@@ -42,6 +42,9 @@ small{color:#667085}
 <h3>Riwayat transaksi</h3>
 <div id="riwayat">Belum ada transaksi.</div>
 <button class="secondary" onclick="ekspor()">Unduh laporan CSV</button>
+<input type="file" id="fileCSV" accept=".csv,text/csv">
+<button class="secondary" onclick="imporCSV()">Pulihkan data dari CSV</button>
+
 <button class="secondary" onclick="hapus()">Hapus seluruh data</button>
 </div>
 <small>Versi awal. Data tersimpan di browser perangkat ini saja. Ekspor laporan secara berkala.</small>
@@ -105,6 +108,32 @@ function ekspor(){
  a.download='laporan-kas.csv';
  a.click();
  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+function imporCSV(){
+ const file=document.getElementById('fileCSV').files[0];
+ if(!file){alert('Pilih file CSV terlebih dahulu.');return;}
+ const reader=new FileReader();
+ reader.onload=function(){
+  try{
+   const baris=reader.result.replace(/^\uFEFF/,'').trim().split(/\r?\n/);
+   const hasil=[];
+   for(let i=1;i<baris.length;i++){
+    const kolom=baris[i].match(/("(?:[^"]|"")*"|[^;]*)(;|$)/g);
+    if(!kolom)continue;
+    const nilai=baris[i].split(';').map(v=>v.trim().replace(/^"|"$/g,'').replace(/""/g,'"'));
+    if(nilai.length<4)continue;
+    const tanggal=nilai[0],ket=nilai[1],jenis=nilai[2],nom=Number(nilai[3]);
+    if(!ket||!Number.isSafeInteger(nom)||nom<=0||!['masuk','keluar'].includes(jenis))continue;
+    hasil.push({tanggal,ket,jenis,nom});
+   }
+   if(!hasil.length){alert('Tidak ada transaksi valid di file CSV.');return;}
+   if(confirm('Ganti data saat ini dengan '+hasil.length+' transaksi dari CSV?')){
+    data=hasil;simpan();alert('Data berhasil dipulihkan.');
+   }
+  }catch(e){alert('File CSV tidak dapat dibaca.');}
+ };
+ reader.readAsText(file,'UTF-8');
+}
+
 }
 function hapus(){
  if(confirm('Hapus semua transaksi di browser ini?')){
