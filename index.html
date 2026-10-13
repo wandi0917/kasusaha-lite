@@ -108,33 +108,45 @@ function ekspor(){
  a.download='laporan-kas.csv';
  a.click();
  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+
 function imporCSV(){
  const file=document.getElementById('fileCSV').files[0];
  if(!file){alert('Pilih file CSV terlebih dahulu.');return;}
  const reader=new FileReader();
  reader.onload=function(){
   try{
-   const baris=reader.result.replace(/^\uFEFF/,'').trim().split(/\r?\n/);
+   const teks=String(reader.result).replace(/^\uFEFF/,'').trim();
+   const baris=teks.split(/\r?\n/);
    const hasil=[];
    for(let i=1;i<baris.length;i++){
-    const kolom=baris[i].match(/("(?:[^"]|"")*"|[^;]*)(;|$)/g);
-    if(!kolom)continue;
-    const nilai=baris[i].split(';').map(v=>v.trim().replace(/^"|"$/g,'').replace(/""/g,'"'));
+    if(!baris[i].trim())continue;
+    const nilai=[];
+    const re=/"((?:[^"]|"")*)"|([^;]*)(?:;|$)/g;
+    let cocok;
+    while((cocok=re.exec(baris[i]))!==null){
+     nilai.push((cocok[1]!==undefined?cocok[1]:cocok[2]).replace(/""/g,'"'));
+     if(re.lastIndex===baris[i].length)break;
+    }
     if(nilai.length<4)continue;
-    const tanggal=nilai[0],ket=nilai[1],jenis=nilai[2],nom=Number(nilai[3]);
-    if(!ket||!Number.isSafeInteger(nom)||nom<=0||!['masuk','keluar'].includes(jenis))continue;
-    hasil.push({tanggal,ket,jenis,nom});
+    const tanggal=nilai[0].trim();
+    const ket=nilai[1].trim();
+    const jenis=nilai[2].trim();
+    const nom=Number(nilai[3].trim());
+    if(ket&&Number.isSafeInteger(nom)&&nom>0&&['masuk','keluar'].includes(jenis)){
+     hasil.push({tanggal,ket,jenis,nom});
+    }
    }
-   if(!hasil.length){alert('Tidak ada transaksi valid di file CSV.');return;}
+   if(!hasil.length){alert('CSV tidak berisi transaksi valid. Data lama tidak diubah.');return;}
    if(confirm('Ganti data saat ini dengan '+hasil.length+' transaksi dari CSV?')){
-    data=hasil;simpan();alert('Data berhasil dipulihkan.');
+    data=hasil;
+    simpan();
+    alert('Data berhasil dipulihkan: '+hasil.length+' transaksi.');
    }
-  }catch(e){alert('File CSV tidak dapat dibaca.');}
+  }catch(e){alert('CSV gagal dibaca. Data lama tidak diubah.');}
  };
  reader.readAsText(file,'UTF-8');
 }
 
-}
 function hapus(){
  if(confirm('Hapus semua transaksi di browser ini?')){
   data=[];
