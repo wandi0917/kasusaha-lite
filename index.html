@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KasUsaha Lite</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f2f5f9;margin:0;padding:18px;color:#172033}
+main{max-width:600px;margin:auto}
+.card{background:white;padding:18px;border-radius:14px;margin:14px 0;box-shadow:0 2px 8px #0001}
+h1{color:#087f5b}
+input,button,select{box-sizing:border-box;width:100%;padding:12px;margin:6px 0;border-radius:8px;font-size:16px}
+input,select{border:1px solid #ccd3dc;background:white}
+button{border:0;background:#087f5b;color:white;font-weight:bold}
+.secondary{background:#344054}
+.money{font-size:24px;font-weight:bold}
+small{color:#667085}
+</style>
+</head>
+<body>
+<main>
+<h1>KasUsaha Lite</h1>
+<p>Pencatatan kas sederhana untuk usaha kecil.</p>
+<div class="card">
+<h3>Tambah transaksi</h3>
+<input id="ket" placeholder="Keterangan transaksi">
+<input id="nom" type="number" min="1" step="1" placeholder="Jumlah rupiah">
+<select id="jenis">
+<option value="masuk">Uang masuk</option>
+<option value="keluar">Uang keluar</option>
+</select>
+<button onclick="tambah()">Simpan transaksi</button>
+</div>
+<div class="card">
+<small>Saldo bersih transaksi</small>
+<div class="money" id="saldo">Rp0</div>
+<p>Uang masuk: <b id="masuk">Rp0</b></p>
+<p>Uang keluar: <b id="keluar">Rp0</b></p>
+</div>
+<div class="card">
+<h3>Riwayat transaksi</h3>
+<div id="riwayat">Belum ada transaksi.</div>
+<button class="secondary" onclick="ekspor()">Unduh laporan CSV</button>
+<button class="secondary" onclick="hapus()">Hapus seluruh data</button>
+</div>
+<small>Versi awal. Data tersimpan di browser perangkat ini saja. Ekspor laporan secara berkala.</small>
+</main>
+<script>
+const kunci='kasusaha_lite_v1';
+let data=[];
+try{
+ data=JSON.parse(localStorage.getItem(kunci)||'[]');
+ if(!Array.isArray(data))data=[];
+}catch(e){data=[]}
+const rupiah=n=>'Rp'+n.toLocaleString('id-ID');
+function simpan(){
+ try{
+  localStorage.setItem(kunci,JSON.stringify(data));
+  tampil();
+ }catch(e){alert('Penyimpanan gagal. Ekspor laporan jika diperlukan.')}
+}
+function tambah(){
+ const ket=document.getElementById('ket').value.trim();
+ const nom=Number(document.getElementById('nom').value);
+ if(!ket||!Number.isSafeInteger(nom)||nom<=0){
+  alert('Isi keterangan dan jumlah rupiah yang valid.');
+  return;
+ }
+ data.push({
+  ket,nom,
+  jenis:document.getElementById('jenis').value,
+  tanggal:new Date().toLocaleDateString('id-ID')
+ });
+ simpan();
+ document.getElementById('ket').value='';
+ document.getElementById('nom').value='';
+}
+function aman(s){
+ return String(s).replace(/[&<>"']/g,c=>({
+ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+ }[c]));
+}
+function tampil(){
+ let m=0,k=0;
+ data.forEach(x=>{
+  if(x.jenis==='masuk')m+=x.nom;
+  else k+=x.nom;
+ });
+ document.getElementById('masuk').textContent=rupiah(m);
+ document.getElementById('keluar').textContent=rupiah(k);
+ document.getElementById('saldo').textContent=rupiah(m-k);
+ document.getElementById('riwayat').innerHTML=data.length
+ ?data.map((x,i)=>'<p>'+(i+1)+'. '+aman(x.ket)+'<br>'+
+ aman(x.tanggal)+' — '+(x.jenis==='masuk'?'Masuk ':'Keluar ')+
+ rupiah(x.nom)+'</p>').join('')
+ :'Belum ada transaksi.';
+}
+function ekspor(){
+ const isi=[['Tanggal','Keterangan','Jenis','Jumlah'],
+ ...data.map(x=>[x.tanggal,x.ket,x.jenis,x.nom])];
+ const csv=isi.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');
+ const a=document.createElement('a');
+ a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
+ a.download='laporan-kas.csv';
+ a.click();
+ setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function hapus(){
+ if(confirm('Hapus semua transaksi di browser ini?')){
+  data=[];
+  simpan();
+ }
+}
+tampil();
+</script>
+</body>
+</html>
