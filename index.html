@@ -13,7 +13,7 @@
 <body>
 <header><h1>KasUsaha Lite</h1><p>Kasir • Keuangan • Produk • Pasar Online Indonesia</p></header>
 <nav>
-<button class="active" onclick="buka('beranda',this)">Beranda</button><button onclick="buka('transaksi',this)">Transaksi</button><button onclick="buka('produk',this)">Produk Saya</button><button onclick="buka('pasar',this)">Pasar Online</button><button onclick="buka('cadangan',this)">Cadangan</button><button onclick="buka('akun',this)">Akun Penjual</button>
+<button class="active" type="button" data-tab="beranda">Beranda</button><button type="button" data-tab="transaksi">Transaksi</button><button type="button" data-tab="produk">Produk Saya</button><button type="button" data-tab="pasar">Pasar Online</button><button type="button" data-tab="cadangan">Cadangan</button><button type="button" data-tab="akun">Akun Penjual</button>
 </nav>
 <main>
 <section id="beranda" class="tab active">
@@ -38,7 +38,8 @@ const sb=(window.supabase&&window.supabase.createClient)?window.supabase.createC
 let transaksi=[],produk=[];
 function simpan(){try{localStorage.setItem('kasusaha_transaksi',JSON.stringify(transaksi));localStorage.setItem('kasusaha_produk',JSON.stringify(produk));}catch(e){alert('Penyimpanan gagal. Unduh cadangan dan periksa ruang penyimpanan.');}}
 function muat(){try{transaksi=JSON.parse(localStorage.getItem('kasusaha_transaksi')||'[]');produk=JSON.parse(localStorage.getItem('kasusaha_produk')||'[]');if(!Array.isArray(transaksi))transaksi=[];if(!Array.isArray(produk))produk=[];}catch(e){transaksi=[];produk=[];}tampil();}
-function buka(id,tombol){document.querySelectorAll('main .tab').forEach(s=>s.classList.remove('active'));document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));$(id).classList.add('active');if(tombol)tombol.classList.add('active');tampil();if(id==='pasar')muatPasarOnline();if(id==='akun'){periksaSesi();tampilProdukLokalUntukOnline();}}
+function buka(id,tombol){const halaman=$(id);if(!halaman){console.error('Menu tidak ditemukan:',id);return;}document.querySelectorAll('main .tab').forEach(s=>s.classList.remove('active'));document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));halaman.classList.add('active');const aktif=tombol||document.querySelector('nav button[data-tab="'+id+'"]');if(aktif)aktif.classList.add('active');try{tampil();}catch(e){console.error('Gagal memperbarui tampilan:',e);}if(id==='pasar')muatPasarOnline();if(id==='akun'){periksaSesi();tampilProdukLokalUntukOnline();}}
+document.querySelectorAll('nav button[data-tab]').forEach(button=>{button.addEventListener('click',()=>buka(button.dataset.tab,button));});
 function aman(teks){return String(teks==null?'':teks).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function catat(keterangan,jenis,nominal){const jumlah=Number(nominal);if(!keterangan.trim()||!Number.isFinite(jumlah)||jumlah<=0){alert('Isi keterangan dan jumlah dengan benar.');return false;}transaksi.unshift({id:Date.now()+Math.random(),tanggal:new Date().toLocaleDateString('id-ID'),keterangan:keterangan.trim(),jenis,nominal:Math.round(jumlah)});simpan();tampil();return true;}
 $('formKas').addEventListener('submit',function(e){e.preventDefault();if(catat($('keterangan').value,$('jenis').value,$('nominal').value))this.reset();});
