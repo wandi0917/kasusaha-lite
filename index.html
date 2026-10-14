@@ -325,7 +325,123 @@ async function permintaanSupabase(path,options={}){
   return response.json();
 }
 
+async function 
 async function muatPasarOnline(){
+  const hasil = document.getElementById('hasilOnline');
+  const status = document.getElementById('statusOnline');
+
+  status.className = 'status';
+  status.textContent = 'Menghubungkan ke database online...';
+  hasil.textContent = 'Memuat produk...';
+
+  try {
+    const params = new URLSearchParams({
+      select: 'id,nama_produk,deskripsi,kategori,harga,stok,nama_penjual,kota,foto_url',
+      aktif: 'eq.true',
+      order: 'created_at.desc',
+      limit: '100'
+    });
+
+    const q = document.getElementById('cariPasar').value.trim();
+    const kategori = document.getElementById('filterKategori').value;
+
+    if (q) {
+      const bersih = q.replace(/[(),*]/g, ' ').trim();
+      if (bersih) {
+        params.set(
+          'or',
+          '(nama_produk.ilike.*' + bersih +
+          '*,deskripsi.ilike.*' + bersih + '*)'
+        );
+      }
+    }
+
+    if (kategori) {
+      params.set('kategori', 'eq.' + kategori);
+    }
+
+    const response = await fetch(
+      SUPABASE_URL + '/rest/v1/produk?' + params.toString(),
+      {
+        headers: {
+          apikey: SUPABASE_KEY,
+          Authorization: 'Bearer ' + SUPABASE_KEY
+        }
+      }
+    );
+
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error('HTTP ' + response.status + ': ' + detail.slice(0, 180));
+    }
+
+    const data = await response.json();
+
+    if (!Array.isArray(data)) {
+      throw new Error('Format data produk tidak valid.');
+    }
+
+    hasil.replaceChildren();
+
+    if (data.length === 0) {
+      hasil.textContent = 'Database terhubung, tetapi belum ada produk yang cocok.';
+    }
+
+    data.forEach(function(p) {
+      const kartu = document.createElement('article');
+      kartu.className = 'item';
+
+      const kategoriEl = document.createElement('p');
+      kategoriEl.className = 'small';
+      kategoriEl.textContent = p.kategori || 'Umum';
+
+      const nama = document.createElement('h3');
+      nama.textContent = p.nama_produk || 'Produk';
+
+      const harga = document.createElement('div');
+      harga.className = 'price';
+      harga.textContent = format(p.harga);
+
+      const stok = document.createElement('p');
+      stok.textContent = 'Stok: ' + (Number(p.stok) || 0);
+
+      const penjual = document.createElement('p');
+      penjual.textContent =
+        'Penjual: ' + (p.nama_penjual || 'Penjual') +
+        (p.kota ? ' • ' + p.kota : '');
+
+      const deskripsi = document.createElement('p');
+      deskripsi.textContent = p.deskripsi || '';
+
+      kartu.append(kategoriEl, nama, harga, stok, penjual, deskripsi);
+      hasil.appendChild(kartu);
+    });
+
+    status.className = 'status';
+    status.textContent =
+      'TERHUBUNG ke Supabase. Produk online ditemukan: ' + data.length + '.';
+
+  } catch (error) {
+    console.error('Kesalahan pasar online:', error);
+
+    hasil.textContent = 'Produk online belum dapat dimuat.';
+    status.className = 'status';
+
+    if (error.message.includes('HTTP 401') ||
+        error.message.includes('HTTP 403')) {
+      status.textContent =
+        'AKSES DITOLAK. Periksa API key dan kebijakan SELECT/RLS Supabase.';
+    } else if (error.message.includes('HTTP 404')) {
+      status.textContent =
+        'TABEL TIDAK DITEMUKAN. Pastikan tabel public.produk tersedia.';
+    } else {
+      status.textContent =
+        'KONEKSI GAGAL. Periksa internet, URL, API key, nama kolom, dan aturan RLS. ' +
+        error.message.slice(0, 180);
+    }
+  }
+}
+{
   const hasil=$('hasilOnline');
   const status=$('statusOnline');
   status.textContent='Menghubungkan ke pasar online...';
