@@ -108,7 +108,7 @@ function ekspor(){
  a.download='laporan-kas.csv';
  a.click();
  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-
+}
 function imporCSV(){
  const file=document.getElementById('fileCSV').files[0];
  if(!file){alert('Pilih file CSV terlebih dahulu.');return;}
