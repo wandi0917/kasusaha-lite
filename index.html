@@ -367,6 +367,43 @@ function hapusSemua(){
 }
 
 muat();
+</script> 
+ 
+<!-- Koneksi database Supabase KasUsaha Lite -->
+<script>
+const SUPABASE_URL = 'https://flvdudmdltjjdjkdngbv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_vh4DgP6YyquvZ5fK1ABp1g_g_lRKhsR';
+
+async function cariProdukOnline(kataKunci = '') {
+  const url = new URL(SUPABASE_URL + '/rest/v1/produk');
+
+  url.searchParams.set(
+    'select',
+    'id,nama_produk,deskripsi,kategori,harga,stok,nama_penjual,kota,foto_url'
+  );
+  url.searchParams.set('aktif', 'eq.true');
+  url.searchParams.set('order', 'created_at.desc');
+
+  if (kataKunci.trim()) {
+    url.searchParams.set('nama_produk', 'ilike.*' + kataKunci.trim() + '*');
+  }
+
+  const respons = await fetch(url, {
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: 'Bearer ' + SUPABASE_KEY
+    }
+  });
+
+  if (!respons.ok) {
+    throw new Error('Gagal mengambil produk: ' + respons.status);
+  }
+
+  return await respons.json();
+}
+
+console.log('Fungsi pencarian produk KasUsaha Lite siap digunakan.');
 </script>
+
 </body>
 </html>
