@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -11,9 +12,9 @@ body{margin:0;font-family:Arial,sans-serif;background:#f3f6f4;color:#17211b}
 header{background:#166534;color:white;padding:18px}
 header h1{margin:0;font-size:24px}
 header p{margin:6px 0 0}
-nav{display:flex;gap:6px;overflow-x:auto;background:white;padding:10px}
-nav button{padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#166534;font-weight:bold}
-nav button.active{background:#166534;color:white}
+nav{display:flex;gap:6px;overflow-x:auto;background:white;padding:10px;position:sticky;top:0;z-index:5}
+nav button{padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#166534;font-weight:bold;white-space:nowrap}
+nav button.active,.primary{background:#166534;color:white}
 main{max-width:850px;margin:auto;padding:12px}
 section{display:none}
 section.active{display:block}
@@ -22,20 +23,23 @@ section.active{display:block}
 label{display:block;font-weight:bold;margin:10px 0 5px}
 input,select,textarea{width:100%;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:15px}
 button{cursor:pointer}
-.primary{background:#166534;color:white;border:0;border-radius:8px;padding:12px;font-weight:bold}
+.primary{border:0;border-radius:8px;padding:12px;font-weight:bold}
+.secondary{background:#e5eee7;color:#166534;border:1px solid #b7d0bd;border-radius:8px;padding:10px;font-weight:bold}
 .danger{background:#fee2e2;color:#991b1b;border:0;border-radius:8px;padding:8px}
 .wide{width:100%;margin-top:12px}
-.item{background:white;border:1px solid #ddd;border-radius:9px;padding:12px;margin-top:9px}
+.item{background:white;border:1px solid #ddd;border-radius:9px;padding:12px;margin-top:9px;overflow-wrap:anywhere}
 .price{font-weight:bold;color:#166534;font-size:18px}
 .small{font-size:12px;color:#666}
+.status{padding:10px;background:#eef5ef;border-radius:8px;margin:10px 0;overflow-wrap:anywhere}
 footer{text-align:center;padding:20px;color:#666;font-size:12px}
 </style>
 </head>
 <body>
 <header>
 <h1>KasUsaha Lite</h1>
-<p>Kasir • Keuangan • Katalog • Pasar Online</p>
+<p>Kasir • Keuangan • Produk • Pasar Online Indonesia</p>
 </header>
+
 <nav>
 <button class="active" onclick="buka('beranda',this)">Beranda</button>
 <button onclick="buka('transaksi',this)">Transaksi</button>
@@ -43,6 +47,7 @@ footer{text-align:center;padding:20px;color:#666;font-size:12px}
 <button onclick="buka('pasar',this)">Pasar Online</button>
 <button onclick="buka('cadangan',this)">Cadangan</button>
 </nav>
+
 <main>
 <section id="beranda" class="active">
 <h2>Ringkasan usaha</h2>
@@ -50,7 +55,7 @@ footer{text-align:center;padding:20px;color:#666;font-size:12px}
 <div class="card">Pemasukan<strong id="masuk" style="display:block;font-size:19px">Rp0</strong></div>
 <div class="card">Pengeluaran<strong id="keluar" style="display:block;font-size:19px">Rp0</strong></div>
 <div class="card">Saldo<strong id="saldo" style="display:block;font-size:19px">Rp0</strong></div>
-<div class="card">Jumlah produk<strong id="jumlah" style="display:block;font-size:19px">0</strong></div>
+<div class="card">Jumlah produk lokal<strong id="jumlah" style="display:block;font-size:19px">0</strong></div>
 </div>
 <div class="card">
 <h3>Catat transaksi</h3>
@@ -79,28 +84,25 @@ footer{text-align:center;padding:20px;color:#666;font-size:12px}
 <h3>Tambah barang</h3>
 <form id="formProduk">
 <label>Nama barang</label>
-<input id="nama" required placeholder="Nama produk">
+<input id="nama" required maxlength="120" placeholder="Nama produk">
 <label>Harga jual (Rp)</label>
 <input id="harga" type="number" min="0" required placeholder="35000">
 <label>Stok</label>
-<input id="stok" type="number" min="0" required value="1">
+<input id="stok" type="number" min="0" step="1" required value="1">
 <label>Kategori</label>
 <select id="kategori">
-<option>Makanan & Minuman</option>
-<option>Fashion</option>
-<option>Elektronik</option>
-<option>Rumah Tangga</option>
-<option>Kecantikan</option>
-<option>Jasa</option>
-<option>Pertanian</option>
-<option>Lainnya</option>
+<option>Makanan & Minuman</option><option>Fashion</option>
+<option>Elektronik</option><option>Rumah Tangga</option>
+<option>Kecantikan</option><option>Jasa</option>
+<option>Pertanian</option><option>Lainnya</option>
 </select>
-<label>Kontak penjual</label>
-<input id="kontak" placeholder="Nomor WhatsApp (opsional)">
+<label>Kontak WhatsApp (opsional)</label>
+<input id="kontak" placeholder="Contoh: 628123456789">
 <label>Deskripsi</label>
-<textarea id="deskripsi" placeholder="Informasi barang"></textarea>
-<button class="primary wide">Simpan produk</button>
+<textarea id="deskripsi" maxlength="1000" placeholder="Informasi barang"></textarea>
+<button class="primary wide">Simpan produk di HP</button>
 </form>
+<p class="small">Produk lokal tersimpan di browser perangkat ini. Untuk dijual ke seluruh Indonesia, gunakan tombol Pasang Online pada produk setelah data penjual dilengkapi.</p>
 </div>
 <input id="cariProduk" placeholder="Cari produk saya..." oninput="tampilProduk()">
 <div id="daftarProduk"></div>
@@ -109,30 +111,31 @@ footer{text-align:center;padding:20px;color:#666;font-size:12px}
 <section id="pasar">
 <h2>Pasar Online KasUsaha Lite</h2>
 <div class="card">
-<p>Cari barang berdasarkan nama atau kategori.</p>
-<input id="cariPasar" placeholder="Barang yang ingin dicari..." oninput="tampilPasar()">
+<p>Cari produk yang dipasang di database online KasUsaha Lite.</p>
+<input id="cariPasar" placeholder="Cari nama atau deskripsi barang..." oninput="tampilPasarLokal()">
 <label>Kategori</label>
-<select id="filterKategori" onchange="tampilPasar()">
+<select id="filterKategori" onchange="muatPasarOnline()">
 <option value="">Semua kategori</option>
-<option>Makanan & Minuman</option>
-<option>Fashion</option>
-<option>Elektronik</option>
-<option>Rumah Tangga</option>
-<option>Kecantikan</option>
-<option>Jasa</option>
-<option>Pertanian</option>
-<option>Lainnya</option>
+<option>Makanan & Minuman</option><option>Fashion</option>
+<option>Elektronik</option><option>Rumah Tangga</option>
+<option>Kecantikan</option><option>Jasa</option>
+<option>Pertanian</option><option>Lainnya</option>
 </select>
+<button class="primary wide" onclick="muatPasarOnline()">Cari produk online</button>
+<div id="statusOnline" class="status">Menyiapkan koneksi pasar online...</div>
 </div>
+<h3>Produk online</h3>
+<div id="hasilOnline"></div>
+<h3>Produk lokal di perangkat ini</h3>
 <div id="hasilPasar"></div>
 <div class="card">
-<h3>Ingin berjualan?</h3>
-<p>Masukkan barang melalui menu Produk Saya agar tampil di katalog perangkat ini.</p>
-<button class="primary" onclick="buka('produk',document.querySelectorAll('nav button')[2])">Pasang barang</button>
+<h3>Ingin berjualan online?</h3>
+<p>Tambahkan produk melalui menu Produk Saya, lalu tekan Pasang Online. Nama penjual dan kota akan diminta sebelum produk dikirim ke database.</p>
+<button class="primary" onclick="buka('produk',document.querySelectorAll('nav button')[2])">Tambah produk</button>
 </div>
 <div class="card">
 <strong>Pembayaran online</strong>
-<p class="small">Integrasi Midtrans memerlukan backend dan verifikasi pembayaran. Jangan memasukkan kunci rahasia pembayaran ke dalam kode browser.</p>
+<p class="small">Pembayaran otomatis belum aktif. Jangan mengirim barang hanya berdasarkan tangkapan layar pembayaran. Integrasi Midtrans memerlukan backend dan verifikasi status pembayaran.</p>
 </div>
 </section>
 
@@ -143,267 +146,359 @@ footer{text-align:center;padding:20px;color:#666;font-size:12px}
 <label>Pilih file cadangan JSON</label>
 <input type="file" id="fileCadangan" accept=".json,application/json">
 <button class="primary wide" onclick="impor()">Pulihkan cadangan</button>
-<button class="danger wide" onclick="hapusSemua()">Hapus semua data</button>
-<p class="small">Simpan cadangan secara berkala. Data versi ini tersimpan pada browser perangkat.</p>
+<button class="danger wide" onclick="hapusSemua()">Hapus semua data lokal</button>
+<p class="small">Cadangan berisi transaksi dan produk lokal pada perangkat ini. Produk online tersimpan terpisah di Supabase.</p>
 </div>
 </section>
 </main>
-<footer>KasUsaha Lite • Aplikasi pencatatan dan katalog usaha</footer>
+
+<footer>KasUsaha Lite • Pencatatan usaha dan katalog produk</footer>
+
 <script>
+'use strict';
+
 const $=id=>document.getElementById(id);
 const format=n=>new Intl.NumberFormat('id-ID',{
- style:'currency',currency:'IDR',maximumFractionDigits:0
-}).format(n||0);
+  style:'currency',currency:'IDR',maximumFractionDigits:0
+}).format(Number(n)||0);
+
+/* Konfigurasi koneksi Supabase */
+const SUPABASE_URL='https://flvdudmdltjjdjkdngbv.supabase.co';
+const SUPABASE_KEY='sb_publishable_vh4DgP6YyquvZ5fK1ABp1g_g_lRKhsR';
 
 let transaksi=[];
 let produk=[];
 
 function simpan(){
- try{
-  localStorage.setItem('kasusaha_transaksi',JSON.stringify(transaksi));
-  localStorage.setItem('kasusaha_produk',JSON.stringify(produk));
- }catch(e){
-  alert('Penyimpanan gagal. Silakan ekspor cadangan data.');
- }
+  try{
+    localStorage.setItem('kasusaha_transaksi',JSON.stringify(transaksi));
+    localStorage.setItem('kasusaha_produk',JSON.stringify(produk));
+  }catch(e){
+    alert('Penyimpanan gagal. Unduh cadangan dan periksa ruang penyimpanan.');
+  }
 }
 
 function muat(){
- try{
-  transaksi=JSON.parse(localStorage.getItem('kasusaha_transaksi')||'[]');
-  produk=JSON.parse(localStorage.getItem('kasusaha_produk')||'[]');
-  if(!Array.isArray(transaksi))transaksi=[];
-  if(!Array.isArray(produk))produk=[];
- }catch(e){
-  transaksi=[];produk=[];
- }
- tampil();
+  try{
+    transaksi=JSON.parse(localStorage.getItem('kasusaha_transaksi')||'[]');
+    produk=JSON.parse(localStorage.getItem('kasusaha_produk')||'[]');
+    if(!Array.isArray(transaksi))transaksi=[];
+    if(!Array.isArray(produk))produk=[];
+  }catch(e){transaksi=[];produk=[];}
+  tampil();
 }
 
 function buka(id,tombol){
- document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
- document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
- $(id).classList.add('active');
- if(tombol)tombol.classList.add('active');
- tampil();
+  document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  $(id).classList.add('active');
+  if(tombol)tombol.classList.add('active');
+  tampil();
+  if(id==='pasar')muatPasarOnline();
+}
+
+function aman(teks){
+  return String(teks==null?'':teks).replace(/[&<>"']/g,c=>({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
 }
 
 function catat(keterangan,jenis,nominal){
- const jumlah=Number(nominal);
- if(!keterangan.trim()||!Number.isFinite(jumlah)||jumlah<=0){
-  alert('Isi keterangan dan jumlah yang benar.');
-  return false;
- }
- transaksi.unshift({
-  id:Date.now()+Math.random(),
-  tanggal:new Date().toLocaleDateString('id-ID'),
-  keterangan:keterangan.trim(),
-  jenis:jenis,
-  nominal:Math.round(jumlah)
- });
- simpan();tampil();
- return true;
+  const jumlah=Number(nominal);
+  if(!keterangan.trim()||!Number.isFinite(jumlah)||jumlah<=0){
+    alert('Isi keterangan dan jumlah dengan benar.');return false;
+  }
+  transaksi.unshift({
+    id:Date.now()+Math.random(),
+    tanggal:new Date().toLocaleDateString('id-ID'),
+    keterangan:keterangan.trim(),jenis,nominal:Math.round(jumlah)
+  });
+  simpan();tampil();return true;
 }
 
 $('formKas').addEventListener('submit',function(e){
- e.preventDefault();
- if(catat($('keterangan').value,$('jenis').value,$('nominal').value)){
-  this.reset();
- }
+  e.preventDefault();
+  if(catat($('keterangan').value,$('jenis').value,$('nominal').value))this.reset();
 });
 
 function hapusTransaksi(id){
- if(confirm('Hapus transaksi ini?')){
-  transaksi=transaksi.filter(t=>t.id!==id);
-  simpan();tampil();
- }
+  if(confirm('Hapus transaksi ini?')){
+    transaksi=transaksi.filter(t=>String(t.id)!==String(id));
+    simpan();tampil();
+  }
 }
 
 function tampilTransaksi(){
- const q=($('cariTransaksi').value||'').toLowerCase();
- const data=transaksi.filter(t=>t.keterangan.toLowerCase().includes(q));
- $('riwayat').innerHTML=data.length?data.map(t=>`
-  <div class="item">
-   <strong>${aman(t.keterangan)}</strong>
-   <p class="small">${aman(t.tanggal)} • ${t.jenis==='masuk'?'Pemasukan':'Pengeluaran'}</p>
-   <strong style="color:${t.jenis==='masuk'?'#166534':'#b42318'}">
-   ${t.jenis==='masuk'?'+':'−'}${format(t.nominal)}</strong>
-   <button class="danger" onclick="hapusTransaksi(${Number(t.id)})">Hapus</button>
-  </div>
- `).join(''):'<p>Belum ada transaksi.</p>';
-}
-
-function tampilProduk(){
- const q=($('cariProduk').value||'').toLowerCase();
- const data=produk.filter(p=>(p.nama+' '+p.kategori).toLowerCase().includes(q));
- $('daftarProduk').innerHTML=data.length?data.map(p=>kartu(p,true)).join(''):'<p>Belum ada produk.</p>';
+  const q=($('cariTransaksi').value||'').toLowerCase();
+  const data=transaksi.filter(t=>String(t.keterangan||'').toLowerCase().includes(q));
+  $('riwayat').innerHTML=data.length?data.map(t=>`
+    <div class="item">
+      <strong>${aman(t.keterangan)}</strong>
+      <p class="small">${aman(t.tanggal)} • ${t.jenis==='masuk'?'Pemasukan':'Pengeluaran'}</p>
+      <strong style="color:${t.jenis==='masuk'?'#166534':'#b42318'}">${t.jenis==='masuk'?'+':'−'}${format(t.nominal)}</strong>
+      <button class="danger" onclick="hapusTransaksi('${String(t.id)}')">Hapus</button>
+    </div>`).join(''):'<p>Belum ada transaksi.</p>';
 }
 
 $('formProduk').addEventListener('submit',function(e){
- e.preventDefault();
- const nama=$('nama').value.trim();
- const harga=Number($('harga').value);
- const stok=Number($('stok').value);
- if(!nama||harga<0||stok<0||!Number.isFinite(harga)||!Number.isInteger(stok)){
-  alert('Periksa nama, harga, dan stok.');
-  return;
- }
- produk.unshift({
-  id:Date.now()+Math.random(),
-  nama:nama,
-  harga:Math.round(harga),
-  stok:stok,
-  kategori:$('kategori').value,
-  kontak:$('kontak').value.trim(),
-  deskripsi:$('deskripsi').value.trim()
- });
- simpan();this.reset();$('stok').value=1;tampil();
- alert('Produk berhasil disimpan di perangkat ini.');
+  e.preventDefault();
+  const nama=$('nama').value.trim();
+  const harga=Number($('harga').value);
+  const stok=Number($('stok').value);
+  if(!nama||harga<0||stok<0||!Number.isFinite(harga)||!Number.isInteger(stok)){
+    alert('Periksa nama, harga, dan stok.');return;
+  }
+  produk.unshift({
+    id:Date.now()+Math.random(),nama,harga:Math.round(harga),stok,
+    kategori:$('kategori').value,kontak:$('kontak').value.trim(),
+    deskripsi:$('deskripsi').value.trim(),onlineId:null
+  });
+  simpan();this.reset();$('stok').value=1;tampil();
+  alert('Produk berhasil disimpan di perangkat ini.');
 });
 
-function aman(teks){
- return String(teks==null?'':teks).replace(/[&<>"']/g,c=>({
-  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
- }[c]));
-}
-
 function kartu(p,bisaHapus){
- return `<div class="item">
-  <span class="small">${aman(p.kategori)}</span>
-  <h3>${aman(p.nama)}</h3>
-  <div class="price">${format(p.harga)}</div>
-  <p>Stok: ${Number(p.stok)||0}</p>
-  <p>${aman(p.deskripsi||'')}</p>
-  ${p.kontak?'<p>Kontak: '+aman(p.kontak)+'</p>':''}
-  ${p.kontak?'<button class="primary" onclick="hubungi('+Number(p.id)+')">Hubungi penjual</button>':''}
-  ${bisaHapus?'<button class="danger" onclick="hapusProduk('+Number(p.id)+')">Hapus</button>':''}
- </div>`;
+  const id=Number(p.id);
+  const kontak=String(p.kontak||'');
+  return `<div class="item">
+    <span class="small">${aman(p.kategori||'Umum')}</span>
+    <h3>${aman(p.nama||p.nama_produk||'Produk')}</h3>
+    <div class="price">${format(p.harga)}</div>
+    <p>Stok: ${Number(p.stok)||0}</p>
+    <p>${aman(p.deskripsi||'')}</p>
+    ${kontak?`<p>Kontak: ${aman(kontak)}</p><button class="secondary" onclick="hubungi('${String(p.id)}')">Hubungi penjual</button>`:''}
+    ${bisaHapus?`<button class="danger" onclick="hapusProduk('${String(p.id)}')">Hapus lokal</button>`:''}
+    ${bisaHapus&&!p.onlineId?`<button class="primary" onclick="publikasikanProduk('${String(p.id)}')">Pasang Online</button>`:''}
+    ${bisaHapus&&p.onlineId?'<p class="small">Status: sudah dipasang online</p>':''}
+  </div>`;
 }
 
-function tampilPasar(){
- const q=($('cariPasar').value||'').toLowerCase();
- const kat=$('filterKategori').value;
- const data=produk.filter(p=>
-  (p.nama+' '+p.kategori+' '+(p.deskripsi||'')).toLowerCase().includes(q)&&
-  (!kat||p.kategori===kat)
- );
- $('hasilPasar').innerHTML=data.length?
-  data.map(p=>kartu(p,false)).join(''):
-  '<div class="item">Barang belum ditemukan. Tambahkan barang melalui menu Produk Saya.</div>';
+function tampilProduk(){
+  const q=($('cariProduk').value||'').toLowerCase();
+  const data=produk.filter(p=>(p.nama+' '+p.kategori).toLowerCase().includes(q));
+  $('daftarProduk').innerHTML=data.length?data.map(p=>kartu(p,true)).join(''):'<p>Belum ada produk.</p>';
+}
+
+function tampilPasarLokal(){
+  const q=($('cariPasar').value||'').toLowerCase();
+  const kat=$('filterKategori').value;
+  const data=produk.filter(p=>
+    (p.nama+' '+p.kategori+' '+(p.deskripsi||'')).toLowerCase().includes(q)&&
+    (!kat||p.kategori===kat)
+  );
+  $('hasilPasar').innerHTML=data.length?data.map(p=>kartu(p,false)).join(''):
+    '<div class="item">Tidak ada produk lokal yang cocok.</div>';
 }
 
 function hubungi(id){
- const p=produk.find(x=>x.id===id);
- if(!p||!p.kontak)return;
- const nomor=p.kontak.replace(/\D/g,'');
- if(nomor.length>=8&&nomor.length<=15){
-  window.open('https://wa.me/'+nomor,'_blank','noopener');
- }else{
-  alert('Kontak penjual: '+p.kontak);
- }
+  const p=produk.find(x=>String(x.id)===String(id));
+  if(!p||!p.kontak)return;
+  const nomor=p.kontak.replace(/\D/g,'');
+  if(nomor.length>=8&&nomor.length<=15){
+    window.open('https://wa.me/'+nomor,'_blank','noopener');
+  }else alert('Periksa format nomor WhatsApp penjual.');
 }
 
 function hapusProduk(id){
- if(confirm('Hapus produk ini?')){
-  produk=produk.filter(p=>p.id!==id);
-  simpan();tampil();
- }
+  if(confirm('Hapus produk lokal ini? Produk online yang sudah diterbitkan tidak ikut terhapus.')){
+    produk=produk.filter(p=>String(p.id)!==String(id));
+    simpan();tampil();
+  }
+}
+
+/* Fungsi REST Supabase */
+async function permintaanSupabase(path,options={}){
+  const response=await fetch(SUPABASE_URL+'/rest/v1/'+path,{
+    ...options,
+    headers:{
+      apikey:SUPABASE_KEY,
+      Authorization:'Bearer '+SUPABASE_KEY,
+      'Content-Type':'application/json',
+      ...(options.headers||{})
+    }
+  });
+  if(!response.ok){
+    const detail=await response.text();
+    throw new Error('HTTP '+response.status+' '+detail);
+  }
+  if(response.status===204)return null;
+  return response.json();
+}
+
+async function muatPasarOnline(){
+  const hasil=$('hasilOnline');
+  const status=$('statusOnline');
+  status.textContent='Menghubungkan ke pasar online...';
+  hasil.textContent='Memuat produk...';
+
+  try{
+    const params=new URLSearchParams();
+    params.set('select','id,nama_produk,deskripsi,kategori,harga,stok,nama_penjual,kota,foto_url,created_at');
+    params.set('aktif','eq.true');
+    params.set('order','created_at.desc');
+    params.set('limit','100');
+
+    const q=($('cariPasar').value||'').trim();
+    const kat=$('filterKategori').value;
+    if(q){
+      const bersih=q.replace(/[(),]/g,' ').trim();
+      if(bersih)params.set('or','(nama_produk.ilike.*'+bersih+'*,deskripsi.ilike.*'+bersih+'*)');
+    }
+    if(kat)params.set('kategori','eq.'+kat);
+
+    const data=await permintaanSupabase('produk?'+params.toString());
+    hasil.replaceChildren();
+
+    if(!data.length){
+      hasil.textContent='Belum ada produk online yang cocok.';
+    }else{
+      data.forEach(p=>{
+        const div=document.createElement('div');
+        div.className='item';
+
+        const nama=document.createElement('h3');
+        nama.textContent=p.nama_produk||'Produk';
+
+        const kategori=document.createElement('p');
+        kategori.className='small';
+        kategori.textContent=p.kategori||'Umum';
+
+        const harga=document.createElement('div');
+        harga.className='price';
+        harga.textContent=format(p.harga);
+
+        const stok=document.createElement('p');
+        stok.textContent='Stok: '+p.stok;
+
+        const penjual=document.createElement('p');
+        penjual.textContent='Penjual: '+(p.nama_penjual||'Penjual')+
+          (p.kota?' • '+p.kota:'');
+
+        const deskripsi=document.createElement('p');
+        deskripsi.textContent=p.deskripsi||'';
+
+        div.append(kategori,nama,harga,stok,penjual,deskripsi);
+        if(p.foto_url){
+          try{
+            const u=new URL(p.foto_url);
+            if(u.protocol==='https:'){
+              const img=document.createElement('img');
+              img.src=u.href;img.alt=p.nama_produk||'Foto produk';
+              img.loading='lazy';
+              img.style.cssText='max-width:100%;max-height:220px;object-fit:contain';
+              div.insertBefore(img,nama);
+            }
+          }catch(e){}
+        }
+        hasil.appendChild(div);
+      });
+    }
+    status.textContent='Terhubung. Produk online: '+data.length+'.';
+  }catch(e){
+    hasil.textContent='Produk online belum dapat dimuat.';
+    status.textContent='Koneksi gagal. Periksa URL, API key, tabel produk, dan aturan RLS Supabase.';
+    console.error('Supabase:',e);
+  }
+}
+
+async function publikasikanProduk(id){
+  const p=produk.find(x=>String(x.id)===String(id));
+  if(!p)return;
+  if(p.onlineId){alert('Produk ini sudah ditandai terbit online.');return;}
+
+  const namaPenjual=prompt('Masukkan nama toko atau penjual:');
+  if(!namaPenjual||!namaPenjual.trim())return;
+  const kota=prompt('Masukkan kota penjual:','Tanjungpinang');
+  if(kota===null)return;
+
+  const record={
+    nama_produk:p.nama,
+    deskripsi:p.deskripsi||'',
+    kategori:p.kategori||'Lainnya',
+    harga:Number(p.harga),
+    stok:Number(p.stok),
+    nama_penjual:namaPenjual.trim().slice(0,100),
+    kota:kota.trim().slice(0,100),
+    foto_url:'',
+    aktif:true
+  };
+
+  if(record.nama_produk.length>120||record.deskripsi.length>1000||
+     !Number.isFinite(record.harga)||record.harga<0||
+     !Number.isInteger(record.stok)||record.stok<0){
+    alert('Data produk tidak valid. Periksa kembali produk Anda.');return;
+  }
+
+  if(!confirm('Terbitkan produk ini di pasar online agar dapat dilihat pengunjung? Pastikan Anda berhak menjual barang ini.'))return;
+
+  try{
+    const data=await permintaanSupabase('produk',{
+      method:'POST',
+      headers:{Prefer:'return=representation'},
+      body:JSON.stringify(record)
+    });
+    if(!data||!data.length)throw new Error('Server tidak mengembalikan data produk.');
+    p.onlineId=data[0].id;
+    simpan();tampil();
+    alert('Produk berhasil diterbitkan online.');
+    buka('pasar',document.querySelectorAll('nav button')[3]);
+    await muatPasarOnline();
+  }catch(e){
+    console.error('Terbitkan produk:',e);
+    alert('Produk belum berhasil diterbitkan. Pastikan kebijakan INSERT Supabase telah disiapkan. Jangan membuat tabel atau policy baru berulang kali.');
+  }
 }
 
 function tampil(){
- const masuk=transaksi.filter(t=>t.jenis==='masuk').reduce((a,t)=>a+t.nominal,0);
- const keluar=transaksi.filter(t=>t.jenis==='keluar').reduce((a,t)=>a+t.nominal,0);
- $('masuk').textContent=format(masuk);
- $('keluar').textContent=format(keluar);
- $('saldo').textContent=format(masuk-keluar);
- $('jumlah').textContent=produk.length;
+  const pemasukan=transaksi.filter(t=>t.jenis==='masuk').reduce((a,t)=>a+Number(t.nominal||0),0);
+  const pengeluaran=transaksi.filter(t=>t.jenis==='keluar').reduce((a,t)=>a+Number(t.nominal||0),0);
+  $('masuk').textContent=format(pemasukan);
+  $('keluar').textContent=format(pengeluaran);
+  $('saldo').textContent=format(pemasukan-pengeluaran);
+  $('jumlah').textContent=produk.length;
 
- $('terbaru').innerHTML=transaksi.length?
- transaksi.slice(0,5).map(t=>`
-  <div class="item">
-   ${aman(t.keterangan)}
-   <strong>${t.jenis==='masuk'?'+':'−'}${format(t.nominal)}</strong>
-   <div class="small">${aman(t.tanggal)}</div>
-  </div>`).join(''):'<p>Belum ada transaksi.</p>';
+  $('terbaru').innerHTML=transaksi.length?
+    transaksi.slice(0,5).map(t=>`
+      <div class="item">${aman(t.keterangan)}
+      <strong>${t.jenis==='masuk'?'+':'−'}${format(t.nominal)}</strong>
+      <div class="small">${aman(t.tanggal)}</div></div>`).join(''):
+    '<p>Belum ada transaksi.</p>';
 
- tampilTransaksi();
- tampilProduk();
- tampilPasar();
+  tampilTransaksi();tampilProduk();tampilPasarLokal();
 }
 
 function ekspor(){
- const cadangan={versi:1,tanggal:new Date().toISOString(),transaksi,produk};
- const blob=new Blob([JSON.stringify(cadangan,null,2)],{type:'application/json'});
- const url=URL.createObjectURL(blob);
- const a=document.createElement('a');
- a.href=url;a.download='kasusaha-cadangan.json';
- a.click();
- setTimeout(()=>URL.revokeObjectURL(url),1000);
+  const cadangan={versi:1,tanggal:new Date().toISOString(),transaksi,produk};
+  const blob=new Blob([JSON.stringify(cadangan,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='kasusaha-cadangan.json';a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
 function impor(){
- const file=$('fileCadangan').files[0];
- if(!file){alert('Pilih file JSON terlebih dahulu.');return;}
- const reader=new FileReader();
- reader.onload=function(){
-  try{
-   const x=JSON.parse(reader.result);
-   if(!Array.isArray(x.transaksi)||!Array.isArray(x.produk))throw Error();
-   if(!confirm('Data saat ini akan diganti. Lanjutkan?'))return;
-   transaksi=x.transaksi;
-   produk=x.produk;
-   simpan();tampil();
-   alert('Cadangan berhasil dipulihkan.');
-  }catch(e){
-   alert('File cadangan tidak valid. Data lama tidak diubah.');
-  }
- };
- reader.readAsText(file);
+  const file=$('fileCadangan').files[0];
+  if(!file){alert('Pilih file JSON terlebih dahulu.');return;}
+  const reader=new FileReader();
+  reader.onload=function(){
+    try{
+      const x=JSON.parse(reader.result);
+      if(!Array.isArray(x.transaksi)||!Array.isArray(x.produk))throw Error();
+      if(!confirm('Data transaksi dan produk lokal saat ini akan diganti. Lanjutkan?'))return;
+      transaksi=x.transaksi;produk=x.produk;simpan();tampil();
+      alert('Cadangan berhasil dipulihkan.');
+    }catch(e){alert('File cadangan tidak valid. Data lama tidak diubah.');}
+  };
+  reader.readAsText(file);
 }
 
 function hapusSemua(){
- if(confirm('Hapus semua transaksi dan produk pada perangkat ini?')){
-  transaksi=[];produk=[];simpan();tampil();
- }
+  if(confirm('Hapus semua transaksi dan produk lokal di perangkat ini? Data online tidak ikut terhapus.')){
+    transaksi=[];produk=[];simpan();tampil();
+  }
 }
 
 muat();
-</script> 
- 
-<!-- Koneksi database Supabase KasUsaha Lite -->
-<script>
-const SUPABASE_URL = 'https://flvdudmdltjjdjkdngbv.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_vh4DgP6YyquvZ5fK1ABp1g_g_lRKhsR';
-
-async function cariProdukOnline(kataKunci = '') {
-  const url = new URL(SUPABASE_URL + '/rest/v1/produk');
-
-  url.searchParams.set(
-    'select',
-    'id,nama_produk,deskripsi,kategori,harga,stok,nama_penjual,kota,foto_url'
-  );
-  url.searchParams.set('aktif', 'eq.true');
-  url.searchParams.set('order', 'created_at.desc');
-
-  if (kataKunci.trim()) {
-    url.searchParams.set('nama_produk', 'ilike.*' + kataKunci.trim() + '*');
-  }
-
-  const respons = await fetch(url, {
-    headers: {
-      apikey: SUPABASE_KEY,
-      Authorization: 'Bearer ' + SUPABASE_KEY
-    }
-  });
-
-  if (!respons.ok) {
-    throw new Error('Gagal mengambil produk: ' + respons.status);
-  }
-
-  return await respons.json();
-}
-
-console.log('Fungsi pencarian produk KasUsaha Lite siap digunakan.');
 </script>
-
 </body>
 </html>
