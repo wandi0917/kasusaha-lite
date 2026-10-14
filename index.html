@@ -4,156 +4,475 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#166534">
 <title>KasUsaha Lite</title>
 <style>
-body{font-family:Arial,sans-serif;background:#f2f5f9;margin:0;padding:18px;color:#172033}
-main{max-width:600px;margin:auto}
-.card{background:white;padding:18px;border-radius:14px;margin:14px 0;box-shadow:0 2px 8px #0001}
-h1{color:#087f5b}
-input,button,select{box-sizing:border-box;width:100%;padding:12px;margin:6px 0;border-radius:8px;font-size:16px}
-input,select{border:1px solid #ccd3dc;background:white}
-button{border:0;background:#087f5b;color:white;font-weight:bold}
-.secondary{background:#344054}
-.money{font-size:24px;font-weight:bold}
-small{color:#667085}
+*{box-sizing:border-box}
+body{margin:0;background:#f1f5f9;color:#1e293b;
+font-family:Arial,sans-serif;font-size:15px}
+header{background:#166534;color:white;padding:22px 16px}
+header h1{margin:0 0 6px;font-size:25px}
+header p{margin:0;font-size:14px}
+main{max-width:760px;margin:auto;padding:16px}
+.card{background:white;border-radius:12px;padding:16px;
+margin-bottom:16px;box-shadow:0 2px 8px #0000000b}
+h2{font-size:18px;margin:0 0 15px}
+.ringkasan{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.angka{padding:15px;border-radius:10px;background:#f8fafc;
+border:1px solid #e2e8f0;overflow-wrap:anywhere}
+.angka small{display:block;color:#64748b;margin-bottom:8px}
+.angka strong{font-size:18px}
+.masuk{color:#15803d}
+.keluar{color:#dc2626}
+.saldo{background:#f0fdf4;border-color:#bbf7d0}
+label{display:block;font-weight:600;margin:12px 0 6px}
+input,select,button{font:inherit}
+input,select{width:100%;padding:12px;border:1px solid #cbd5e1;
+border-radius:8px;background:white}
+button{padding:12px 15px;border:0;border-radius:8px;
+background:#166534;color:white;font-weight:600;cursor:pointer}
+button:active{opacity:.8}
+.tombol{width:100%;margin-top:14px}
+.sekunder{background:#e2e8f0;color:#1e293b}
+.bahaya{background:#b91c1c;color:white}
+.tombol-kelompok{display:grid;grid-template-columns:1fr 1fr;
+gap:10px;margin-top:12px}
+.tombol-kelompok button{width:100%}
+input[type=file]{padding:9px;font-size:13px}
+.item{border-bottom:1px solid #e2e8f0;padding:13px 0;
+overflow-wrap:anywhere}
+.item:last-child{border-bottom:0}
+.item strong{display:block;margin-bottom:5px}
+.item small{color:#64748b}
+.kosong{color:#64748b;text-align:center;padding:20px 0}
+.catatan{font-size:13px;line-height:1.6;color:#64748b}
+footer{text-align:center;color:#64748b;font-size:12px;padding:10px 15px 25px}
+@media(min-width:540px){
+.ringkasan{grid-template-columns:repeat(3,1fr)}
+.angka strong{font-size:17px}
+}
 </style>
 </head>
 <body>
-<main>
-<h1>KasUsaha Lite</h1>
-<p>Pencatatan kas sederhana untuk usaha kecil.</p>
-<div class="card">
-<h3>Tambah transaksi</h3>
-<input id="ket" placeholder="Keterangan transaksi">
-<input id="nom" type="number" min="1" step="1" placeholder="Jumlah rupiah">
-<select id="jenis">
-<option value="masuk">Uang masuk</option>
-<option value="keluar">Uang keluar</option>
-</select>
-<button onclick="tambah()">Simpan transaksi</button>
-</div>
-<div class="card">
-<small>Saldo bersih transaksi</small>
-<div class="money" id="saldo">Rp0</div>
-<p>Uang masuk: <b id="masuk">Rp0</b></p>
-<p>Uang keluar: <b id="keluar">Rp0</b></p>
-</div>
-<div class="card">
-<h3>Riwayat transaksi</h3>
-<div id="riwayat">Belum ada transaksi.</div>
-<button class="secondary" onclick="ekspor()">Unduh laporan CSV</button>
-<input type="file" id="fileCSV" accept=".csv,text/csv">
-<button class="secondary" onclick="imporCSV()">Pulihkan data dari CSV</button>
 
-<button class="secondary" onclick="hapus()">Hapus seluruh data</button>
+<header>
+<h1>KasUsaha Lite</h1>
+<p>Aplikasi pencatatan keuangan usaha sederhana</p>
+</header>
+
+<main>
+<section class="card">
+<h2>Ringkasan Keuangan</h2>
+<div class="ringkasan">
+<div class="angka">
+<small>Total Uang Masuk</small>
+<strong class="masuk" id="masuk">Rp0</strong>
 </div>
-<small>Versi awal. Data tersimpan di browser perangkat ini saja. Ekspor laporan secara berkala.</small>
+<div class="angka">
+<small>Total Uang Keluar</small>
+<strong class="keluar" id="keluar">Rp0</strong>
+</div>
+<div class="angka saldo">
+<small>Saldo</small>
+<strong id="saldo">Rp0</strong>
+</div>
+</div>
+</section>
+
+<section class="card">
+<h2>Tambah Transaksi</h2>
+<form id="formTransaksi">
+<label for="tanggal">Tanggal</label>
+<input type="date" id="tanggal" required>
+
+<label for="ket">Keterangan</label>
+<input type="text" id="ket" maxlength="200"
+placeholder="Contoh: Penjualan kopi" required>
+
+<label for="jenis">Jenis Transaksi</label>
+<select id="jenis" required>
+<option value="masuk">Uang Masuk</option>
+<option value="keluar">Uang Keluar</option>
+</select>
+
+<label for="nom">Jumlah (Rp)</label>
+<input type="number" id="nom" min="1" step="1"
+placeholder="Contoh: 50000" required>
+
+<button type="submit" class="tombol">Simpan Transaksi</button>
+</form>
+</section>
+
+<section class="card">
+<h2>Riwayat Transaksi</h2>
+<p class="catatan">Transaksi terbaru ditampilkan terlebih dahulu.</p>
+<div id="riwayat"></div>
+<div class="tombol-kelompok">
+<button type="button" class="sekunder" id="btnEkspor">
+Ekspor CSV
+</button>
+<button type="button" class="sekunder" id="btnPilih">
+Impor CSV
+</button>
+</div>
+<input type="file" id="fileCSV" accept=".csv,text/csv"
+hidden>
+<p class="catatan">
+Ekspor CSV untuk membuat salinan cadangan. Impor CSV
+akan mengganti seluruh transaksi setelah Anda menyetujuinya.
+</p>
+</section>
+
+<section class="card">
+<h2>Pengelolaan Data</h2>
+<p class="catatan">
+Data disimpan di penyimpanan browser pada perangkat ini.
+Bersihkan data browser atau mengganti perangkat dapat
+menyebabkan data tidak tersedia. Simpan cadangan CSV secara berkala.
+</p>
+<button type="button" class="bahaya tombol" id="btnHapus">
+Hapus Semua Transaksi
+</button>
+</section>
 </main>
+
+<footer>KasUsaha Lite · Pencatatan usaha sederhana</footer>
+
 <script>
-const kunci='kasusaha_lite_v1';
+'use strict';
+
+const KUNCI='kasusaha_lite_data_v1';
 let data=[];
-try{
- data=JSON.parse(localStorage.getItem(kunci)||'[]');
- if(!Array.isArray(data))data=[];
-}catch(e){data=[]}
-const rupiah=n=>'Rp'+n.toLocaleString('id-ID');
+
+function rupiah(n){
+ return new Intl.NumberFormat('id-ID',{
+  style:'currency',currency:'IDR',
+  maximumFractionDigits:0
+ }).format(n);
+}
+
+function tanggalHariIni(){
+ const d=new Date();
+ const lokal=new Date(d.getTime()-d.getTimezoneOffset()*60000);
+ return lokal.toISOString().slice(0,10);
+}
+
+function tanggalTampil(t){
+ if(/^\d{4}-\d{2}-\d{2}$/.test(t)){
+  const p=t.split('-');
+  return p[2]+'/'+p[1]+'/'+p[0];
+ }
+ return t;
+}
+
 function simpan(){
  try{
-  localStorage.setItem(kunci,JSON.stringify(data));
+  localStorage.setItem(KUNCI,JSON.stringify(data));
   tampil();
- }catch(e){alert('Penyimpanan gagal. Ekspor laporan jika diperlukan.')}
-}
-function tambah(){
- const ket=document.getElementById('ket').value.trim();
- const nom=Number(document.getElementById('nom').value);
- if(!ket||!Number.isSafeInteger(nom)||nom<=0){
-  alert('Isi keterangan dan jumlah rupiah yang valid.');
-  return;
+ }catch(e){
+  alert('Data gagal disimpan. Periksa ruang penyimpanan browser.');
  }
- data.push({
-  ket,nom,
-  jenis:document.getElementById('jenis').value,
-  tanggal:new Date().toLocaleDateString('id-ID')
- });
- simpan();
- document.getElementById('ket').value='';
- document.getElementById('nom').value='';
 }
-function aman(s){
- return String(s).replace(/[&<>"']/g,c=>({
- '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
- }[c]));
+
+function muat(){
+ try{
+  const lama=localStorage.getItem(KUNCI);
+  if(lama){
+   const hasil=JSON.parse(lama);
+   if(Array.isArray(hasil)){
+    data=hasil.filter(x=>
+     x && typeof x.tanggal==='string' &&
+     typeof x.ket==='string' &&
+     ['masuk','keluar'].includes(x.jenis) &&
+     Number.isSafeInteger(x.nom) && x.nom>0
+    );
+   }
+  }
+ }catch(e){
+  alert('Data tersimpan tidak dapat dibaca. Data lama tidak sengaja dihapus.');
+ }
+ tampil();
 }
+
 function tampil(){
  let m=0,k=0;
  data.forEach(x=>{
   if(x.jenis==='masuk')m+=x.nom;
   else k+=x.nom;
  });
+
  document.getElementById('masuk').textContent=rupiah(m);
  document.getElementById('keluar').textContent=rupiah(k);
  document.getElementById('saldo').textContent=rupiah(m-k);
- document.getElementById('riwayat').innerHTML=data.length
- ?data.map((x,i)=>'<p>'+(i+1)+'. '+aman(x.ket)+'<br>'+
- aman(x.tanggal)+' — '+(x.jenis==='masuk'?'Masuk ':'Keluar ')+
- rupiah(x.nom)+'</p>').join('')
- :'Belum ada transaksi.';
+
+ const wadah=document.getElementById('riwayat');
+ wadah.replaceChildren();
+
+ if(!data.length){
+  const p=document.createElement('p');
+  p.className='kosong';
+  p.textContent='Belum ada transaksi.';
+  wadah.appendChild(p);
+  return;
+ }
+
+ [...data].reverse().forEach(x=>{
+  const item=document.createElement('div');
+  item.className='item';
+
+  const judul=document.createElement('strong');
+  judul.textContent=x.ket;
+
+  const tanggal=document.createElement('small');
+  tanggal.textContent=tanggalTampil(x.tanggal)+' · ';
+
+  const nilai=document.createElement('div');
+  nilai.className=x.jenis==='masuk'?'masuk':'keluar';
+  nilai.style.marginTop='6px';
+  nilai.textContent=(x.jenis==='masuk'?'+ ':'− ')+rupiah(x.nom);
+
+  item.append(judul,tanggal,nilai);
+  wadah.appendChild(item);
+ });
 }
+
+document.getElementById('tanggal').value=tanggalHariIni();
+
+document.getElementById('formTransaksi').addEventListener('submit',e=>{
+ e.preventDefault();
+
+ const tanggal=document.getElementById('tanggal').value;
+ const ket=document.getElementById('ket').value.trim();
+ const jenis=document.getElementById('jenis').value;
+ const nom=Number(document.getElementById('nom').value);
+
+ if(!tanggal||!ket||!['masuk','keluar'].includes(jenis)||
+    !Number.isSafeInteger(nom)||nom<=0){
+  alert('Periksa kembali tanggal, keterangan, jenis, dan jumlah.');
+  return;
+ }
+
+ data.push({tanggal,ket,jenis,nom});
+ simpan();
+
+ document.getElementById('ket').value='';
+ document.getElementById('nom').value='';
+ document.getElementById('tanggal').value=tanggalHariIni();
+
+ alert('Transaksi berhasil disimpan.');
+});
+
 function ekspor(){
- const isi=[['Tanggal','Keterangan','Jenis','Jumlah'],
- ...data.map(x=>[x.tanggal,x.ket,x.jenis,x.nom])];
- const csv=isi.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(';')).join('\r\n');
+ const isi=[
+  ['Tanggal','Keterangan','Jenis','Jumlah'],
+  ...data.map(x=>[
+   /^\d{4}-\d{2}-\d{2}$/.test(x.tanggal)
+    ?tanggalTampil(x.tanggal):x.tanggal,
+   x.ket,x.jenis,x.nom
+  ])
+ ];
+
+ const csv=isi.map(r=>r.map(v=>
+  '"'+String(v).replace(/"/g,'""')+'"'
+ ).join(';')).join('\r\n');
+
+ const blob=new Blob(['\uFEFF'+csv],{
+  type:'text/csv;charset=utf-8;'
+ });
+ const url=URL.createObjectURL(blob);
  const a=document.createElement('a');
- a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
+ a.href=url;
  a.download='laporan-kas.csv';
+ document.body.appendChild(a);
  a.click();
- setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+ a.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),1500);
 }
+
+function pecahCSV(baris,pemisah){
+ const nilai=[];
+ let isi='';
+ let kutip=false;
+
+ for(let i=0;i<baris.length;i++){
+  const c=baris[i];
+
+  if(c==='"'){
+   if(kutip&&baris[i+1]==='"'){
+    isi+='"';
+    i++;
+   }else{
+    kutip=!kutip;
+   }
+  }else if(c===pemisah&&!kutip){
+   nilai.push(isi.trim());
+   isi='';
+  }else{
+   isi+=c;
+  }
+ }
+
+ nilai.push(isi.trim());
+ return nilai;
+}
+
+function normalisasiHeader(s){
+ return String(s||'').replace(/^\uFEFF/,'')
+  .trim().toLowerCase();
+}
+
+function tanggalCSV(s){
+ s=String(s||'').trim();
+
+ let m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+ if(m){
+  const d=m[1].padStart(2,'0');
+  const b=m[2].padStart(2,'0');
+  return m[3]+'-'+b+'-'+d;
+ }
+
+ m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+ if(m){
+  return m[1]+'-'+m[2].padStart(2,'0')+'-'+
+   m[3].padStart(2,'0');
+ }
+
+ return s;
+}
+
 function imporCSV(){
  const file=document.getElementById('fileCSV').files[0];
- if(!file){alert('Pilih file CSV terlebih dahulu.');return;}
+
+ if(!file){
+  alert('Pilih file CSV terlebih dahulu.');
+  return;
+ }
+
  const reader=new FileReader();
+
  reader.onload=function(){
   try{
-   const teks=String(reader.result).replace(/^\uFEFF/,'').trim();
-   const baris=teks.split(/\r?\n/);
+   const teks=String(reader.result||'')
+    .replace(/^\uFEFF/,'').trim();
+
+   if(!teks){
+    alert('File CSV kosong. Data lama tidak diubah.');
+    return;
+   }
+
+   const baris=teks.split(/\r\n|\n|\r/).filter(x=>x.trim());
+
+   if(baris.length<2){
+    alert('CSV harus berisi judul kolom dan setidaknya satu transaksi.');
+    return;
+   }
+
+   const contoh=baris[0];
+   const hitung=p=>pecahCSV(contoh,p).length;
+   const pemisah=[
+    {p:';',n:hitung(';')},
+    {p:',',n:hitung(',')},
+    {p:'\t',n:hitung('\t')}
+   ].sort((a,b)=>b.n-a.n)[0];
+
+   if(pemisah.n<4){
+    alert('Kolom CSV tidak dikenali. Gunakan Tanggal, Keterangan, Jenis, Jumlah.');
+    return;
+   }
+
+   const header=pecahCSV(baris[0],pemisah.p)
+    .map(normalisasiHeader);
+
+   const cariHeader=nama=>header.findIndex(h=>nama.includes(h));
+
+   const iTanggal=header.findIndex(h=>
+    ['tanggal','tgl','date'].includes(h));
+   const iKet=header.findIndex(h=>
+    ['keterangan','ket','deskripsi','uraian'].includes(h));
+   const iJenis=header.findIndex(h=>
+    ['jenis','tipe','type'].includes(h));
+   const iNom=header.findIndex(h=>
+    ['jumlah','nominal','nom','jumlah (rp)','amount'].includes(h));
+
+   if([iTanggal,iKet,iJenis,iNom].some(i=>i<0)){
+    alert('Judul kolom tidak cocok. Gunakan: Tanggal;Keterangan;Jenis;Jumlah. Data lama tidak diubah.');
+    return;
+   }
+
    const hasil=[];
+   let dilewati=0;
+
    for(let i=1;i<baris.length;i++){
-    if(!baris[i].trim())continue;
-    const nilai=[];
-    const re=/"((?:[^"]|"")*)"|([^;]*)(?:;|$)/g;
-    let cocok;
-    while((cocok=re.exec(baris[i]))!==null){
-     nilai.push((cocok[1]!==undefined?cocok[1]:cocok[2]).replace(/""/g,'"'));
-     if(re.lastIndex===baris[i].length)break;
-    }
-    if(nilai.length<4)continue;
-    const tanggal=nilai[0].trim();
-    const ket=nilai[1].trim();
-    const jenis=nilai[2].trim();
-    const nom=Number(nilai[3].trim());
-    if(ket&&Number.isSafeInteger(nom)&&nom>0&&['masuk','keluar'].includes(jenis)){
+    const v=pecahCSV(baris[i],pemisah.p);
+
+    if(v.every(x=>!x.trim()))continue;
+
+    const tanggal=tanggalCSV(v[iTanggal]||'');
+    const ket=(v[iKet]||'').trim();
+    const jenis=(v[iJenis]||'').trim().toLowerCase();
+    const mentah=(v[iNom]||'').trim();
+    const nom=/^\d+$/.test(mentah)?Number(mentah):NaN;
+
+    if(tanggal&&ket&&
+       ['masuk','keluar'].includes(jenis)&&
+       Number.isSafeInteger(nom)&&nom>0){
      hasil.push({tanggal,ket,jenis,nom});
+    }else{
+     dilewati++;
     }
    }
-   if(!hasil.length){alert('CSV tidak berisi transaksi valid. Data lama tidak diubah.');return;}
-   if(confirm('Ganti data saat ini dengan '+hasil.length+' transaksi dari CSV?')){
+
+   if(!hasil.length){
+    alert('CSV tidak berisi transaksi valid. Data lama tidak diubah.');
+    return;
+   }
+
+   let pesan='Ganti data saat ini dengan '+hasil.length+
+    ' transaksi dari CSV?';
+   if(dilewati)pesan+='\n'+dilewati+
+    ' baris tidak valid akan dilewati.';
+
+   if(confirm(pesan)){
     data=hasil;
     simpan();
-    alert('Data berhasil dipulihkan: '+hasil.length+' transaksi.');
+    document.getElementById('fileCSV').value='';
+    alert('Impor berhasil: '+hasil.length+' transaksi dipulihkan.');
    }
-  }catch(e){alert('CSV gagal dibaca. Data lama tidak diubah.');}
+  }catch(e){
+   alert('CSV gagal dibaca. Data lama tidak diubah.');
+  }
  };
+
+ reader.onerror=function(){
+  alert('File tidak dapat dibaca. Data lama tidak diubah.');
+ };
+
  reader.readAsText(file,'UTF-8');
 }
 
-function hapus(){
- if(confirm('Hapus semua transaksi di browser ini?')){
-  data=[];
-  simpan();
- }
-}
-tampil();
+document.getElementById('btnEkspor')
+ .addEventListener('click',ekspor);
+
+document.getElementById('btnPilih')
+ .addEventListener('click',()=>{
+  const f=document.getElementById('fileCSV');
+  f.value='';
+  f.click();
+ });
+
+document.getElementById('fileCSV')
+ .addEventListener('change',imporCSV);
+
+document.getElementById('btnHapus')
+ .addEventListener('click',()=>{
+  if(confirm('Hapus semua transaksi tersimpan di browser ini?')){
+   data=[];
+   simpan();
+   alert('Semua transaksi telah dihapus.');
+  }
+ });
+
+muat();
 </script>
 </body>
 </html>
