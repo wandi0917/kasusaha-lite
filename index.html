@@ -1,308 +1,372 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#166534">
-<title>KasUsaha Lite - Catatan Keuangan Usaha</title>
+<title>KasUsaha Lite</title>
 <style>
 *{box-sizing:border-box}
-:root{--green:#166534;--green2:#15803d;--navy:#17324d;--muted:#64748b;--bg:#f3f7f5;--border:#e2e8f0}
-body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#1e293b}
-button,input,select{font:inherit}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f6f4;color:#17211b}
+header{background:#166534;color:white;padding:18px}
+header h1{margin:0;font-size:24px}
+header p{margin:6px 0 0}
+nav{display:flex;gap:6px;overflow-x:auto;background:white;padding:10px}
+nav button{padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#166534;font-weight:bold}
+nav button.active{background:#166534;color:white}
+main{max-width:850px;margin:auto;padding:12px}
+section{display:none}
+section.active{display:block}
+.card{background:white;border-radius:12px;padding:15px;margin-bottom:12px;border:1px solid #ddd}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+label{display:block;font-weight:bold;margin:10px 0 5px}
+input,select,textarea{width:100%;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:15px}
 button{cursor:pointer}
-[hidden]{display:none!important}
-.landing{min-height:100vh;padding:25px 18px 35px;background:linear-gradient(145deg,#f8fbff,#e2f5e9)}
-.wrap{max-width:1050px;margin:auto}
-.nav{display:flex;align-items:center;gap:12px;margin-bottom:45px}
-.logo{width:48px;height:48px;background:var(--green);color:white;border-radius:15px;display:grid;place-items:center;font-size:25px;font-weight:bold}
-.brand{font-size:21px;font-weight:bold;color:var(--navy)}
-.brand span{color:var(--green2)}
-.muted{color:var(--muted);font-size:13px}
-.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:30px;align-items:center}
-.kicker{display:inline-block;background:#d5f2e3;color:#14532d;padding:8px 12px;border-radius:25px;font-size:11px;font-weight:bold}
-h1{font-size:clamp(34px,6vw,54px);line-height:1.12;letter-spacing:-1px;color:var(--navy);margin:18px 0}
-.desc{line-height:1.8;color:#526579}
-.btn{border:0;border-radius:10px;padding:12px 16px;font-weight:bold}
-.primary{background:var(--green);color:white}
-.secondary{background:#e2e8f0;color:#1e293b}
-.danger{background:#fee2e2;color:#991b1b}
-.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
-.price{margin-top:18px;color:var(--muted)}
-.price strong{font-size:22px;color:var(--green)}
-.preview{background:white;padding:22px;border-radius:22px;box-shadow:0 15px 45px #17324d15}
-.preview-balance{background:linear-gradient(120deg,#17324d,#15803d);color:white;padding:20px;border-radius:15px;margin-top:15px}
-.preview-balance strong{display:block;font-size:27px;margin-top:10px}
-.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:14px}
-.stat{background:white;border:1px solid var(--border);padding:15px;border-radius:13px;min-width:0}
-.stat small{display:block;color:var(--muted);margin-bottom:8px}
-.stat strong{font-size:clamp(15px,3vw,21px);overflow-wrap:anywhere}
-.benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:42px}
-.benefit{background:#ffffffd9;border:1px solid var(--border);padding:18px;border-radius:15px}
-.benefit p{font-size:13px;line-height:1.7;color:var(--muted)}
-footer{text-align:center;color:var(--muted);font-size:12px;margin-top:35px}
-.topbar{background:var(--green);color:white;padding:18px}
-.topinner{max-width:1000px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
-main{max-width:1000px;margin:22px auto;padding:0 14px}
-.panel{background:white;border:1px solid var(--border);border-radius:15px;padding:18px;margin-bottom:17px}
-h2{font-size:19px;margin:0 0 16px;color:var(--navy)}
-.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.field{display:flex;flex-direction:column;gap:6px}
-.field label{font-size:13px;font-weight:bold}
-.field input,.field select,#cari{width:100%;min-width:0;padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white}
-.full{grid-column:1/-1}
-.formbuttons{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
-.tablewrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th,td{padding:12px 9px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
-th{background:#f8fafc}
-.income{color:#15803d;font-weight:bold}
-.expense{color:#dc2626;font-weight:bold}
-.smallbtn{padding:7px 9px;border:0;border-radius:7px;background:#fee2e2;color:#991b1b}
-.note{font-size:12px;color:var(--muted);line-height:1.7}
-.empty{text-align:center;padding:25px;color:var(--muted)}
-@media(max-width:700px){
- .hero{grid-template-columns:1fr;gap:25px}
- .benefits{grid-template-columns:1fr;margin-top:28px}
- .nav{margin-bottom:30px}
- h1{font-size:38px}
- .formgrid{grid-template-columns:1fr}
- .full{grid-column:auto}
- .topinner{align-items:flex-start;flex-direction:column}
- main{margin-top:14px}
- .panel{padding:14px}
-}
+.primary{background:#166534;color:white;border:0;border-radius:8px;padding:12px;font-weight:bold}
+.danger{background:#fee2e2;color:#991b1b;border:0;border-radius:8px;padding:8px}
+.wide{width:100%;margin-top:12px}
+.item{background:white;border:1px solid #ddd;border-radius:9px;padding:12px;margin-top:9px}
+.price{font-weight:bold;color:#166534;font-size:18px}
+.small{font-size:12px;color:#666}
+footer{text-align:center;padding:20px;color:#666;font-size:12px}
 </style>
 </head>
 <body>
-
-<section class="landing" id="landingPage">
- <div class="wrap">
-  <div class="nav">
-   <div class="logo">K</div>
-   <div>
-    <div class="brand">KasUsaha <span>Lite</span></div>
-    <div class="muted">Kelola usaha, lebih percaya diri.</div>
-   </div>
-  </div>
-  <div class="hero">
-   <div>
-    <div class="kicker">SOLUSI KAS USAHA KECIL</div>
-    <h1>Usaha lebih teratur. Keuangan lebih jelas.</h1>
-    <p class="desc">Catat pemasukan dan pengeluaran, pantau saldo kas, serta ekspor transaksi sebagai cadangan dengan aplikasi yang sederhana dan praktis.</p>
-    <div class="actions">
-     <button class="btn primary" id="mulai">Coba Aplikasi Gratis →</button>
-    </div>
-    <div class="price">Harga produk penuh: <strong>Rp39.000</strong></div>
-    <p class="note">Harga ini adalah informasi produk. Pembayaran online belum diaktifkan pada versi ini.</p>
-   </div>
-   <div class="preview">
-    <strong>Ringkasan Keuangan</strong>
-    <div class="preview-balance">
-     <small>Contoh saldo kas</small>
-     <strong>Rp2.500.000</strong>
-     <small>Ilustrasi tampilan aplikasi</small>
-    </div>
-    <div class="stats">
-     <div class="stat"><small>↗ Pemasukan</small><strong class="income">Rp4.000.000</strong></div>
-     <div class="stat"><small>↘ Pengeluaran</small><strong class="expense">Rp1.500.000</strong></div>
-    </div>
-   </div>
-  </div>
-  <div class="benefits">
-   <div class="benefit"><strong>✎ Catat transaksi</strong><p>Input pemasukan dan pengeluaran dengan cepat.</p></div>
-   <div class="benefit"><strong>◈ Pantau saldo</strong><p>Ringkasan kas dihitung otomatis dari transaksi.</p></div>
-   <div class="benefit"><strong>↗ Cadangkan data</strong><p>Ekspor dan impor riwayat transaksi melalui CSV.</p></div>
-  </div>
-  <footer>KasUsaha Lite © 2026</footer>
- </div>
+<header>
+<h1>KasUsaha Lite</h1>
+<p>Kasir • Keuangan • Katalog • Pasar Online</p>
+</header>
+<nav>
+<button class="active" onclick="buka('beranda',this)">Beranda</button>
+<button onclick="buka('transaksi',this)">Transaksi</button>
+<button onclick="buka('produk',this)">Produk Saya</button>
+<button onclick="buka('pasar',this)">Pasar Online</button>
+<button onclick="buka('cadangan',this)">Cadangan</button>
+</nav>
+<main>
+<section id="beranda" class="active">
+<h2>Ringkasan usaha</h2>
+<div class="grid">
+<div class="card">Pemasukan<strong id="masuk" style="display:block;font-size:19px">Rp0</strong></div>
+<div class="card">Pengeluaran<strong id="keluar" style="display:block;font-size:19px">Rp0</strong></div>
+<div class="card">Saldo<strong id="saldo" style="display:block;font-size:19px">Rp0</strong></div>
+<div class="card">Jumlah produk<strong id="jumlah" style="display:block;font-size:19px">0</strong></div>
+</div>
+<div class="card">
+<h3>Catat transaksi</h3>
+<form id="formKas">
+<label>Keterangan</label>
+<input id="keterangan" required placeholder="Contoh: Penjualan kopi">
+<label>Jenis transaksi</label>
+<select id="jenis"><option value="masuk">Pemasukan</option><option value="keluar">Pengeluaran</option></select>
+<label>Jumlah rupiah</label>
+<input id="nominal" type="number" min="1" required placeholder="50000">
+<button class="primary wide">Simpan transaksi</button>
+</form>
+</div>
+<div class="card"><h3>Transaksi terbaru</h3><div id="terbaru"></div></div>
 </section>
 
-<header class="topbar" id="appHeader" hidden>
- <div class="topinner">
-  <div><strong>KasUsaha Lite</strong><div style="font-size:12px;margin-top:4px">Catatan keuangan usaha</div></div>
-  <button class="btn secondary" id="kembali">Halaman Depan</button>
- </div>
-</header>
+<section id="transaksi">
+<h2>Riwayat transaksi</h2>
+<input id="cariTransaksi" placeholder="Cari transaksi..." oninput="tampilTransaksi()">
+<div id="riwayat"></div>
+</section>
 
-<main id="dashboard" hidden>
- <section class="stats">
-  <div class="stat"><small>Total Pemasukan</small><strong id="masuk" class="income">Rp0</strong></div>
-  <div class="stat"><small>Total Pengeluaran</small><strong id="keluar" class="expense">Rp0</strong></div>
-  <div class="stat" style="grid-column:1/-1"><small>Saldo Kas</small><strong id="saldo">Rp0</strong></div>
- </section>
+<section id="produk">
+<h2>Kelola produk</h2>
+<div class="card">
+<h3>Tambah barang</h3>
+<form id="formProduk">
+<label>Nama barang</label>
+<input id="nama" required placeholder="Nama produk">
+<label>Harga jual (Rp)</label>
+<input id="harga" type="number" min="0" required placeholder="35000">
+<label>Stok</label>
+<input id="stok" type="number" min="0" required value="1">
+<label>Kategori</label>
+<select id="kategori">
+<option>Makanan & Minuman</option>
+<option>Fashion</option>
+<option>Elektronik</option>
+<option>Rumah Tangga</option>
+<option>Kecantikan</option>
+<option>Jasa</option>
+<option>Pertanian</option>
+<option>Lainnya</option>
+</select>
+<label>Kontak penjual</label>
+<input id="kontak" placeholder="Nomor WhatsApp (opsional)">
+<label>Deskripsi</label>
+<textarea id="deskripsi" placeholder="Informasi barang"></textarea>
+<button class="primary wide">Simpan produk</button>
+</form>
+</div>
+<input id="cariProduk" placeholder="Cari produk saya..." oninput="tampilProduk()">
+<div id="daftarProduk"></div>
+</section>
 
- <section class="panel">
-  <h2>Tambah Transaksi</h2>
-  <form id="formTransaksi">
-   <div class="formgrid">
-    <div class="field"><label for="tanggal">Tanggal</label><input id="tanggal" type="date" required></div>
-    <div class="field"><label for="jenis">Jenis transaksi</label><select id="jenis"><option value="masuk">Pemasukan</option><option value="keluar">Pengeluaran</option></select></div>
-    <div class="field full"><label for="keterangan">Keterangan</label><input id="keterangan" maxlength="150" placeholder="Contoh: Penjualan kopi" required></div>
-    <div class="field full"><label for="jumlah">Jumlah (Rp)</label><input id="jumlah" type="number" min="1" step="1" placeholder="50000" required></div>
-   </div>
-   <div class="formbuttons"><button class="btn primary" type="submit">Simpan Transaksi</button><button class="btn secondary" type="reset">Bersihkan Form</button></div>
-  </form>
- </section>
+<section id="pasar">
+<h2>Pasar Online KasUsaha Lite</h2>
+<div class="card">
+<p>Cari barang berdasarkan nama atau kategori.</p>
+<input id="cariPasar" placeholder="Barang yang ingin dicari..." oninput="tampilPasar()">
+<label>Kategori</label>
+<select id="filterKategori" onchange="tampilPasar()">
+<option value="">Semua kategori</option>
+<option>Makanan & Minuman</option>
+<option>Fashion</option>
+<option>Elektronik</option>
+<option>Rumah Tangga</option>
+<option>Kecantikan</option>
+<option>Jasa</option>
+<option>Pertanian</option>
+<option>Lainnya</option>
+</select>
+</div>
+<div id="hasilPasar"></div>
+<div class="card">
+<h3>Ingin berjualan?</h3>
+<p>Masukkan barang melalui menu Produk Saya agar tampil di katalog perangkat ini.</p>
+<button class="primary" onclick="buka('produk',document.querySelectorAll('nav button')[2])">Pasang barang</button>
+</div>
+<div class="card">
+<strong>Pembayaran online</strong>
+<p class="small">Integrasi Midtrans memerlukan backend dan verifikasi pembayaran. Jangan memasukkan kunci rahasia pembayaran ke dalam kode browser.</p>
+</div>
+</section>
 
- <section class="panel">
-  <h2>Riwayat Transaksi</h2>
-  <div class="field" style="margin-bottom:12px"><label for="cari">Cari transaksi</label><input id="cari" placeholder="Cari keterangan atau tanggal..."></div>
-  <div class="formbuttons" style="margin:0 0 14px">
-   <button class="btn primary" id="ekspor" type="button">Ekspor CSV</button>
-   <button class="btn secondary" id="pilihCsv" type="button">Impor CSV</button>
-   <input id="fileCsv" type="file" accept=".csv,text/csv" hidden>
-  </div>
-  <p class="note">Data tersimpan di penyimpanan browser pada perangkat ini. Ekspor CSV secara berkala untuk membuat cadangan.</p>
-  <div class="tablewrap">
-   <table>
-    <thead><tr><th>Tanggal</th><th>Keterangan</th><th>Jenis</th><th>Jumlah</th><th>Aksi</th></tr></thead>
-    <tbody id="daftar"></tbody>
-   </table>
-   <div class="empty" id="kosong">Belum ada transaksi. Tambahkan transaksi pertama Anda.</div>
-  </div>
- </section>
- <footer>KasUsaha Lite · Simpan cadangan data Anda secara berkala.</footer>
+<section id="cadangan">
+<h2>Cadangan data</h2>
+<div class="card">
+<button class="primary wide" onclick="ekspor()">Unduh cadangan JSON</button>
+<label>Pilih file cadangan JSON</label>
+<input type="file" id="fileCadangan" accept=".json,application/json">
+<button class="primary wide" onclick="impor()">Pulihkan cadangan</button>
+<button class="danger wide" onclick="hapusSemua()">Hapus semua data</button>
+<p class="small">Simpan cadangan secara berkala. Data versi ini tersimpan pada browser perangkat.</p>
+</div>
+</section>
 </main>
-
+<footer>KasUsaha Lite • Aplikasi pencatatan dan katalog usaha</footer>
 <script>
-"use strict";
 const $=id=>document.getElementById(id);
-const STORAGE_KEY="kasusaha_lite_transaksi_v1";
-let data=[];
-function rupiah(n){
- return new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(n);
-}
-function tanggalHariIni(){
- const d=new Date();
- return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-}
+const format=n=>new Intl.NumberFormat('id-ID',{
+ style:'currency',currency:'IDR',maximumFractionDigits:0
+}).format(n||0);
+
+let transaksi=[];
+let produk=[];
+
 function simpan(){
- try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));}
- catch(e){alert("Penyimpanan gagal. Ekspor CSV untuk menyelamatkan data Anda.");}
+ try{
+  localStorage.setItem('kasusaha_transaksi',JSON.stringify(transaksi));
+  localStorage.setItem('kasusaha_produk',JSON.stringify(produk));
+ }catch(e){
+  alert('Penyimpanan gagal. Silakan ekspor cadangan data.');
+ }
 }
+
 function muat(){
  try{
-  const v=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
-  data=Array.isArray(v)?v.filter(x=>x&&typeof x.tanggal==="string"&&typeof x.keterangan==="string"&&(x.jenis==="masuk"||x.jenis==="keluar")&&Number.isFinite(Number(x.nom))&&Number(x.nom)>0).map(x=>({...x,nom:Number(x.nom)})):[];
- }catch(e){data=[];}
+  transaksi=JSON.parse(localStorage.getItem('kasusaha_transaksi')||'[]');
+  produk=JSON.parse(localStorage.getItem('kasusaha_produk')||'[]');
+  if(!Array.isArray(transaksi))transaksi=[];
+  if(!Array.isArray(produk))produk=[];
+ }catch(e){
+  transaksi=[];produk=[];
+ }
+ tampil();
 }
-function tampil(){
- let m=0,k=0;
- data.forEach(x=>{if(x.jenis==="masuk")m+=x.nom;else k+=x.nom;});
- $("masuk").textContent=rupiah(m);
- $("keluar").textContent=rupiah(k);
- $("saldo").textContent=rupiah(m-k);
- const q=$("cari").value.trim().toLowerCase();
- const hasil=data.map((x,i)=>({...x,_i:i})).filter(x=>(x.keterangan+" "+x.tanggal+" "+x.jenis).toLowerCase().includes(q)).sort((a,b)=>b.tanggal.localeCompare(a.tanggal)||b._i-a._i);
- $("daftar").replaceChildren();
- $("kosong").hidden=hasil.length>0;
- hasil.forEach(x=>{
-  const tr=document.createElement("tr");
-  [x.tanggal,x.keterangan,x.jenis==="masuk"?"Pemasukan":"Pengeluaran",rupiah(x.nom)].forEach((v,j)=>{
-   const td=document.createElement("td");
-   td.textContent=v;
-   if(j===2)td.className=x.jenis==="masuk"?"income":"expense";
-   tr.appendChild(td);
-  });
-  const td=document.createElement("td");
-  const b=document.createElement("button");
-  b.className="smallbtn";b.type="button";b.textContent="Hapus";
-  b.addEventListener("click",()=>{
-   if(confirm("Hapus transaksi ini?")){
-    data.splice(x._i,1);simpan();tampil();
-   }
-  });
-  td.appendChild(b);tr.appendChild(td);$("daftar").appendChild(tr);
+
+function buka(id,tombol){
+ document.querySelectorAll('main section').forEach(s=>s.classList.remove('active'));
+ document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+ $(id).classList.add('active');
+ if(tombol)tombol.classList.add('active');
+ tampil();
+}
+
+function catat(keterangan,jenis,nominal){
+ const jumlah=Number(nominal);
+ if(!keterangan.trim()||!Number.isFinite(jumlah)||jumlah<=0){
+  alert('Isi keterangan dan jumlah yang benar.');
+  return false;
+ }
+ transaksi.unshift({
+  id:Date.now()+Math.random(),
+  tanggal:new Date().toLocaleDateString('id-ID'),
+  keterangan:keterangan.trim(),
+  jenis:jenis,
+  nominal:Math.round(jumlah)
  });
-}
-function bukaAplikasi(){
- $("landingPage").hidden=true;
- $("appHeader").hidden=false;
- $("dashboard").hidden=false;
- window.scrollTo(0,0);
-}
-$("mulai").addEventListener("click",bukaAplikasi);
-$("kembali").addEventListener("click",()=>{
- $("landingPage").hidden=false;$("appHeader").hidden=true;$("dashboard").hidden=true;window.scrollTo(0,0);
-});
-$("tanggal").value=tanggalHariIni();
-$("formTransaksi").addEventListener("submit",e=>{
- e.preventDefault();
- const tanggal=$("tanggal").value;
- const keterangan=$("keterangan").value.trim();
- const jenis=$("jenis").value;
- const nom=Number($("jumlah").value);
- if(!tanggal||!keterangan||!Number.isSafeInteger(nom)||nom<=0){
-  alert("Periksa tanggal, keterangan, dan jumlah transaksi.");return;
- }
- data.push({tanggal,keterangan,jenis,nom});
  simpan();tampil();
- $("formTransaksi").reset();$("tanggal").value=tanggalHariIni();
- $("keterangan").focus();
-});
-$("cari").addEventListener("input",tampil);
-function csvCell(v){return '"'+String(v).replace(/"/g,'""')+'"';}
-$("ekspor").addEventListener("click",()=>{
- const rows=[["Tanggal","Keterangan","Jenis","Jumlah"],...data.map(x=>[x.tanggal,x.keterangan,x.jenis,x.nom])];
- const csv="\uFEFF"+rows.map(r=>r.map(csvCell).join(";")).join("\r\n");
- const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
- const url=URL.createObjectURL(blob);
- const a=document.createElement("a");a.href=url;a.download="kasusaha-lite-"+tanggalHariIni()+".csv";a.click();
- setTimeout(()=>URL.revokeObjectURL(url),1000);
-});
-$("pilihCsv").addEventListener("click",()=>$("fileCsv").click());
-function parseCSV(text){
- const rows=[];let row=[],field="",quoted=false;
- text=text.replace(/^\uFEFF/,"");
- for(let i=0;i<text.length;i++){
-  const c=text[i];
-  if(quoted){
-   if(c==='"'&&text[i+1]==='"'){field+='"';i++;}
-   else if(c==='"')quoted=false;
-   else field+=c;
-  }else{
-   if(c==='"')quoted=true;
-   else if(c===";"||c===","){row.push(field.trim());field="";}
-   else if(c==="\n"){row.push(field.trim());rows.push(row);row=[];field="";}
-   else if(c!=="\r")field+=c;
-  }
- }
- if(quoted)throw new Error("Tanda kutip CSV tidak lengkap.");
- if(field.length||row.length){row.push(field.trim());rows.push(row);}
- return rows.filter(r=>r.some(v=>v!==""));
+ return true;
 }
-$("fileCsv").addEventListener("change",async e=>{
- const file=e.target.files[0];if(!file)return;
- try{
-  const rows=parseCSV(await file.text());
-  if(rows.length<2)throw new Error("CSV belum memiliki baris transaksi.");
-  const head=rows[0].map(x=>x.toLowerCase().replace(/[^a-z]/g,""));
-  const ix={
-   tanggal:head.indexOf("tanggal"),
-   keterangan:head.indexOf("keterangan"),
-   jenis:head.indexOf("jenis"),
-   nom:head.indexOf("jumlah")
-  };
-  if(Object.values(ix).some(i=>i<0))throw new Error("Kolom harus: Tanggal, Keterangan, Jenis, Jumlah.");
-  const parsed=[];
-  for(let i=1;i<rows.length;i++){
-   const r=rows[i],tanggal=(r[ix.tanggal]||"").trim(),keterangan=(r[ix.keterangan]||"").trim();
-   const jenis=(r[ix.jenis]||"").trim().toLowerCase();
-   const raw=(r[ix.nom]||"").replace(/[.\sRp]/gi,"").replace(/,/g,"");
-   const nom=Number(raw);
-   if(!/^\d{4}-\d{2}-\d{2}$/.test(tanggal)||!keterangan||!["masuk","keluar"].includes(jenis)||!Number.isSafeInteger(nom)||nom<=0)continue;
-   parsed.push({tanggal,keterangan,jenis,nom});
-  }
-  if(!parsed.length)throw new Error("CSV tidak berisi transaksi valid. Data lama tidak diubah.");
-  if(!confirm("Impor "+parsed.length+" transaksi? Transaksi baru akan ditambahkan ke data saat ini."))return;
-  data=data.concat(parsed);simpan();tampil();
-  alert("Berhasil mengimpor "+parsed.length+" transaksi.");
- }catch(err){alert(err.message||"Gagal membaca CSV.");}
- finally{e.target.value="";}
+
+$('formKas').addEventListener('submit',function(e){
+ e.preventDefault();
+ if(catat($('keterangan').value,$('jenis').value,$('nominal').value)){
+  this.reset();
+ }
 });
-muat();tampil();
+
+function hapusTransaksi(id){
+ if(confirm('Hapus transaksi ini?')){
+  transaksi=transaksi.filter(t=>t.id!==id);
+  simpan();tampil();
+ }
+}
+
+function tampilTransaksi(){
+ const q=($('cariTransaksi').value||'').toLowerCase();
+ const data=transaksi.filter(t=>t.keterangan.toLowerCase().includes(q));
+ $('riwayat').innerHTML=data.length?data.map(t=>`
+  <div class="item">
+   <strong>${aman(t.keterangan)}</strong>
+   <p class="small">${aman(t.tanggal)} • ${t.jenis==='masuk'?'Pemasukan':'Pengeluaran'}</p>
+   <strong style="color:${t.jenis==='masuk'?'#166534':'#b42318'}">
+   ${t.jenis==='masuk'?'+':'−'}${format(t.nominal)}</strong>
+   <button class="danger" onclick="hapusTransaksi(${Number(t.id)})">Hapus</button>
+  </div>
+ `).join(''):'<p>Belum ada transaksi.</p>';
+}
+
+function tampilProduk(){
+ const q=($('cariProduk').value||'').toLowerCase();
+ const data=produk.filter(p=>(p.nama+' '+p.kategori).toLowerCase().includes(q));
+ $('daftarProduk').innerHTML=data.length?data.map(p=>kartu(p,true)).join(''):'<p>Belum ada produk.</p>';
+}
+
+$('formProduk').addEventListener('submit',function(e){
+ e.preventDefault();
+ const nama=$('nama').value.trim();
+ const harga=Number($('harga').value);
+ const stok=Number($('stok').value);
+ if(!nama||harga<0||stok<0||!Number.isFinite(harga)||!Number.isInteger(stok)){
+  alert('Periksa nama, harga, dan stok.');
+  return;
+ }
+ produk.unshift({
+  id:Date.now()+Math.random(),
+  nama:nama,
+  harga:Math.round(harga),
+  stok:stok,
+  kategori:$('kategori').value,
+  kontak:$('kontak').value.trim(),
+  deskripsi:$('deskripsi').value.trim()
+ });
+ simpan();this.reset();$('stok').value=1;tampil();
+ alert('Produk berhasil disimpan di perangkat ini.');
+});
+
+function aman(teks){
+ return String(teks==null?'':teks).replace(/[&<>"']/g,c=>({
+  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+ }[c]));
+}
+
+function kartu(p,bisaHapus){
+ return `<div class="item">
+  <span class="small">${aman(p.kategori)}</span>
+  <h3>${aman(p.nama)}</h3>
+  <div class="price">${format(p.harga)}</div>
+  <p>Stok: ${Number(p.stok)||0}</p>
+  <p>${aman(p.deskripsi||'')}</p>
+  ${p.kontak?'<p>Kontak: '+aman(p.kontak)+'</p>':''}
+  ${p.kontak?'<button class="primary" onclick="hubungi('+Number(p.id)+')">Hubungi penjual</button>':''}
+  ${bisaHapus?'<button class="danger" onclick="hapusProduk('+Number(p.id)+')">Hapus</button>':''}
+ </div>`;
+}
+
+function tampilPasar(){
+ const q=($('cariPasar').value||'').toLowerCase();
+ const kat=$('filterKategori').value;
+ const data=produk.filter(p=>
+  (p.nama+' '+p.kategori+' '+(p.deskripsi||'')).toLowerCase().includes(q)&&
+  (!kat||p.kategori===kat)
+ );
+ $('hasilPasar').innerHTML=data.length?
+  data.map(p=>kartu(p,false)).join(''):
+  '<div class="item">Barang belum ditemukan. Tambahkan barang melalui menu Produk Saya.</div>';
+}
+
+function hubungi(id){
+ const p=produk.find(x=>x.id===id);
+ if(!p||!p.kontak)return;
+ const nomor=p.kontak.replace(/\D/g,'');
+ if(nomor.length>=8&&nomor.length<=15){
+  window.open('https://wa.me/'+nomor,'_blank','noopener');
+ }else{
+  alert('Kontak penjual: '+p.kontak);
+ }
+}
+
+function hapusProduk(id){
+ if(confirm('Hapus produk ini?')){
+  produk=produk.filter(p=>p.id!==id);
+  simpan();tampil();
+ }
+}
+
+function tampil(){
+ const masuk=transaksi.filter(t=>t.jenis==='masuk').reduce((a,t)=>a+t.nominal,0);
+ const keluar=transaksi.filter(t=>t.jenis==='keluar').reduce((a,t)=>a+t.nominal,0);
+ $('masuk').textContent=format(masuk);
+ $('keluar').textContent=format(keluar);
+ $('saldo').textContent=format(masuk-keluar);
+ $('jumlah').textContent=produk.length;
+
+ $('terbaru').innerHTML=transaksi.length?
+ transaksi.slice(0,5).map(t=>`
+  <div class="item">
+   ${aman(t.keterangan)}
+   <strong>${t.jenis==='masuk'?'+':'−'}${format(t.nominal)}</strong>
+   <div class="small">${aman(t.tanggal)}</div>
+  </div>`).join(''):'<p>Belum ada transaksi.</p>';
+
+ tampilTransaksi();
+ tampilProduk();
+ tampilPasar();
+}
+
+function ekspor(){
+ const cadangan={versi:1,tanggal:new Date().toISOString(),transaksi,produk};
+ const blob=new Blob([JSON.stringify(cadangan,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');
+ a.href=url;a.download='kasusaha-cadangan.json';
+ a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+
+function impor(){
+ const file=$('fileCadangan').files[0];
+ if(!file){alert('Pilih file JSON terlebih dahulu.');return;}
+ const reader=new FileReader();
+ reader.onload=function(){
+  try{
+   const x=JSON.parse(reader.result);
+   if(!Array.isArray(x.transaksi)||!Array.isArray(x.produk))throw Error();
+   if(!confirm('Data saat ini akan diganti. Lanjutkan?'))return;
+   transaksi=x.transaksi;
+   produk=x.produk;
+   simpan();tampil();
+   alert('Cadangan berhasil dipulihkan.');
+  }catch(e){
+   alert('File cadangan tidak valid. Data lama tidak diubah.');
+  }
+ };
+ reader.readAsText(file);
+}
+
+function hapusSemua(){
+ if(confirm('Hapus semua transaksi dan produk pada perangkat ini?')){
+  transaksi=[];produk=[];simpan();tampil();
+ }
+}
+
+muat();
 </script>
 </body>
 </html>
