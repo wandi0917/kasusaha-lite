@@ -616,5 +616,229 @@ function hapusSemua(){
 
 muat();
 </script>
-</body>
+
+<!-- PANEL PENJUAL KASUSAHA LITE -->
+<section id="panelPenjualKL" style="max-width:600px;margin:20px auto;padding:16px;border:1px solid #ddd;border-radius:12px;font-family:Arial,sans-serif">
+  <h2>🏪 Akun Penjual Pasar Online</h2>
+  <p>Daftar atau login untuk memasang produk ke Pasar Online KasUsaha Lite.</p>
+  <div id="pesanPenjualKL" role="status" style="padding:10px;background:#f3f4f6;border-radius:8px;margin:10px 0">
+    Silakan daftar atau login menggunakan email.
+  </div>
+
+  <label for="emailPenjualKL">Email</label>
+  <input id="emailPenjualKL" type="email" autocomplete="email" placeholder="Email aktif Anda" style="width:100%;padding:12px;margin:6px 0 12px">
+
+  <label for="sandiPenjualKL">Kata sandi (minimal 6 karakter)</label>
+  <input id="sandiPenjualKL" type="password" autocomplete="current-password" placeholder="Buat kata sandi" style="width:100%;padding:12px;margin:6px 0 12px">
+
+  <div style="display:flex;flex-wrap:wrap;gap:8px">
+    <button id="daftarPenjualKL" type="button" style="padding:12px;background:#166534;color:white;border:0;border-radius:8px">Daftar Akun</button>
+    <button id="loginPenjualKL" type="button" style="padding:12px;background:#166534;color:white;border:0;border-radius:8px">Login</button>
+    <button id="keluarPenjualKL" type="button" style="padding:12px;border:1px solid #aaa;border-radius:8px">Logout</button>
+  </div>
+
+  <hr style="margin:20px 0">
+  <h3>Pasang Produk</h3>
+  <p>Login terlebih dahulu. Gunakan informasi produk yang benar.</p>
+
+  <label for="namaProdukKL">Nama produk</label>
+  <input id="namaProdukKL" maxlength="150" placeholder="Contoh: Kopi bubuk" style="width:100%;padding:12px;margin:6px 0 12px">
+
+  <label for="kategoriProdukKL">Kategori</label>
+  <select id="kategoriProdukKL" style="width:100%;padding:12px;margin:6px 0 12px">
+    <option value="Makanan & Minuman">Makanan & Minuman</option>
+    <option value="Elektronik">Elektronik</option>
+    <option value="Pakaian">Pakaian</option>
+    <option value="Rumah Tangga">Rumah Tangga</option>
+    <option value="Pertanian">Pertanian</option>
+    <option value="Jasa">Jasa</option>
+    <option value="Lainnya">Lainnya</option>
+  </select>
+
+  <label for="hargaProdukKL">Harga (rupiah)</label>
+  <input id="hargaProdukKL" type="number" min="0" step="1" placeholder="25000" style="width:100%;padding:12px;margin:6px 0 12px">
+
+  <label for="stokProdukKL">Stok</label>
+  <input id="stokProdukKL" type="number" min="0" step="1" value="1" style="width:100%;padding:12px;margin:6px 0 12px">
+
+  <label for="kotaProdukKL">Kota penjual</label>
+  <input id="kotaProdukKL" maxlength="100" placeholder="Contoh: Tanjungpinang" style="width:100%;padding:12px;margin:6px 0 12px">
+
+  <label for="deskripsiProdukKL">Deskripsi produk</label>
+  <textarea id="deskripsiProdukKL" maxlength="2000" placeholder="Jelaskan kondisi dan informasi produk" style="width:100%;padding:12px;margin:6px 0 12px"></textarea>
+
+  <label for="namaTokoKL">Nama toko/penjual</label>
+  <input id="namaTokoKL" maxlength="150" placeholder="Nama toko Anda" style="width:100%;padding:12px;margin:6px 0 12px">
+
+  <button id="kirimProdukKL" type="button" style="width:100%;padding:14px;background:#166534;color:white;border:0;border-radius:8px;font-weight:bold">
+    Pasang Produk Online
+  </button>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(async function fiturPenjualKasUsahaLite() {
+  const pesan = document.getElementById('pesanPenjualKL');
+  const tombolDaftar = document.getElementById('daftarPenjualKL');
+  const tombolLogin = document.getElementById('loginPenjualKL');
+  const tombolKeluar = document.getElementById('keluarPenjualKL');
+  const tombolKirim = document.getElementById('kirimProdukKL');
+
+  function tampilPesan(teks) {
+    pesan.textContent = teks;
+  }
+
+  if (!window.supabase || !window.supabase.createClient) {
+    tampilPesan('Pustaka login gagal dimuat. Periksa koneksi internet lalu muat ulang halaman.');
+    return;
+  }
+
+  const klSupabase = window.supabase.createClient(
+    'https://flvdudmdltjjdjkdngbv.supabase.co',
+    'sb_publishable_vh4DgP6YyquvZ5fK1ABp1g_g_lRKhsR'
+  );
+
+  async function periksaSesi() {
+    const hasil = await klSupabase.auth.getSession();
+    if (hasil.error) {
+      tampilPesan('Gagal memeriksa sesi. Silakan coba login kembali.');
+      return;
+    }
+    if (hasil.data.session) {
+      tampilPesan('Login aktif: ' + hasil.data.session.user.email);
+    } else {
+      tampilPesan('Belum login. Daftar akun atau login terlebih dahulu.');
+    }
+  }
+
+  tombolDaftar.addEventListener('click', async function() {
+    const email = document.getElementById('emailPenjualKL').value.trim();
+    const password = document.getElementById('sandiPenjualKL').value;
+
+    if (!email || password.length < 6) {
+      tampilPesan('Masukkan email yang valid dan kata sandi minimal 6 karakter.');
+      return;
+    }
+
+    tombolDaftar.disabled = true;
+    tampilPesan('Sedang mendaftarkan akun...');
+
+    try {
+      const hasil = await klSupabase.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          emailRedirectTo: 'https://wandi0917.github.io/kasusaha-lite/'
+        }
+      });
+
+      if (hasil.error) throw hasil.error;
+
+      if (hasil.data.session) {
+        tampilPesan('Akun berhasil dibuat dan login aktif.');
+      } else {
+        tampilPesan('Pendaftaran diterima. Buka email Anda dan tekan tautan konfirmasi sebelum login.');
+      }
+    } catch (e) {
+      tampilPesan('Pendaftaran gagal: ' + (e.message || 'Periksa koneksi dan pengaturan Supabase.'));
+    } finally {
+      tombolDaftar.disabled = false;
+    }
+  });
+
+  tombolLogin.addEventListener('click', async function() {
+    const email = document.getElementById('emailPenjualKL').value.trim();
+    const password = document.getElementById('sandiPenjualKL').value;
+
+    if (!email || !password) {
+      tampilPesan('Masukkan email dan kata sandi.');
+      return;
+    }
+
+    tombolLogin.disabled = true;
+    tampilPesan('Sedang login...');
+
+    try {
+      const hasil = await klSupabase.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+      if (hasil.error) throw hasil.error;
+      tampilPesan('Login berhasil: ' + hasil.data.user.email);
+    } catch (e) {
+      tampilPesan('Login gagal. Pastikan email sudah dikonfirmasi dan kata sandi benar.');
+    } finally {
+      tombolLogin.disabled = false;
+    }
+  });
+
+  tombolKeluar.addEventListener('click', async function() {
+    const hasil = await klSupabase.auth.signOut();
+    tampilPesan(hasil.error ? 'Logout gagal. Coba lagi.' : 'Anda sudah logout.');
+  });
+
+  tombolKirim.addEventListener('click', async function() {
+    const sesi = await klSupabase.auth.getSession();
+    if (sesi.error || !sesi.data.session) {
+      tampilPesan('Silakan login terlebih dahulu sebelum memasang produk.');
+      return;
+    }
+
+    const nama = document.getElementById('namaProdukKL').value.trim();
+    const kategori = document.getElementById('kategoriProdukKL').value;
+    const harga = Number(document.getElementById('hargaProdukKL').value);
+    const stok = Number(document.getElementById('stokProdukKL').value);
+    const kota = document.getElementById('kotaProdukKL').value.trim();
+    const deskripsi = document.getElementById('deskripsiProdukKL').value.trim();
+    const toko = document.getElementById('namaTokoKL').value.trim();
+
+    if (!nama || !toko || !kota ||
+        document.getElementById('hargaProdukKL').value === '' ||
+        document.getElementById('stokProdukKL').value === '' ||
+        !Number.isFinite(harga) || harga < 0 ||
+        !Number.isSafeInteger(stok) || stok < 0) {
+      tampilPesan('Lengkapi nama produk, toko, kota, harga, dan stok dengan benar.');
+      return;
+    }
+
+    tombolKirim.disabled = true;
+    tampilPesan('Sedang mengirim produk ke Pasar Online...');
+
+    try {
+      const hasil = await klSupabase
+        .from('produk')
+        .insert({
+          nama_produk: nama,
+          deskripsi: deskripsi,
+          kategori: kategori,
+          harga: harga,
+          stok: stok,
+          nama_penjual: toko,
+          kota: kota,
+          foto_url: '',
+          aktif: true,
+          owner_id: sesi.data.session.user.id
+        })
+        .select('id')
+        .single();
+
+      if (hasil.error) throw hasil.error;
+
+      tampilPesan('Produk berhasil dipasang! ID produk: ' + hasil.data.id +
+        '. Muat ulang bagian Pasar Online untuk melihat produk.');
+      document.getElementById('namaProdukKL').value = '';
+      document.getElementById('deskripsiProdukKL').value = '';
+    } catch (e) {
+      tampilPesan('Produk belum berhasil dipasang: ' +
+        (e.message || 'Periksa koneksi dan aturan keamanan database.'));
+    } finally {
+      tombolKirim.disabled = false;
+    }
+  });
+
+  await periksaSesi();
+})();
+</script>
+<!-- AKHIR PANEL PENJUAL -->
+  </body>
 </html>
