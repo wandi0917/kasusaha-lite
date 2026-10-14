@@ -3,563 +3,306 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#142B4A">
-<meta name="description" content="KasUsaha Lite membantu usaha kecil mencatat pemasukan, pengeluaran, dan saldo dengan mudah.">
-<title>KasUsaha Lite — Kelola Keuangan Usaha</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#166534">
+<title>KasUsaha Lite - Catatan Keuangan Usaha</title>
 <style>
-:root{
- --green:#13795B;
- --dark:#0D5541;
- --navy:#142B4A;
- --light:#E4F5EC;
- --bg:#F5F7F8;
- --white:#FFFFFF;
- --text:#192B3E;
- --muted:#718096;
- --border:#E4EAF0;
- --red:#C94F4F;
- --shadow:0 8px 30px rgba(20,43,74,.07);
-}
 *{box-sizing:border-box}
-body{
- margin:0;background:var(--bg);color:var(--text);
- font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;
-}
+:root{--green:#166534;--green2:#15803d;--navy:#17324d;--muted:#64748b;--bg:#f3f7f5;--border:#e2e8f0}
+body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:#1e293b}
 button,input,select{font:inherit}
 button{cursor:pointer}
-.topbar{
- background:linear-gradient(120deg,#142B4A,#13795B);
- color:#fff;box-shadow:0 5px 22px #142b4a20;
-}
-.nav{
- max-width:1120px;margin:auto;padding:16px 20px;
- display:flex;align-items:center;gap:12px;
-}
-.logo{
- width:46px;height:46px;border-radius:15px;background:#fff;
- color:var(--green);display:grid;place-items:center;
- font-size:25px;font-weight:900;
- box-shadow:0 4px 14px #0002;
-}
-.brand{font-size:20px;font-weight:850;letter-spacing:-.6px}
-.brand span{color:#B7F2D5}
-.tagline{font-size:12px;color:#E0F2E9}
-.nav-label{
- margin-left:auto;border:1px solid #ffffff55;
- border-radius:30px;padding:7px 12px;
- font-size:11px;font-weight:750;letter-spacing:.4px;
-}
-main{max-width:1120px;margin:auto;padding:28px 20px 44px}
-.welcome{
- display:flex;justify-content:space-between;align-items:center;
- gap:16px;margin-bottom:24px;
-}
-.eyebrow{
- font-size:11px;font-weight:850;color:var(--green);
- letter-spacing:1.4px;text-transform:uppercase;margin-bottom:5px;
-}
-h1{font-size:clamp(24px,4vw,32px);line-height:1.2;
- letter-spacing:-1px;margin:0 0 8px}
-h2{font-size:17px;letter-spacing:-.3px;margin:0}
-p{margin:0}
-.muted{color:var(--muted);font-size:13px}
-.date-pill{
- padding:9px 13px;background:#fff;border:1px solid var(--border);
- border-radius:30px;color:var(--muted);font-size:12px;white-space:nowrap;
-}
-.summary{
- display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:15px;
-}
-.card{
- background:var(--white);border:1px solid var(--border);
- border-radius:19px;padding:21px;box-shadow:var(--shadow);min-width:0;
-}
-.balance{
- background:linear-gradient(135deg,#142B4A 0%,#13795B 100%);
- color:#fff;border:0;position:relative;overflow:hidden;
-}
-.balance:after{
- content:"";position:absolute;width:170px;height:170px;
- border:30px solid #ffffff12;border-radius:50%;
- right:-55px;top:-75px;pointer-events:none;
-}
-.metric-label{
- font-size:13px;color:var(--muted);display:flex;
- align-items:center;gap:9px;margin-bottom:14px;
-}
-.balance .metric-label{color:#E0F2E9}
-.metric-icon{
- width:36px;height:36px;display:grid;place-items:center;
- border-radius:12px;background:var(--light);
- color:var(--green);font-size:20px;flex-shrink:0;
-}
-.balance .metric-icon{background:#ffffff22;color:#fff}
-.metric-number{
- font-size:clamp(20px,3vw,29px);font-weight:850;
- letter-spacing:-.8px;overflow-wrap:anywhere;line-height:1.25;
-}
-.balance .metric-number{font-size:clamp(25px,3.5vw,34px)}
-.balance-note{font-size:12px;color:#D7F2E5;margin-top:9px}
-.layout{
- display:grid;grid-template-columns:minmax(0,.86fr) minmax(0,1.4fr);
- gap:18px;margin-top:20px;align-items:start;
-}
-.card-head{
- display:flex;justify-content:space-between;align-items:center;
- gap:10px;margin-bottom:18px;
-}
-label{display:block;font-size:13px;font-weight:700;margin:15px 0 7px}
-input,select{
- width:100%;padding:12px 13px;border:1px solid #DCE4EB;
- border-radius:11px;background:#fff;color:var(--text);
- outline:none;min-width:0;
-}
-input:focus,select:focus{
- border-color:var(--green);box-shadow:0 0 0 3px #13795b18;
-}
-input[type="file"]{font-size:12px;padding:10px}
-.btn{
- border:0;border-radius:11px;padding:12px 15px;font-weight:750;
- display:inline-flex;align-items:center;justify-content:center;gap:7px;
- transition:transform .15s,filter .15s;
-}
-.btn:active{transform:scale(.98)}
-.primary{
- background:linear-gradient(120deg,#13795B,#0D5541);color:white;
- box-shadow:0 5px 13px #13795b20;
-}
-.primary:hover{filter:brightness(1.05)}
-.soft{background:var(--light);color:var(--green)}
-.ghost{background:#fff;color:var(--navy);border:1px solid var(--border)}
-.full{width:100%;margin-top:20px}
-.segment{
- display:grid;grid-template-columns:1fr 1fr;gap:7px;
- padding:5px;background:#F0F4F3;border-radius:13px;
-}
-.segment button{
- border:0;border-radius:10px;padding:11px 5px;
- background:transparent;color:var(--muted);
- font-weight:750;font-size:13px;
-}
-.segment button.active{
- background:#fff;color:var(--green);
- box-shadow:0 2px 7px #142b4a12;
-}
-.segment button.active.out{color:var(--red)}
-.search{flex:1;min-width:100px}
-.tools{display:flex;gap:8px;align-items:center;margin-bottom:14px}
-.tools .btn{padding:10px 12px;font-size:12px}
-.table-wrap{overflow-x:auto}
-table{border-collapse:collapse;width:100%;font-size:13px}
-th{
- text-align:left;font-weight:750;color:var(--muted);
- background:#F5F8FA;font-size:10px;text-transform:uppercase;
- letter-spacing:.5px;
-}
-th,td{padding:13px 9px;border-bottom:1px solid var(--border)}
-tbody tr:last-child td{border-bottom:0}
-.amount{white-space:nowrap;font-weight:800}
-.income{color:var(--green)}
-.expense{color:var(--red)}
-.kind{
- display:inline-block;padding:5px 9px;border-radius:20px;
- background:var(--light);color:var(--green);
- font-size:11px;font-weight:800;
-}
-.kind.out{background:#FFF0EF;color:var(--red)}
-.delete{
- background:#FFF0EF;color:var(--red);border:0;
- border-radius:8px;padding:7px 9px;font-size:11px;font-weight:750;
-}
-.empty{text-align:center;padding:32px 10px;color:var(--muted);font-size:13px}
-.empty-icon{font-size:32px;margin-bottom:8px}
-.extra{
- display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:18px;
-}
-.extra .card{box-shadow:none}
-.extra .btn{margin-top:14px}
-.notice{font-size:12px;color:var(--muted);margin-top:11px;line-height:1.65}
-.product-price{margin-top:13px;font-size:18px;font-weight:850;color:var(--green)}
-.footer{text-align:center;color:var(--muted);font-size:12px;padding:22px}
 [hidden]{display:none!important}
-button:focus-visible{
- outline:3px solid #64B5A0;outline-offset:3px;
-}
-@media(max-width:760px){
- main{padding:23px 14px 35px}
- .summary{grid-template-columns:1fr 1fr;gap:10px}
- .balance{grid-column:1/-1}
- .layout{grid-template-columns:1fr}
- .extra{grid-template-columns:1fr}
- .welcome{align-items:flex-start}
- .card{padding:17px}
-}
-@media(max-width:420px){
- .nav{padding:13px 14px}
- .logo{width:42px;height:42px}
- .brand{font-size:18px}
- .nav-label{font-size:10px;padding:6px 8px}
- .summary .card{padding:14px}
- .metric-label{font-size:12px;gap:6px}
- .metric-icon{width:30px;height:30px}
- .metric-number{font-size:20px}
- .balance .metric-number{font-size:26px}
- .date-pill{display:none}
- .tools{flex-wrap:wrap}
- .search{flex-basis:100%}
- .tools .btn{flex:1}
- th,td{padding:11px 7px}
+.landing{min-height:100vh;padding:25px 18px 35px;background:linear-gradient(145deg,#f8fbff,#e2f5e9)}
+.wrap{max-width:1050px;margin:auto}
+.nav{display:flex;align-items:center;gap:12px;margin-bottom:45px}
+.logo{width:48px;height:48px;background:var(--green);color:white;border-radius:15px;display:grid;place-items:center;font-size:25px;font-weight:bold}
+.brand{font-size:21px;font-weight:bold;color:var(--navy)}
+.brand span{color:var(--green2)}
+.muted{color:var(--muted);font-size:13px}
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:30px;align-items:center}
+.kicker{display:inline-block;background:#d5f2e3;color:#14532d;padding:8px 12px;border-radius:25px;font-size:11px;font-weight:bold}
+h1{font-size:clamp(34px,6vw,54px);line-height:1.12;letter-spacing:-1px;color:var(--navy);margin:18px 0}
+.desc{line-height:1.8;color:#526579}
+.btn{border:0;border-radius:10px;padding:12px 16px;font-weight:bold}
+.primary{background:var(--green);color:white}
+.secondary{background:#e2e8f0;color:#1e293b}
+.danger{background:#fee2e2;color:#991b1b}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.price{margin-top:18px;color:var(--muted)}
+.price strong{font-size:22px;color:var(--green)}
+.preview{background:white;padding:22px;border-radius:22px;box-shadow:0 15px 45px #17324d15}
+.preview-balance{background:linear-gradient(120deg,#17324d,#15803d);color:white;padding:20px;border-radius:15px;margin-top:15px}
+.preview-balance strong{display:block;font-size:27px;margin-top:10px}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:14px}
+.stat{background:white;border:1px solid var(--border);padding:15px;border-radius:13px;min-width:0}
+.stat small{display:block;color:var(--muted);margin-bottom:8px}
+.stat strong{font-size:clamp(15px,3vw,21px);overflow-wrap:anywhere}
+.benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:42px}
+.benefit{background:#ffffffd9;border:1px solid var(--border);padding:18px;border-radius:15px}
+.benefit p{font-size:13px;line-height:1.7;color:var(--muted)}
+footer{text-align:center;color:var(--muted);font-size:12px;margin-top:35px}
+.topbar{background:var(--green);color:white;padding:18px}
+.topinner{max-width:1000px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:12px}
+main{max-width:1000px;margin:22px auto;padding:0 14px}
+.panel{background:white;border:1px solid var(--border);border-radius:15px;padding:18px;margin-bottom:17px}
+h2{font-size:19px;margin:0 0 16px;color:var(--navy)}
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:bold}
+.field input,.field select,#cari{width:100%;min-width:0;padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white}
+.full{grid-column:1/-1}
+.formbuttons{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:12px 9px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+th{background:#f8fafc}
+.income{color:#15803d;font-weight:bold}
+.expense{color:#dc2626;font-weight:bold}
+.smallbtn{padding:7px 9px;border:0;border-radius:7px;background:#fee2e2;color:#991b1b}
+.note{font-size:12px;color:var(--muted);line-height:1.7}
+.empty{text-align:center;padding:25px;color:var(--muted)}
+@media(max-width:700px){
+ .hero{grid-template-columns:1fr;gap:25px}
+ .benefits{grid-template-columns:1fr;margin-top:28px}
+ .nav{margin-bottom:30px}
+ h1{font-size:38px}
+ .formgrid{grid-template-columns:1fr}
+ .full{grid-column:auto}
+ .topinner{align-items:flex-start;flex-direction:column}
+ main{margin-top:14px}
+ .panel{padding:14px}
 }
 </style>
 </head>
 <body>
-<header class="topbar">
- <div class="nav">
-  <div class="logo">K</div>
-  <div>
-   <div class="brand">KasUsaha <span>Lite</span></div>
-   <div class="tagline">Kelola usaha, lebih percaya diri.</div>
+
+<section class="landing" id="landingPage">
+ <div class="wrap">
+  <div class="nav">
+   <div class="logo">K</div>
+   <div>
+    <div class="brand">KasUsaha <span>Lite</span></div>
+    <div class="muted">Kelola usaha, lebih percaya diri.</div>
+   </div>
   </div>
-  <div class="nav-label">KEUANGAN USAHA</div>
+  <div class="hero">
+   <div>
+    <div class="kicker">SOLUSI KAS USAHA KECIL</div>
+    <h1>Usaha lebih teratur. Keuangan lebih jelas.</h1>
+    <p class="desc">Catat pemasukan dan pengeluaran, pantau saldo kas, serta ekspor transaksi sebagai cadangan dengan aplikasi yang sederhana dan praktis.</p>
+    <div class="actions">
+     <button class="btn primary" id="mulai">Coba Aplikasi Gratis →</button>
+    </div>
+    <div class="price">Harga produk penuh: <strong>Rp39.000</strong></div>
+    <p class="note">Harga ini adalah informasi produk. Pembayaran online belum diaktifkan pada versi ini.</p>
+   </div>
+   <div class="preview">
+    <strong>Ringkasan Keuangan</strong>
+    <div class="preview-balance">
+     <small>Contoh saldo kas</small>
+     <strong>Rp2.500.000</strong>
+     <small>Ilustrasi tampilan aplikasi</small>
+    </div>
+    <div class="stats">
+     <div class="stat"><small>↗ Pemasukan</small><strong class="income">Rp4.000.000</strong></div>
+     <div class="stat"><small>↘ Pengeluaran</small><strong class="expense">Rp1.500.000</strong></div>
+    </div>
+   </div>
+  </div>
+  <div class="benefits">
+   <div class="benefit"><strong>✎ Catat transaksi</strong><p>Input pemasukan dan pengeluaran dengan cepat.</p></div>
+   <div class="benefit"><strong>◈ Pantau saldo</strong><p>Ringkasan kas dihitung otomatis dari transaksi.</p></div>
+   <div class="benefit"><strong>↗ Cadangkan data</strong><p>Ekspor dan impor riwayat transaksi melalui CSV.</p></div>
+  </div>
+  <footer>KasUsaha Lite © 2026</footer>
+ </div>
+</section>
+
+<header class="topbar" id="appHeader" hidden>
+ <div class="topinner">
+  <div><strong>KasUsaha Lite</strong><div style="font-size:12px;margin-top:4px">Catatan keuangan usaha</div></div>
+  <button class="btn secondary" id="kembali">Halaman Depan</button>
  </div>
 </header>
 
-<main>
- <section class="welcome">
-  <div>
-   <div class="eyebrow">DASHBOARD USAHA</div>
-   <h1>Keuangan usaha, lebih terkendali.</h1>
-   <p class="muted">Catat transaksi, pantau pemasukan, dan kendalikan pengeluaran.</p>
-  </div>
-  <div class="date-pill" id="hariIni"></div>
+<main id="dashboard" hidden>
+ <section class="stats">
+  <div class="stat"><small>Total Pemasukan</small><strong id="masuk" class="income">Rp0</strong></div>
+  <div class="stat"><small>Total Pengeluaran</small><strong id="keluar" class="expense">Rp0</strong></div>
+  <div class="stat" style="grid-column:1/-1"><small>Saldo Kas</small><strong id="saldo">Rp0</strong></div>
  </section>
 
- <section class="summary">
-  <div class="card balance">
-   <div class="metric-label"><span class="metric-icon">◈</span> Total saldo kas</div>
-   <div class="metric-number" id="saldo">Rp0</div>
-   <div class="balance-note">Pemasukan dikurangi pengeluaran</div>
-  </div>
-  <div class="card">
-   <div class="metric-label"><span class="metric-icon">↗</span> Pemasukan</div>
-   <div class="metric-number income" id="masuk">Rp0</div>
-   <p class="muted" style="margin-top:9px">Total uang masuk</p>
-  </div>
-  <div class="card">
-   <div class="metric-label"><span class="metric-icon" style="color:#C94F4F;background:#FFF0EF">↘</span> Pengeluaran</div>
-   <div class="metric-number expense" id="keluar">Rp0</div>
-   <p class="muted" style="margin-top:9px">Total uang keluar</p>
-  </div>
+ <section class="panel">
+  <h2>Tambah Transaksi</h2>
+  <form id="formTransaksi">
+   <div class="formgrid">
+    <div class="field"><label for="tanggal">Tanggal</label><input id="tanggal" type="date" required></div>
+    <div class="field"><label for="jenis">Jenis transaksi</label><select id="jenis"><option value="masuk">Pemasukan</option><option value="keluar">Pengeluaran</option></select></div>
+    <div class="field full"><label for="keterangan">Keterangan</label><input id="keterangan" maxlength="150" placeholder="Contoh: Penjualan kopi" required></div>
+    <div class="field full"><label for="jumlah">Jumlah (Rp)</label><input id="jumlah" type="number" min="1" step="1" placeholder="50000" required></div>
+   </div>
+   <div class="formbuttons"><button class="btn primary" type="submit">Simpan Transaksi</button><button class="btn secondary" type="reset">Bersihkan Form</button></div>
+  </form>
  </section>
 
- <section class="layout">
-  <div class="card">
-   <div class="card-head">
-    <div><div class="eyebrow">TRANSAKSI BARU</div><h2>Catat keuangan</h2></div>
-    <span style="font-size:24px">✎</span>
-   </div>
-   <form id="form">
-    <label>Jenis transaksi</label>
-    <div class="segment">
-     <button type="button" id="btnMasuk" class="active" aria-pressed="true">＋ Pemasukan</button>
-     <button type="button" id="btnKeluar" aria-pressed="false">－ Pengeluaran</button>
-    </div>
-    <input id="jenis" type="hidden" value="masuk">
-
-    <label for="tanggal">Tanggal transaksi</label>
-    <input id="tanggal" type="date" required>
-
-    <label for="keterangan">Nama transaksi</label>
-    <input id="keterangan" maxlength="150" placeholder="Contoh: Penjualan kopi" required>
-
-    <label for="jumlah">Nominal (rupiah)</label>
-    <input id="jumlah" type="number" min="1" max="9007199254740991" step="1" placeholder="Contoh: 50000" required>
-
-    <button class="btn primary full" type="submit">＋ Simpan transaksi</button>
-   </form>
-   <p class="notice">Data tersimpan di browser perangkat ini. Ekspor cadangan secara berkala agar data tetap aman.</p>
+ <section class="panel">
+  <h2>Riwayat Transaksi</h2>
+  <div class="field" style="margin-bottom:12px"><label for="cari">Cari transaksi</label><input id="cari" placeholder="Cari keterangan atau tanggal..."></div>
+  <div class="formbuttons" style="margin:0 0 14px">
+   <button class="btn primary" id="ekspor" type="button">Ekspor CSV</button>
+   <button class="btn secondary" id="pilihCsv" type="button">Impor CSV</button>
+   <input id="fileCsv" type="file" accept=".csv,text/csv" hidden>
   </div>
-
-  <div class="card">
-   <div class="card-head">
-    <div><div class="eyebrow">AKTIVITAS USAHA</div><h2>Riwayat transaksi</h2></div>
-    <span class="muted" id="jumlahData">0 transaksi</span>
-   </div>
-   <div class="tools">
-    <div class="search"><input id="cari" type="search" placeholder="Cari transaksi..."></div>
-    <button type="button" id="ekspor" class="btn soft">↓ CSV</button>
-   </div>
-   <div class="table-wrap">
-    <table>
-     <thead><tr><th>Tanggal / nama</th><th>Jenis</th><th>Nominal</th><th>Aksi</th></tr></thead>
-     <tbody id="daftar"></tbody>
-    </table>
-    <div id="kosong" class="empty">
-     <div class="empty-icon">▤</div>
-     <strong>Belum ada transaksi</strong>
-     <p style="margin-top:5px">Transaksi yang dicatat akan muncul di sini.</p>
-    </div>
-   </div>
+  <p class="note">Data tersimpan di penyimpanan browser pada perangkat ini. Ekspor CSV secara berkala untuk membuat cadangan.</p>
+  <div class="tablewrap">
+   <table>
+    <thead><tr><th>Tanggal</th><th>Keterangan</th><th>Jenis</th><th>Jumlah</th><th>Aksi</th></tr></thead>
+    <tbody id="daftar"></tbody>
+   </table>
+   <div class="empty" id="kosong">Belum ada transaksi. Tambahkan transaksi pertama Anda.</div>
   </div>
  </section>
-
- <section class="extra">
-  <div class="card">
-   <div class="card-head" style="margin-bottom:8px">
-    <div><div class="eyebrow">KEAMANAN DATA</div><h2>Cadangkan transaksi</h2></div>
-    <span style="font-size:23px">↗</span>
-   </div>
-   <p class="muted">Unduh transaksi dalam format CSV untuk disimpan sebagai cadangan.</p>
-   <button type="button" id="ekspor2" class="btn soft">↓ Unduh cadangan CSV</button>
-  </div>
-  <div class="card">
-   <div class="card-head" style="margin-bottom:8px">
-    <div><div class="eyebrow">PULIHKAN DATA</div><h2>Impor transaksi</h2></div>
-    <span style="font-size:23px">↙</span>
-   </div>
-   <p class="muted">Pilih file CSV yang sebelumnya diekspor dari KasUsaha Lite.</p>
-   <label for="file">Pilih file CSV</label>
-   <input id="file" type="file" accept=".csv,text/csv">
-   <button type="button" id="impor" class="btn ghost">Impor data</button>
-  </div>
- </section>
-
- <section class="card" style="margin-top:18px;box-shadow:none">
-  <div class="card-head" style="margin-bottom:7px">
-   <h2>Tentang KasUsaha Lite</h2>
-   <span class="kind">Versi Lite</span>
-  </div>
-  <p class="muted">Aplikasi pencatatan kas sederhana untuk membantu usaha kecil memantau pemasukan, pengeluaran, dan saldo.</p>
-  <div class="product-price">Rp39.000</div>
-  <p class="notice">Harga produk. Pembayaran online dan aktivasi otomatis belum aktif sampai integrasi pembayaran resmi selesai dan diuji.</p>
- </section>
+ <footer>KasUsaha Lite · Simpan cadangan data Anda secara berkala.</footer>
 </main>
-
-<footer class="footer">KasUsaha Lite © 2026 · Sederhana, praktis, untuk usahamu.</footer>
 
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
-const rupiah=n=>new Intl.NumberFormat("id-ID",{
- style:"currency",currency:"IDR",maximumFractionDigits:0
-}).format(n);
-const KEY="kasusaha_lite_transaksi_v1";
+const STORAGE_KEY="kasusaha_lite_transaksi_v1";
 let data=[];
-
-function valid(x){
- return x&&/^\d{4}-\d{2}-\d{2}$/.test(x.tanggal||"")
- &&typeof x.keterangan==="string"
- &&["masuk","keluar"].includes(x.jenis)
- &&Number.isSafeInteger(Number(x.nom))&&Number(x.nom)>0;
+function rupiah(n){
+ return new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(n);
 }
-try{
- const raw=JSON.parse(localStorage.getItem(KEY)||"[]");
- if(Array.isArray(raw))data=raw.filter(valid);
-}catch(e){data=[]}
-
+function tanggalHariIni(){
+ const d=new Date();
+ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
 function simpan(){
+ try{localStorage.setItem(STORAGE_KEY,JSON.stringify(data));}
+ catch(e){alert("Penyimpanan gagal. Ekspor CSV untuk menyelamatkan data Anda.");}
+}
+function muat(){
  try{
-  localStorage.setItem(KEY,JSON.stringify(data));
-  return true;
- }catch(e){
-  alert("Penyimpanan gagal. Segera ekspor data sebagai cadangan.");
-  return false;
- }
-}
-function tanggalIndo(t){
- const d=t.split("-");
- return d.length===3?d[2]+"/"+d[1]+"/"+d[0]:t;
-}
-function buat(tag,txt,cls){
- const el=document.createElement(tag);
- if(txt!==undefined)el.textContent=txt;
- if(cls)el.className=cls;
- return el;
+  const v=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
+  data=Array.isArray(v)?v.filter(x=>x&&typeof x.tanggal==="string"&&typeof x.keterangan==="string"&&(x.jenis==="masuk"||x.jenis==="keluar")&&Number.isFinite(Number(x.nom))&&Number(x.nom)>0).map(x=>({...x,nom:Number(x.nom)})):[];
+ }catch(e){data=[];}
 }
 function tampil(){
  let m=0,k=0;
- data.forEach(x=>{
-  if(x.jenis==="masuk")m+=Number(x.nom);
-  else k+=Number(x.nom);
- });
+ data.forEach(x=>{if(x.jenis==="masuk")m+=x.nom;else k+=x.nom;});
  $("masuk").textContent=rupiah(m);
  $("keluar").textContent=rupiah(k);
  $("saldo").textContent=rupiah(m-k);
- $("jumlahData").textContent=data.length+" transaksi";
-
  const q=$("cari").value.trim().toLowerCase();
- const hasil=data.map((x,i)=>({...x,i}))
-  .filter(x=>x.keterangan.toLowerCase().includes(q))
-  .sort((a,b)=>b.tanggal.localeCompare(a.tanggal)||b.i-a.i);
- const tbody=$("daftar");
- tbody.replaceChildren();
+ const hasil=data.map((x,i)=>({...x,_i:i})).filter(x=>(x.keterangan+" "+x.tanggal+" "+x.jenis).toLowerCase().includes(q)).sort((a,b)=>b.tanggal.localeCompare(a.tanggal)||b._i-a._i);
+ $("daftar").replaceChildren();
  $("kosong").hidden=hasil.length>0;
-
  hasil.forEach(x=>{
-  const tr=buat("tr");
-  const td1=buat("td");
-  td1.appendChild(buat("div",tanggalIndo(x.tanggal),"muted"));
-  const name=buat("div",x.keterangan);
-  name.style.fontWeight="700";
-  name.style.marginTop="3px";
-  td1.appendChild(name);
-  tr.appendChild(td1);
-
-  const td2=buat("td");
-  td2.appendChild(buat("span",
-   x.jenis==="masuk"?"Masuk":"Keluar",
-   "kind"+(x.jenis==="keluar"?" out":"")));
-  tr.appendChild(td2);
-
-  tr.appendChild(buat("td",
-   (x.jenis==="masuk"?"+ ":"− ")+rupiah(Number(x.nom)),
-   "amount "+(x.jenis==="masuk"?"income":"expense")));
-
-  const td4=buat("td");
-  const btn=buat("button","Hapus","delete");
-  btn.type="button";
-  btn.setAttribute("aria-label","Hapus "+x.keterangan);
-  btn.addEventListener("click",()=>{
-   if(confirm("Hapus transaksi '"+x.keterangan+"'?")){
-    const old=data.slice();
-    data.splice(x.i,1);
-    if(simpan())tampil();
-    else data=old;
+  const tr=document.createElement("tr");
+  [x.tanggal,x.keterangan,x.jenis==="masuk"?"Pemasukan":"Pengeluaran",rupiah(x.nom)].forEach((v,j)=>{
+   const td=document.createElement("td");
+   td.textContent=v;
+   if(j===2)td.className=x.jenis==="masuk"?"income":"expense";
+   tr.appendChild(td);
+  });
+  const td=document.createElement("td");
+  const b=document.createElement("button");
+  b.className="smallbtn";b.type="button";b.textContent="Hapus";
+  b.addEventListener("click",()=>{
+   if(confirm("Hapus transaksi ini?")){
+    data.splice(x._i,1);simpan();tampil();
    }
   });
-  td4.appendChild(btn);
-  tr.appendChild(td4);
-  tbody.appendChild(tr);
+  td.appendChild(b);tr.appendChild(td);$("daftar").appendChild(tr);
  });
 }
-function setJenis(jenis){
- $("jenis").value=jenis;
- $("btnMasuk").classList.toggle("active",jenis==="masuk");
- $("btnKeluar").classList.toggle("active",jenis==="keluar");
- $("btnKeluar").classList.toggle("out",jenis==="keluar");
- $("btnMasuk").setAttribute("aria-pressed",String(jenis==="masuk"));
- $("btnKeluar").setAttribute("aria-pressed",String(jenis==="keluar"));
+function bukaAplikasi(){
+ $("landingPage").hidden=true;
+ $("appHeader").hidden=false;
+ $("dashboard").hidden=false;
+ window.scrollTo(0,0);
 }
-$("btnMasuk").addEventListener("click",()=>setJenis("masuk"));
-$("btnKeluar").addEventListener("click",()=>setJenis("keluar"));
-
-const now=new Date();
-$("tanggal").value=[
- now.getFullYear(),
- String(now.getMonth()+1).padStart(2,"0"),
- String(now.getDate()).padStart(2,"0")
-].join("-");
-$("hariIni").textContent=now.toLocaleDateString("id-ID",{
- weekday:"long",day:"numeric",month:"long",year:"numeric"
+$("mulai").addEventListener("click",bukaAplikasi);
+$("kembali").addEventListener("click",()=>{
+ $("landingPage").hidden=false;$("appHeader").hidden=true;$("dashboard").hidden=true;window.scrollTo(0,0);
 });
-
-$("form").addEventListener("submit",e=>{
+$("tanggal").value=tanggalHariIni();
+$("formTransaksi").addEventListener("submit",e=>{
  e.preventDefault();
- const x={
-  tanggal:$("tanggal").value,
-  keterangan:$("keterangan").value.trim(),
-  jenis:$("jenis").value,
-  nom:Number($("jumlah").value)
- };
- if(!valid(x)){
-  alert("Periksa tanggal, keterangan, dan nominal transaksi.");
-  return;
+ const tanggal=$("tanggal").value;
+ const keterangan=$("keterangan").value.trim();
+ const jenis=$("jenis").value;
+ const nom=Number($("jumlah").value);
+ if(!tanggal||!keterangan||!Number.isSafeInteger(nom)||nom<=0){
+  alert("Periksa tanggal, keterangan, dan jumlah transaksi.");return;
  }
- data.push(x);
- if(simpan()){
-  $("keterangan").value="";
-  $("jumlah").value="";
-  tampil();
- }
+ data.push({tanggal,keterangan,jenis,nom});
+ simpan();tampil();
+ $("formTransaksi").reset();$("tanggal").value=tanggalHariIni();
+ $("keterangan").focus();
 });
 $("cari").addEventListener("input",tampil);
-
-function csvField(v){
- return '"'+String(v).replace(/"/g,'""')+'"';
-}
-function ekspor(){
- const rows=[
-  ["Tanggal","Keterangan","Jenis","Jumlah"],
-  ...data.map(x=>[tanggalIndo(x.tanggal),x.keterangan,x.jenis,x.nom])
- ];
- const csv="\uFEFF"+rows.map(r=>r.map(csvField).join(";")).join("\r\n");
- const url=URL.createObjectURL(new Blob([csv],{
-  type:"text/csv;charset=utf-8"
- }));
- const a=buat("a");
- a.href=url;
- a.download="kasusaha-lite.csv";
- document.body.appendChild(a);
- a.click();
- a.remove();
+function csvCell(v){return '"'+String(v).replace(/"/g,'""')+'"';}
+$("ekspor").addEventListener("click",()=>{
+ const rows=[["Tanggal","Keterangan","Jenis","Jumlah"],...data.map(x=>[x.tanggal,x.keterangan,x.jenis,x.nom])];
+ const csv="\uFEFF"+rows.map(r=>r.map(csvCell).join(";")).join("\r\n");
+ const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement("a");a.href=url;a.download="kasusaha-lite-"+tanggalHariIni()+".csv";a.click();
  setTimeout(()=>URL.revokeObjectURL(url),1000);
-}
-$("ekspor").addEventListener("click",ekspor);
-$("ekspor2").addEventListener("click",ekspor);
-
-function parseCSV(line,delimiter){
- const out=[];
- let cur="",quote=false;
- for(let i=0;i<line.length;i++){
-  const c=line[i];
-  if(c==='"'&&quote&&line[i+1]==='"'){cur+='"';i++}
-  else if(c==='"')quote=!quote;
-  else if(c===delimiter&&!quote){out.push(cur);cur=""}
-  else cur+=c;
- }
- out.push(cur);
- return out;
-}
-$("impor").addEventListener("click",async()=>{
- const f=$("file").files[0];
- if(!f){alert("Pilih file CSV terlebih dahulu.");return}
- try{
-  const txt=(await f.text()).replace(/^\uFEFF/,"");
-  const lines=txt.split(/\r?\n/).filter(s=>s.trim());
-  if(lines.length<2)throw Error("CSV tidak berisi transaksi.");
-
-  const delimiter=lines[0].includes(";")?";":",";
-  const head=parseCSV(lines[0],delimiter)
-   .map(s=>s.trim().toLowerCase());
-  const ix=["tanggal","keterangan","jenis","jumlah"]
-   .map(h=>head.indexOf(h));
-  if(ix.some(i=>i<0))
-   throw Error("Kolom harus: Tanggal, Keterangan, Jenis, Jumlah.");
-
-  const baru=[];
-  for(const line of lines.slice(1)){
-   const r=parseCSV(line,delimiter);
-   const raw=(r[ix[0]]||"").trim();
-   let tanggal=raw;
-   const d=raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-   if(d)tanggal=d[3]+"-"+d[2]+"-"+d[1];
-
-   const jenis=(r[ix[2]]||"").trim().toLowerCase();
-   const nom=Number((r[ix[3]]||"").replace(/[^\d]/g,""));
-   const x={
-    tanggal,
-    keterangan:(r[ix[1]]||"").trim(),
-    jenis,
-    nom
-   };
-   if(valid(x))baru.push(x);
-  }
-  if(!baru.length)
-   throw Error("CSV tidak berisi transaksi valid. Data lama tidak diubah.");
-  if(!confirm("Tambahkan "+baru.length+" transaksi valid?"))return;
-
-  const old=data.slice();
-  data.push(...baru);
-  if(simpan()){
-   tampil();
-   alert("Impor berhasil: "+baru.length+" transaksi.");
-  }else data=old;
- }catch(e){
-  alert(e.message||"File CSV tidak dapat dibaca.");
- }
 });
-tampil();
+$("pilihCsv").addEventListener("click",()=>$("fileCsv").click());
+function parseCSV(text){
+ const rows=[];let row=[],field="",quoted=false;
+ text=text.replace(/^\uFEFF/,"");
+ for(let i=0;i<text.length;i++){
+  const c=text[i];
+  if(quoted){
+   if(c==='"'&&text[i+1]==='"'){field+='"';i++;}
+   else if(c==='"')quoted=false;
+   else field+=c;
+  }else{
+   if(c==='"')quoted=true;
+   else if(c===";"||c===","){row.push(field.trim());field="";}
+   else if(c==="\n"){row.push(field.trim());rows.push(row);row=[];field="";}
+   else if(c!=="\r")field+=c;
+  }
+ }
+ if(quoted)throw new Error("Tanda kutip CSV tidak lengkap.");
+ if(field.length||row.length){row.push(field.trim());rows.push(row);}
+ return rows.filter(r=>r.some(v=>v!==""));
+}
+$("fileCsv").addEventListener("change",async e=>{
+ const file=e.target.files[0];if(!file)return;
+ try{
+  const rows=parseCSV(await file.text());
+  if(rows.length<2)throw new Error("CSV belum memiliki baris transaksi.");
+  const head=rows[0].map(x=>x.toLowerCase().replace(/[^a-z]/g,""));
+  const ix={
+   tanggal:head.indexOf("tanggal"),
+   keterangan:head.indexOf("keterangan"),
+   jenis:head.indexOf("jenis"),
+   nom:head.indexOf("jumlah")
+  };
+  if(Object.values(ix).some(i=>i<0))throw new Error("Kolom harus: Tanggal, Keterangan, Jenis, Jumlah.");
+  const parsed=[];
+  for(let i=1;i<rows.length;i++){
+   const r=rows[i],tanggal=(r[ix.tanggal]||"").trim(),keterangan=(r[ix.keterangan]||"").trim();
+   const jenis=(r[ix.jenis]||"").trim().toLowerCase();
+   const raw=(r[ix.nom]||"").replace(/[.\sRp]/gi,"").replace(/,/g,"");
+   const nom=Number(raw);
+   if(!/^\d{4}-\d{2}-\d{2}$/.test(tanggal)||!keterangan||!["masuk","keluar"].includes(jenis)||!Number.isSafeInteger(nom)||nom<=0)continue;
+   parsed.push({tanggal,keterangan,jenis,nom});
+  }
+  if(!parsed.length)throw new Error("CSV tidak berisi transaksi valid. Data lama tidak diubah.");
+  if(!confirm("Impor "+parsed.length+" transaksi? Transaksi baru akan ditambahkan ke data saat ini."))return;
+  data=data.concat(parsed);simpan();tampil();
+  alert("Berhasil mengimpor "+parsed.length+" transaksi.");
+ }catch(err){alert(err.message||"Gagal membaca CSV.");}
+ finally{e.target.value="";}
+});
+muat();tampil();
 </script>
 </body>
 </html>
