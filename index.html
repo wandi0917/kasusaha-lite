@@ -1,96 +1,607 @@
+
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#166534">
-<meta name="description" content="KasUsaha Lite: kasir sederhana, pencatatan keuangan, produk dan pasar online Indonesia.">
 <title>KasUsaha Lite</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f3f6f4;color:#17211b}header{background:#166534;color:white;padding:18px}header h1{margin:0;font-size:24px}header p{margin:6px 0 0}nav{display:flex;gap:6px;overflow-x:auto;background:white;padding:10px;position:sticky;top:0;z-index:5}nav button{padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#166534;font-weight:bold;white-space:nowrap}nav button.active,.primary{background:#166534;color:white}main{max-width:850px;margin:auto;padding:12px}.tab{display:none}.tab.active{display:block}.card{background:white;border-radius:12px;padding:15px;margin-bottom:12px;border:1px solid #ddd}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}label{display:block;font-weight:bold;margin:10px 0 5px}input,select,textarea{width:100%;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:15px}button{cursor:pointer}.primary{border:0;border-radius:8px;padding:12px;font-weight:bold}.primary:disabled{opacity:.6;cursor:wait}.secondary{background:#e5eee7;color:#166534;border:1px solid #b7d0bd;border-radius:8px;padding:10px;font-weight:bold}.danger{background:#fee2e2;color:#991b1b;border:0;border-radius:8px;padding:8px}.wide{width:100%;margin-top:12px}.item{background:white;border:1px solid #ddd;border-radius:9px;padding:12px;margin-top:9px;overflow-wrap:anywhere}.price{font-weight:bold;color:#166534;font-size:18px}.small{font-size:12px;color:#666}.status{padding:10px;background:#eef5ef;border-radius:8px;margin:10px 0;overflow-wrap:anywhere}.status.error{background:#fff0f0;color:#8a1c1c}.status.warn{background:#fff8e1;color:#785600}footer{text-align:center;padding:20px;color:#666;font-size:12px}img.product-photo{display:block;max-width:100%;max-height:220px;object-fit:contain;margin:8px 0;border-radius:8px}.row-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}@media(max-width:480px){.grid{grid-template-columns:1fr}header h1{font-size:22px}}
+:root{--green:#166534;--light:#f0fdf4;--border:#dce5df;--text:#17211b;--muted:#647067;--red:#b91c1c}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f3f6f4;color:var(--text)}
+header{background:var(--green);color:white;padding:18px 16px}
+header h1{margin:0 0 5px;font-size:23px}
+header p{margin:0;font-size:13px;opacity:.9}
+nav{display:flex;gap:7px;padding:10px;background:white;overflow-x:auto;border-bottom:1px solid var(--border)}
+nav button{white-space:nowrap;border:0;border-radius:8px;padding:11px 13px;background:#edf2ee;color:#203126;font-weight:bold}
+nav button.active{background:var(--green);color:white}
+main{max-width:1000px;margin:auto;padding:16px}
+section{display:none}
+section.active{display:block}
+h2{font-size:21px;margin:8px 0 15px}
+h3{font-size:16px;margin:0 0 10px}
+.card{background:white;border:1px solid var(--border);border-radius:12px;padding:15px;margin-bottom:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px}
+.stat{background:white;border:1px solid var(--border);border-radius:12px;padding:16px}
+.stat strong{display:block;font-size:23px;margin-top:8px;overflow-wrap:anywhere}
+label{display:block;font-size:13px;font-weight:bold;margin:11px 0 5px}
+input,select,textarea{width:100%;padding:11px;border:1px solid #cbd5ce;border-radius:8px;font:inherit;background:white;color:var(--text)}
+textarea{min-height:80px;resize:vertical}
+button,.btn{cursor:pointer;border:0;border-radius:8px;padding:11px 14px;background:var(--green);color:white;font-weight:bold;font-size:14px}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.secondary{background:#e8eee9;color:#24382a}
+button.danger{background:#b91c1c}
+.actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.row{display:flex;gap:10px;align-items:center}
+.row>*{flex:1;min-width:0}
+.muted{color:var(--muted);font-size:13px}
+.status{padding:10px;border-radius:8px;background:var(--light);margin:10px 0;font-size:13px;overflow-wrap:anywhere}
+.status.error{background:#fef2f2;color:#991b1b}
+.product{display:grid;grid-template-columns:88px 1fr;gap:12px;border-top:1px solid var(--border);padding:13px 0}
+.product:first-child{border-top:0}
+.product img{width:88px;height:88px;object-fit:cover;border-radius:8px;background:#edf2ee}
+.product h3{margin:0 0 6px;overflow-wrap:anywhere}
+.price{font-weight:bold;color:var(--green);margin:6px 0}
+.empty{text-align:center;padding:24px 10px;color:var(--muted)}
+.hidden{display:none!important}
+small{color:var(--muted)}
+footer{text-align:center;padding:24px;color:var(--muted);font-size:12px}
+@media(min-width:700px){main{padding:22px}.product{grid-template-columns:100px 1fr}.product img{width:100px;height:100px}}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-<header><h1>KasUsaha Lite</h1><p>Kasir • Keuangan • Produk • Pasar Online Indonesia</p></header>
-<nav aria-label="Navigasi utama">
-<button class="active" type="button" onclick="buka('beranda',this)">Beranda</button><button type="button" onclick="buka('transaksi',this)">Transaksi</button><button type="button" onclick="buka('produk',this)">Produk Saya</button><button type="button" onclick="buka('pasar',this)">Pasar Online</button><button type="button" onclick="buka('cadangan',this)">Cadangan</button><button type="button" onclick="buka('akun',this)">Akun Penjual</button>
+<header>
+  <h1>KasUsaha Lite</h1>
+  <p>Kasir • Keuangan • Produk • Pasar Online Indonesia</p>
+</header>
+
+<nav id="nav">
+  <button class="active" data-tab="beranda">Beranda</button>
+  <button data-tab="kasir">Kasir</button>
+  <button data-tab="transaksi">Transaksi</button>
+  <button data-tab="produk">Produk Saya</button>
+  <button data-tab="pasar">Pasar Online</button>
+  <button data-tab="akun">Akun Penjual</button>
+  <button data-tab="cadangan">Cadangan</button>
 </nav>
+
 <main>
-<section id="beranda" class="tab active">
-<h2>Ringkasan usaha</h2><div class="grid"><div class="card">Pemasukan<strong id="masuk" style="display:block;font-size:19px">Rp0</strong></div><div class="card">Pengeluaran<strong id="keluar" style="display:block;font-size:19px">Rp0</strong></div><div class="card">Saldo<strong id="saldo" style="display:block;font-size:19px">Rp0</strong></div><div class="card">Jumlah produk lokal<strong id="jumlah" style="display:block;font-size:19px">0</strong></div></div>
-<div class="card"><h3>Catat transaksi</h3><form id="formKas"><label for="keterangan">Keterangan</label><input id="keterangan" required placeholder="Contoh: Penjualan kopi"><label for="jenis">Jenis transaksi</label><select id="jenis"><option value="masuk">Pemasukan</option><option value="keluar">Pengeluaran</option></select><label for="nominal">Jumlah rupiah</label><input id="nominal" type="number" min="1" step="1" required placeholder="50000"><button class="primary wide">Simpan transaksi</button></form></div><div class="card"><h3>Transaksi terbaru</h3><div id="terbaru"></div></div>
+<section id="beranda" class="active">
+  <h2>Ringkasan Usaha</h2>
+  <div class="grid">
+    <div class="stat">Jumlah transaksi<strong id="statTransaksi">0</strong></div>
+    <div class="stat">Omzet tercatat<strong id="statOmzet">Rp0</strong></div>
+    <div class="stat">Produk lokal<strong id="statProduk">0</strong></div>
+    <div class="stat">Produk online<strong id="statOnline">—</strong></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h3>Status Pasar Online</h3>
+    <div id="statusBeranda" class="status">Menyiapkan koneksi...</div>
+    <div class="actions">
+      <button onclick="bukaTab('kasir')">Buka Kasir</button>
+      <button class="secondary" onclick="bukaTab('pasar')">Lihat Pasar Online</button>
+    </div>
+  </div>
 </section>
-<section id="transaksi" class="tab"><h2>Riwayat transaksi</h2><input id="cariTransaksi" placeholder="Cari transaksi..." oninput="tampilTransaksi()"><div id="riwayat"></div></section>
-<section id="produk" class="tab"><h2>Kelola produk</h2><div class="card"><h3>Tambah barang</h3><form id="formProduk"><label for="nama">Nama barang</label><input id="nama" required maxlength="120" placeholder="Nama produk"><label for="harga">Harga jual (Rp)</label><input id="harga" type="number" min="0" step="1" required placeholder="35000"><label for="stok">Stok</label><input id="stok" type="number" min="0" step="1" required value="1"><label for="kategori">Kategori</label><select id="kategori"><option>Makanan &amp; Minuman</option><option>Fashion</option><option>Elektronik</option><option>Rumah Tangga</option><option>Kecantikan</option><option>Jasa</option><option>Pertanian</option><option>Lainnya</option></select><label for="kontak">Kontak WhatsApp (opsional)</label><input id="kontak" placeholder="Contoh: 628123456789"><label for="deskripsi">Deskripsi</label><textarea id="deskripsi" maxlength="1000" placeholder="Informasi barang"></textarea><button class="primary wide">Simpan produk di HP</button></form><p class="small">Produk lokal tersimpan di browser perangkat ini. Untuk menerbitkan produk, buka Akun Penjual dan login terlebih dahulu.</p></div><input id="cariProduk" placeholder="Cari produk saya..." oninput="tampilProduk()"><div id="daftarProduk"></div></section>
-<section id="pasar" class="tab"><h2>Pasar Online KasUsaha Lite</h2><div class="card"><p>Cari produk yang dipasang di database online KasUsaha Lite.</p><label for="cariPasar">Nama atau deskripsi barang</label><input id="cariPasar" placeholder="Contoh: kopi, teh, pakaian..."><label for="filterKategori">Kategori</label><select id="filterKategori"><option value="">Semua kategori</option><option>Makanan &amp; Minuman</option><option>Fashion</option><option>Elektronik</option><option>Rumah Tangga</option><option>Kecantikan</option><option>Jasa</option><option>Pertanian</option><option>Lainnya</option></select><div class="row-actions"><button class="primary" type="button" onclick="muatPasarOnline()">Cari produk online</button><button class="secondary" type="button" onclick="resetFilterPasar()">Tampilkan semua</button></div><div id="statusOnline" class="status" role="status">Menyiapkan koneksi pasar online...</div></div><h3>Produk online</h3><div id="hasilOnline"></div><h3>Produk lokal di perangkat ini</h3><div id="hasilPasar"></div><div class="card"><strong>Pembayaran online</strong><p class="small">Pembayaran otomatis belum aktif. Integrasi pembayaran memerlukan backend dan verifikasi status pembayaran. Jangan mengirim barang hanya berdasarkan tangkapan layar pembayaran.</p></div></section>
-<section id="cadangan" class="tab"><h2>Cadangan data</h2><div class="card"><button class="primary wide" type="button" onclick="ekspor()">Unduh cadangan JSON</button><label for="fileCadangan">Pilih file cadangan JSON</label><input type="file" id="fileCadangan" accept=".json,application/json"><button class="primary wide" type="button" onclick="impor()">Pulihkan cadangan</button><button class="danger wide" type="button" onclick="hapusSemua()">Hapus semua data lokal</button><p class="small">Cadangan berisi transaksi dan produk lokal pada perangkat ini. Produk online tersimpan terpisah di Supabase.</p></div></section>
-<section id="akun" class="tab"><h2>Akun Penjual Pasar Online</h2><div class="card"><p>Daftar atau login dengan email. Jika konfirmasi email aktif, buka email dan konfirmasi sebelum login.</p><div id="pesanPenjual" class="status" role="status">Memeriksa koneksi akun...</div><label for="emailPenjual">Email</label><input id="emailPenjual" type="email" autocomplete="email" placeholder="Email aktif Anda"><label for="sandiPenjual">Kata sandi (minimal 6 karakter)</label><input id="sandiPenjual" type="password" autocomplete="current-password" placeholder="Kata sandi"><div class="row-actions"><button id="daftarPenjual" class="primary" type="button">Daftar Akun</button><button id="loginPenjual" class="primary" type="button">Login</button><button id="keluarPenjual" class="secondary" type="button">Logout</button></div></div>
-<div class="card"><h3>Pasang produk online</h3><p class="small">Login terlebih dahulu. Produk akan diterbitkan atas nama akun yang sedang login.</p><label for="namaProdukOnline">Nama produk</label><input id="namaProdukOnline" maxlength="150" placeholder="Contoh: Kopi bubuk"><label for="kategoriProdukOnline">Kategori</label><select id="kategoriProdukOnline"><option>Makanan &amp; Minuman</option><option>Fashion</option><option>Elektronik</option><option>Rumah Tangga</option><option>Kecantikan</option><option>Jasa</option><option>Pertanian</option><option>Lainnya</option></select><label for="hargaProdukOnline">Harga (rupiah)</label><input id="hargaProdukOnline" type="number" min="0" step="1" placeholder="25000"><label for="stokProdukOnline">Stok</label><input id="stokProdukOnline" type="number" min="0" step="1" value="1"><label for="namaTokoOnline">Nama toko/penjual</label><input id="namaTokoOnline" maxlength="150" placeholder="Nama toko Anda"><label for="kotaProdukOnline">Kota penjual</label><input id="kotaProdukOnline" maxlength="100" placeholder="Contoh: Tanjungpinang"><label for="deskripsiProdukOnline">Deskripsi</label><textarea id="deskripsiProdukOnline" maxlength="2000" placeholder="Jelaskan produk"></textarea><button id="kirimProdukOnline" class="primary wide" type="button">Pasang Produk Online</button></div>
-<div class="card"><h3>Terbitkan produk lokal</h3><p class="small">Pilih produk yang sudah disimpan di menu Produk Saya untuk mengisi formulir penerbitan.</p><div id="produkLokalUntukOnline"></div></div></section>
-</main><footer>KasUsaha Lite • Pencatatan usaha dan katalog produk</footer>
+
+<section id="kasir">
+  <h2>Kasir</h2>
+  <div class="card">
+    <label for="kasirProduk">Nama produk</label>
+    <input id="kasirProduk" list="daftarProduk" placeholder="Pilih atau ketik nama produk">
+    <datalist id="daftarProduk"></datalist>
+    <div class="row">
+      <div><label for="kasirHarga">Harga satuan (Rp)</label><input id="kasirHarga" type="number" min="0" step="1" placeholder="25000"></div>
+      <div><label for="kasirJumlah">Jumlah</label><input id="kasirJumlah" type="number" min="1" step="1" value="1"></div>
+    </div>
+    <label for="kasirCatatan">Catatan (opsional)</label>
+    <input id="kasirCatatan" placeholder="Nama pelanggan atau catatan">
+    <div class="status">Total: <strong id="kasirTotal">Rp0</strong></div>
+    <div class="actions">
+      <button onclick="tambahTransaksi()">Simpan Transaksi</button>
+      <button class="secondary" onclick="kosongkanKasir()">Kosongkan</button>
+    </div>
+  </div>
+</section>
+
+<section id="transaksi">
+  <h2>Riwayat Transaksi</h2>
+  <div class="card">
+    <div class="row">
+      <input id="cariTransaksi" placeholder="Cari produk atau catatan">
+      <button onclick="renderTransaksi()">Cari</button>
+    </div>
+    <div id="daftarTransaksi"></div>
+    <div class="actions"><button class="secondary" onclick="exportTransaksiCSV()">Ekspor CSV</button></div>
+  </div>
+</section>
+
+<section id="produk">
+  <h2>Produk Saya</h2>
+  <div class="card">
+    <h3>Tambah produk lokal</h3>
+    <label for="lokalNama">Nama produk</label><input id="lokalNama" placeholder="Contoh: Kopi Bubuk">
+    <div class="row">
+      <div><label for="lokalHarga">Harga (Rp)</label><input id="lokalHarga" type="number" min="0" placeholder="25000"></div>
+      <div><label for="lokalStok">Stok</label><input id="lokalStok" type="number" min="0" value="0"></div>
+    </div>
+    <label for="lokalKategori">Kategori</label>
+    <select id="lokalKategori">
+      <option>Makanan &amp; Minuman</option><option>Fashion</option><option>Elektronik</option>
+      <option>Rumah Tangga</option><option>Kecantikan</option><option>Jasa</option>
+      <option>Pertanian</option><option>Lainnya</option>
+    </select>
+    <label for="lokalDeskripsi">Deskripsi</label><textarea id="lokalDeskripsi" placeholder="Deskripsi produk"></textarea>
+    <div class="row">
+      <div><label for="lokalPenjual">Nama toko</label><input id="lokalPenjual" placeholder="Nama toko"></div>
+      <div><label for="lokalKota">Kota</label><input id="lokalKota" value="Tanjungpinang"></div>
+    </div>
+    <label for="lokalFoto">URL foto (opsional)</label><input id="lokalFoto" type="url" placeholder="https://...">
+    <div class="actions"><button onclick="tambahProdukLokal()">Simpan Produk Lokal</button></div>
+  </div>
+  <div class="card"><h3>Daftar produk lokal</h3><div id="daftarProdukLokal"></div></div>
+</section>
+
+<section id="pasar">
+  <h2>Pasar Online</h2>
+  <div class="card">
+    <div id="statusPasar" class="status">Menghubungkan ke Supabase...</div>
+    <label for="cariPasar">Cari produk, toko, deskripsi, atau kota</label>
+    <input id="cariPasar" placeholder="Contoh: kopi, Tanjungpinang">
+    <label for="filterKategori">Kategori</label>
+    <select id="filterKategori">
+      <option value="">Semua kategori</option>
+      <option>Makanan &amp; Minuman</option><option>Fashion</option><option>Elektronik</option>
+      <option>Rumah Tangga</option><option>Kecantikan</option><option>Jasa</option>
+      <option>Pertanian</option><option>Lainnya</option>
+    </select>
+    <div class="actions">
+      <button onclick="muatPasarOnline()">Muat Ulang Produk</button>
+      <button class="secondary" onclick="resetFilterPasar()">Hapus Filter</button>
+    </div>
+    <p class="muted">Produk yang ditampilkan berasal dari database online dan berstatus aktif.</p>
+    <div id="daftarPasar"><div class="empty">Sedang memuat produk...</div></div>
+  </div>
+</section>
+
+<section id="akun">
+  <h2>Akun Penjual</h2>
+  <div class="card">
+    <div id="statusAkun" class="status">Memeriksa status akun...</div>
+    <div id="formAuth">
+      <label for="email">Email</label><input id="email" type="email" autocomplete="email" placeholder="nama@email.com">
+      <label for="password">Kata sandi</label><input id="password" type="password" autocomplete="current-password" placeholder="Minimal 6 karakter">
+      <div class="actions">
+        <button onclick="masuk()">Masuk</button>
+        <button class="secondary" onclick="daftarAkun()">Daftar Akun</button>
+      </div>
+      <p class="muted">Pendaftaran dapat memerlukan verifikasi email, sesuai pengaturan Supabase.</p>
+    </div>
+    <div id="akunAktif" class="hidden">
+      <p id="emailAktif"></p>
+      <button class="danger" onclick="keluar()">Keluar</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Terbitkan produk ke Pasar Online</h3>
+    <p class="muted">Masuk terlebih dahulu. Produk diterbitkan ke tabel <code>public.produk</code> dengan pemilik akun Anda.</p>
+    <label for="onlineNama">Nama produk</label><input id="onlineNama" placeholder="Nama produk">
+    <label for="onlineDeskripsi">Deskripsi</label><textarea id="onlineDeskripsi" placeholder="Deskripsi produk"></textarea>
+    <label for="onlineKategori">Kategori</label>
+    <select id="onlineKategori">
+      <option>Makanan &amp; Minuman</option><option>Fashion</option><option>Elektronik</option>
+      <option>Rumah Tangga</option><option>Kecantikan</option><option>Jasa</option>
+      <option>Pertanian</option><option>Lainnya</option>
+    </select>
+    <div class="row">
+      <div><label for="onlineHarga">Harga (Rp)</label><input id="onlineHarga" type="number" min="0" step="1" placeholder="25000"></div>
+      <div><label for="onlineStok">Stok</label><input id="onlineStok" type="number" min="0" value="1"></div>
+    </div>
+    <div class="row">
+      <div><label for="onlinePenjual">Nama toko</label><input id="onlinePenjual" placeholder="Nama toko"></div>
+      <div><label for="onlineKota">Kota</label><input id="onlineKota" value="Tanjungpinang"></div>
+    </div>
+    <label for="onlineFoto">URL foto (opsional)</label><input id="onlineFoto" type="url" placeholder="https://...">
+    <div class="actions"><button onclick="terbitkanProduk()">Terbitkan Produk</button></div>
+    <div id="statusTerbit" class="status hidden"></div>
+  </div>
+</section>
+
+<section id="cadangan">
+  <h2>Cadangan Data</h2>
+  <div class="card">
+    <h3>Ekspor cadangan</h3>
+    <p class="muted">Simpan produk lokal dan riwayat transaksi ke file JSON di perangkat Anda. Produk online tersimpan terpisah di Supabase.</p>
+    <button onclick="eksporCadangan()">Unduh Cadangan JSON</button>
+  </div>
+  <div class="card">
+    <h3>Pulihkan cadangan</h3>
+    <label for="fileCadangan">Pilih file JSON</label>
+    <input id="fileCadangan" type="file" accept=".json,application/json">
+    <div class="actions"><button onclick="pulihkanCadangan()">Pulihkan Data Lokal</button></div>
+  </div>
+  <div class="card">
+    <h3>Penghapusan data lokal</h3>
+    <p class="muted">Tindakan ini menghapus transaksi dan produk lokal pada perangkat ini. Data online di Supabase tidak ikut dihapus.</p>
+    <button class="danger" onclick="hapusDataLokal()">Hapus Semua Data Lokal</button>
+  </div>
+</section>
+</main>
+
+<footer>KasUsaha Lite • Data transaksi lokal tersimpan pada perangkat ini</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 'use strict';
-const $=id=>document.getElementById(id);
-const format=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
-const SUPABASE_URL='https://flvdudmdltjjdjkdngbv.supabase.co';
-// Kunci publishable/anon boleh berada di browser. Jangan pernah menaruh service_role key atau kata sandi di file ini.
-const SUPABASE_KEY='sb_publishable_vh4DgP6YyquvZ5fK1ABp1g_g_lRKhsR';
-const sb=(window.supabase&&window.supabase.createClient)?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
-let transaksi=[],produk=[],localSelectedId=null,onlineRequestNo=0;
-function simpan(){try{localStorage.setItem('kasusaha_transaksi',JSON.stringify(transaksi));localStorage.setItem('kasusaha_produk',JSON.stringify(produk));}catch(e){alert('Penyimpanan gagal. Unduh cadangan dan periksa ruang penyimpanan HP.');}}
-function muat(){try{transaksi=JSON.parse(localStorage.getItem('kasusaha_transaksi')||'[]');produk=JSON.parse(localStorage.getItem('kasusaha_produk')||'[]');if(!Array.isArray(transaksi))transaksi=[];if(!Array.isArray(produk))produk=[];}catch(e){transaksi=[];produk=[];}tampil();}
-function buka(id,tombol){document.querySelectorAll('main .tab').forEach(s=>s.classList.remove('active'));document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));$(id).classList.add('active');if(tombol)tombol.classList.add('active');if(id==='pasar'){tampilPasarLokal();muatPasarOnline();}if(id==='akun'){periksaSesi();tampilProdukLokalUntukOnline();} }
-function aman(teks){return String(teks==null?'':teks).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-function catat(keterangan,jenis,nominal){const jumlah=Number(nominal);if(!keterangan.trim()||!Number.isFinite(jumlah)||jumlah<=0||!Number.isSafeInteger(jumlah)){alert('Isi keterangan dan jumlah rupiah bulat yang benar.');return false;}transaksi.unshift({id:Date.now()+Math.random(),tanggal:new Date().toLocaleDateString('id-ID'),keterangan:keterangan.trim(),jenis,nominal:jumlah});simpan();tampil();return true;}
-$('formKas').addEventListener('submit',function(e){e.preventDefault();if(catat($('keterangan').value,$('jenis').value,$('nominal').value))this.reset();});
-function hapusTransaksi(id){if(confirm('Hapus transaksi ini?')){transaksi=transaksi.filter(t=>String(t.id)!==String(id));simpan();tampil();}}
-function tampilTransaksi(){const q=($('cariTransaksi').value||'').toLowerCase();const data=transaksi.filter(t=>String(t.keterangan||'').toLowerCase().includes(q));$('riwayat').innerHTML=data.length?data.map(t=>`<div class="item"><strong>${aman(t.keterangan)}</strong><p class="small">${aman(t.tanggal)} • ${t.jenis==='masuk'?'Pemasukan':'Pengeluaran'}</p><strong style="color:${t.jenis==='masuk'?'#166534':'#b42318'}">${t.jenis==='masuk'?'+':'−'}${format(t.nominal)}</strong> <button class="danger" type="button" onclick="hapusTransaksi('${String(t.id)}')">Hapus</button></div>`).join(''):'<p>Belum ada transaksi.</p>';}
-$('formProduk').addEventListener('submit',function(e){e.preventDefault();const nama=$('nama').value.trim(),harga=Number($('harga').value),stok=Number($('stok').value);if(!nama||$('harga').value===''||harga<0||!Number.isSafeInteger(harga)||stok<0||!Number.isSafeInteger(stok)){alert('Periksa nama, harga, dan stok. Harga dan stok harus bilangan bulat.');return;}produk.unshift({id:Date.now()+Math.random(),nama,harga,stok,kategori:$('kategori').value,kontak:$('kontak').value.trim(),deskripsi:$('deskripsi').value.trim(),onlineId:null});simpan();this.reset();$('stok').value=1;tampil();alert('Produk berhasil disimpan di perangkat ini.');});
-function kartu(p,bisaHapus){const nama=p.nama||p.nama_produk||'Produk';const id=String(p.id);return `<div class="item"><span class="small">${aman(p.kategori||'Umum')}</span><h3>${aman(nama)}</h3><div class="price">${format(p.harga)}</div><p>Stok: ${Number(p.stok)||0}</p><p>${aman(p.deskripsi||'')}</p>${p.kontak?`<p>Kontak WhatsApp: ${aman(p.kontak)}</p><button class="secondary" type="button" onclick="hubungi('${id}')">Hubungi penjual</button>`:''}${bisaHapus?` <button class="danger" type="button" onclick="hapusProduk('${id}')">Hapus lokal</button>`:''}${bisaHapus&&!p.onlineId?` <button class="primary" type="button" onclick="isiFormOnline('${id}')">Pasang Online</button>`:''}${bisaHapus&&p.onlineId?'<p class="small">Sudah dikaitkan dengan produk online ID '+aman(p.onlineId)+'</p>':''}</div>`;}
-function tampilProduk(){const q=($('cariProduk').value||'').toLowerCase();const data=produk.filter(p=>(String(p.nama||'')+' '+String(p.kategori||'')+' '+String(p.deskripsi||'')).toLowerCase().includes(q));$('daftarProduk').innerHTML=data.length?data.map(p=>kartu(p,true)).join(''):'<p>Belum ada produk yang cocok.</p>';tampilProdukLokalUntukOnline();}
-function tampilPasarLokal(){const q=($('cariPasar').value||'').trim().toLowerCase(),kat=$('filterKategori').value;const data=produk.filter(p=>(String(p.nama||'')+' '+String(p.kategori||'')+' '+String(p.deskripsi||'')).toLowerCase().includes(q)&&(!kat||p.kategori===kat));$('hasilPasar').innerHTML=data.length?data.map(p=>kartu(p,false)).join(''):'<div class="item">Tidak ada produk lokal yang cocok.</div>';}
-function hubungi(id){const p=produk.find(x=>String(x.id)===String(id));if(!p||!p.kontak)return;const nomor=p.kontak.replace(/\D/g,'');if(nomor.length>=8&&nomor.length<=15)window.open('https://wa.me/'+nomor,'_blank','noopener');else alert('Periksa format nomor WhatsApp penjual.');}
-function hapusProduk(id){if(confirm('Hapus produk lokal ini? Produk online yang sudah diterbitkan tidak ikut terhapus.')){produk=produk.filter(p=>String(p.id)!==String(id));simpan();tampil();}}
-function setStatusOnline(teks,error=false){const s=$('statusOnline');s.className=error?'status error':'status';s.textContent=teks;}
-function normalisasi(teks){return String(teks||'').normalize('NFKC').toLocaleLowerCase('id-ID').trim();}
-async function muatPasarOnline(){const hasil=$('hasilOnline');const nomorPermintaan=++onlineRequestNo;setStatusOnline('Menghubungkan ke database online...');hasil.textContent='Memuat produk...';if(!sb){hasil.textContent='';setStatusOnline('Pustaka Supabase gagal dimuat. Periksa koneksi internet dan muat ulang halaman.',true);return;}try{
- // Ambil hanya produk aktif. Filter pencarian dan kategori dilakukan di browser agar karakter khusus tidak merusak query URL.
- const {data,error}=await sb.from('produk').select('id,nama_produk,deskripsi,kategori,harga,stok,nama_penjual,kota,foto_url,created_at,aktif').eq('aktif',true).order('created_at',{ascending:false}).limit(100);
- if(error)throw error;if(nomorPermintaan!==onlineRequestNo)return;if(!Array.isArray(data))throw new Error('Format data dari database tidak valid.');
- const q=normalisasi($('cariPasar').value),kat=$('filterKategori').value;
- const cocok=data.filter(p=>{
-  if(p.aktif===false)return false;
-  if(normalisasi(p.nama_penjual)==='toko contoh kasusaha')return false;
-  if(kat&&String(p.kategori||'')!==kat)return false;
-  if(q&&!normalisasi([p.nama_produk,p.deskripsi,p.nama_penjual,p.kota].join(' ')).includes(q))return false;
-  return true;
- });
- hasil.replaceChildren();if(!cocok.length){hasil.textContent='Belum ada produk aktif yang cocok. Coba hapus kata pencarian atau pilih Semua kategori.';}
- cocok.forEach(p=>{const d=document.createElement('article');d.className='item';const k=document.createElement('p');k.className='small';k.textContent=p.kategori||'Umum';const n=document.createElement('h3');n.textContent=p.nama_produk||'Produk';const h=document.createElement('div');h.className='price';h.textContent=format(p.harga);const s=document.createElement('p');s.textContent='Stok: '+(Number(p.stok)||0);const j=document.createElement('p');j.textContent='Penjual: '+(p.nama_penjual||'Penjual')+(p.kota?' • '+p.kota:'');const de=document.createElement('p');de.textContent=p.deskripsi||'';if(p.foto_url){try{const u=new URL(p.foto_url);if(u.protocol==='https:'){const im=document.createElement('img');im.src=u.href;im.alt=p.nama_produk||'Foto produk';im.loading='lazy';im.className='product-photo';d.appendChild(im);}}catch(e){/* URL foto tidak valid: tampilkan produk tanpa foto. */}}d.append(k,n,h,s,j,de);hasil.appendChild(d);});
- setStatusOnline('Terhubung. Produk aktif yang cocok: '+cocok.length+'. Data aktif di database: '+data.length+'.');
- }catch(e){console.error('Gagal memuat Pasar Online:',e);if(nomorPermintaan!==onlineRequestNo)return;hasil.textContent='Produk online belum dapat dimuat. Data lokal Anda tetap aman.';setStatusOnline('Koneksi/database gagal: '+String(e.message||e).slice(0,220)+'. Periksa kebijakan SELECT/RLS dan koneksi Supabase.',true);}}
-function resetFilterPasar(){$('cariPasar').value='';$('filterKategori').value='';tampilPasarLokal();muatPasarOnline();}
-let timerCariPasar=null;$('cariPasar').addEventListener('input',()=>{tampilPasarLokal();clearTimeout(timerCariPasar);timerCariPasar=setTimeout(muatPasarOnline,350);});$('filterKategori').addEventListener('change',muatPasarOnline);
-function pesanAkun(teks,error=false){$('pesanPenjual').className=error?'status error':'status';$('pesanPenjual').textContent=teks;}
-async function periksaSesi(){if(!sb){pesanAkun('Pustaka login gagal dimuat. Periksa koneksi internet.',true);return null;}try{const {data,error}=await sb.auth.getSession();if(error)throw error;if(data.session)pesanAkun('Login aktif: '+data.session.user.email);else pesanAkun('Belum login. Daftar akun atau login terlebih dahulu.');return data.session;}catch(e){pesanAkun('Tidak dapat memeriksa sesi: '+String(e.message||e).slice(0,160),true);return null;}}
-$('daftarPenjual').addEventListener('click',async()=>{if(!sb)return pesanAkun('Pustaka login belum tersedia.',true);const email=$('emailPenjual').value.trim(),password=$('sandiPenjual').value;if(!email||password.length<6)return pesanAkun('Masukkan email valid dan kata sandi minimal 6 karakter.',true);$('daftarPenjual').disabled=true;pesanAkun('Sedang mendaftarkan akun...');try{const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:'https://wandi0917.github.io/kasusaha-lite/'}});if(error)throw error;if(data.session)pesanAkun('Akun berhasil dibuat dan login aktif.');else pesanAkun('Pendaftaran diterima. Buka email dan tekan tautan konfirmasi sebelum login.');}catch(e){pesanAkun('Pendaftaran gagal: '+String(e.message||'Periksa pengaturan Supabase.').slice(0,220),true);}finally{$('daftarPenjual').disabled=false;}});
-$('loginPenjual').addEventListener('click',async()=>{if(!sb)return pesanAkun('Pustaka login belum tersedia.',true);const email=$('emailPenjual').value.trim(),password=$('sandiPenjual').value;if(!email||!password)return pesanAkun('Masukkan email dan kata sandi.',true);$('loginPenjual').disabled=true;pesanAkun('Sedang login...');try{const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;pesanAkun('Login berhasil: '+data.user.email);tampilProdukLokalUntukOnline();}catch(e){pesanAkun('Login gagal: '+String(e.message||'Pastikan email sudah dikonfirmasi dan kata sandi benar.').slice(0,180),true);}finally{$('loginPenjual').disabled=false;}});
-$('keluarPenjual').addEventListener('click',async()=>{if(!sb)return pesanAkun('Pustaka login belum tersedia.',true);try{const {error}=await sb.auth.signOut();if(error)throw error;pesanAkun('Anda sudah logout.');}catch(e){pesanAkun('Logout gagal: '+String(e.message||e).slice(0,160),true);}});
-function isiFormOnline(id){const p=produk.find(x=>String(x.id)===String(id));if(!p)return;localSelectedId=p.id;$('namaProdukOnline').value=p.nama||'';$('kategoriProdukOnline').value=p.kategori||'Lainnya';$('hargaProdukOnline').value=p.harga??'';$('stokProdukOnline').value=p.stok??1;$('deskripsiProdukOnline').value=p.deskripsi||'';buka('akun',document.querySelectorAll('nav button')[5]);}
-function tampilProdukLokalUntukOnline(){const box=$('produkLokalUntukOnline');if(!box)return;const data=produk.filter(p=>!p.onlineId);box.innerHTML=data.length?data.map(p=>`<div class="item"><strong>${aman(p.nama)}</strong> — ${format(p.harga)}<button class="secondary" style="margin-left:8px" type="button" onclick="isiFormOnline('${String(p.id)}')">Pilih produk ini</button></div>`).join(''):'<p>Tidak ada produk lokal yang belum dikaitkan dengan produk online.</p>';}
-$('kirimProdukOnline').addEventListener('click',async()=>{if(!sb)return pesanAkun('Pustaka login belum tersedia.',true);let sesiData;try{const hasilSesi=await sb.auth.getSession();if(hasilSesi.error)throw hasilSesi.error;sesiData=hasilSesi.data;}catch(e){return pesanAkun('Tidak dapat memeriksa login: '+String(e.message||e).slice(0,150),true);}if(!sesiData.session)return pesanAkun('Silakan login terlebih dahulu sebelum memasang produk.',true);
- const nama=$('namaProdukOnline').value.trim(),kategori=$('kategoriProdukOnline').value,harga=Number($('hargaProdukOnline').value),stok=Number($('stokProdukOnline').value),toko=$('namaTokoOnline').value.trim(),kota=$('kotaProdukOnline').value.trim(),deskripsi=$('deskripsiProdukOnline').value.trim();
- if(!nama||!toko||!kota||$('hargaProdukOnline').value===''||$('stokProdukOnline').value===''||!Number.isSafeInteger(harga)||harga<0||!Number.isSafeInteger(stok)||stok<0)return pesanAkun('Lengkapi nama produk, nama toko, kota, harga dan stok dengan benar. Harga dan stok harus bilangan bulat.',true);
- $('kirimProdukOnline').disabled=true;pesanAkun('Sedang mengirim produk ke Pasar Online...');try{const {data,error}=await sb.from('produk').insert({nama_produk:nama,deskripsi,kategori,harga,stok,nama_penjual:toko,kota,foto_url:'',aktif:true,owner_id:sesiData.session.user.id}).select('id').single();if(error)throw error;
- if(localSelectedId!==null){const lokal=produk.find(p=>String(p.id)===String(localSelectedId));if(lokal){lokal.onlineId=data.id;simpan();}localSelectedId=null;}
- pesanAkun('Produk berhasil dipasang! ID produk: '+data.id+'. Memuat Pasar Online...');$('namaProdukOnline').value='';$('hargaProdukOnline').value='';$('stokProdukOnline').value='1';$('deskripsiProdukOnline').value='';tampilProdukLokalUntukOnline();buka('pasar',document.querySelectorAll('nav button')[3]);await muatPasarOnline();
- }catch(e){console.error('Gagal menerbitkan produk:',e);pesanAkun('Produk belum berhasil dipasang: '+String(e.message||'Periksa aturan INSERT/RLS Supabase.').slice(0,220),true);}finally{$('kirimProdukOnline').disabled=false;}});
-function tampil(){const pemasukan=transaksi.filter(t=>t.jenis==='masuk').reduce((a,t)=>a+Number(t.nominal||0),0),pengeluaran=transaksi.filter(t=>t.jenis==='keluar').reduce((a,t)=>a+Number(t.nominal||0),0);$('masuk').textContent=format(pemasukan);$('keluar').textContent=format(pengeluaran);$('saldo').textContent=format(pemasukan-pengeluaran);$('jumlah').textContent=produk.length;$('terbaru').innerHTML=transaksi.length?transaksi.slice(0,5).map(t=>`<div class="item">${aman(t.keterangan)} <strong>${t.jenis==='masuk'?'+':'−'}${format(t.nominal)}</strong><div class="small">${aman(t.tanggal)}</div></div>`).join(''):'<p>Belum ada transaksi.</p>';tampilTransaksi();tampilProduk();tampilPasarLokal();}
-function ekspor(){const cadangan={versi:1,tanggal:new Date().toISOString(),transaksi,produk};const blob=new Blob([JSON.stringify(cadangan,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='kasusaha-cadangan.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-function impor(){const file=$('fileCadangan').files[0];if(!file){alert('Pilih file JSON terlebih dahulu.');return;}const reader=new FileReader();reader.onload=function(){try{const x=JSON.parse(reader.result);if(!x||!Array.isArray(x.transaksi)||!Array.isArray(x.produk))throw Error();if(!confirm('Data transaksi dan produk lokal saat ini akan diganti. Pastikan sudah mengunduh cadangan terbaru. Lanjutkan?'))return;transaksi=x.transaksi;produk=x.produk;simpan();tampil();alert('Cadangan berhasil dipulihkan.');}catch(e){alert('File cadangan tidak valid. Data lama tidak diubah.');}};reader.readAsText(file);}
-function hapusSemua(){if(confirm('Hapus semua transaksi dan produk lokal di perangkat ini? Data online tidak ikut terhapus. Tindakan ini tidak dapat dibatalkan tanpa cadangan.')){transaksi=[];produk=[];simpan();tampil();}}
-muat();if(sb){periksaSesi();sb.auth.onAuthStateChange((_event,session)=>{if(session)pesanAkun('Login aktif: '+session.user.email);else if($('pesanPenjual'))pesanAkun('Belum login. Daftar akun atau login terlebih dahulu.');});}else{pesanAkun('Pustaka Supabase tidak tersedia. Periksa koneksi internet.',true);setStatusOnline('Pustaka Supabase tidak tersedia. Periksa koneksi internet.',true);}
+
+/* Konfigurasi proyek Supabase Anda */
+const SUPABASE_URL = 'https://flvdudmdltjjdjkdngbv.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_vh4DgP6YyquvZ5fK1ABp1g_g_lRKhsR';
+
+const $ = id => document.getElementById(id);
+const formatRp = n => new Intl.NumberFormat('id-ID',{
+  style:'currency',currency:'IDR',maximumFractionDigits:0
+}).format(Number(n)||0);
+const normalisasi = s => String(s||'').toLowerCase().trim()
+  .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+  .replace(/&/g,' dan ').replace(/\s+/g,' ');
+const angka = v => Number(v);
+const amanArray = v => Array.isArray(v)?v:[];
+let sb = null;
+let produkOnline = [];
+let userAktif = null;
+
+function bacaLokal(kunci, fallback){
+  try {
+    const raw = localStorage.getItem(kunci);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch(e) { return fallback; }
+}
+function simpanLokal(){
+  localStorage.setItem('kasusaha_produk',JSON.stringify(amanArray(produkLokal)));
+  localStorage.setItem('kasusaha_transaksi',JSON.stringify(amanArray(transaksi)));
+}
+let produkLokal = bacaLokal('kasusaha_produk',[]);
+let transaksi = bacaLokal('kasusaha_transaksi',[]);
+
+function tampilStatus(id, pesan, error=false){
+  const el=$(id);
+  if(!el)return;
+  el.textContent=pesan;
+  el.classList.toggle('error',!!error);
+}
+function buat(tag, kelas, teks){
+  const el=document.createElement(tag);
+  if(kelas)el.className=kelas;
+  if(teks!==undefined)el.textContent=teks;
+  return el;
+}
+function bukaTab(id){
+  document.querySelectorAll('main section').forEach(s=>s.classList.toggle('active',s.id===id));
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));
+  if(id==='pasar')muatPasarOnline();
+  if(id==='produk')renderProdukLokal();
+  if(id==='transaksi')renderTransaksi();
+  if(id==='akun')perbaruiAkun();
+}
+document.querySelectorAll('#nav button').forEach(b=>b.addEventListener('click',()=>bukaTab(b.dataset.tab)));
+
+function perbaruiRingkasan(){
+  $('statTransaksi').textContent=transaksi.length;
+  $('statOmzet').textContent=formatRp(transaksi.reduce((s,t)=>s+(Number(t.total)||0),0));
+  $('statProduk').textContent=produkLokal.length;
+  $('statOnline').textContent=produkOnline.length;
+  $('statusBeranda').textContent=sb
+    ?'Klien Supabase siap. Produk online terakhir dimuat: '+produkOnline.length
+    :'Pustaka Supabase belum siap. Periksa koneksi internet.';
+  isiDatalist();
+}
+function isiDatalist(){
+  const dl=$('daftarProduk');dl.replaceChildren();
+  produkLokal.forEach(p=>{
+    const o=document.createElement('option');o.value=p.nama_produk;dl.appendChild(o);
+  });
+}
+function kosongkanKasir(){
+  $('kasirProduk').value='';$('kasirHarga').value='';
+  $('kasirJumlah').value='1';$('kasirCatatan').value='';
+  $('kasirTotal').textContent=formatRp(0);
+}
+function hitungKasir(){
+  $('kasirTotal').textContent=formatRp(angka($('kasirHarga').value)*angka($('kasirJumlah').value));
+}
+$('kasirProduk').addEventListener('change',()=>{
+  const p=produkLokal.find(x=>normalisasi(x.nama_produk)===normalisasi($('kasirProduk').value));
+  if(p)$('kasirHarga').value=p.harga;
+  hitungKasir();
+});
+$('kasirHarga').addEventListener('input',hitungKasir);
+$('kasirJumlah').addEventListener('input',hitungKasir);
+
+function tambahTransaksi(){
+  const nama=$('kasirProduk').value.trim();
+  const harga=angka($('kasirHarga').value);
+  const jumlah=angka($('kasirJumlah').value);
+  if(!nama||!Number.isFinite(harga)||harga<0||!Number.isInteger(jumlah)||jumlah<1){
+    alert('Isi nama produk, harga yang valid, dan jumlah minimal 1.');return;
+  }
+  const p=produkLokal.find(x=>normalisasi(x.nama_produk)===normalisasi(nama));
+  const total=harga*jumlah;
+  transaksi.unshift({
+    id:Date.now(),tanggal:new Date().toISOString(),nama_produk:nama,
+    harga,jumlah,total,catatan:$('kasirCatatan').value.trim()
+  });
+  if(p&&Number(p.stok)>=jumlah)p.stok=Number(p.stok)-jumlah;
+  simpanLokal();renderProdukLokal();renderTransaksi();perbaruiRingkasan();
+  kosongkanKasir();alert('Transaksi berhasil disimpan pada perangkat ini.');
+}
+function renderTransaksi(){
+  const wadah=$('daftarTransaksi');wadah.replaceChildren();
+  const q=normalisasi($('cariTransaksi').value);
+  const hasil=transaksi.filter(t=>!q||normalisasi(t.nama_produk+' '+t.catatan).includes(q));
+  if(!hasil.length){wadah.appendChild(buat('div','empty','Belum ada transaksi yang cocok.'));return;}
+  hasil.forEach(t=>{
+    const c=buat('div','product');
+    const img=buat('div','');img.textContent='🧾';img.style.fontSize='32px';
+    const info=buat('div','');
+    info.appendChild(buat('h3','',t.nama_produk||'Transaksi'));
+    info.appendChild(buat('div','muted',new Date(t.tanggal).toLocaleString('id-ID')));
+    info.appendChild(buat('div','',`${t.jumlah} × ${formatRp(t.harga)}`));
+    info.appendChild(buat('div','price',formatRp(t.total)));
+    if(t.catatan)info.appendChild(buat('div','muted',t.catatan));
+    const del=buat('button','danger','Hapus transaksi');
+    del.addEventListener('click',()=>{
+      if(!confirm('Hapus transaksi ini?'))return;
+      transaksi=transaksi.filter(x=>x.id!==t.id);simpanLokal();
+      renderTransaksi();perbaruiRingkasan();
+    });
+    info.appendChild(del);c.append(img,info);wadah.appendChild(c);
+  });
+}
+$('cariTransaksi').addEventListener('input',renderTransaksi);
+
+function tambahProdukLokal(){
+  const nama=$('lokalNama').value.trim(),harga=angka($('lokalHarga').value),stok=angka($('lokalStok').value);
+  if(!nama||!Number.isFinite(harga)||harga<0||!Number.isInteger(stok)||stok<0){
+    alert('Isi nama, harga, dan stok dengan benar.');return;
+  }
+  produkLokal.unshift({
+    id:'lokal-'+Date.now(),nama_produk:nama,harga,stok,
+    kategori:$('lokalKategori').value,deskripsi:$('lokalDeskripsi').value.trim(),
+    nama_penjual:$('lokalPenjual').value.trim(),kota:$('lokalKota').value.trim(),
+    foto_url:$('lokalFoto').value.trim(),created_at:new Date().toISOString()
+  });
+  simpanLokal();renderProdukLokal();perbaruiRingkasan();
+  ['lokalNama','lokalHarga','lokalDeskripsi','lokalFoto'].forEach(id=>$(id).value='');
+  alert('Produk lokal berhasil disimpan.');
+}
+function renderProdukLokal(){
+  const wadah=$('daftarProdukLokal');wadah.replaceChildren();
+  if(!produkLokal.length){wadah.appendChild(buat('div','empty','Belum ada produk lokal.'));return;}
+  produkLokal.forEach(p=>{
+    const c=buat('div','product');
+    const im=buat('img','');im.alt=p.nama_produk||'Foto produk';
+    if(p.foto_url)im.src=p.foto_url;
+    im.onerror=()=>{im.removeAttribute('src');im.style.visibility='hidden';};
+    const info=buat('div','');
+    info.appendChild(buat('h3','',p.nama_produk));
+    info.appendChild(buat('div','price',formatRp(p.harga)));
+    info.appendChild(buat('div','muted',`Stok: ${p.stok} • ${p.kategori||'Lainnya'}`));
+    if(p.deskripsi)info.appendChild(buat('p','',p.deskripsi));
+    const actions=buat('div','actions');
+    const edit=buat('button','secondary','Ubah stok');
+    edit.addEventListener('click',()=>{
+      const val=prompt('Masukkan stok baru:',p.stok);
+      if(val===null)return;
+      const n=Number(val);
+      if(!Number.isInteger(n)||n<0){alert('Stok harus bilangan bulat nol atau lebih.');return;}
+      p.stok=n;simpanLokal();renderProdukLokal();
+    });
+    const del=buat('button','danger','Hapus');
+    del.addEventListener('click',()=>{
+      if(!confirm('Hapus produk lokal ini?'))return;
+      produkLokal=produkLokal.filter(x=>x.id!==p.id);simpanLokal();
+      renderProdukLokal();perbaruiRingkasan();
+    });
+    actions.append(edit,del);info.appendChild(actions);c.append(im,info);wadah.appendChild(c);
+  });
+}
+
+function resetFilterPasar(){
+  $('cariPasar').value='';$('filterKategori').value='';renderPasar();
+}
+$('cariPasar').addEventListener('input',renderPasar);
+$('filterKategori').addEventListener('change',renderPasar);
+
+async function muatPasarOnline(){
+  const wadah=$('daftarPasar');
+  if(!sb){
+    tampilStatus('statusPasar','Koneksi Supabase belum siap. Periksa internet dan muat ulang halaman.',true);
+    return;
+  }
+  tampilStatus('statusPasar','Mengambil produk aktif dari database...');
+  wadah.replaceChildren(buat('div','empty','Sedang memuat produk...'));
+  try{
+    const {data,error}=await sb.from('produk')
+      .select('id,nama_produk,deskripsi,kategori,harga,stok,nama_penjual,kota,foto_url,created_at,aktif')
+      .eq('aktif',true).order('created_at',{ascending:false}).limit(500);
+    if(error)throw error;
+    produkOnline=amanArray(data);
+    renderPasar();perbaruiRingkasan();
+    tampilStatus('statusPasar',`Terhubung. Produk online aktif yang diterima: ${produkOnline.length}.`);
+  }catch(e){
+    produkOnline=[];renderPasar();perbaruiRingkasan();
+    tampilStatus('statusPasar','Gagal memuat produk: '+(e.message||String(e)),true);
+  }
+}
+function renderPasar(){
+  const wadah=$('daftarPasar');wadah.replaceChildren();
+  const q=normalisasi($('cariPasar').value),kat=normalisasi($('filterKategori').value);
+  const hasil=produkOnline.filter(p=>{
+    if(p.aktif===false)return false;
+    if(kat&&normalisasi(p.kategori)!==kat)return false;
+    const gabung=normalisasi([p.nama_produk,p.deskripsi,p.nama_penjual,p.kota,p.kategori].join(' '));
+    return !q||gabung.includes(q);
+  });
+  if(!hasil.length){
+    wadah.appendChild(buat('div','empty',produkOnline.length
+      ?'Tidak ada produk yang sesuai pencarian atau kategori.'
+      :'Belum ada produk aktif yang dapat ditampilkan. Coba muat ulang atau periksa koneksi dan kebijakan SELECT Supabase.'));
+    return;
+  }
+  hasil.forEach(p=>{
+    const c=buat('div','product');
+    const im=buat('img','');im.alt=p.nama_produk||'Foto produk';
+    if(p.foto_url&&/^https?:\/\//i.test(p.foto_url))im.src=p.foto_url;
+    im.onerror=()=>{im.removeAttribute('src');im.style.visibility='hidden';};
+    const info=buat('div','');
+    info.appendChild(buat('h3','',p.nama_produk||'Produk tanpa nama'));
+    info.appendChild(buat('div','price',formatRp(p.harga)));
+    info.appendChild(buat('div','muted',`${p.kategori||'Lainnya'} • Stok: ${p.stok??0}`));
+    info.appendChild(buat('div','muted',`Penjual: ${p.nama_penjual||'Penjual'} • ${p.kota||'Indonesia'}`));
+    if(p.deskripsi)info.appendChild(buat('p','',p.deskripsi));
+    const hub=buat('button','secondary','Salin informasi produk');
+    hub.addEventListener('click',async()=>{
+      const teks=`${p.nama_produk}\nHarga: ${formatRp(p.harga)}\nPenjual: ${p.nama_penjual||'-'}\nKota: ${p.kota||'-'}\nDeskripsi: ${p.deskripsi||'-'}`;
+      try{await navigator.clipboard.writeText(teks);alert('Informasi produk disalin.');}
+      catch(e){prompt('Salin informasi produk berikut:',teks);}
+    });
+    info.appendChild(hub);c.append(im,info);wadah.appendChild(c);
+  });
+}
+
+async function perbaruiAkun(){
+  if(!sb){tampilStatus('statusAkun','Supabase belum siap.',true);return;}
+  try{
+    const {data,error}=await sb.auth.getSession();
+    if(error)throw error;
+    userAktif=data.session?.user||null;
+    const login=!!userAktif;
+    $('formAuth').classList.toggle('hidden',login);
+    $('akunAktif').classList.toggle('hidden',!login);
+    $('emailAktif').textContent=login?'Masuk sebagai: '+userAktif.email:'';
+    tampilStatus('statusAkun',login?'Akun penjual aktif. Anda dapat menerbitkan produk.':'Belum masuk. Silakan masuk atau daftar akun.');
+    if(login&&!$('onlinePenjual').value)$('onlinePenjual').value=(userAktif.email||'Penjual').split('@')[0];
+  }catch(e){tampilStatus('statusAkun','Gagal memeriksa akun: '+e.message,true);}
+}
+async function masuk(){
+  if(!sb)return alert('Supabase belum siap.');
+  const email=$('email').value.trim(),password=$('password').value;
+  if(!email||!password)return alert('Isi email dan kata sandi.');
+  tampilStatus('statusAkun','Sedang masuk...');
+  const {error}=await sb.auth.signInWithPassword({email,password});
+  if(error){tampilStatus('statusAkun','Gagal masuk: '+error.message,true);return;}
+  await perbaruiAkun();
+}
+async function daftarAkun(){
+  if(!sb)return alert('Supabase belum siap.');
+  const email=$('email').value.trim(),password=$('password').value;
+  if(!email||password.length<6)return alert('Isi email dan kata sandi minimal 6 karakter.');
+  tampilStatus('statusAkun','Mendaftarkan akun...');
+  const {data,error}=await sb.auth.signUp({email,password});
+  if(error){tampilStatus('statusAkun','Pendaftaran gagal: '+error.message,true);return;}
+  if(data.session){await perbaruiAkun();}
+  else tampilStatus('statusAkun','Pendaftaran diterima. Periksa email untuk verifikasi, lalu masuk.');
+}
+async function keluar(){
+  if(!sb)return;
+  const {error}=await sb.auth.signOut();
+  if(error){tampilStatus('statusAkun','Gagal keluar: '+error.message,true);return;}
+  userAktif=null;await perbaruiAkun();
+}
+async function terbitkanProduk(){
+  if(!sb)return alert('Supabase belum siap.');
+  const {data:sessionData,error:sessionError}=await sb.auth.getSession();
+  if(sessionError||!sessionData.session){
+    alert('Silakan masuk ke akun penjual terlebih dahulu.');bukaTab('akun');return;
+  }
+  const nama=$('onlineNama').value.trim();
+  const harga=angka($('onlineHarga').value),stok=angka($('onlineStok').value);
+  if(!nama||!Number.isFinite(harga)||harga<0||!Number.isInteger(stok)||stok<0){
+    alert('Isi nama, harga, dan stok dengan benar.');return;
+  }
+  const foto=$('onlineFoto').value.trim();
+  if(foto&&!/^https?:\/\//i.test(foto)){alert('URL foto harus dimulai dengan https:// atau http://');return;}
+  const user=sessionData.session.user;
+  const produk={
+    nama_produk:nama,deskripsi:$('onlineDeskripsi').value.trim(),
+    kategori:$('onlineKategori').value,harga,stok,
+    nama_penjual:$('onlinePenjual').value.trim()||(user.email||'Penjual').split('@')[0],
+    kota:$('onlineKota').value.trim()||'Indonesia',
+    foto_url:foto||null,aktif:true,owner_id:user.id
+  };
+  const status=$('statusTerbit');status.classList.remove('hidden');
+  tampilStatus('statusTerbit','Sedang menerbitkan produk...');
+  const {error}=await sb.from('produk').insert(produk);
+  if(error){
+    tampilStatus('statusTerbit','Produk belum diterbitkan: '+error.message,true);return;
+  }
+  tampilStatus('statusTerbit','Produk berhasil diterbitkan. Memuat ulang Pasar Online...');
+  ['onlineNama','onlineDeskripsi','onlineHarga','onlineFoto'].forEach(id=>$(id).value='');
+  $('onlineStok').value='1';
+  await muatPasarOnline();
+  tampilStatus('statusTerbit','Produk berhasil diterbitkan ke Supabase.');
+  bukaTab('pasar');
+}
+function unduh(nama,isi,tipe){
+  const blob=new Blob([isi],{type:tipe});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=nama;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function eksporCadangan(){
+  const data={
+    aplikasi:'KasUsaha Lite',versi:2,dibuat:new Date().toISOString(),
+    produk:produkLokal,transaksi
+  };
+  unduh('cadangan-kasusaha-'+new Date().toISOString().slice(0,10)+'.json',
+    JSON.stringify(data,null,2),'application/json');
+}
+async function pulihkanCadangan(){
+  const file=$('fileCadangan').files[0];
+  if(!file)return alert('Pilih file cadangan JSON terlebih dahulu.');
+  try{
+    const data=JSON.parse(await file.text());
+    const p=data.produk||data.produkLokal;
+    const t=data.transaksi;
+    if(!Array.isArray(p)||!Array.isArray(t))throw new Error('Format cadangan tidak sesuai.');
+    if(!confirm(`Pulihkan ${p.length} produk lokal dan ${t.length} transaksi? Data lokal saat ini akan diganti.`))return;
+    produkLokal=p;transaksi=t;simpanLokal();
+    renderProdukLokal();renderTransaksi();perbaruiRingkasan();
+    alert('Cadangan berhasil dipulihkan.');
+  }catch(e){alert('Gagal memulihkan cadangan: '+e.message);}
+}
+function hapusDataLokal(){
+  if(!confirm('Yakin menghapus semua produk lokal dan transaksi pada perangkat ini?'))return;
+  produkLokal=[];transaksi=[];simpanLokal();
+  renderProdukLokal();renderTransaksi();perbaruiRingkasan();
+  alert('Data lokal sudah dihapus. Data Supabase tidak berubah.');
+}
+function exportTransaksiCSV(){
+  const header=['tanggal','nama_produk','harga','jumlah','total','catatan'];
+  const quote=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const rows=[header.join(','),...transaksi.map(t=>header.map(k=>quote(t[k])).join(','))];
+  unduh('transaksi-kasusaha.csv','\uFEFF'+rows.join('\r\n'),'text/csv;charset=utf-8');
+}
+
+async function mulai(){
+  renderProdukLokal();renderTransaksi();perbaruiRingkasan();
+  if(!window.supabase||!window.supabase.createClient){
+    tampilStatus('statusPasar','Pustaka Supabase gagal dimuat. Periksa koneksi internet.',true);
+    tampilStatus('statusBeranda','Pustaka Supabase tidak tersedia.',true);return;
+  }
+  try{
+    sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+    sb.auth.onAuthStateChange(()=>{setTimeout(perbaruiAkun,0);});
+    await perbaruiAkun();
+    await muatPasarOnline();
+  }catch(e){
+    tampilStatus('statusPasar','Inisialisasi Supabase gagal: '+e.message,true);
+  }
+}
+mulai();
 </script>
 </body>
 </html>
