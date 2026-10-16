@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#166534">
 <meta name="description" content="KasUsaha Lite: kasir sederhana, pencatatan keuangan, produk dan pasar online Indonesia.">
-<meta name="kasusaha-build" content="2026-10-15-midtrans-sandbox-2">
+<meta name="kasusaha-build" content="2026-10-16-checkout-response-recovery-1">
 <title>KasUsaha Lite</title>
 <style>
 *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f3f6f4;color:#17211b}header{background:#166534;color:white;padding:18px}header h1{margin:0;font-size:24px}header p{margin:6px 0 0}nav{display:flex;gap:6px;overflow-x:auto;background:white;padding:10px;position:sticky;top:0;z-index:5}nav button{padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#166534;font-weight:bold;white-space:nowrap}nav button.active,.primary{background:#166534;color:white}main{max-width:850px;margin:auto;padding:12px}.tab{display:none}.tab.active{display:block}.card{background:white;border-radius:12px;padding:15px;margin-bottom:12px;border:1px solid #ddd}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}label{display:block;font-weight:bold;margin:10px 0 5px}input,select,textarea{width:100%;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:15px}button{cursor:pointer}.primary{border:0;border-radius:8px;padding:12px;font-weight:bold}.primary:disabled{opacity:.6;cursor:wait}.secondary{background:#e5eee7;color:#166534;border:1px solid #b7d0bd;border-radius:8px;padding:10px;font-weight:bold}.danger{background:#fee2e2;color:#991b1b;border:0;border-radius:8px;padding:8px}.wide{width:100%;margin-top:12px}.item{background:white;border:1px solid #ddd;border-radius:9px;padding:12px;margin-top:9px;overflow-wrap:anywhere}.price{font-weight:bold;color:#166534;font-size:18px}.small{font-size:12px;color:#666}.status{padding:10px;background:#eef5ef;border-radius:8px;margin:10px 0;overflow-wrap:anywhere}.status.error{background:#fff0f0;color:#8a1c1c}.status.warn{background:#fff8e1;color:#785600}footer{text-align:center;padding:20px;color:#666;font-size:12px}img.product-photo{display:block;max-width:100%;max-height:220px;object-fit:contain;margin:8px 0;border-radius:8px}.row-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}@media(max-width:480px){.grid{grid-template-columns:1fr}header h1{font-size:22px}}
@@ -85,6 +85,28 @@ function tampilKeranjang(){const box=$('isiKeranjang');if(!box)return;box.replac
 function tampilRiwayatPesanan(){const box=$('riwayatPesanan');if(!box)return;box.innerHTML=pesanan.length?pesanan.slice().reverse().map(p=>`<div class="item"><strong>${aman(p.nomor)}</strong><p>${aman(p.tanggal)} • ${format(p.total)}</p><p class="small">${aman(statusIndonesia(p.status))} — ${aman(p.nama)}</p><button class="secondary" type="button" onclick="salinPesanan('${String(p.id)}')">Salin ringkasan</button></div>`).join(''):'<p>Belum ada pesanan di perangkat ini.</p>';}
 function ringkasanPesanan(p){return 'PESANAN KASUSAHA LITE\nNomor: '+p.nomor+'\nNama: '+p.nama+'\nWhatsApp: '+p.wa+'\nAlamat/catatan: '+p.alamat+'\n\n'+p.items.map(x=>'- '+x.nama+' x'+x.qty+' = '+format(x.harga*x.qty)+' (penjual: '+x.penjual+')').join('\n')+'\n\nTOTAL: '+format(p.total)+'\nStatus: MENUNGGU KONFIRMASI PENJUAL. Pembayaran belum dilakukan melalui aplikasi.';}
 async function salinPesanan(id){const p=pesanan.find(x=>String(x.id)===String(id));if(!p)return;const t=ringkasanPesanan(p);try{await navigator.clipboard.writeText(t);alert('Ringkasan pesanan disalin. Kirim kepada penjual untuk konfirmasi.');}catch(e){prompt('Salin ringkasan pesanan berikut:',t);}}
+function ambilOrderId(obj,depth=0){
+ if(depth>5||obj==null)return null;
+ if(typeof obj==='string'){
+   const t=obj.trim();
+   if(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(t))return t;
+   if((t.startsWith('{')||t.startsWith('['))){try{return ambilOrderId(JSON.parse(t),depth+1)}catch(_){}}
+   return null;
+ }
+ if(Array.isArray(obj)){for(const x of obj){const id=ambilOrderId(x,depth+1);if(id)return id;}return null;}
+ if(typeof obj==='object'){
+   for(const k of ['order_id','orderId','marketplace_order_id']){const v=obj[k];if(typeof v==='string'&&/^[0-9a-f-]{36}$/i.test(v))return v;}
+   for(const k of ['data','result','order','payload','body']){if(obj[k]!=null){const id=ambilOrderId(obj[k],depth+1);if(id)return id;}}
+ }
+ return null;
+}
+async function cariPesananBaru(uid,nama,total,sejak){
+ const {data,error}=await sb.from('marketplace_orders').select('id,buyer_name,status,total_amount,created_at').eq('buyer_id',uid).eq('buyer_name',nama).gte('created_at',sejak).order('created_at',{ascending:false}).limit(5);
+ if(error)throw error;
+ const list=(data||[]).filter(o=>Math.round(Number(o.total_amount))===Math.round(total));
+ // Hanya menerima hasil tunggal agar tidak salah mengaitkan pesanan lama/berbeda.
+ return list.length===1?list[0]:null;
+}
 $('formCheckout').addEventListener('submit',async e=>{
  e.preventDefault();
  const status=$('statusPesanan');
@@ -92,43 +114,50 @@ $('formCheckout').addEventListener('submit',async e=>{
  const nama=$('namaPembeli').value.trim(),wa=$('waPembeli').value.trim(),alamat=$('alamatPembeli').value.trim();
  if(!nama||!alamat||wa.replace(/\D/g,'').length<8){status.textContent='Periksa nama, nomor WhatsApp, dan alamat pembeli.';return;}
  if(!sb){status.textContent='Koneksi Supabase belum tersedia. Muat ulang halaman dan coba lagi.';return;}
- const {data:sessionData,error:sessionError}=await sb.auth.getSession();
- if(sessionError||!sessionData.session){status.textContent='Silakan login menggunakan akun pembeli di menu Akun Penjual sebelum checkout.';return;}
+ let sessionData;
+ try{const ses=await sb.auth.getSession();if(ses.error)throw ses.error;sessionData=ses.data;}catch(err){status.textContent='Tidak dapat memeriksa login: '+String(err.message||err);return;}
+ if(!sessionData.session){status.textContent='Silakan login menggunakan akun pembeli di menu Akun Penjual sebelum checkout.';return;}
+ const uid=sessionData.session.user.id;
  const nonOnline=keranjang.some(x=>!String(x.id).startsWith('online:'));
  if(nonOnline){status.textContent='Checkout database hanya mendukung produk Pasar Online. Hapus produk lokal dari keranjang terlebih dahulu.';return;}
  const items=keranjang.map(x=>({product_id:Number(String(x.id).slice(7)),quantity:Number(x.qty)}));
  if(items.some(x=>!Number.isSafeInteger(x.product_id)||x.product_id<=0||!Number.isSafeInteger(x.quantity)||x.quantity<=0)){status.textContent='Data produk/jumlah di keranjang tidak valid. Hapus produk tersebut lalu tambahkan kembali dari Pasar Online.';return;}
+ const totalKeranjangOnline=keranjang.reduce((sum,x)=>sum+Number(x.harga||0)*Number(x.qty||1),0);
  const form=e.currentTarget,button=form.querySelector('button[type="submit"]');
  button.disabled=true;status.textContent='Mengirim pesanan ke server... Jangan tutup halaman.';
+ const sejak=new Date(Date.now()-5000).toISOString();
+ let order=null,invokeError=null,resp=null;
  try{
-   const {data,error}=await sb.functions.invoke('create-marketplace-order',{body:{items,buyer_name:nama,buyer_phone:wa,shipping_address:alamat}});
-   if(error){let msg=error.message||'Permintaan checkout gagal.';try{const c=error.context;if(c&&typeof c.json==='function'){const detail=await c.json();if(detail&&detail.error)msg=detail.error;}}catch(_){}throw new Error(msg);}
-   if(!data||data.success!==true||!data.order_id)throw new Error((data&&data.error)||'Server tidak mengembalikan nomor pesanan.');
-   const order={id:data.order_id,nomor:data.order_id,tanggal:new Date().toLocaleString('id-ID'),nama,total:Number(data.total_amount||0),status:data.status||'pending_payment'};
-   pesanan.push(order);
-   try{localStorage.setItem('kasusaha_pesanan',JSON.stringify(pesanan));}catch(_){/* Pesanan tetap tersimpan di server. */}
-   keranjang=[];simpanKeranjang();tampilKeranjang();tampilRiwayatPesanan();
-   status.textContent='Pesanan tersimpan di server. Nomor: '+data.order_id+'. Total '+format(data.total_amount)+'. Menyiapkan halaman pembayaran Sandbox...';
-   // Pesanan sudah tersimpan. Jika membuat tagihan gagal, jangan buat pesanan kedua.
-   try {
-     const {data:payData,error:payError}=await sb.functions.invoke('create-midtrans-payment',{body:{order_id:data.order_id}});
-     if(payError){
-       let msg=payError.message||'Gagal menyiapkan pembayaran.';
-       try{const c=payError.context;if(c&&typeof c.json==='function'){const detail=await c.json();if(detail&&detail.error)msg=detail.error+(detail.message?': '+detail.message:'');}}catch(_){}
-       throw new Error(msg);
-     }
-     if(!payData||payData.success!==true||!payData.redirect_url)throw new Error((payData&&payData.error)||'Server tidak mengembalikan tautan pembayaran.');
-     const tujuan=new URL(payData.redirect_url);
-     if(tujuan.protocol!=='https:'||tujuan.hostname!=='app.sandbox.midtrans.com')throw new Error('Tautan pembayaran bukan halaman Midtrans Sandbox yang diizinkan.');
-     status.textContent='Pesanan tersimpan. Membuka halaman pembayaran Midtrans Sandbox...';
-     window.location.assign(tujuan.href);
-   } catch(payErr) {
-     console.error('Pesanan tersimpan tetapi pembayaran belum terbuka:',payErr);
-     status.textContent='Pesanan sudah tersimpan dengan nomor '+data.order_id+', tetapi halaman pembayaran belum berhasil dibuka: '+String(payErr.message||payErr).slice(0,180)+'. Jangan checkout ulang. Buka menu Pesanan Saya, tekan Muat ulang pesanan, lalu tekan Bayar via Midtrans (Sandbox).';
-     alert('Pesanan berhasil dibuat, tetapi pembayaran belum terbuka. Jangan buat pesanan baru. Buka menu Pesanan Saya dan coba tombol Bayar pada pesanan yang sama.');
+   resp=await sb.functions.invoke('create-marketplace-order',{body:{items,buyer_name:nama,buyer_phone:wa,shipping_address:alamat}});
+   invokeError=resp.error||null;
+   if(!invokeError&&resp.data){const id=ambilOrderId(resp.data);if(id)order={id,total_amount:resp.data.total_amount,status:resp.data.status||'pending_payment'};}
+ }catch(err){invokeError=err;}
+ try{
+   if(!order){
+     // RPC bisa berhasil menyimpan pesanan meskipun Edge Function mengirim respons yang tidak sesuai.
+     const recovered=await cariPesananBaru(uid,nama,totalKeranjangOnline,sejak);
+     if(recovered)order={id:recovered.id,total_amount:recovered.total_amount,status:recovered.status};
    }
- }catch(err){console.error('Checkout online gagal:',err);status.textContent='Checkout gagal: '+String(err.message||err).slice(0,240)+'. Keranjang Anda tetap disimpan. Jika pesan menunjukkan hasil tidak pasti, periksa marketplace_orders sebelum mencoba lagi.';}
- finally{button.disabled=false;}
+ }catch(recoverErr){console.warn('Pemulihan pesanan melalui database gagal:',recoverErr);}
+ if(!order){
+   const detail=invokeError?(invokeError.message||String(invokeError)):(resp&&resp.data&&resp.data.error?resp.data.error:'Nomor pesanan tidak ditemukan pada respons server.');
+   status.textContent='Belum dapat memastikan pesanan tersimpan: '+String(detail).slice(0,180)+'. Keranjang tidak dihapus. Jangan checkout ulang dulu; buka Pesanan Saya dan tekan Muat ulang untuk memastikan apakah pesanan sudah ada.';
+   button.disabled=false;return;
+ }
+ const orderId=order.id,total=Number(order.total_amount||totalKeranjangOnline);
+ const cached={id:orderId,nomor:orderId,tanggal:new Date().toLocaleString('id-ID'),nama,total,status:order.status||'pending_payment'};
+ const existing=pesanan.find(p=>String(p.id)===String(orderId));if(!existing)pesanan.push(cached);else Object.assign(existing,cached);
+ try{localStorage.setItem('kasusaha_pesanan',JSON.stringify(pesanan));}catch(_){}
+ keranjang=[];simpanKeranjang();tampilKeranjang();tampilRiwayatPesanan();
+ status.textContent='Pesanan tersimpan. Nomor: '+orderId+'. Total '+format(total)+'. Menyiapkan pembayaran Sandbox...';
+ try{
+   const {data:payData,error:payError}=await sb.functions.invoke('create-midtrans-payment',{body:{order_id:orderId}});
+   if(payError){let msg=payError.message||'Gagal menyiapkan pembayaran.';try{const c=payError.context;if(c&&typeof c.json==='function'){const d=await c.json();if(d&&d.error)msg=d.error+(d.message?': '+d.message:'');}}catch(_){}throw new Error(msg);}
+   if(!payData||payData.success!==true||!payData.redirect_url)throw new Error((payData&&payData.error)||'Server tidak mengembalikan tautan pembayaran.');
+   let tujuan;try{tujuan=new URL(payData.redirect_url)}catch(_){throw new Error('Tautan pembayaran tidak valid.');}
+   if(tujuan.protocol!=='https:'||tujuan.hostname!=='app.sandbox.midtrans.com')throw new Error('Tautan pembayaran bukan halaman Midtrans Sandbox yang diizinkan.');
+   status.textContent='Pesanan tersimpan. Membuka pembayaran Midtrans Sandbox...';window.location.assign(tujuan.href);
+ }catch(payErr){console.error('Pesanan tersimpan tetapi pembayaran belum terbuka:',payErr);status.textContent='Pesanan sudah tersimpan dengan nomor '+orderId+', tetapi pembayaran belum terbuka: '+String(payErr.message||payErr).slice(0,180)+'. Jangan checkout ulang. Buka Pesanan Saya, tekan Muat ulang, lalu Bayar pada pesanan yang sama.';alert('Pesanan tersimpan. Jangan checkout ulang. Buka menu Pesanan Saya dan tekan Bayar pada pesanan yang sama.');}
 });
 function setStatusArea(id,teks,error=false){const el=$(id);if(!el)return;el.className=error?'status error':'status';el.textContent=teks;}
 function statusIndonesia(status){const map={pending_payment:'Menunggu pembayaran',paid:'Sudah dibayar',processing:'Diproses',shipped:'Dikirim',completed:'Selesai',cancelled:'Dibatalkan',refunded:'Dikembalikan'};return map[status]||String(status||'Status tidak diketahui');}
