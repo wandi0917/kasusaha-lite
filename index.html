@@ -212,6 +212,7 @@ async function muatPesananSaya(){
           copy.onclick=async()=>{try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(lic.license_key);alert('Kode lisensi berhasil disalin. Simpan dengan aman dan jangan bagikan.');}else{input.type='text';input.focus();input.select();const ok=document.execCommand('copy');if(ok)alert('Kode lisensi berhasil disalin.');else prompt('Salin kode lisensi ini:',lic.license_key);}}catch(_){prompt('Salin kode lisensi ini:',lic.license_key);}};
           actions.append(reveal,copy);panel.appendChild(actions);
           if(lic.activated_at||lic.created_at){const act=document.createElement('p');act.className='small';act.textContent='Tanggal penerbitan lisensi: '+new Date(lic.activated_at||lic.created_at).toLocaleString('id-ID');panel.appendChild(act);}
+          const licenseStatus=String(lic.status||'').trim().toLowerCase();
           const alreadyActivated=Boolean(lic.activation_confirmed_at||lic.activation_user_id)||licenseStatus==='active';
           if(!alreadyActivated&&licenseStatus!=='revoked'&&licenseStatus!=='expired'){
             const activate=document.createElement('button');activate.type='button';activate.className='primary wide';activate.textContent='Aktivasi Lisensi';
