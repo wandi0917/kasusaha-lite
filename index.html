@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
 <meta name="description" content="KasUsaha Lite: kasir sederhana, pencatatan keuangan, produk dan pasar online Indonesia.">
-<meta name="kasusaha-build" content="2026-10-21-dashboard-showcase-v4">
+<meta name="kasusaha-build" content="2026-10-21-license-49000-v5">
 <title>KasUsaha Lite</title>
 <style>
 *{box-sizing:border-box}.table-wrap{width:100%;overflow-x:auto;margin-top:10px}.report-table{width:100%;border-collapse:collapse;background:#fff;font-size:13px}.report-table th,.report-table td{border:1px solid #d7ded9;padding:9px;text-align:left;vertical-align:top}.report-table th{background:#e8f1eb;color:#164e2c;white-space:nowrap}.report-table td.amount{white-space:nowrap;text-align:right}.report-table .income{color:#166534}.report-table .expense{color:#b42318}.report-table tr:nth-child(even){background:#f8faf8}body{margin:0;font-family:Arial,sans-serif;background:#f3f6f4;color:#17211b}header{background:#166534;color:white;padding:18px}header h1{margin:0;font-size:24px}header p{margin:6px 0 0}nav{display:flex;gap:6px;overflow-x:auto;background:white;padding:10px;position:sticky;top:0;z-index:5}nav button{padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#166534;font-weight:bold;white-space:nowrap}nav button.active,.primary{background:#166534;color:white}main{max-width:850px;margin:auto;padding:12px}.tab{display:none}.tab.active{display:block}.card{background:white;border-radius:12px;padding:15px;margin-bottom:12px;border:1px solid #ddd}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}label{display:block;font-weight:bold;margin:10px 0 5px}input,select,textarea{width:100%;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:15px}button{cursor:pointer}.primary{border:0;border-radius:8px;padding:12px;font-weight:bold}.primary:disabled{opacity:.6;cursor:wait}.secondary{background:#e5eee7;color:#166534;border:1px solid #b7d0bd;border-radius:8px;padding:10px;font-weight:bold}.danger{background:#fee2e2;color:#991b1b;border:0;border-radius:8px;padding:8px}.wide{width:100%;margin-top:12px}.item{background:white;border:1px solid #ddd;border-radius:9px;padding:12px;margin-top:9px;overflow-wrap:anywhere}.price{font-weight:bold;color:#166534;font-size:18px}.small{font-size:12px;color:#666}.status{padding:10px;background:#eef5ef;border-radius:8px;margin:10px 0;overflow-wrap:anywhere}.status.error{background:#fff0f0;color:#8a1c1c}.status.warn{background:#fff8e1;color:#785600}footer{text-align:center;padding:20px;color:#666;font-size:12px}img.product-photo{display:block;max-width:100%;max-height:220px;object-fit:contain;margin:8px 0;border-radius:8px}.foto-preview-box{margin-top:8px;padding:8px;border:1px dashed #b7d0bd;border-radius:8px}.foto-preview-box img{display:block;max-width:100%;max-height:220px;object-fit:contain;margin:8px auto}.foto-preview-status{font-size:12px;color:#666}.foto-preview-status.error{color:#991b1b}.row-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}@media(max-width:480px){.grid{grid-template-columns:1fr}header h1{font-size:22px}}
@@ -328,6 +328,14 @@ html body main #beranda .ks-float-lock>span{background:#fff0ed;color:#df6d77}
 @media(max-width:850px){html body main #beranda .promo-hero{grid-template-columns:1fr!important}html body main #beranda .ks-dashboard-showcase{min-height:410px!important;grid-row:1;padding:30px 20px!important}html body main #beranda .promo-copy{grid-row:2}}
 @media(max-width:520px){html body main #beranda .ks-dashboard-showcase{min-height:350px!important;padding:24px 10px!important}html body main #beranda .ks-dash-window{padding:10px;border-radius:15px;width:100%}html body main #beranda .ks-dash-stats{gap:5px}html body main #beranda .ks-dash-stat{padding:8px 6px}html body main #beranda .ks-dash-stat em{font-size:7px}html body main #beranda .ks-dash-lower{grid-template-columns:1.1fr .9fr;gap:5px}html body main #beranda .ks-dash-chart,html body main #beranda .ks-dash-products{padding:8px 6px}html body main #beranda .ks-float-receipt{top:4%;right:0;transform:scale(.82);transform-origin:top right}html body main #beranda .ks-float-lock{bottom:3%;left:0;transform:scale(.82);transform-origin:bottom left}html body main #beranda .ks-dash-live{font-size:7px;padding:5px}}
 
+
+/* LICENSE PRICE PROMINENCE */
+html body main #beranda .ks-license-price{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:4px 0 16px;padding:11px 14px;background:linear-gradient(110deg,#fff 0%,#f3f0ff 75%,#fff0ed 100%);border:1px solid #d9d1ff;border-radius:14px;box-shadow:0 7px 19px rgba(79,70,229,.09)}
+html body main #beranda .ks-price-label{font-size:9px;letter-spacing:1.2px;font-weight:900;color:#6d28d9}
+html body main #beranda .ks-license-price strong{font-size:25px;line-height:1;color:#312e81;letter-spacing:-.7px}
+html body main #beranda .ks-price-once{font-size:11px;font-weight:700;color:#666080}
+@media(max-width:520px){html body main #beranda .ks-license-price{padding:10px 11px;gap:5px 8px}html body main #beranda .ks-license-price strong{font-size:23px}html body main #beranda .ks-price-once{font-size:10px}}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -344,11 +352,12 @@ html body main #beranda .ks-float-lock>span{background:#fff0ed;color:#df6d77}
 <span class="promo-kicker">UNTUK USAHA KECIL YANG INGIN TERUS MAJU</span>
 <h2>Jangan biarkan catatan usaha membuat Anda <span>kehilangan kendali.</span></h2>
 <p>Mulai rapikan transaksi, pantau produk, dan pahami arus uang usaha dengan KasUsaha Lite. Lebih sedikit menebak-nebak, lebih banyak waktu untuk melayani pelanggan dan mengembangkan usaha.</p>
+<div class="ks-license-price"><span class="ks-price-label">AKTIVASI LISENSI</span><strong>Rp49.000</strong><span class="ks-price-once">Sekali bayar · tanpa langganan berkala</span></div>
 <div class="promo-actions">
 <button type="button" class="promo-primary" onclick="buka('akunPembeli',document.querySelectorAll('nav button')[8])">Buat Akun Sekarang ↗</button>
 <button type="button" class="promo-secondary" onclick="buka('pasar',document.querySelectorAll('nav button')[3])">Jelajahi Pasar Online</button>
 </div>
-<p class="promo-note">Mulai dengan membuat akun. Tinjau harga, fitur, dan ketentuan lisensi sebelum melakukan pembayaran.</p>
+<p class="promo-note">Aktivasi KasUsaha Lite Rp49.000 sekali bayar. Buat akun, lalu buka Pasar Online untuk membeli lisensi.</p>
 </div>
 <div class="promo-art ks-dashboard-showcase" role="img" aria-label="Ilustrasi visual dashboard KasUsaha Lite dengan ringkasan usaha, grafik, transaksi, dan produk">
   <div class="ks-orbit ks-orbit-one"></div><div class="ks-orbit ks-orbit-two"></div>
