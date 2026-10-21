@@ -568,9 +568,11 @@ function renderFinanceReport(){
 function printFinanceReport(){
  if(!financeBusiness){setFinanceStatus('Hubungkan usaha dahulu sebelum mencetak laporan.',true);return;}
  renderFinanceReport();
- const bounds=financePeriodBounds(), filter=$('financeRoleFilter'), title=$('financeReportCard').dataset.reportTitle||'Laporan Keuangan';
+ const isEmployee=financeMemberRole==='employee';
+ const filter=$('financeRoleFilter'), title=$('financeReportCard').dataset.reportTitle||'Laporan Keuangan';
  const summary=$('financeReportSummary').innerHTML, table=$('financeReportRows').innerHTML;
- $('areaLaporanCetak').innerHTML='<h2>KasUsaha Lite — '+aman(title)+'</h2><p>Usaha: '+aman(financeBusiness.business_name)+'</p><p>Dicetak: '+aman(new Date().toLocaleString('id-ID'))+'</p><p>Filter pencatat: '+aman(filter.selectedOptions[0]?.textContent||'Semua')+'</p><div class="grid">'+summary+'</div><table class="report-table"><thead><tr><th>Tanggal &amp; Jam</th><th>Pencatat</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo periode</th></tr></thead><tbody>'+table+'</tbody></table>';
+ const headings=isEmployee?'<tr><th>Tanggal &amp; Jam</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th></tr>':'<tr><th>Tanggal &amp; Jam</th><th>Pencatat</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo periode</th></tr>';
+ $('areaLaporanCetak').innerHTML='<h2>KasUsaha Lite — '+aman(title)+'</h2><p>Usaha: '+aman(financeBusiness.business_name)+'</p><p>Dicetak: '+aman(new Date().toLocaleString('id-ID'))+'</p>'+(isEmployee?'':'<p>Filter pencatat: '+aman(filter.selectedOptions[0]?.textContent||'Semua')+'</p>')+'<div class="grid">'+summary+'</div><table class="report-table"><thead>'+headings+'</thead><tbody>'+table+'</tbody></table>';
  window.print();
 }
 
