@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
 <meta name="description" content="KasUsaha Lite: kasir sederhana, pencatatan keuangan, produk dan pasar online Indonesia.">
-<meta name="kasusaha-build" content="2026-10-21-dashboard-pro-refresh-v1">
+<meta name="kasusaha-build" content="2026-10-21-indigo-violet-beranda-v2">
 <title>KasUsaha Lite</title>
 <style>
 *{box-sizing:border-box}.table-wrap{width:100%;overflow-x:auto;margin-top:10px}.report-table{width:100%;border-collapse:collapse;background:#fff;font-size:13px}.report-table th,.report-table td{border:1px solid #d7ded9;padding:9px;text-align:left;vertical-align:top}.report-table th{background:#e8f1eb;color:#164e2c;white-space:nowrap}.report-table td.amount{white-space:nowrap;text-align:right}.report-table .income{color:#166534}.report-table .expense{color:#b42318}.report-table tr:nth-child(even){background:#f8faf8}body{margin:0;font-family:Arial,sans-serif;background:#f3f6f4;color:#17211b}header{background:#166534;color:white;padding:18px}header h1{margin:0;font-size:24px}header p{margin:6px 0 0}nav{display:flex;gap:6px;overflow-x:auto;background:white;padding:10px;position:sticky;top:0;z-index:5}nav button{padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#166534;font-weight:bold;white-space:nowrap}nav button.active,.primary{background:#166534;color:white}main{max-width:850px;margin:auto;padding:12px}.tab{display:none}.tab.active{display:block}.card{background:white;border-radius:12px;padding:15px;margin-bottom:12px;border:1px solid #ddd}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}label{display:block;font-weight:bold;margin:10px 0 5px}input,select,textarea{width:100%;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:15px}button{cursor:pointer}.primary{border:0;border-radius:8px;padding:12px;font-weight:bold}.primary:disabled{opacity:.6;cursor:wait}.secondary{background:#e5eee7;color:#166534;border:1px solid #b7d0bd;border-radius:8px;padding:10px;font-weight:bold}.danger{background:#fee2e2;color:#991b1b;border:0;border-radius:8px;padding:8px}.wide{width:100%;margin-top:12px}.item{background:white;border:1px solid #ddd;border-radius:9px;padding:12px;margin-top:9px;overflow-wrap:anywhere}.price{font-weight:bold;color:#166534;font-size:18px}.small{font-size:12px;color:#666}.status{padding:10px;background:#eef5ef;border-radius:8px;margin:10px 0;overflow-wrap:anywhere}.status.error{background:#fff0f0;color:#8a1c1c}.status.warn{background:#fff8e1;color:#785600}footer{text-align:center;padding:20px;color:#666;font-size:12px}img.product-photo{display:block;max-width:100%;max-height:220px;object-fit:contain;margin:8px 0;border-radius:8px}.foto-preview-box{margin-top:8px;padding:8px;border:1px dashed #b7d0bd;border-radius:8px}.foto-preview-box img{display:block;max-width:100%;max-height:220px;object-fit:contain;margin:8px auto}.foto-preview-status{font-size:12px;color:#666}.foto-preview-status.error{color:#991b1b}.row-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}@media(max-width:480px){.grid{grid-template-columns:1fr}header h1{font-size:22px}}
@@ -150,6 +150,86 @@ html body main #beranda .promo-art:after{color:#115e59!important;border:1px soli
 button:focus-visible,a:focus-visible{outline:3px solid #5eead4!important;outline-offset:2px}
 @media(max-width:650px){html body>header{padding:18px 16px!important}html body nav{position:sticky;top:0;padding:8px!important}html body nav button{padding:9px 11px!important;font-size:12px!important}html body main{padding:10px!important}html body main .card{padding:14px!important}html body main #beranda .promo-hero{border-radius:18px!important}html body main #beranda .promo-art{border-radius:17px 17px 0 0!important}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}}
+
+
+/* BERANDA SIGNATURE THEME — indigo, violet, coral, warm ivory */
+html body main #beranda.tab.active{
+ background:linear-gradient(145deg,#f7f7ff 0%,#f8f4ff 42%,#fff7f2 100%)!important;
+ color:#202344!important;border:1px solid #e7e3fa!important;
+ box-shadow:0 16px 46px rgba(67,56,202,.07)!important
+}
+html body main #beranda .promo-hero{
+ grid-template-columns:1.04fr .96fr!important;
+ background:linear-gradient(125deg,#e9eaff 0%,#f2eaff 48%,#fff0e9 100%)!important;
+ border:1px solid #ddd6fe!important;border-radius:28px!important;
+ box-shadow:0 22px 55px rgba(91,66,180,.15)!important;overflow:hidden
+}
+html body main #beranda .promo-copy{padding:clamp(24px,4.4vw,54px)!important}
+html body main #beranda .promo-kicker{
+ background:linear-gradient(90deg,#fff,#f5f3ff)!important;color:#6d28d9!important;
+ border:1px solid #ddd6fe!important;box-shadow:0 4px 12px rgba(109,40,217,.07)
+}
+html body main #beranda .promo-copy h2{
+ color:#211d49!important;letter-spacing:-1.35px!important;
+ font-size:clamp(33px,4.7vw,53px)!important;line-height:1.06!important
+}
+html body main #beranda .promo-copy h2 span{
+ background:linear-gradient(100deg,#4f46e5 0%,#9333ea 52%,#e85d75 100%)!important;
+ -webkit-background-clip:text!important;background-clip:text!important;
+ color:transparent!important;-webkit-text-fill-color:transparent!important
+}
+html body main #beranda .promo-copy p{color:#555675!important;line-height:1.75!important}
+html body main #beranda .promo-primary{
+ background:linear-gradient(100deg,#4f46e5 0%,#7c3aed 62%,#a855f7 100%)!important;
+ color:white!important;border:0!important;border-radius:13px!important;
+ box-shadow:0 9px 23px rgba(109,40,217,.25)!important
+}
+html body main #beranda .promo-primary:hover{box-shadow:0 12px 28px rgba(109,40,217,.32)!important}
+html body main #beranda .promo-secondary{
+ background:#fff!important;color:#5b21b6!important;border:1px solid #d8ccff!important;
+ border-radius:13px!important;box-shadow:0 5px 16px rgba(91,33,182,.06)!important
+}
+html body main #beranda .promo-art{
+ min-height:390px!important;
+ background-image:linear-gradient(135deg,rgba(79,70,229,.10),rgba(232,93,117,.05)),url('https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1200&q=85')!important;
+ background-size:cover!important;background-position:center!important;position:relative
+}
+html body main #beranda .promo-art:after{
+ content:"Satu dashboard. Usaha lebih terarah."!important;max-width:250px;
+ color:#4c1d95!important;background:linear-gradient(110deg,#ffffffef,#f5f3ffef)!important;
+ border:1px solid #ddd6fe!important;border-radius:15px!important;
+ box-shadow:0 12px 28px rgba(49,46,129,.16)!important
+}
+html body main #beranda .promo-benefits{gap:13px!important}
+html body main #beranda .promo-benefit{
+ background:#fff!important;border:1px solid #e7e5f4!important;border-radius:17px!important;
+ box-shadow:0 8px 23px rgba(49,46,129,.055)!important;transition:transform .18s ease,box-shadow .18s ease
+}
+html body main #beranda .promo-benefit:hover{transform:translateY(-3px);box-shadow:0 13px 27px rgba(49,46,129,.10)!important}
+html body main #beranda .promo-benefit:nth-child(1){background:linear-gradient(145deg,#eef2ff,#fff)!important;border-color:#c7d2fe!important}
+html body main #beranda .promo-benefit:nth-child(2){background:linear-gradient(145deg,#f5f3ff,#fff)!important;border-color:#ddd6fe!important}
+html body main #beranda .promo-benefit:nth-child(3){background:linear-gradient(145deg,#fff1ed,#fff)!important;border-color:#fed7c9!important}
+html body main #beranda .promo-benefit:nth-child(4){background:linear-gradient(145deg,#fff7e8,#fff)!important;border-color:#fde2ad!important}
+html body main #beranda .promo-benefit b{color:#30265c!important}
+html body main #beranda .promo-benefit span{color:#65627e!important}
+html body main #beranda .promo-section-title{color:#38256d!important;font-size:clamp(22px,3vw,30px)!important;letter-spacing:-.6px}
+html body main #beranda .promo-product{
+ background:#fff!important;border:1px solid #e6e2f5!important;border-radius:19px!important;
+ box-shadow:0 10px 28px rgba(49,46,129,.075)!important;overflow:hidden
+}
+html body main #beranda .promo-product img{transition:transform .25s ease}
+html body main #beranda .promo-product:hover img{transform:scale(1.035)}
+html body main #beranda .promo-product h3{color:#38256d!important}
+html body main #beranda .promo-product p,html body main #beranda .promo-note{color:#65627e!important}
+html body main #beranda .promo-home~.card{border-color:#e6e2f5!important}
+@media(max-width:650px){
+ html body main #beranda.tab.active{background:linear-gradient(155deg,#f7f7ff,#fff7f2)!important;border-radius:18px!important}
+ html body main #beranda .promo-hero{grid-template-columns:1fr!important;border-radius:20px!important}
+ html body main #beranda .promo-art{min-height:220px!important;border-radius:18px 18px 0 0!important;grid-row:1}
+ html body main #beranda .promo-copy{padding:23px!important}
+ html body main #beranda .promo-copy h2{font-size:34px!important}
+ html body main #beranda .promo-benefit{padding:13px 11px!important}
+}
 
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
