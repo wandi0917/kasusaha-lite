@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#166534">
 <meta name="description" content="KasUsaha Lite: kasir sederhana, pencatatan keuangan, produk dan pasar online Indonesia.">
-<meta name="kasusaha-build" content="2026-10-21-owner-employee-finance-separation-1">
+<meta name="kasusaha-build" content="2026-10-21-employee-income-only-owner-full-report-2">
 <title>KasUsaha Lite</title>
 <style>
 *{box-sizing:border-box}.table-wrap{width:100%;overflow-x:auto;margin-top:10px}.report-table{width:100%;border-collapse:collapse;background:#fff;font-size:13px}.report-table th,.report-table td{border:1px solid #d7ded9;padding:9px;text-align:left;vertical-align:top}.report-table th{background:#e8f1eb;color:#164e2c;white-space:nowrap}.report-table td.amount{white-space:nowrap;text-align:right}.report-table .income{color:#166534}.report-table .expense{color:#b42318}.report-table tr:nth-child(even){background:#f8faf8}body{margin:0;font-family:Arial,sans-serif;background:#f3f6f4;color:#17211b}header{background:#166534;color:white;padding:18px}header h1{margin:0;font-size:24px}header p{margin:6px 0 0}nav{display:flex;gap:6px;overflow-x:auto;background:white;padding:10px;position:sticky;top:0;z-index:5}nav button{padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#166534;font-weight:bold;white-space:nowrap}nav button.active,.primary{background:#166534;color:white}main{max-width:850px;margin:auto;padding:12px}.tab{display:none}.tab.active{display:block}.card{background:white;border-radius:12px;padding:15px;margin-bottom:12px;border:1px solid #ddd}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}label{display:block;font-weight:bold;margin:10px 0 5px}input,select,textarea{width:100%;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:15px}button{cursor:pointer}.primary{border:0;border-radius:8px;padding:12px;font-weight:bold}.primary:disabled{opacity:.6;cursor:wait}.secondary{background:#e5eee7;color:#166534;border:1px solid #b7d0bd;border-radius:8px;padding:10px;font-weight:bold}.danger{background:#fee2e2;color:#991b1b;border:0;border-radius:8px;padding:8px}.wide{width:100%;margin-top:12px}.item{background:white;border:1px solid #ddd;border-radius:9px;padding:12px;margin-top:9px;overflow-wrap:anywhere}.price{font-weight:bold;color:#166534;font-size:18px}.small{font-size:12px;color:#666}.status{padding:10px;background:#eef5ef;border-radius:8px;margin:10px 0;overflow-wrap:anywhere}.status.error{background:#fff0f0;color:#8a1c1c}.status.warn{background:#fff8e1;color:#785600}footer{text-align:center;padding:20px;color:#666;font-size:12px}img.product-photo{display:block;max-width:100%;max-height:220px;object-fit:contain;margin:8px 0;border-radius:8px}.foto-preview-box{margin-top:8px;padding:8px;border:1px dashed #b7d0bd;border-radius:8px}.foto-preview-box img{display:block;max-width:100%;max-height:220px;object-fit:contain;margin:8px auto}.foto-preview-status{font-size:12px;color:#666}.foto-preview-status.error{color:#991b1b}.row-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}@media(max-width:480px){.grid{grid-template-columns:1fr}header h1{font-size:22px}}
@@ -50,7 +50,7 @@ body:not(.license-verified) main #cadangan{display:none!important}
 <h3>Catat transaksi usaha</h3>
 <form id="financeForm">
 <label for="financeDescription">Keterangan transaksi</label><input id="financeDescription" maxlength="300" required placeholder="Contoh: Penjualan harian / beli bahan baku">
-<label for="financeType">Jenis transaksi</label><select id="financeType"><option value="income">Pemasukan</option><option value="expense">Pengeluaran</option></select>
+<div id="financeTypeWrap"><label for="financeType">Jenis transaksi</label><select id="financeType"><option value="income">Pemasukan</option><option value="expense">Pengeluaran</option></select></div>
 <label for="financeAmount">Nominal (Rp)</label><input id="financeAmount" type="number" min="1" step="1" required placeholder="50000">
 <label for="financeDate">Tanggal transaksi</label><input id="financeDate" type="date" required>
 <label for="financeCategory">Kategori</label><select id="financeCategory"><option>Penjualan</option><option>Modal</option><option>Belanja stok</option><option>Operasional</option><option>Gaji</option><option>Transportasi</option><option>Listrik/Air/Internet</option><option>Prive Owner</option><option>Lainnya</option></select>
@@ -58,10 +58,10 @@ body:not(.license-verified) main #cadangan{display:none!important}
 </form>
 </div>
 <div class="card" id="financeReportCard" hidden>
-<h3>Laporan keuangan owner dan karyawan</h3>
+<h3 id="financeReportTitle">Laporan Keuangan Lengkap (Owner)</h3>
 <label for="financePeriod">Periode laporan</label><select id="financePeriod" onchange="renderFinanceReport()"><option value="daily">Harian</option><option value="weekly">Mingguan (Senin–Minggu)</option><option value="monthly">Bulanan</option></select>
 <label for="financeReportDate">Tanggal acuan</label><input id="financeReportDate" type="date" onchange="renderFinanceReport()">
-<label for="financeRoleFilter">Pisahkan laporan berdasarkan pencatat</label><select id="financeRoleFilter" onchange="renderFinanceReport()"><option value="all">Semua transaksi (khusus Owner)</option><option value="owner">Transaksi Owner</option><option value="employee">Transaksi Karyawan</option><option value="mine">Transaksi saya</option></select>
+<div id="financeRoleFilterWrap"><label for="financeRoleFilter">Pisahkan laporan berdasarkan pencatat</label><select id="financeRoleFilter" onchange="renderFinanceReport()"><option value="all">Semua transaksi</option><option value="owner">Transaksi Owner</option><option value="employee">Transaksi Karyawan</option><option value="mine">Transaksi saya</option></select></div>
 <div id="financeReportSummary" class="grid"></div>
 <div class="row-actions"><button type="button" class="secondary" onclick="loadFinanceWorkspace()">Muat ulang laporan</button><button type="button" class="primary" onclick="printFinanceReport()">Cetak / Simpan PDF</button></div>
 <div class="table-wrap"><table class="report-table"><thead><tr><th>Tanggal &amp; Jam</th><th>Pencatat</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo periode</th></tr></thead><tbody id="financeReportRows"><tr><td colspan="7">Memuat laporan...</td></tr></tbody></table></div>
@@ -516,7 +516,7 @@ async function loadFinanceWorkspace(){
   if(be)throw be;
   financeBusiness=business;financeMemberRole=member.role;setup.hidden=true;info.hidden=false;entry.hidden=false;report.hidden=false;
   info.innerHTML='<p><strong>Usaha:</strong> '+aman(business.business_name)+'<br><strong>Peran akun:</strong> '+financeRoleLabel(member.role)+(member.role==='owner'?'<br><strong>Kode undangan karyawan:</strong> <code>'+aman(business.invite_code)+'</code><br><span class="small">Bagikan kode ini hanya kepada karyawan yang Anda izinkan.</span>':'')+'</p>';
-  const roleFilter=$('financeRoleFilter');if(member.role==='employee'){roleFilter.innerHTML='<option value="mine">Pemasukan saya</option>';roleFilter.value='mine';$('financeType').value='income';$('financeType').disabled=true;$('financeType').parentElement.hidden=true;$('financeReportTitle').textContent='Laporan Pemasukan Karyawan';$('financeRoleFilterWrap').hidden=true;}else{roleFilter.innerHTML='<option value="all">Semua transaksi</option><option value="owner">Transaksi Owner</option><option value="employee">Transaksi Karyawan</option><option value="mine">Transaksi saya</option>';$('financeType').disabled=false;$('financeType').parentElement.hidden=false;$('financeReportTitle').textContent='Laporan Keuangan Lengkap (Owner)';$('financeRoleFilterWrap').hidden=false;}
+  const roleFilter=$('financeRoleFilter');if(member.role==='employee'){roleFilter.innerHTML='<option value="mine">Pemasukan saya</option>';roleFilter.value='mine';$('financeType').value='income';$('financeType').disabled=true;$('financeTypeWrap').hidden=true;$('financeReportTitle').textContent='Laporan Pemasukan Karyawan';$('financeRoleFilterWrap').hidden=true;}else{roleFilter.innerHTML='<option value="all">Semua transaksi</option><option value="owner">Transaksi Owner</option><option value="employee">Transaksi Karyawan</option><option value="mine">Transaksi saya</option>';$('financeType').disabled=false;$('financeTypeWrap').hidden=false;$('financeReportTitle').textContent='Laporan Keuangan Lengkap (Owner)';$('financeRoleFilterWrap').hidden=false;}
   if(!$('financeDate').value)$('financeDate').value=financeToday();if(!$('financeReportDate').value)$('financeReportDate').value=financeToday();
   const {data:rows,error:re}=await sb.from('financial_transactions').select('id,business_id,created_by,created_by_role,transaction_date,transaction_type,amount,description,category,created_at').eq('business_id',business.id).order('transaction_date',{ascending:true}).order('created_at',{ascending:true});
   if(re)throw re;financeRows=rows||[];renderFinanceReport();setFinanceStatus('Data usaha tersambung. '+financeRows.length+' transaksi bersama berhasil dimuat.');
@@ -543,20 +543,27 @@ function financePeriodBounds(){
 function financeDateISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function renderFinanceReport(){
  const tbody=$('financeReportRows');if(!tbody)return;
+ const isEmployee=financeMemberRole==='employee';
  if(!financeBusiness){tbody.innerHTML='<tr><td colspan="7">Buat atau hubungkan usaha terlebih dahulu.</td></tr>';return;}
  const bounds=financePeriodBounds();if(!bounds){tbody.innerHTML='<tr><td colspan="7">Pilih tanggal laporan yang valid.</td></tr>';return;}
  let rows=financeRows.filter(r=>r.transaction_date>=bounds.start&&r.transaction_date<=bounds.end);
- const filter=$('financeRoleFilter').value;
- if(filter==='owner'||filter==='employee')rows=rows.filter(r=>r.created_by_role===filter);
- if(filter==='mine')rows=rows.filter(r=>r.created_by===financeMemberUserId);
+ if(isEmployee){rows=rows.filter(r=>r.created_by===financeMemberUserId&&r.created_by_role==='employee'&&r.transaction_type==='income');}
+ else{
+  const filter=$('financeRoleFilter').value;
+  if(filter==='owner'||filter==='employee')rows=rows.filter(r=>r.created_by_role===filter);
+  if(filter==='mine')rows=rows.filter(r=>r.created_by===financeMemberUserId);
+ }
  const income=rows.filter(r=>r.transaction_type==='income').reduce((a,r)=>a+Number(r.amount||0),0);
  const expense=rows.filter(r=>r.transaction_type==='expense').reduce((a,r)=>a+Number(r.amount||0),0);
  let running=0;
- const summary=$('financeReportSummary');
- summary.innerHTML='<div class="finance-metric">Total pemasukan<strong>'+format(income)+'</strong></div><div class="finance-metric">Total pengeluaran<strong>'+format(expense)+'</strong></div><div class="finance-metric">Selisih periode<strong>'+format(income-expense)+'</strong></div>';
- const label=$('financePeriod').selectedOptions[0]?.textContent||'Laporan';
- $('financeReportCard').dataset.reportTitle='Laporan '+label+' '+bounds.start+' s.d. '+bounds.end;
- tbody.innerHTML=rows.length?rows.map(r=>{const d=new Date(r.created_at);running+=r.transaction_type==='income'?Number(r.amount):-Number(r.amount);return '<tr><td>'+aman(r.transaction_date)+'<br>'+aman(Number.isFinite(d.getTime())?d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'—')+'</td><td>'+financeRoleLabel(r.created_by_role)+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+(r.transaction_type==='income'?format(r.amount):'—')+'</td><td class="amount expense">'+(r.transaction_type==='expense'?format(r.amount):'—')+'</td><td class="amount">'+format(running)+'</td></tr>';}).join(''):'<tr><td colspan="7">Tidak ada transaksi pada periode ini.</td></tr>';
+ $('financeReportSummary').innerHTML=isEmployee
+  ?'<div class="finance-metric">Total pemasukan<strong>'+format(income)+'</strong></div>'
+  :'<div class="finance-metric">Total pemasukan<strong>'+format(income)+'</strong></div><div class="finance-metric">Total pengeluaran<strong>'+format(expense)+'</strong></div><div class="finance-metric">Selisih periode<strong>'+format(income-expense)+'</strong></div>';
+ $('financeReportTitle').textContent=isEmployee?'Laporan Pemasukan Karyawan':'Laporan Keuangan Lengkap (Owner)';
+ $('financeReportCard').dataset.reportTitle=(isEmployee?'Laporan Pemasukan Karyawan — ':'Laporan Keuangan Lengkap — ')+$('financePeriod').selectedOptions[0]?.textContent+' '+bounds.start+' s.d. '+bounds.end;
+ const rowHtml=rows.map(r=>{const d=new Date(r.created_at);const time=Number.isFinite(d.getTime())?d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'—';if(isEmployee)return '<tr><td>'+aman(r.transaction_date)+'<br>'+aman(time)+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+format(r.amount)+'</td></tr>';running+=r.transaction_type==='income'?Number(r.amount):-Number(r.amount);return '<tr><td>'+aman(r.transaction_date)+'<br>'+aman(time)+'</td><td>'+financeRoleLabel(r.created_by_role)+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+(r.transaction_type==='income'?format(r.amount):'—')+'</td><td class="amount expense">'+(r.transaction_type==='expense'?format(r.amount):'—')+'</td><td class="amount">'+format(running)+'</td></tr>';}).join('');
+ $('financeReportHead').innerHTML=isEmployee?'<tr><th>Tanggal &amp; Jam</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th></tr>':'<tr><th>Tanggal &amp; Jam</th><th>Pencatat</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo periode</th></tr>';
+ tbody.innerHTML=rowHtml||(isEmployee?'<tr><td colspan="4">Belum ada pemasukan pada periode ini.</td></tr>':'<tr><td colspan="7">Tidak ada transaksi pada periode ini.</td></tr>');
 }
 function printFinanceReport(){
  if(!financeBusiness){setFinanceStatus('Hubungkan usaha dahulu sebelum mencetak laporan.',true);return;}
