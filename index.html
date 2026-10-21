@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
 <meta name="description" content="KasUsaha Lite: kasir sederhana, pencatatan keuangan, produk dan pasar online Indonesia.">
-<meta name="kasusaha-build" content="2026-10-21-shopee-affiliate-tracking-v1">
+<meta name="kasusaha-build" content="2026-10-21-dashboard-pro-refresh-v1">
 <title>KasUsaha Lite</title>
 <style>
 *{box-sizing:border-box}.table-wrap{width:100%;overflow-x:auto;margin-top:10px}.report-table{width:100%;border-collapse:collapse;background:#fff;font-size:13px}.report-table th,.report-table td{border:1px solid #d7ded9;padding:9px;text-align:left;vertical-align:top}.report-table th{background:#e8f1eb;color:#164e2c;white-space:nowrap}.report-table td.amount{white-space:nowrap;text-align:right}.report-table .income{color:#166534}.report-table .expense{color:#b42318}.report-table tr:nth-child(even){background:#f8faf8}body{margin:0;font-family:Arial,sans-serif;background:#f3f6f4;color:#17211b}header{background:#166534;color:white;padding:18px}header h1{margin:0;font-size:24px}header p{margin:6px 0 0}nav{display:flex;gap:6px;overflow-x:auto;background:white;padding:10px;position:sticky;top:0;z-index:5}nav button{padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#166534;font-weight:bold;white-space:nowrap}nav button.active,.primary{background:#166534;color:white}main{max-width:850px;margin:auto;padding:12px}.tab{display:none}.tab.active{display:block}.card{background:white;border-radius:12px;padding:15px;margin-bottom:12px;border:1px solid #ddd}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}label{display:block;font-weight:bold;margin:10px 0 5px}input,select,textarea{width:100%;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:15px}button{cursor:pointer}.primary{border:0;border-radius:8px;padding:12px;font-weight:bold}.primary:disabled{opacity:.6;cursor:wait}.secondary{background:#e5eee7;color:#166534;border:1px solid #b7d0bd;border-radius:8px;padding:10px;font-weight:bold}.danger{background:#fee2e2;color:#991b1b;border:0;border-radius:8px;padding:8px}.wide{width:100%;margin-top:12px}.item{background:white;border:1px solid #ddd;border-radius:9px;padding:12px;margin-top:9px;overflow-wrap:anywhere}.price{font-weight:bold;color:#166534;font-size:18px}.small{font-size:12px;color:#666}.status{padding:10px;background:#eef5ef;border-radius:8px;margin:10px 0;overflow-wrap:anywhere}.status.error{background:#fff0f0;color:#8a1c1c}.status.warn{background:#fff8e1;color:#785600}footer{text-align:center;padding:20px;color:#666;font-size:12px}img.product-photo{display:block;max-width:100%;max-height:220px;object-fit:contain;margin:8px 0;border-radius:8px}.foto-preview-box{margin-top:8px;padding:8px;border:1px dashed #b7d0bd;border-radius:8px}.foto-preview-box img{display:block;max-width:100%;max-height:220px;object-fit:contain;margin:8px auto}.foto-preview-status{font-size:12px;color:#666}.foto-preview-status.error{color:#991b1b}.row-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}@media(max-width:480px){.grid{grid-template-columns:1fr}header h1{font-size:22px}}
@@ -97,6 +97,59 @@ html body nav button{background:transparent!important;color:#fff!important;borde
 html body nav button.active{background:#fff!important;color:#4f46e5!important}
 html body button.primary{background:linear-gradient(90deg,#2563eb,#7c3aed)!important;color:#fff!important}
 @media(max-width:650px){html body main #beranda.tab.active{width:calc(100% - 12px)!important;margin:8px auto!important;padding:9px!important}html body main #beranda .promo-hero{min-height:unset!important}html body main #beranda .promo-art{min-height:230px!important;border-radius:22px 22px 0 0!important;grid-row:1}html body main #beranda .promo-copy h2{font-size:32px!important}}
+
+
+/* DASHBOARD PRO REFRESH 2026-10-21: visual hierarchy, clean surfaces, accessible controls */
+:root{--ks-ink:#172b4d;--ks-muted:#64748b;--ks-line:#e2e8f0;--ks-brand:#0f766e;--ks-brand-dark:#115e59;--ks-surface:#fff;--ks-page:#f5f7fb}
+html{scroll-behavior:smooth}
+body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;background:var(--ks-page)!important;color:var(--ks-ink)!important;line-height:1.5}
+body>header{background:linear-gradient(115deg,#102a43 0%,#164e63 58%,#0f766e 100%)!important;padding:22px clamp(16px,4vw,42px)!important;box-shadow:0 5px 22px rgba(15,39, sixty,0)!important}
+body>header h1{font-size:clamp(23px,3vw,30px)!important;font-weight:800;letter-spacing:-.7px}
+body>header p{color:#d9f3f0!important;font-size:13px;letter-spacing:.2px}
+html body nav{background:#fff!important;border-bottom:1px solid var(--ks-line);box-shadow:0 5px 18px rgba(15,23,42,.05);padding:10px clamp(10px,3vw,30px)!important;gap:7px!important}
+html body nav button{background:#f8fafc!important;color:#475569!important;border:1px solid #e2e8f0!important;border-radius:10px!important;padding:10px 13px!important;font-size:13px!important;font-weight:700;transition:background .16s,border-color .16s,transform .16s}
+html body nav button:hover{background:#ecfdf5!important;color:#115e59!important;border-color:#99f6e4!important}
+html body nav button.active{background:#0f766e!important;color:#fff!important;border-color:#0f766e!important;box-shadow:0 4px 10px rgba(15,118,110,.18)}
+html body main{max-width:1240px!important;padding:clamp(12px,2.5vw,28px)!important}
+html body main .tab>h2{font-size:clamp(22px,3vw,29px);letter-spacing:-.6px;color:#16324f;margin:8px 0 18px}
+html body main .card,html body main .item{border:1px solid var(--ks-line)!important;border-radius:16px!important;background:#fff!important;box-shadow:0 4px 18px rgba(15,23,42,.035)!important;padding:clamp(14px,2vw,21px)!important}
+html body main .card h3{color:#173b4f;font-size:17px;letter-spacing:-.2px}
+html body main .grid{gap:14px}
+html body main .grid>.card{min-height:98px}
+html body main label{color:#334155;font-size:13px}
+html body main input,html body main select,html body main textarea{border:1px solid #cbd5e1!important;border-radius:10px!important;background:#fff;color:#172b4d;transition:border-color .15s,box-shadow .15s}
+html body main input:focus,html body main select:focus,html body main textarea:focus{outline:none;border-color:#0f766e!important;box-shadow:0 0 0 3px rgba(13,148,136,.13)}
+html body main button.primary{background:linear-gradient(105deg,#0f766e,#0d9488)!important;color:#fff!important;border:0!important;border-radius:10px!important;box-shadow:0 4px 10px rgba(15,118,110,.13);transition:transform .15s,box-shadow .15s}
+html body main button.primary:hover{transform:translateY(-1px);box-shadow:0 7px 16px rgba(15,118,110,.2)}
+html body main button.secondary{background:#f0fdfa!important;color:#115e59!important;border:1px solid #99f6e4!important;border-radius:10px!important}
+html body main .status{border:1px solid #dbeafe;background:#eff6ff;color:#1e40af;border-radius:11px;padding:12px 14px}
+html body main .status.error{background:#fff1f2;border-color:#fecdd3;color:#9f1239}
+html body main .status.warn{background:#fffbeb;border-color:#fde68a;color:#92400e}
+html body main .finance-metric{background:linear-gradient(145deg,#f8fafc,#f0fdfa)!important;border:1px solid #dbe7e9!important;border-radius:13px!important}
+html body main .report-table{border-radius:10px;overflow:hidden;font-size:13px}
+html body main .report-table th{background:#eaf5f4!important;color:#134e4a!important;border-color:#d7e7e5!important}
+html body main .report-table td{border-color:#e5eaf0!important}
+html body main .report-table tr:nth-child(even){background:#f8fafc!important}
+html body main .item .price{color:#0f766e!important}
+html body footer{color:#64748b;border-top:1px solid #e2e8f0;margin-top:28px;background:#fff}
+html body #beranda.tab.active{background:linear-gradient(180deg,#f5f8fc,#f5f7fb)!important;box-shadow:none!important;border:0!important}
+html body main #beranda .promo-hero{background:linear-gradient(120deg,#e7f5f2 0%,#eef5ff 58%,#f7faff 100%)!important;border:1px solid #d6e7e8!important;border-radius:22px!important;box-shadow:0 14px 36px rgba(15,39, sixty,0)!important}
+html body main #beranda .promo-kicker{background:#d9f5ef!important;color:#11665e!important;border:1px solid #b7e4db!important;letter-spacing:.45px}
+html body main #beranda .promo-copy h2{color:#15344b!important;letter-spacing:-1.2px}
+html body main #beranda .promo-copy h2 span{background:none!important;color:#0f766e!important;-webkit-text-fill-color:#0f766e!important}
+html body main #beranda .promo-copy p{color:#526779!important}
+html body main #beranda .promo-primary{background:#0f766e!important;border-radius:10px!important;box-shadow:0 5px 14px rgba(15,118,110,.17)!important}
+html body main #beranda .promo-secondary{color:#115e59!important;border-color:#b8dcd6!important;border-radius:10px!important}
+html body main #beranda .promo-benefit{background:#fff!important;border:1px solid #e2e8f0!important;border-radius:14px!important;box-shadow:0 5px 16px rgba(15,23,42,.035)!important}
+html body main #beranda .promo-benefit b{color:#173b4f!important}
+html body main #beranda .promo-benefit span{color:#64748b!important}
+html body main #beranda .promo-section-title{color:#173b4f!important}
+html body main #beranda .promo-product{border:1px solid #e2e8f0!important;border-radius:15px!important;box-shadow:0 5px 18px rgba(15,23,42,.045)!important}
+html body main #beranda .promo-product h3{color:#173b4f!important}
+html body main #beranda .promo-art:after{color:#115e59!important;border:1px solid #d7e7e5!important}
+button:focus-visible,a:focus-visible{outline:3px solid #5eead4!important;outline-offset:2px}
+@media(max-width:650px){html body>header{padding:18px 16px!important}html body nav{position:sticky;top:0;padding:8px!important}html body nav button{padding:9px 11px!important;font-size:12px!important}html body main{padding:10px!important}html body main .card{padding:14px!important}html body main #beranda .promo-hero{border-radius:18px!important}html body main #beranda .promo-art{border-radius:17px 17px 0 0!important}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}}
 
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
