@@ -171,7 +171,7 @@ async function muatPesananSaya(){
     let licenseReadWarning='';
     try{
       const {data:licenses,error:le}=await sb.from('kasusaha_licenses')
-        .select('order_id,buyer_id,license_key,product_name,status,activated_at,created_at')
+        .select('order_id,buyer_id,license_key,product_name,status,activated_at,created_at,activation_user_id,activation_confirmed_at')
         .eq('buyer_id',uid).in('order_id',ids);
       if(le)throw le;
       (licenses||[]).forEach(l=>{if(l.order_id)licensesByOrder[l.order_id]=l;});
@@ -212,7 +212,35 @@ async function muatPesananSaya(){
           copy.onclick=async()=>{try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(lic.license_key);alert('Kode lisensi berhasil disalin. Simpan dengan aman dan jangan bagikan.');}else{input.type='text';input.focus();input.select();const ok=document.execCommand('copy');if(ok)alert('Kode lisensi berhasil disalin.');else prompt('Salin kode lisensi ini:',lic.license_key);}}catch(_){prompt('Salin kode lisensi ini:',lic.license_key);}};
           actions.append(reveal,copy);panel.appendChild(actions);
           if(lic.activated_at||lic.created_at){const act=document.createElement('p');act.className='small';act.textContent='Tanggal penerbitan lisensi: '+new Date(lic.activated_at||lic.created_at).toLocaleString('id-ID');panel.appendChild(act);}
-          const note=document.createElement('p');note.className='small';note.textContent='Kode lisensi hanya ditampilkan untuk akun pembeli yang memiliki pesanan ini. Simpan dengan aman dan jangan bagikan kepada orang lain.';panel.appendChild(note);
+          const alreadyActivated=Boolean(lic.activation_confirmed_at||lic.activation_user_id);
+          const licenseStatus=String(lic.status||'').trim().toLowerCase();
+          if(!alreadyActivated&&licenseStatus!=='revoked'&&licenseStatus!=='expired'){
+            const activate=document.createElement('button');activate.type='button';activate.className='primary wide';activate.textContent='Aktivasi Lisensi';
+            const activationMessage=document.createElement('p');activationMessage.className='small';activationMessage.setAttribute('role','status');
+            activate.onclick=async()=>{
+              activate.disabled=true;activate.textContent='Memverifikasi dan mengaktifkan...';
+              activationMessage.className='status';activationMessage.textContent='Memeriksa kepemilikan pesanan dan status pembayaran di server...';
+              try{
+                const {data:sessionData,error:sessionError}=await sb.auth.getSession();
+                if(sessionError)throw sessionError;
+                if(!sessionData||!sessionData.session)throw new Error('Silakan login dengan akun pembeli yang membeli lisensi ini.');
+                const activation=await panggilAktivasiLisensi({action:'activate',license_key:lic.license_key});
+                if(activation.active!==true)throw new Error(activation.message||'Server belum mengonfirmasi aktivasi lisensi.');
+                activationMessage.className='status';activationMessage.textContent='Lisensi berhasil diaktifkan dan diverifikasi oleh server.';
+                setAksesLisensi(true);
+                setStatusAktivasi('Lisensi terverifikasi dan aktif untuk akun ini. Fitur KasUsaha Lite dapat digunakan.',false);
+                activate.textContent='Lisensi Berhasil Diaktifkan';activate.disabled=true;
+                await muatPesananSaya();
+              }catch(err){
+                activationMessage.className='status error';activationMessage.textContent='Aktivasi gagal: '+String(err.message||err).slice(0,220);
+                activate.disabled=false;activate.textContent='Coba Aktivasi Lagi';
+              }
+            };
+            panel.append(activate,activationMessage);
+          }else{
+            const confirmed=document.createElement('p');confirmed.className='status';confirmed.textContent='Lisensi ini sudah tercatat aktif untuk akun pembeli.';panel.appendChild(confirmed);
+          }
+          const note=document.createElement('p');note.className='small';note.textContent='Aktivasi dilakukan melalui server Supabase dan hanya berhasil jika pesanan serta lisensi memenuhi syarat. Simpan kode lisensi dengan aman.';panel.appendChild(note);
         }else{
           const p=document.createElement('p');p.textContent='Pembayaran tercatat lunas, tetapi kode lisensi belum tersedia atau belum dapat dibaca oleh akun ini. Jangan membayar ulang. Muat ulang halaman dan pastikan login menggunakan akun pembeli yang melakukan pembayaran.';panel.appendChild(p);
         }
