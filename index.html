@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
 <meta name="description" content="KasUsaha Lite: kasir sederhana, pencatatan keuangan, produk dan pasar online Indonesia.">
-<meta name="kasusaha-build" content="2026-10-21-competitive-signature-v3">
+<meta name="kasusaha-build" content="2026-10-21-dashboard-showcase-v4">
 <title>KasUsaha Lite</title>
 <style>
 *{box-sizing:border-box}.table-wrap{width:100%;overflow-x:auto;margin-top:10px}.report-table{width:100%;border-collapse:collapse;background:#fff;font-size:13px}.report-table th,.report-table td{border:1px solid #d7ded9;padding:9px;text-align:left;vertical-align:top}.report-table th{background:#e8f1eb;color:#164e2c;white-space:nowrap}.report-table td.amount{white-space:nowrap;text-align:right}.report-table .income{color:#166534}.report-table .expense{color:#b42318}.report-table tr:nth-child(even){background:#f8faf8}body{margin:0;font-family:Arial,sans-serif;background:#f3f6f4;color:#17211b}header{background:#166534;color:white;padding:18px}header h1{margin:0;font-size:24px}header p{margin:6px 0 0}nav{display:flex;gap:6px;overflow-x:auto;background:white;padding:10px;position:sticky;top:0;z-index:5}nav button{padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#166534;font-weight:bold;white-space:nowrap}nav button.active,.primary{background:#166534;color:white}main{max-width:850px;margin:auto;padding:12px}.tab{display:none}.tab.active{display:block}.card{background:white;border-radius:12px;padding:15px;margin-bottom:12px;border:1px solid #ddd}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}label{display:block;font-weight:bold;margin:10px 0 5px}input,select,textarea{width:100%;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:15px}button{cursor:pointer}.primary{border:0;border-radius:8px;padding:12px;font-weight:bold}.primary:disabled{opacity:.6;cursor:wait}.secondary{background:#e5eee7;color:#166534;border:1px solid #b7d0bd;border-radius:8px;padding:10px;font-weight:bold}.danger{background:#fee2e2;color:#991b1b;border:0;border-radius:8px;padding:8px}.wide{width:100%;margin-top:12px}.item{background:white;border:1px solid #ddd;border-radius:9px;padding:12px;margin-top:9px;overflow-wrap:anywhere}.price{font-weight:bold;color:#166534;font-size:18px}.small{font-size:12px;color:#666}.status{padding:10px;background:#eef5ef;border-radius:8px;margin:10px 0;overflow-wrap:anywhere}.status.error{background:#fff0f0;color:#8a1c1c}.status.warn{background:#fff8e1;color:#785600}footer{text-align:center;padding:20px;color:#666;font-size:12px}img.product-photo{display:block;max-width:100%;max-height:220px;object-fit:contain;margin:8px 0;border-radius:8px}.foto-preview-box{margin-top:8px;padding:8px;border:1px dashed #b7d0bd;border-radius:8px}.foto-preview-box img{display:block;max-width:100%;max-height:220px;object-fit:contain;margin:8px auto}.foto-preview-status{font-size:12px;color:#666}.foto-preview-status.error{color:#991b1b}.row-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}@media(max-width:480px){.grid{grid-template-columns:1fr}header h1{font-size:22px}}
@@ -268,6 +268,66 @@ a{color:#5145cd}
  .card{border-radius:14px!important}
 }
 
+
+/* VISUAL DASHBOARD SHOWCASE — layered product illustration */
+html body main #beranda .promo-hero{grid-template-columns:1fr 1.08fr!important;min-height:440px!important}
+html body main #beranda .promo-copy{position:relative;z-index:2}
+html body main #beranda .ks-dashboard-showcase{isolation:isolate;display:flex!important;align-items:center;justify-content:center;min-height:430px!important;padding:35px 24px!important;overflow:hidden!important;background:radial-gradient(ellipse at 54% 45%,#d8d4ff 0%,#e7e5ff 33%,#f2eaff 61%,#fff0e9 100%)!important}
+html body main #beranda .ks-orbit{position:absolute;border:1px solid rgba(109,91,230,.15);border-radius:50%;z-index:-1}
+html body main #beranda .ks-orbit-one{width:470px;height:470px}
+html body main #beranda .ks-orbit-two{width:360px;height:360px;border-style:dashed}
+html body main #beranda .ks-dash-window{width:min(100%,490px);padding:15px;background:rgba(255,255,255,.93);border:1px solid rgba(255,255,255,.95);border-radius:20px;box-shadow:0 25px 65px rgba(58,48,135,.22);transform:rotate(-1.1deg);backdrop-filter:blur(12px);position:relative;z-index:1}
+html body main #beranda .ks-dash-top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-bottom:12px;border-bottom:1px solid #efedf9}
+html body main #beranda .ks-dash-brand{font-weight:900;color:#29245d;font-size:13px;display:flex;align-items:center;gap:6px}
+html body main #beranda .ks-dash-brand i{font-style:normal;display:grid;place-items:center;width:25px;height:25px;border-radius:8px;color:#fff;background:linear-gradient(135deg,#5145cd,#9a55e9);font-size:17px}
+html body main #beranda .ks-dash-brand small{font-size:8px;letter-spacing:1px;color:#887de0}
+html body main #beranda .ks-dash-live{font-size:8px;color:#777492;background:#f5f3ff;padding:6px 8px;border-radius:20px;white-space:nowrap}
+html body main #beranda .ks-dash-live b{display:inline-block;width:6px;height:6px;border-radius:50%;background:#39b98a;margin-right:4px}
+html body main #beranda .ks-dash-greeting{display:flex;justify-content:space-between;align-items:center;padding:15px 1px 12px}
+html body main #beranda .ks-dash-greeting small{display:block;color:#918cae;font-size:8px;letter-spacing:1.2px;font-weight:800;margin-bottom:5px}
+html body main #beranda .ks-dash-greeting strong{font-size:clamp(13px,1.6vw,18px);color:#29245d;letter-spacing:-.5px}
+html body main #beranda .ks-dash-avatar{width:30px;height:30px;display:grid;place-items:center;border-radius:11px;background:linear-gradient(135deg,#ffb6a5,#ed7d93);color:white;font-size:12px;font-weight:900}
+html body main #beranda .ks-dash-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+html body main #beranda .ks-dash-stat{padding:10px 9px;background:#fff;border:1px solid #eeecf8;border-radius:12px;min-width:0}
+html body main #beranda .ks-stat-icon{display:grid;place-items:center;width:25px;height:25px;border-radius:8px;font-style:normal;font-weight:900;margin-bottom:9px;font-size:13px}
+html body main #beranda .ks-stat-icon.purple{background:#efedff;color:#6554d9}
+html body main #beranda .ks-stat-icon.coral{background:#fff0ed;color:#e66f6a}
+html body main #beranda .ks-stat-icon.mint{background:#e7faf3;color:#239b78}
+html body main #beranda .ks-dash-stat small{display:block;color:#8c89a5;font-size:9px;margin-bottom:5px}
+html body main #beranda .ks-dash-stat b{display:block;color:#332d68;font-size:clamp(11px,1.4vw,15px);white-space:nowrap}
+html body main #beranda .ks-dash-stat em{display:block;color:#aaa6c0;font-size:8px;font-style:normal;margin-top:5px;line-height:1.35}
+html body main #beranda .ks-dash-lower{display:grid;grid-template-columns:1.3fr 1fr;gap:9px;margin-top:10px}
+html body main #beranda .ks-dash-chart,html body main #beranda .ks-dash-products{padding:11px 10px;border:1px solid #eeecf8;border-radius:12px;background:#fff;min-width:0}
+html body main #beranda .ks-dash-panel-title{display:flex;align-items:center;justify-content:space-between;gap:4px;font-size:10px;font-weight:850;color:#373064}
+html body main #beranda .ks-dash-panel-title span{font-size:8px;font-weight:600;color:#9c97b8}
+html body main #beranda .ks-chart-legend{display:flex;align-items:center;gap:5px;font-size:8px;color:#9994b1;margin-top:8px}
+html body main #beranda .ks-chart-legend i{width:7px;height:7px;border-radius:50%;background:#7565e8}
+html body main #beranda .ks-chart-legend i.second{background:#f08b83;margin-left:5px}
+html body main #beranda .ks-chart-area{height:68px;position:relative;margin-top:4px}
+html body main #beranda .ks-chart-grid{position:absolute;inset:0;background:repeating-linear-gradient(to bottom,transparent 0,transparent 21px,#f0eef9 22px);pointer-events:none}
+html body main #beranda .ks-chart-area svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+html body main #beranda .ks-chart-labels{display:flex;justify-content:space-between;color:#aaa6c0;font-size:7px;margin-top:5px}
+html body main #beranda .ks-product-mini{display:flex;align-items:center;gap:6px;margin-top:9px;min-width:0}
+html body main #beranda .ks-product-pic{width:28px;height:28px;flex:0 0 28px;display:grid;place-items:center;border-radius:8px;font-style:normal;font-size:13px}
+html body main #beranda .ks-product-pic.coffee{background:#fff0dc}
+html body main #beranda .ks-product-pic.snack{background:#ffe9ed;color:#d85d7d}
+html body main #beranda .ks-product-pic.retail{background:#e9e7ff;color:#6453d4}
+html body main #beranda .ks-product-mini span{min-width:0;flex:1}
+html body main #beranda .ks-product-mini b{display:block;color:#514b79;font-size:8px;white-space:nowrap}
+html body main #beranda .ks-product-mini small{display:block;color:#aaa6c0;font-size:7px;margin-top:3px;white-space:nowrap}
+html body main #beranda .ks-product-mini strong{color:#aaa5c6;font-size:8px}
+html body main #beranda .ks-dash-footer{display:flex;justify-content:space-between;gap:5px;margin-top:11px;padding-top:9px;border-top:1px solid #efedf9;color:#918cae;font-size:8px}
+html body main #beranda .ks-float{position:absolute;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(255,255,255,.97);border:1px solid #fff;border-radius:13px;box-shadow:0 12px 30px rgba(58,48,135,.16);z-index:2;max-width:190px}
+html body main #beranda .ks-float>span{width:30px;height:30px;display:grid;place-items:center;border-radius:10px;background:#efedff;color:#6554d9;font-size:17px}
+html body main #beranda .ks-float b{display:block;font-size:10px;color:#393267;white-space:nowrap}
+html body main #beranda .ks-float small{display:block;font-size:8px;color:#9691b1;margin-top:3px;white-space:nowrap}
+html body main #beranda .ks-float>i{font-style:normal;color:#fff;background:#2eb889;border-radius:50%;width:17px;height:17px;display:grid;place-items:center;font-size:10px}
+html body main #beranda .ks-float-receipt{top:12%;right:3%}
+html body main #beranda .ks-float-lock{bottom:10%;left:2%}
+html body main #beranda .ks-float-lock>span{background:#fff0ed;color:#df6d77}
+@media(max-width:850px){html body main #beranda .promo-hero{grid-template-columns:1fr!important}html body main #beranda .ks-dashboard-showcase{min-height:410px!important;grid-row:1;padding:30px 20px!important}html body main #beranda .promo-copy{grid-row:2}}
+@media(max-width:520px){html body main #beranda .ks-dashboard-showcase{min-height:350px!important;padding:24px 10px!important}html body main #beranda .ks-dash-window{padding:10px;border-radius:15px;width:100%}html body main #beranda .ks-dash-stats{gap:5px}html body main #beranda .ks-dash-stat{padding:8px 6px}html body main #beranda .ks-dash-stat em{font-size:7px}html body main #beranda .ks-dash-lower{grid-template-columns:1.1fr .9fr;gap:5px}html body main #beranda .ks-dash-chart,html body main #beranda .ks-dash-products{padding:8px 6px}html body main #beranda .ks-float-receipt{top:4%;right:0;transform:scale(.82);transform-origin:top right}html body main #beranda .ks-float-lock{bottom:3%;left:0;transform:scale(.82);transform-origin:bottom left}html body main #beranda .ks-dash-live{font-size:7px;padding:5px}}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -290,7 +350,25 @@ a{color:#5145cd}
 </div>
 <p class="promo-note">Mulai dengan membuat akun. Tinjau harga, fitur, dan ketentuan lisensi sebelum melakukan pembayaran.</p>
 </div>
-<div class="promo-art" role="img" aria-label="Suasana transaksi usaha dan pembayaran digital"></div>
+<div class="promo-art ks-dashboard-showcase" role="img" aria-label="Ilustrasi visual dashboard KasUsaha Lite dengan ringkasan usaha, grafik, transaksi, dan produk">
+  <div class="ks-orbit ks-orbit-one"></div><div class="ks-orbit ks-orbit-two"></div>
+  <div class="ks-dash-window">
+   <div class="ks-dash-top"><span class="ks-dash-brand"><i>k</i> KasUsaha <small>LITE</small></span><span class="ks-dash-live"><b></b> Ilustrasi dashboard</span></div>
+   <div class="ks-dash-greeting"><div><small>RINGKASAN USAHA</small><strong>Usaha Anda, lebih terarah.</strong></div><span class="ks-dash-avatar">W</span></div>
+   <div class="ks-dash-stats">
+    <div class="ks-dash-stat"><span class="ks-stat-icon purple">↗</span><small>Pemasukan</small><b>Terpantau</b><em>Catat setiap penjualan</em></div>
+    <div class="ks-dash-stat"><span class="ks-stat-icon coral">↘</span><small>Pengeluaran</small><b>Terkendali</b><em>Pantau biaya usaha</em></div>
+    <div class="ks-dash-stat"><span class="ks-stat-icon mint">◈</span><small>Produk</small><b>Terorganisir</b><em>Kelola stok lebih rapi</em></div>
+   </div>
+   <div class="ks-dash-lower">
+    <div class="ks-dash-chart"><div class="ks-dash-panel-title">Aktivitas usaha <span>Ringkasan</span></div><div class="ks-chart-legend"><i></i> Pemasukan <i class="second"></i> Pengeluaran</div><div class="ks-chart-area"><div class="ks-chart-grid"></div><svg viewBox="0 0 340 100" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="ksChartFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#8175f4" stop-opacity=".3"/><stop offset="100%" stop-color="#8175f4" stop-opacity="0"/></linearGradient></defs><path d="M0,79 C24,72 30,55 53,63 S86,38 112,48 S150,25 174,39 S213,57 238,29 S285,36 310,15 S329,23 340,7 L340,100 L0,100 Z" fill="url(#ksChartFill)"/><path d="M0,79 C24,72 30,55 53,63 S86,38 112,48 S150,25 174,39 S213,57 238,29 S285,36 310,15 S329,23 340,7" fill="none" stroke="#6d5ce7" stroke-width="3" stroke-linecap="round"/><path d="M0,88 C26,81 35,77 58,82 S91,70 116,79 S151,64 178,74 S216,70 241,79 S280,61 310,72 S330,60 340,64" fill="none" stroke="#f08b83" stroke-width="2.5" stroke-linecap="round"/></svg></div><div class="ks-chart-labels"><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span></div></div>
+    <div class="ks-dash-products"><div class="ks-dash-panel-title">Produk usaha <span>•••</span></div><div class="ks-product-mini"><i class="ks-product-pic coffee">☕</i><span><b>Kopi premium</b><small>Produk unggulan</small></span><strong>01</strong></div><div class="ks-product-mini"><i class="ks-product-pic snack">✦</i><span><b>Camilan</b><small>Produk harian</small></span><strong>02</strong></div><div class="ks-product-mini"><i class="ks-product-pic retail">◇</i><span><b>Produk retail</b><small>Katalog usaha</small></span><strong>03</strong></div></div>
+   </div>
+   <div class="ks-dash-footer"><span>✦ Satu tempat untuk mengelola usaha</span><span>KasUsaha Lite</span></div>
+  </div>
+  <div class="ks-float ks-float-receipt"><span>▤</span><div><b>Transaksi tercatat</b><small>Lebih rapi setiap hari</small></div><i>✓</i></div>
+  <div class="ks-float ks-float-lock"><span>♙</span><div><b>Akses per peran</b><small>Owner & karyawan</small></div></div>
+ </div>
 </div>
 <div class="promo-benefits">
 <div class="promo-benefit"><b>🧾 Catat transaksi</b><span>Pemasukan dan pengeluaran lebih terorganisir.</span></div>
