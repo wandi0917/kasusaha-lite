@@ -431,7 +431,7 @@ html body main #beranda .ks-price-once{font-size:11px;font-weight:700;color:#666
 <div id="financeRoleFilterWrap"><label for="financeRoleFilter">Pisahkan laporan berdasarkan pencatat</label><select id="financeRoleFilter" onchange="renderFinanceReport()"><option value="all">Semua transaksi</option><option value="owner">Transaksi Owner</option><option value="employee">Transaksi Karyawan</option><option value="mine">Transaksi saya</option></select></div>
 <div id="financeReportSummary" class="grid"></div>
 <div class="row-actions"><button type="button" class="secondary" onclick="loadFinanceWorkspace()">Muat ulang laporan</button><button type="button" class="primary" onclick="printFinanceReport()">Cetak / Simpan PDF</button></div>
-<div class="table-wrap"><table class="report-table"><thead><tr><th>Tanggal &amp; Jam</th><th>Pencatat</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo periode</th></tr></thead><tbody id="financeReportRows"><tr><td colspan="7">Memuat laporan...</td></tr></tbody></table></div>
+<div class="table-wrap"><table class="report-table"><thead id="financeReportHead"><tr><th>Tanggal &amp; Jam</th><th>Pencatat</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo periode</th></tr></thead><tbody id="financeReportRows"><tr><td colspan="7">Memuat laporan...</td></tr></tbody></table></div>
 <p class="small">Owner dapat melihat transaksi owner dan seluruh karyawan. Karyawan hanya dapat melihat dan menghapus transaksi miliknya sendiri. Data dilindungi kebijakan akses Supabase.</p>
 </div>
 <details class="card"><summary><strong>Data transaksi lama di perangkat ini (lokal)</strong></summary>
