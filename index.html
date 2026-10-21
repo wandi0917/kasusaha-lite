@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#4f46e5">
 <meta name="description" content="KasUsaha Lite: kasir sederhana, pencatatan keuangan, produk dan pasar online Indonesia.">
-<meta name="kasusaha-build" content="2026-10-22-audit-fix-2">
+<meta name="kasusaha-build" content="2026-10-22-brand-logo-1">
 <title>KasUsaha Lite</title>
 <style>
 *{box-sizing:border-box}.table-wrap{width:100%;overflow-x:auto;margin-top:10px}.report-table{width:100%;border-collapse:collapse;background:#fff;font-size:13px}.report-table th,.report-table td{border:1px solid #d7ded9;padding:9px;text-align:left;vertical-align:top}.report-table th{background:#e8f1eb;color:#164e2c;white-space:nowrap}.report-table td.amount{white-space:nowrap;text-align:right}.report-table .income{color:#166534}.report-table .expense{color:#b42318}.report-table tr:nth-child(even){background:#f8faf8}body{margin:0;font-family:Arial,sans-serif;background:#f3f6f4;color:#17211b}header{background:#166534;color:white;padding:18px}header h1{margin:0;font-size:24px}header p{margin:6px 0 0}nav{display:flex;gap:6px;overflow-x:auto;background:white;padding:10px;position:sticky;top:0;z-index:5}nav button{padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#166534;font-weight:bold;white-space:nowrap}nav button.active,.primary{background:#166534;color:white}main{max-width:850px;margin:auto;padding:12px}.tab{display:none}.tab.active{display:block}.card{background:white;border-radius:12px;padding:15px;margin-bottom:12px;border:1px solid #ddd}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}label{display:block;font-weight:bold;margin:10px 0 5px}input,select,textarea{width:100%;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:15px}button{cursor:pointer}.primary{border:0;border-radius:8px;padding:12px;font-weight:bold}.primary:disabled{opacity:.6;cursor:wait}.secondary{background:#e5eee7;color:#166534;border:1px solid #b7d0bd;border-radius:8px;padding:10px;font-weight:bold}.danger{background:#fee2e2;color:#991b1b;border:0;border-radius:8px;padding:8px}.wide{width:100%;margin-top:12px}.item{background:white;border:1px solid #ddd;border-radius:9px;padding:12px;margin-top:9px;overflow-wrap:anywhere}.price{font-weight:bold;color:#166534;font-size:18px}.small{font-size:12px;color:#666}.status{padding:10px;background:#eef5ef;border-radius:8px;margin:10px 0;overflow-wrap:anywhere}.status.error{background:#fff0f0;color:#8a1c1c}.status.warn{background:#fff8e1;color:#785600}footer{text-align:center;padding:20px;color:#666;font-size:12px}img.product-photo{display:block;max-width:100%;max-height:220px;object-fit:contain;margin:8px 0;border-radius:8px}.foto-preview-box{margin-top:8px;padding:8px;border:1px dashed #b7d0bd;border-radius:8px}.foto-preview-box img{display:block;max-width:100%;max-height:220px;object-fit:contain;margin:8px auto}.foto-preview-status{font-size:12px;color:#666}.foto-preview-status.error{color:#991b1b}.row-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}@media(max-width:480px){.grid{grid-template-columns:1fr}header h1{font-size:22px}}
@@ -336,11 +336,42 @@ html body main #beranda .ks-license-price strong{font-size:25px;line-height:1;co
 html body main #beranda .ks-price-once{font-size:11px;font-weight:700;color:#666080}
 @media(max-width:520px){html body main #beranda .ks-license-price{padding:10px 11px;gap:5px 8px}html body main #beranda .ks-license-price strong{font-size:23px}html body main #beranda .ks-price-once{font-size:10px}}
 
+
+/* Logo resmi KasUsaha Lite — ikon kasir, pencatatan, dan transaksi */
+body>header.ks-brand-header{display:flex;flex-direction:column;align-items:center;text-align:center;gap:0;padding:25px 16px 23px!important;background:radial-gradient(circle at 50% 0%,#1f6b79 0%,#123b50 48%,#102a43 100%)!important;position:relative;overflow:hidden}
+body>header.ks-brand-header:before{content:"";position:absolute;width:290px;height:170px;border-radius:50%;background:rgba(45,212,191,.09);filter:blur(5px);top:-105px;left:calc(50% - 145px);pointer-events:none}
+.ks-brand-logo{width:82px;height:82px;flex:0 0 82px;margin:0 0 11px;filter:drop-shadow(0 8px 14px rgba(0,0,0,.22));position:relative;z-index:1}
+.ks-brand-logo svg{display:block;width:100%;height:100%}
+body>header.ks-brand-header h1{position:relative;z-index:1;font-size:clamp(27px,4vw,35px)!important;line-height:1.15;letter-spacing:-.9px!important;color:#fff!important;text-shadow:0 2px 12px rgba(0,0,0,.14)}
+body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!important;color:#d8f7f2!important;font-size:clamp(12px,1.7vw,14px)!important;letter-spacing:.15px;line-height:1.5}
+.ks-brand-accent{display:flex;align-items:center;gap:5px;margin-top:14px;position:relative;z-index:1}
+.ks-brand-accent span{display:block;height:4px;border-radius:99px}
+.ks-brand-accent span:nth-child(1){width:22px;background:#34d399}.ks-brand-accent span:nth-child(2){width:38px;background:#fbbf24}.ks-brand-accent span:nth-child(3){width:22px;background:#a5b4fc}
+@media(max-width:480px){body>header.ks-brand-header{padding:21px 12px 19px!important}.ks-brand-logo{width:70px;height:70px;flex-basis:70px;margin-bottom:9px}body>header.ks-brand-header p{max-width:320px}}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-<header><h1>KasUsaha Lite</h1><p>Kasir • Keuangan • Produk • Pasar Online Indonesia</p></header>
+<header class="ks-brand-header">
+<div class="ks-brand-logo" role="img" aria-label="Logo KasUsaha Lite">
+<svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<defs><linearGradient id="ksLogoBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#34d399"/><stop offset="1" stop-color="#0f766e"/></linearGradient><linearGradient id="ksLogoPaper" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#d1fae5"/></linearGradient></defs>
+<rect x="4" y="4" width="88" height="88" rx="25" fill="url(#ksLogoBg)"/>
+<path d="M23 35h50a5 5 0 0 1 5 5v32a5 5 0 0 1-5 5H23a5 5 0 0 1-5-5V40a5 5 0 0 1 5-5Z" fill="url(#ksLogoPaper)"/>
+<path d="M30 35V27a6 6 0 0 1 6-6h24a6 6 0 0 1 6 6v8" fill="none" stroke="#ecfdf5" stroke-width="5" stroke-linecap="round"/>
+<rect x="25" y="43" width="46" height="10" rx="3" fill="#ccfbf1"/>
+<path d="M30 48h10m6 0h5" stroke="#0f766e" stroke-width="3" stroke-linecap="round"/>
+<rect x="27" y="59" width="19" height="12" rx="3" fill="#0f766e"/>
+<path d="M32 66l4-4 4 3" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="60" cy="65" r="8" fill="#fbbf24"/>
+<path d="M57 65h6m-3-3v6" stroke="#78350f" stroke-width="2" stroke-linecap="round"/>
+<circle cx="72" cy="24" r="11" fill="#fbbf24" stroke="#fff" stroke-width="3"/>
+<path d="M67 24l3 3 6-7" fill="none" stroke="#78350f" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg></div>
+<h1>KasUsaha Lite</h1><p>Kasir • Keuangan • Produk • Pasar Online Indonesia</p>
+<div class="ks-brand-accent" aria-hidden="true"><span></span><span></span><span></span></div>
+</header>
 <nav aria-label="Navigasi utama">
 <button class="active" type="button" onclick="buka('beranda',this)">Beranda</button><button type="button" onclick="buka('transaksi',this)">Transaksi</button><button type="button" onclick="buka('produk',this)">Produk Saya</button><button type="button" onclick="buka('pasar',this)">Pasar Online</button><button type="button" onclick="buka('keranjang',this)">Keranjang <span id="jumlahKeranjang">0</span></button><button type="button" onclick="buka('cadangan',this)">Cadangan</button><button type="button" onclick="buka('akun',this)">Login Owner / Penjual</button><button type="button" onclick="buka('loginKaryawan',this)">Login Karyawan</button><button type="button" onclick="buka('akunPembeli',this)">Akun Pembeli</button><button type="button" onclick="buka('pesananSaya',this)">Pesanan Saya</button><button type="button" onclick="buka('pesananMasuk',this)">Pesanan Masuk</button>
 </nav>
