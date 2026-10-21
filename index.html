@@ -269,7 +269,7 @@ async function buka(id,tombol){
   document.querySelectorAll('main .tab').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   const panel=$(id);if(!panel)return;panel.classList.add('active');if(tombol)tombol.classList.add('active');
-  if(id==='pasar'){tampilPasarLokal();muatPasarOnline();}
+  if(id==='pasar'){tampilPasarLokal();muatPasarOnline();muatProdukAfiliasi();muatLaporanAfiliasi();}
   if(id==='keranjang'){tampilKeranjang();tampilRiwayatPesanan();}
   if(id==='akun'){periksaSesi();tampilProdukLokalUntukOnline();}
   if(id==='akunPembeli'){periksaSesiPembeli();if(sb)periksaAktivasiLisensi();}
