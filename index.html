@@ -476,15 +476,25 @@ $('tombolAktivasiLisensi').addEventListener('click',async()=>{
 });
 $('daftarPembeli').addEventListener('click',async()=>{if(!sb)return pesanPembeli('Pustaka login belum tersedia.',true);const email=$('emailPembeliAkun').value.trim(),password=$('sandiPembeliAkun').value;if(!email||password.length<6)return pesanPembeli('Masukkan email valid dan kata sandi minimal 6 karakter.',true);$('daftarPembeli').disabled=true;pesanPembeli('Sedang mendaftarkan akun pembeli...');try{const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:'https://wandi0917.github.io/kasusaha-lite/'}});if(error)throw error;if(data.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0){pesanPembeli('Akun dengan email ini sudah terdaftar. Tidak perlu mendaftar ulang dan email konfirmasi baru mungkin tidak dikirim. Silakan gunakan tombol Login Pembeli. Jika ini akun baru yang belum pernah Anda buat, pastikan alamat email benar.');}else if(data.session){await sb.auth.signOut();pesanPembeli('Akun berhasil dibuat. Periksa email '+email+' termasuk Spam/Junk. Jika email konfirmasi tidak masuk, SMTP Supabase harus dikonfigurasi. Setelah email terkonfirmasi, login kembali.');}else pesanPembeli('Permintaan pendaftaran diterima oleh Supabase, tetapi ini belum membuktikan email terkirim. Periksa Inbox/Spam. Jika tidak ada email, atur custom SMTP di Supabase Authentication > SMTP Settings.');}catch(e){pesanPembeli('Pendaftaran gagal: '+String(e.message||'Periksa pengaturan Supabase.').slice(0,220),true);}finally{$('daftarPembeli').disabled=false;}});
 async function kirimUlangKonfirmasi(email, tampilkan){
- if(!sb)return tampilkan('Koneksi Supabase belum tersedia.',true);
+ if(!sb)return tampilkan('Koneksi Supabase tidak tersedia.',true);
  email=String(email||'').trim();
  if(!email||!email.includes('@'))return tampilkan('Masukkan alamat email yang sama dengan email saat mendaftar.',true);
- tampilkan('Meminta Supabase mengirim ulang tautan konfirmasi ke '+email+'...');
+ tampilkan('Meminta Supabase mengirim ulang tautan konfirmasi...');
  try{
   const {error}=await sb.auth.resend({type:'signup',email,options:{emailRedirectTo:'https://wandi0917.github.io/kasusaha-lite/'}});
   if(error)throw error;
-  tampilkan('Permintaan kirim ulang diterima Supabase untuk '+email+'. Periksa Inbox, Spam/Junk, dan tab Promosi. Jika email tetap tidak datang, SMTP pengirim pada proyek Supabase perlu dikonfigurasi; tombol ini tidak dapat memperbaiki pengiriman email di sisi server.');
- }catch(e){tampilkan('Gagal meminta ulang konfirmasi: '+String(e.message||e).slice(0,200)+'. Pastikan email benar dan pengiriman email Supabase sudah dikonfigurasi.',true);}
+  tampilkan('Supabase menerima permintaan kirim ulang. Ini belum menjamin email terkirim. Periksa Inbox, Spam/Junk, dan Promosi. Jika tidak masuk, proyek perlu SMTP khusus: https://supabase.com/dashboard/project/flvdudmdltjjdjkdngbv/auth/smtp . SMTP bawaan Supabase biasanya hanya mengirim ke alamat anggota tim proyek.');
+ }catch(e){
+  const detail=String(e.message||e);
+  const low=detail.toLowerCase();
+  if(low.includes('email address not authorized')||low.includes('not authorized')){
+   tampilkan('Email ditolak oleh SMTP bawaan Supabase karena alamat bukan anggota tim proyek. Aktifkan SMTP khusus di https://supabase.com/dashboard/project/flvdudmdltjjdjkdngbv/auth/smtp . Jangan menonaktifkan konfirmasi email sebagai jalan pintas.',true);
+  }else if(low.includes('rate limit')||low.includes('too many requests')){
+   tampilkan('Permintaan email terlalu sering. Tunggu beberapa menit sebelum mencoba lagi. Jika tetap gagal, periksa SMTP di https://supabase.com/dashboard/project/flvdudmdltjjdjkdngbv/auth/smtp .',true);
+  }else{
+   tampilkan('Gagal meminta ulang konfirmasi: '+detail.slice(0,180)+'. Periksa email dan konfigurasi SMTP: https://supabase.com/dashboard/project/flvdudmdltjjdjkdngbv/auth/smtp .',true);
+  }
+ }
 }
 $('resendBuyerConfirmation').addEventListener('click',()=>kirimUlangKonfirmasi($('emailPembeliAkun').value,pesanPembeli));
  $('loginPembeli').addEventListener('click',async()=>{if(!sb)return pesanPembeli('Pustaka login belum tersedia.',true);const email=$('emailPembeliAkun').value.trim(),password=$('sandiPembeliAkun').value;if(!email||!password)return pesanPembeli('Masukkan email dan kata sandi.',true);$('loginPembeli').disabled=true;pesanPembeli('Sedang login sebagai pembeli...');try{const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;pesanPembeli('Login berhasil: '+data.user.email+'. Anda dapat melanjutkan belanja.');await periksaAktivasiLisensi();}catch(e){pesanPembeli('Login gagal: '+String(e.message||'Pastikan email sudah dikonfirmasi dan kata sandi benar.').slice(0,180),true);}finally{$('loginPembeli').disabled=false;}});
