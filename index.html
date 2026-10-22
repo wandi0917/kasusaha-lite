@@ -662,7 +662,7 @@ async function buatPratinjauLaporan(){
  return true;
 }
 function setStatusCetakLaporan(teks,error=false){const el=$("statusCetakLaporan");if(el){el.className=error?"status error":"status";el.textContent=teks;}}
-function cetakLaporan(){if(buatPratinjauLaporan())window.print();}
+async function cetakLaporan(){const siap=await buatPratinjauLaporan();if(siap)window.print();}
 function batalEditProduk(){ $('formProduk').reset(); $('fotoProduk').value=''; pratinjauFotoProduk(); $('idProdukEdit').value=''; $('stok').value=1; $('judulFormProduk').textContent='Tambah barang'; $('simpanProdukLokal').textContent='Simpan produk di HP'; $('batalEditProduk').hidden=true; }
 function pratinjauFotoProduk(){const nilai=$('fotoProduk').value.trim(),box=$('fotoPreviewBox'),img=$('fotoPreviewImg'),status=$('fotoPreviewStatus');if(!nilai){box.hidden=true;img.removeAttribute('src');status.textContent='';status.classList.remove('error');return;}box.hidden=false;img.onload=()=>{status.textContent='Pratinjau foto siap. Foto akan disimpan bersama produk di perangkat ini.';status.classList.remove('error');};img.onerror=()=>{status.textContent='Pratinjau foto tidak dapat dibuka. Silakan pilih foto lain.';status.classList.add('error');};img.src=nilai;}
 function hapusFotoProduk(){$('fotoProduk').value='';$('kameraFotoProduk').value='';$('galeriFotoProduk').value='';pratinjauFotoProduk();}
