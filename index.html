@@ -1034,6 +1034,11 @@ async function cekOngkirBiteship(){
   status.textContent='Cek ongkir gagal: '+String(err.message||err).slice(0,220);
  }finally{btn.disabled=false;btn.textContent='Cek ongkir Biteship';}
 }
+$('kodePosPembeli').addEventListener('input',()=>{
+ biteshipQuoteId=null;biteshipQuoteFingerprint="";
+ const sel=$('pilihanOngkir');if(sel)sel.replaceChildren(new Option('Kode pos berubah — cek ongkir kembali',''));
+ $('ringkasanOngkir').textContent='Kode pos tujuan berubah. Hitung ongkir kembali sebelum membuat pesanan.';
+});
 $('cekOngkirBtn').addEventListener('click',cekOngkirBiteship);
 $('pilihanOngkir').addEventListener('change',()=>{
  const opt=$('pilihanOngkir').selectedOptions[0];
