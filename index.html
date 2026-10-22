@@ -1089,7 +1089,7 @@ async function muatPesananSaya(){
     if(!sd||!sd.session||!sd.session.user){setStatusArea('statusPesananSaya','Silakan login melalui menu Akun Pembeli terlebih dahulu.',true);return;}
     const uid=sd.session.user.id;
     const {data:orders,error}=await sb.from('marketplace_orders')
-      .select('id,buyer_id,buyer_name,status,total_amount,created_at,shipping_address')
+      .select('id,buyer_id,buyer_name,status,total_amount,created_at,shipping_address,shipping_provider,shipping_tracking_id,shipping_waybill_id,shipping_status,shipping_label_url,shipping_created_at')
       .eq('buyer_id',uid).order('created_at',{ascending:false}).limit(100);
     if(error)throw error;
     if(!Array.isArray(orders)||orders.length===0){setStatusArea('statusPesananSaya','Belum ada pesanan untuk akun pembeli yang sedang login. Pastikan Anda login dengan akun yang digunakan saat membeli.');return;}
@@ -1123,7 +1123,7 @@ async function muatPesananSaya(){
       d.append(h,date,st,total);
       const orderItems=byOrder[o.id]||[];
       orderItems.forEach(i=>{const line=document.createElement('p');line.textContent=(i.product_name_snapshot||'Produk')+' × '+i.quantity+' — '+format(i.item_subtotal);d.appendChild(line);});
-      if(o.shipping_address){const a=document.createElement('p');a.className='small';a.textContent='Alamat/catatan: '+o.shipping_address;d.appendChild(a);}
+      if(o.shipping_address){const a=document.createElement('p');a.className='small';a.textContent='Alamat/catatan: '+o.shipping_address;d.appendChild(a);}if(o.shipping_provider||o.shipping_tracking_id||o.shipping_waybill_id){const ship=document.createElement('p');ship.className='status';ship.textContent='Pengiriman '+(o.shipping_provider||'')+' • '+(o.shipping_status||'status menunggu')+' • Resi: '+(o.shipping_waybill_id||o.shipping_tracking_id||'belum tersedia');d.appendChild(ship);}
 
       const lic=licensesByOrder[o.id];
       const itemIsLicenseProduct=orderItems.some(i=>String(i.product_name_snapshot||'').trim().toLocaleLowerCase('id-ID')==='kasusaha lite');
