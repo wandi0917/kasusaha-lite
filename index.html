@@ -473,7 +473,7 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 <button type="button" class="promo-primary" onclick="buka('akunPembeli',document.querySelectorAll('nav button')[8])">Daftar / Masuk untuk Aktivasi ↗</button>
 <button type="button" class="promo-secondary" onclick="document.getElementById('caraAktivasiKasUsaha')?.scrollIntoView({behavior:'smooth',block:'start'})">Cara Aktivasi</button>
 </div>
-<p class="promo-note">Harga lisensi Rp49.000 sekali bayar. Buat akun atau login, lalu lanjutkan ke Pasar Online untuk membeli lisensi. Pembayaran uang sungguhan baru dapat diterima setelah mode Midtrans Production diaktifkan.</p>
+<p class="promo-note">Harga lisensi Rp49.000 sekali bayar. Buat akun atau login, lalu lanjutkan ke Pasar Online untuk membeli lisensi. Pembayaran uang sungguhan hanya dapat diterima setelah mode Midtrans Production dan kunci server Production yang sesuai dikonfigurasi di Supabase.</p>
 </div>
 <div class="promo-art ks-dashboard-showcase" role="img" aria-label="Ilustrasi visual dashboard KasUsaha Lite dengan ringkasan usaha, grafik, transaksi, dan produk">
   <div class="ks-orbit ks-orbit-one"></div><div class="ks-orbit ks-orbit-two"></div>
@@ -518,7 +518,7 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
       <button type="button" class="promo-primary" onclick="buka('akunPembeli',document.querySelectorAll('nav button')[8])">Daftar / Masuk ↗</button>
       <button type="button" class="promo-secondary" onclick="buka('pasar',document.querySelectorAll('nav button')[3])">Buka Pasar Online</button>
     </div>
-    <p class="ks-payment-note"><strong>Catatan pembayaran:</strong> konfigurasi situs yang ada masih menunjukkan Midtrans Sandbox. Jangan melakukan pembayaran uang sungguhan melalui checkout sampai pemilik situs mengaktifkan dan menguji kredensial Midtrans Production.</p>
+    <p class="ks-payment-note"><strong>Catatan pembayaran:</strong> checkout akan menunjukkan peringatan jika masih berada di mode Sandbox. Pembayaran uang sungguhan hanya boleh dilakukan setelah pemilik situs mengatur kunci server Production dan MIDTRANS_IS_PRODUCTION=true di Supabase, mengatur URL notifikasi Midtrans, lalu menguji alur pembayaran dan penerbitan lisensi.</p>
   </div>
 </section>
 
@@ -1181,20 +1181,34 @@ async function mulaiPembayaranMidtrans(orderId, button) {
       throw new Error('Tautan pembayaran dari server tidak valid.');
     }
 
-    // Aplikasi saat ini memakai Midtrans Sandbox. Terima format URL Snap v2, v3, atau v4.
-    const hostValid = tujuan.hostname === 'app.sandbox.midtrans.com';
+    // Mode harus dinyatakan oleh Edge Function dan host URL wajib cocok.
+    const mode = data.payment_mode;
+    const expectedHost = mode === 'production'
+      ? 'app.midtrans.com'
+      : mode === 'sandbox'
+        ? 'app.sandbox.midtrans.com'
+        : '';
+    const hostValid = Boolean(expectedHost) && tujuan.hostname === expectedHost;
     const pathValid =
       tujuan.pathname.startsWith('/snap/v2/vtweb/') ||
+      tujuan.pathname.startsWith('/snap/v2/redirection/') ||
       tujuan.pathname.startsWith('/snap/v3/redirect/') ||
       tujuan.pathname.startsWith('/snap/v4/redirection/');
 
     if (
       tujuan.protocol !== 'https:' || !hostValid || !pathValid ||
-      tujuan.username || tujuan.password
+      tujuan.username || tujuan.password || tujuan.port
     ) {
       throw new Error(
-        'Tautan bukan URL pembayaran Midtrans Sandbox yang dikenal. Periksa konfigurasi Edge Function.'
+        'Mode atau tautan pembayaran Midtrans tidak cocok. Pembayaran dihentikan demi keamanan; periksa MIDTRANS_IS_PRODUCTION dan kunci server di Supabase.'
       );
+    }
+
+    if (mode === 'sandbox') {
+      const lanjutSandbox = confirm(
+        'PERINGATAN: checkout saat ini memakai MIDTRANS SANDBOX. Ini hanya simulasi dan bukan pembayaran uang sungguhan.\n\nLanjutkan simulasi untuk pengujian?'
+      );
+      if (!lanjutSandbox) return;
     }
 
     window.location.assign(tujuan.href);
