@@ -458,11 +458,13 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 </div>
 <div class="card" id="financeReportCard" hidden>
 <h3 id="financeReportTitle">Laporan Keuangan Lengkap (Owner)</h3>
-<label for="financePeriod">Periode laporan</label><select id="financePeriod" onchange="muatDanTampilkanLaporan()"><option value="daily">Harian</option><option value="weekly">Mingguan (Senin–Minggu)</option><option value="monthly">Bulanan</option></select>
-<label for="financeReportDate">Tanggal acuan</label><input id="financeReportDate" type="date" onchange="muatDanTampilkanLaporan()">
-<div id="financeRoleFilterWrap"><label for="financeRoleFilter">Pisahkan laporan berdasarkan pencatat</label><select id="financeRoleFilter" onchange="muatDanTampilkanLaporan()"><option value="all">Semua transaksi</option><option value="owner">Transaksi Owner</option><option value="employee">Transaksi Karyawan</option><option value="mine">Transaksi saya</option></select></div>
+<div class="grid">
+<div><label for="financeReportStart">Tanggal dimulai</label><input id="financeReportStart" type="date" required></div>
+<div><label for="financeReportEnd">Tanggal sampai</label><input id="financeReportEnd" type="date" required></div>
+</div>
+<div id="financeRoleFilterWrap"><label for="financeRoleFilter">Pisahkan laporan berdasarkan pencatat</label><select id="financeRoleFilter"><option value="all">Semua transaksi</option><option value="owner">Transaksi Owner</option><option value="employee">Transaksi Karyawan</option><option value="mine">Transaksi saya</option></select></div>
+<div class="row-actions"><button type="button" class="primary" onclick="muatDanTampilkanLaporan()">Tampilkan laporan</button><button type="button" class="secondary" onclick="muatDanTampilkanLaporan()">Muat ulang laporan</button><button type="button" class="secondary" onclick="printFinanceReport()">Cetak / Simpan PDF</button></div>
 <div id="financeReportSummary" class="grid"></div>
-<div class="row-actions"><button type="button" class="secondary" onclick="loadFinanceWorkspace()">Muat ulang laporan</button><button type="button" class="primary" onclick="printFinanceReport()">Cetak / Simpan PDF</button></div>
 <div class="table-wrap"><table class="report-table"><thead id="financeReportHead"><tr><th>Tanggal &amp; Jam</th><th>Pencatat</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo periode</th></tr></thead><tbody id="financeReportRows"><tr><td colspan="7">Memuat laporan...</td></tr></tbody></table></div>
 <p class="small">Owner dapat melihat transaksi owner dan seluruh karyawan. Karyawan hanya dapat melihat dan menghapus transaksi miliknya sendiri. Data dilindungi kebijakan akses Supabase.</p>
 </div>
@@ -1083,7 +1085,7 @@ async function loadFinanceWorkspace(){
   financeBusiness=business;financeMemberRole=member.role;document.body.classList.toggle('employee-verified',member.role==='employee');document.body.classList.toggle('owner-verified',member.role==='owner');setup.hidden=true;info.hidden=false;entry.hidden=false;report.hidden=false;
   info.innerHTML='<p><strong>Usaha:</strong> '+aman(business.business_name)+'<br><strong>Peran akun:</strong> '+financeRoleLabel(member.role)+(member.role==='owner'?'<br><strong>Kode undangan karyawan:</strong> <code>'+aman(business.invite_code)+'</code><br><span class="small">Bagikan kode ini hanya kepada karyawan yang Anda izinkan.</span>':'')+'</p>';
   const roleFilter=$('financeRoleFilter');if(member.role==='employee'){roleFilter.innerHTML='<option value="mine">Pemasukan saya</option>';roleFilter.value='mine';$('financeType').value='income';$('financeType').disabled=true;$('financeTypeWrap').hidden=true;$('financeReportTitle').textContent='Laporan Pemasukan Karyawan';$('financeRoleFilterWrap').hidden=true;}else{roleFilter.innerHTML='<option value="all">Semua transaksi</option><option value="owner">Transaksi Owner</option><option value="employee">Transaksi Karyawan</option><option value="mine">Transaksi saya</option>';$('financeType').disabled=false;$('financeTypeWrap').hidden=false;$('financeReportTitle').textContent='Laporan Keuangan Lengkap (Owner)';$('financeRoleFilterWrap').hidden=false;}
-  if(!$('financeDate').value)$('financeDate').value=financeToday();if(!$('financeReportDate').value)$('financeReportDate').value=financeToday();
+  if(!$('financeDate').value)$('financeDate').value=financeToday();if(!$('financeReportStart').value)$('financeReportStart').value=financeToday().slice(0,8)+'01';if(!$('financeReportEnd').value)$('financeReportEnd').value=financeToday();
   const {data:rows,error:re}=await sb.from('financial_transactions').select('id,business_id,created_by,created_by_role,transaction_date,transaction_type,amount,description,category,created_at').eq('business_id',business.id).order('transaction_date',{ascending:true}).order('created_at',{ascending:true});
   if(re)throw re;financeRows=rows||[];renderFinanceReport();applyHomeFinanceRole();setFinanceStatus('Data usaha tersambung. '+financeRows.length+' transaksi bersama berhasil dimuat.');
  }catch(e){financeBusiness=null;financeMemberRole=null;financeMemberUserId=null;financeRows=[];document.body.classList.remove('employee-verified','owner-verified');$('homeSummaryGrid').hidden=true;$('ownerHomeReports').hidden=true;$('employeeHomeReport').hidden=true;setup.hidden=true;info.hidden=true;entry.hidden=true;report.hidden=true;setFinanceStatus('Laporan tidak ditampilkan karena verifikasi akun/usaha gagal: '+String(e.message||e).slice(0,180),true);}
@@ -1098,13 +1100,10 @@ $('financeForm')?.addEventListener('submit',async function(e){
  }catch(err){setFinanceStatus('Transaksi gagal disimpan: '+String(err.message||err).slice(0,240),true);}finally{btn.disabled=false;}
 });
 function financePeriodBounds(){
- const value=$('financeReportDate').value||financeToday(), d=new Date(value+'T12:00:00');
- if(!Number.isFinite(d.getTime()))return null;
- let start=new Date(d.getFullYear(),d.getMonth(),d.getDate()),end=new Date(start);
- const period=$('financePeriod').value;
- if(period==='weekly'){start.setDate(start.getDate()-((start.getDay()+6)%7));end=new Date(start);end.setDate(start.getDate()+6);}
- else if(period==='monthly'){start=new Date(d.getFullYear(),d.getMonth(),1);end=new Date(d.getFullYear(),d.getMonth()+1,0);}
- return {start:financeDateISO(start),end:financeDateISO(end),period};
+ const start=$('financeReportStart')?.value;
+ const end=$('financeReportEnd')?.value;
+ if(!start||!end||!/^\\d{4}-\\d{2}-\\d{2}$/.test(start)||!/^\\d{4}-\\d{2}-\\d{2}$/.test(end)||start>end)return null;
+ return {start,end};
 }
 function financeDateISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 
@@ -1119,7 +1118,7 @@ function renderFinanceReport(){
  const tbody=$('financeReportRows');if(!tbody)return;
  const isEmployee=financeMemberRole==='employee';
  if(!financeBusiness){tbody.innerHTML='<tr><td colspan="7">Buat atau hubungkan usaha terlebih dahulu.</td></tr>';return;}
- const bounds=financePeriodBounds();if(!bounds){tbody.innerHTML='<tr><td colspan="7">Pilih tanggal laporan yang valid.</td></tr>';return;}
+ const bounds=financePeriodBounds();if(!bounds){tbody.innerHTML='<tr><td colspan="7">Pilih tanggal dimulai dan tanggal sampai yang valid. Tanggal dimulai tidak boleh melewati tanggal sampai.</td></tr>';return;}
  let rows=financeRows.filter(r=>r.transaction_date>=bounds.start&&r.transaction_date<=bounds.end);
  if(isEmployee){rows=rows.filter(r=>r.created_by===financeMemberUserId&&r.created_by_role==='employee'&&r.transaction_type==='income');}
  else{
