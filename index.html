@@ -1492,7 +1492,7 @@ async function imporTransaksiLokalKeBersama(){
   if(!financeBusiness||financeMemberRole!=='owner'||!financeMemberUserId)await loadFinanceWorkspace();
   if(!financeBusiness||financeMemberRole!=='owner'||!financeMemberUserId)throw new Error('Akun yang login belum terhubung sebagai Owner ke usaha. Periksa status akun dan usaha di atas laporan.');
   if(!Array.isArray(transaksi)||transaksi.length===0){
-   setFinanceStatus('Belum ada catatan lokal di browser ini untuk dipindahkan. Periksa bagian “Data transaksi lama di perangkat ini (lokal)”. Data di HP/komputer lain tidak dapat dibaca otomatis.',true);
+   setFinanceStatus('Belum ada catatan lokal di browser ini untuk dipindahkan. Periksa bagian “Data transaksi (Lokal)”. Data di HP/komputer lain tidak dapat dibaca otomatis.',true);
    return;
   }
   const valid=[],skipped=[];
