@@ -1394,7 +1394,7 @@ async function financeJoinBusiness(){
  await loadFinanceWorkspace();setFinanceStatus('Berhasil terhubung ke '+data.business_name+' sebagai '+financeRoleLabel(data.role)+'.');
  }catch(e){setFinanceStatus('Belum berhasil bergabung: '+String(e.message||e).slice(0,220),true);}finally{btn.disabled=false;}
 }
-async function loadFinanceWorkspace(){
+async async function loadFinanceWorkspace(){
  const setup=$('financeSetupForms'),info=$('financeWorkspaceInfo'),entry=$('financeEntryCard'),report=$('financeReportCard');
  if(!sb){setFinanceStatus('Koneksi Supabase belum tersedia.',true);return;}
  try{
@@ -1564,7 +1564,8 @@ function applyHomeFinanceRole(){
   $('masuk').textContent=format(income);$('keluar').textContent=format(expense);$('saldo').textContent=format(income-expense);$('jumlah').textContent=produk.length;
   const daily={};financeRows.forEach(r=>{const day=r.transaction_date;if(!daily[day])daily[day]={income:0,expense:0};daily[day][r.transaction_type==='income'?'income':'expense']+=Number(r.amount||0);});
   let balance=0;
-  $('laporanHarianBeranda').innerHTML=Object.keys(daily).sort().map(day=>{const d=daily[day],opening=balance,net=d.income-d.expense;balance+=net;return '<tr><td>'+aman(formatHariTanggal(day))+'</td><td class="amount">'+format(opening)+'</td><td class="amount income">'+format(d.income)+'</td><td class="amount expense">'+format(d.expense)+'</td><td class="amount">'+format(net)+'</td><td class="amount">'+format(balance)+'</td></tr>';}).join('')||'<tr><td colspan="6">Belum ada transaksi usaha.</td></tr>';
+  const dailyRows=Object.keys(daily).sort().map(day=>{const d=daily[day],opening=balance,net=d.income-d.expense;balance+=net;return '<tr><td>'+aman(formatHariTanggal(day))+'</td><td class="amount">'+format(opening)+'</td><td class="amount income">'+format(d.income)+'</td><td class="amount expense">'+format(d.expense)+'</td><td class="amount">'+format(net)+'</td><td class="amount">'+format(balance)+'</td></tr>';}).join('')||'<tr><td colspan="6">Belum ada transaksi usaha.</td></tr>';
+  $('laporanHarianBeranda').innerHTML=dailyRows;const dailyTransactionReport=$('laporanHarianTransaksi');if(dailyTransactionReport)dailyTransactionReport.innerHTML=dailyRows;
   let running=0;const ordered=financeRows.slice().sort((a,b)=>(String(a.transaction_date)+' '+String(a.created_at)).localeCompare(String(b.transaction_date)+' '+String(b.created_at)));
   const withBalance=ordered.map(r=>{running+=r.transaction_type==='income'?Number(r.amount||0):-Number(r.amount||0);return {...r,running};});
   $('terbaru').innerHTML=withBalance.slice(-10).reverse().map(r=>{const d=new Date(r.created_at),time=Number.isFinite(d.getTime())?d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'—';return '<tr><td>'+aman(formatHariTanggal(r.transaction_date))+'</td><td>'+aman(time)+'</td><td>'+financeRoleLabel(r.created_by_role)+'</td><td>'+aman(r.description)+'</td><td>'+(r.transaction_type==='income'?'Pemasukan':'Pengeluaran')+'</td><td class="amount income">'+(r.transaction_type==='income'?format(r.amount):'—')+'</td><td class="amount expense">'+(r.transaction_type==='expense'?format(r.amount):'—')+'</td><td class="amount">'+format(r.running)+'</td></tr>';}).join('')||'<tr><td colspan="8">Belum ada transaksi usaha.</td></tr>';
