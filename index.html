@@ -369,6 +369,29 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 #beranda .promo-product p{margin:0!important}
 @media(max-width:900px){#beranda .promo-products{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
 @media(max-width:650px){#beranda .promo-products{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}#beranda .promo-product img{height:125px!important}#beranda .promo-product>div{padding:9px!important}}
+
+/* Landing page conversion section: feature benefits, clear steps, and safe payment disclosure */
+.ks-convert-section{margin:26px 0 30px;padding:clamp(18px,3vw,30px);border:1px solid #dbeafe;border-radius:24px;background:linear-gradient(135deg,#f8fafc 0%,#eff6ff 48%,#f0fdf4 100%);box-shadow:0 14px 34px rgba(30,64,175,.07);scroll-margin-top:18px}
+.ks-convert-heading{max-width:760px;margin:0 auto 20px;text-align:center}
+.ks-convert-kicker{font-size:11px;font-weight:900;letter-spacing:.14em;color:#047857}
+.ks-convert-heading h2{margin:8px 0;color:#0f172a;font-size:clamp(23px,3vw,32px);line-height:1.15;letter-spacing:-.035em}
+.ks-convert-heading p{margin:0;color:#475569;line-height:1.65}
+.ks-convert-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:18px 0 22px}
+.ks-convert-card{padding:18px;background:#fff;border:1px solid #dbeafe;border-radius:17px;box-shadow:0 5px 16px rgba(15,23,42,.04)}
+.ks-convert-icon{display:inline-grid;place-items:center;width:42px;height:42px;border-radius:13px;background:#ecfdf5;font-size:22px}
+.ks-convert-card h3{font-size:16px;margin:12px 0 6px;color:#123b2a}
+.ks-convert-card p{margin:0;font-size:13px;line-height:1.6;color:#64748b}
+.ks-steps-wrap{max-width:820px;margin:0 auto;padding:clamp(16px,3vw,24px);border:1px solid #cbd5e1;border-radius:18px;background:rgba(255,255,255,.9)}
+.ks-steps-wrap>h3{margin:0 0 14px;color:#0f172a;font-size:19px}
+.ks-activation-steps{list-style:none;padding:0;margin:0;display:grid;gap:13px}
+.ks-activation-steps li{display:flex;gap:12px;align-items:flex-start}
+.ks-activation-steps li>span{flex:0 0 30px;height:30px;display:grid;place-items:center;border-radius:50%;background:#166534;color:#fff;font-weight:900}
+.ks-activation-steps strong{display:block;color:#0f172a;margin:2px 0 3px}
+.ks-activation-steps p{margin:0;color:#64748b;font-size:13px;line-height:1.55}
+.ks-convert-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.ks-convert-actions button{cursor:pointer}
+.ks-payment-note{margin:18px 0 0;padding:12px 14px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:12px;line-height:1.55}
+@media(max-width:680px){.ks-convert-grid{grid-template-columns:1fr}.ks-convert-card{display:grid;grid-template-columns:42px 1fr;column-gap:12px;align-items:start}.ks-convert-card h3{margin:1px 0 5px}.ks-convert-card p{grid-column:2}.ks-convert-actions{display:grid;grid-template-columns:1fr}.ks-convert-actions button{width:100%}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
@@ -447,10 +470,10 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 <p>Mulai rapikan transaksi, pantau produk, dan pahami arus uang usaha dengan KasUsaha Lite. Lebih sedikit menebak-nebak, lebih banyak waktu untuk melayani pelanggan dan mengembangkan usaha.</p>
 <div class="ks-license-price"><span class="ks-price-label">AKTIVASI LISENSI</span><strong>Rp49.000</strong><span class="ks-price-once">Sekali bayar · tanpa langganan berkala</span></div>
 <div class="promo-actions">
-<button type="button" class="promo-primary" onclick="buka('akunPembeli',document.querySelectorAll('nav button')[8])">Buat Akun Sekarang ↗</button>
-<button type="button" class="promo-secondary" onclick="buka('pasar',document.querySelectorAll('nav button')[3])">Jelajahi Pasar Online</button>
+<button type="button" class="promo-primary" onclick="buka('akunPembeli',document.querySelectorAll('nav button')[8])">Daftar / Masuk untuk Aktivasi ↗</button>
+<button type="button" class="promo-secondary" onclick="document.getElementById('caraAktivasiKasUsaha')?.scrollIntoView({behavior:'smooth',block:'start'})">Cara Aktivasi</button>
 </div>
-<p class="promo-note">Aktivasi KasUsaha Lite Rp49.000 sekali bayar. Buat akun, lalu buka Pasar Online untuk membeli lisensi.</p>
+<p class="promo-note">Harga lisensi Rp49.000 sekali bayar. Buat akun atau login, lalu lanjutkan ke Pasar Online untuk membeli lisensi. Pembayaran uang sungguhan baru dapat diterima setelah mode Midtrans Production diaktifkan.</p>
 </div>
 <div class="promo-art ks-dashboard-showcase" role="img" aria-label="Ilustrasi visual dashboard KasUsaha Lite dengan ringkasan usaha, grafik, transaksi, dan produk">
   <div class="ks-orbit ks-orbit-one"></div><div class="ks-orbit ks-orbit-two"></div>
@@ -472,6 +495,32 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
   <div class="ks-float ks-float-lock"><span>♙</span><div><b>Akses per peran</b><small>Owner & karyawan</small></div></div>
  </div>
 </div>
+
+<section id="caraAktivasiKasUsaha" class="ks-convert-section" aria-label="Manfaat dan cara aktivasi KasUsaha Lite">
+  <div class="ks-convert-heading">
+    <span class="ks-convert-kicker">MULAI DARI LANGKAH SEDERHANA</span>
+    <h2>Kelola usaha dengan lebih teratur</h2>
+    <p>KasUsaha Lite membantu pemilik usaha mencatat aktivitas harian dan mengelola akses sesuai peran. Mulai dengan memahami fitur, lalu aktifkan lisensi jika sudah siap.</p>
+  </div>
+  <div class="ks-convert-grid">
+    <article class="ks-convert-card"><span class="ks-convert-icon">🧾</span><h3>Catatan transaksi</h3><p>Catat pemasukan dan pengeluaran agar riwayat usaha lebih mudah ditinjau.</p></article>
+    <article class="ks-convert-card"><span class="ks-convert-icon">📦</span><h3>Produk dan stok</h3><p>Susun daftar produk dan bantu pantau stok dari satu tempat.</p></article>
+    <article class="ks-convert-card"><span class="ks-convert-icon">👥</span><h3>Akses owner & karyawan</h3><p>Hak akses dan tampilan laporan disesuaikan dengan peran akun masing-masing.</p></article>
+  </div>
+  <div class="ks-steps-wrap">
+    <h3>Bagaimana cara memulai?</h3>
+    <ol class="ks-activation-steps">
+      <li><span>1</span><div><strong>Buat akun atau login</strong><p>Gunakan email aktif dan selesaikan konfirmasi email bila diminta.</p></div></li>
+      <li><span>2</span><div><strong>Buka Pasar Online</strong><p>Pilih produk lisensi KasUsaha Lite dan ikuti proses pemesanan yang tersedia.</p></div></li>
+      <li><span>3</span><div><strong>Periksa Pesanan Saya</strong><p>Setelah pembayaran terverifikasi, periksa lisensi dan petunjuk aktivasi di akun pembeli.</p></div></li>
+    </ol>
+    <div class="ks-convert-actions">
+      <button type="button" class="promo-primary" onclick="buka('akunPembeli',document.querySelectorAll('nav button')[8])">Daftar / Masuk ↗</button>
+      <button type="button" class="promo-secondary" onclick="buka('pasar',document.querySelectorAll('nav button')[3])">Buka Pasar Online</button>
+    </div>
+    <p class="ks-payment-note"><strong>Catatan pembayaran:</strong> konfigurasi situs yang ada masih menunjukkan Midtrans Sandbox. Jangan melakukan pembayaran uang sungguhan melalui checkout sampai pemilik situs mengaktifkan dan menguji kredensial Midtrans Production.</p>
+  </div>
+</section>
 
 <section id="affiliateHomeCatalog" aria-label="Katalog rekomendasi Shopee Affiliate">
 <div class="affiliate-home-head"><div><h2>🛍️ Katalog Pilihan dari Shopee</h2><p>Jelajahi kategori populer dan buka produk di Shopee melalui tautan afiliasi.</p></div><a class="affiliate-home-more" href="#affiliateShopeePanel" onclick="buka('pasar',document.querySelectorAll('nav button')[3]);setTimeout(()=>document.getElementById('affiliateShopeePanel')?.scrollIntoView({behavior:'smooth',block:'start'}),150);return false;">Lihat semua kategori ↗</a></div>
