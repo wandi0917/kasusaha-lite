@@ -1100,9 +1100,19 @@ $('financeForm')?.addEventListener('submit',async function(e){
  }catch(err){setFinanceStatus('Transaksi gagal disimpan: '+String(err.message||err).slice(0,240),true);}finally{btn.disabled=false;}
 });
 function financePeriodBounds(){
- const start=$('financeReportStart')?.value;
- const end=$('financeReportEnd')?.value;
- if(!start||!end||!/^\d{4}-\d{2}-\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}$/.test(end)||start>end)return null;
+ const startInput=$('financeReportStart');
+ const endInput=$('financeReportEnd');
+ const today=financeToday();
+ if(startInput&&!startInput.value)startInput.value=today.slice(0,8)+'01';
+ if(endInput&&!endInput.value)endInput.value=today;
+ let start=startInput?.value||'';
+ let end=endInput?.value||'';
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}$/.test(end))return null;
+ if(start>end){
+  start=today.slice(0,8)+'01';end=today;
+  if(startInput)startInput.value=start;
+  if(endInput)endInput.value=end;
+ }
  return {start,end};
 }
 function financeDateISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
