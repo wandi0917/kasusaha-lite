@@ -653,6 +653,10 @@ async function buatPratinjauLaporan(){
    if(sessionError)throw sessionError;
    if(sessionData.session){
     await loadFinanceWorkspace();
+    if(financeBusiness&&financeMemberRole==='owner'&&financeRows.length===0&&Array.isArray(transaksi)&&transaksi.length>0){
+     await imporTransaksiLokalKeBersama();
+     await loadFinanceWorkspace();
+    }
     if(!financeBusiness||!financeMemberRole){
      setStatusCetakLaporan("Anda sudah login, tetapi akun belum terhubung ke usaha atau data bersama gagal dimuat. Periksa status login/usaha di bagian Keuangan, lalu coba lagi. Laporan lokal tidak dicetak agar data tidak keliru.",true);
      return false;
