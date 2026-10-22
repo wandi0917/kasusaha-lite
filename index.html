@@ -1178,8 +1178,20 @@ function financeDateISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).pad
 async function muatDanTampilkanLaporan(){
  const tbody=$('financeReportRows');if(tbody)tbody.innerHTML='<tr><td colspan="7">Memuat ulang transaksi untuk periode yang dipilih...</td></tr>';
  if(!sb||!financeBusiness){renderFinanceReport();return;}
- try{await loadFinanceWorkspace();renderFinanceReport();}
- catch(e){if(tbody)tbody.innerHTML='<tr><td colspan="7">Gagal memuat transaksi: '+aman(String(e.message||e).slice(0,180))+'</td></tr>';}
+ try{
+  await loadFinanceWorkspace();
+  // Jika laporan bersama masih kosong, Owner ditawari memindahkan catatan lama dari browser ini.
+  // Data lokal tidak pernah dicampur diam-diam ke laporan bersama dan tidak dihapus saat impor.
+  if(financeBusiness&&financeMemberRole==='owner'&&financeRows.length===0&&Array.isArray(transaksi)&&transaksi.length>0){
+   if(tbody)tbody.innerHTML='<tr><td colspan="7">Belum ada transaksi bersama. Memeriksa apakah ada transaksi lokal yang dapat dipindahkan...</td></tr>';
+   await imporTransaksiLokalKeBersama();
+   await loadFinanceWorkspace();
+  }
+  renderFinanceReport();
+ }catch(e){
+  if(tbody)tbody.innerHTML='<tr><td colspan="7">Gagal memuat transaksi: '+aman(String(e.message||e).slice(0,180))+'</td></tr>';
+  setFinanceStatus('Laporan gagal dimuat: '+String(e.message||e).slice(0,220),true);
+ }
 }
 
 function renderFinanceReport(){
