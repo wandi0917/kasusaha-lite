@@ -463,7 +463,7 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 <div><label for="financeReportEnd">Tanggal sampai</label><input id="financeReportEnd" type="date" required></div>
 </div>
 <div class="grid"><div id="financeRoleFilterWrap"><label for="financeRoleFilter">Pencatat</label><select id="financeRoleFilter"><option value="all">Semua transaksi</option><option value="owner">Transaksi Owner</option><option value="employee">Transaksi Karyawan</option><option value="mine">Transaksi saya</option></select></div><div><label for="financeReportCategory">Kategori transaksi</label><select id="financeReportCategory"><option value="all">Semua kategori</option><option>Penjualan</option><option>Modal</option><option>Belanja stok</option><option>Operasional</option><option>Gaji</option><option>Transportasi</option><option>Listrik/Air/Internet</option><option>Prive Owner</option><option>Lainnya</option></select></div></div>
-<div class="row-actions"><button type="button" class="primary" onclick="muatDanTampilkanLaporan()">Tampilkan laporan</button><button type="button" class="secondary" onclick="muatDanTampilkanLaporan()">Muat ulang laporan</button><button type="button" class="secondary" onclick="printFinanceReport()">Cetak / Simpan PDF</button></div>
+<div class="row-actions"><button type="button" class="primary" onclick="muatDanTampilkanLaporan()">Tampilkan laporan</button><button type="button" class="secondary" onclick="muatDanTampilkanLaporan()">Muat ulang laporan</button><button type="button" id="importLocalFinanceBtn" class="secondary" onclick="imporTransaksiLokalKeBersama()">Pindahkan transaksi lokal ke laporan bersama</button><button type="button" class="secondary" onclick="printFinanceReport()">Cetak / Simpan PDF</button></div>
 <div id="financeReportSummary" class="grid"></div>
 <div class="table-wrap"><table class="report-table"><thead id="financeReportHead"><tr><th>Tanggal &amp; Jam</th><th>Pencatat</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo periode</th></tr></thead><tbody id="financeReportRows"><tr><td colspan="7">Memuat laporan...</td></tr></tbody></table></div>
 <p class="small">Owner dapat melihat transaksi owner dan seluruh karyawan. Karyawan hanya dapat melihat dan menghapus transaksi miliknya sendiri. Data dilindungi kebijakan akses Supabase.</p>
@@ -1139,6 +1139,39 @@ function renderFinanceReport(){
  const rowHtml=rows.map(r=>{const d=new Date(r.created_at);const time=Number.isFinite(d.getTime())?d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'—';if(isEmployee)return '<tr><td>'+aman(r.transaction_date)+'<br>'+aman(time)+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+format(r.amount)+'</td></tr>';running+=r.transaction_type==='income'?Number(r.amount):-Number(r.amount);return '<tr><td>'+aman(r.transaction_date)+'<br>'+aman(time)+'</td><td>'+financeRoleLabel(r.created_by_role)+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+(r.transaction_type==='income'?format(r.amount):'—')+'</td><td class="amount expense">'+(r.transaction_type==='expense'?format(r.amount):'—')+'</td><td class="amount">'+format(running)+'</td></tr>';}).join('');
  $('financeReportHead').innerHTML=isEmployee?'<tr><th>Tanggal &amp; Jam</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th></tr>':'<tr><th>Tanggal &amp; Jam</th><th>Pencatat</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo periode</th></tr>';
  tbody.innerHTML=rowHtml||(isEmployee?'<tr><td colspan="4">Belum ada pemasukan pada periode ini.</td></tr>':'<tr><td colspan="7">Tidak ada transaksi pada periode ini.</td></tr>');
+}
+async function imporTransaksiLokalKeBersama(){
+ if(!sb||!financeBusiness||financeMemberRole!=='owner'||!financeMemberUserId){setFinanceStatus('Hanya Owner yang sudah terhubung ke usaha yang dapat memindahkan transaksi lokal.',true);return;}
+ if(!Array.isArray(transaksi)||transaksi.length===0){setFinanceStatus('Tidak ada transaksi lokal di browser ini untuk dipindahkan. Transaksi yang sudah tersimpan di perangkat lain tidak dapat dibaca dari sini.',true);return;}
+ const valid=[],skipped=[];
+ transaksi.forEach((t,i)=>{
+  const amount=Number(t.nominal),kind=t.jenis==='masuk'?'income':t.jenis==='keluar'?'expense':null;
+  let date='';
+  const raw=t.waktu||t.createdAt||t.timestamp;
+  if(raw){const d=new Date(raw);if(Number.isFinite(d.getTime()))date=financeDateISO(d);}
+  if(!date){const m=String(t.tanggal||'').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(m)date=m[3]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0');}
+  const desc=String(t.keterangan||t.description||'').trim();
+  if(!kind||!date||!desc||!Number.isSafeInteger(amount)||amount<=0){skipped.push(i);return;}
+  const rawId=t.id!==undefined&&t.id!==null?String(t.id):(raw||date+':'+desc+':'+amount+':'+i);
+  const row={business_id:financeBusiness.id,created_by:financeMemberUserId,created_by_role:'owner',transaction_date:date,transaction_type:kind,amount,description:desc.slice(0,300),category:String(t.kategori||t.category||'Lainnya').slice(0,100),legacy_ref:'local:'+rawId.slice(0,180)};
+  if(raw){const d=new Date(raw);if(Number.isFinite(d.getTime()))row.created_at=d.toISOString();}
+  valid.push(row);
+ });
+ if(!valid.length){setFinanceStatus('Tidak ada transaksi lokal dengan tanggal, keterangan, jenis, dan nominal yang valid untuk dipindahkan.',true);return;}
+ if(!confirm('Pindahkan '+valid.length+' transaksi lokal ke laporan bersama usaha '+financeBusiness.business_name+'? Transaksi yang pernah dipindahkan akan dilewati otomatis. Data lokal tidak akan dihapus.'))return;
+ const btn=$('importLocalFinanceBtn');if(btn)btn.disabled=true;
+ try{
+  let inserted=0;
+  for(let i=0;i<valid.length;i+=100){
+   const batch=valid.slice(i,i+100);
+   const {data,error}=await sb.from('financial_transactions').upsert(batch,{onConflict:'business_id,legacy_ref',ignoreDuplicates:true}).select('id');
+   if(error)throw error;
+   inserted+=(data||[]).length;
+  }
+  await loadFinanceWorkspace();
+  setFinanceStatus('Pemindahan selesai. Transaksi baru ditambahkan: '+inserted+'. Duplikat dilewati otomatis. Baris tidak valid yang dilewati: '+skipped.length+'. Data lokal tetap tersimpan.');
+ }catch(e){setFinanceStatus('Pemindahan belum selesai: '+String(e.message||e).slice(0,220)+'. Data lokal tetap tersimpan; Anda dapat mencoba lagi.',true);}
+ finally{if(btn)btn.disabled=false;}
 }
 function printFinanceReport(){
  if(!financeBusiness){setFinanceStatus('Hubungkan usaha dahulu sebelum mencetak laporan.',true);return;}
