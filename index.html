@@ -467,7 +467,7 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 <div><label for="financeReportStart">Tanggal dimulai</label><input id="financeReportStart" type="date" required></div>
 <div><label for="financeReportEnd">Tanggal sampai</label><input id="financeReportEnd" type="date" required></div>
 </div>
-<div class="grid"><div id="financeRoleFilterWrap"><label for="financeRoleFilter">Pencatat</label><select id="financeRoleFilter"><option value="all">Semua transaksi</option><option value="owner">Transaksi Owner</option><option value="employee">Transaksi Karyawan</option><option value="mine">Transaksi saya</option></select></div><div><label for="financeReportCategory">Kategori transaksi</label><select id="financeReportCategory"><option value="all">Semua kategori</option><option>Penjualan</option><option>Modal</option><option>Belanja stok</option><option>Operasional</option><option>Gaji</option><option>Transportasi</option><option>Listrik/Air/Internet</option><option>Prive Owner</option><option>Lainnya</option></select></div></div>
+<div class="grid"><div id="financeRoleFilterWrap"><label for="financeRoleFilter">Pencatat</label><select id="financeRoleFilter"><option value="all">Semua transaksi</option><option value="owner">Transaksi Owner</option><option value="employee">Transaksi Karyawan</option><option value="mine">Transaksi saya</option></select></div><div><label for="financeReportCategory">Kategori transaksi</label><select id="financeReportCategory"><option value="all">Semua kategori</option><option>Penjualan</option><option>Modal</option><option>Belanja stok</option><option>Operasional</option><option>Gaji</option><option>Transportasi</option><option>Listrik/Air/Internet</option><option>Prive Owner</option><option>Lainnya</option><option value="__uncategorized">Transaksi tanpa kategori</option></select></div></div>
 <div class="row-actions"><button type="button" class="primary" onclick="muatDanTampilkanLaporan()">Tampilkan laporan</button><button type="button" class="secondary" onclick="muatDanTampilkanLaporan()">Muat ulang laporan</button><button type="button" id="importLocalFinanceBtn" class="secondary" onclick="imporTransaksiLokalKeBersama()">Pindahkan transaksi lokal ke laporan bersama</button><button type="button" class="secondary" onclick="printFinanceReport()">Cetak / Simpan PDF</button></div>
 <div id="financeReportSummary" class="grid"></div>
 <div class="table-wrap"><table class="report-table"><thead id="financeReportHead"><tr><th>Tanggal &amp; Jam</th><th>Pencatat</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo periode</th></tr></thead><tbody id="financeReportRows"><tr><td colspan="7">Memuat laporan...</td></tr></tbody></table></div>
@@ -634,7 +634,7 @@ $('formKas').addEventListener('submit',async function(e){
 });
 function hapusTransaksi(id){if(confirm('Hapus transaksi ini?')){transaksi=transaksi.filter(t=>String(t.id)!==String(id));simpan();tampil();}}
 function saldoBerjalan(data){let saldo=0;return data.slice().reverse().map(t=>{const n=Number(t.nominal)||0;saldo+=t.jenis==='masuk'?n:-n;return {t,saldo};}).reverse();}
-function formatTanggalTransaksi(t){const nilai=t.waktu||t.createdAt||t.timestamp;const d=nilai?new Date(nilai):null;if(d&&Number.isFinite(d.getTime()))return d.toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'});return t.tanggal||'—';}
+function formatTanggalTransaksi(t){const nilai=t.waktu||t.createdAt||t.timestamp;if(nilai){const d=new Date(nilai);if(Number.isFinite(d.getTime()))return financeFormatDate(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));}const raw=String(t.tanggal||'').trim();const m=raw.match(/^([0-9]{1,2})[\/-]([0-9]{1,2})[\/-]([0-9]{4})$/);if(m)return String(m[1]).padStart(2,'0')+'/'+String(m[2]).padStart(2,'0')+'/'+m[3];return raw||'—';}
 function formatJamTransaksi(t){const nilai=t.waktu||t.createdAt||t.timestamp;const d=nilai?new Date(nilai):null;if(d&&Number.isFinite(d.getTime()))return d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});return '—';}
 function barisLaporan(t,saldo,aksi=false){const masuk=t.jenis==='masuk'?Number(t.nominal)||0:0,keluar=t.jenis==='keluar'?Number(t.nominal)||0:0;return '<tr><td>'+aman(formatTanggalTransaksi(t))+'</td><td>'+aman(formatJamTransaksi(t))+'</td><td>'+aman(t.keterangan||'')+'</td><td>'+ (t.jenis==='masuk'?'Pemasukan':'Pengeluaran')+'</td><td class="amount income">'+(masuk?format(masuk):'—')+'</td><td class="amount expense">'+(keluar?format(keluar):'—')+'</td><td class="amount">'+format(saldo)+'</td>'+(aksi?'<td><button class="danger" type="button" onclick="hapusTransaksi('+aman(JSON.stringify(String(t.id)))+')">Hapus</button></td>':'')+'</tr>';}
 function tanggalKunci(t){const nilai=t.waktu||t.createdAt||t.timestamp;if(nilai){const d=new Date(nilai);if(Number.isFinite(d.getTime()))return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}const teks=String(t.tanggal||'').trim();const m=teks.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(m)return m[3]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0');return 'Tanggal lama';}
@@ -679,12 +679,12 @@ async function buatPratinjauLaporan(){
    if(tanggal<kMulai||tanggal>kAkhir)return false;
    const cat=String(r.category||"").trim();
    if(kategori==="__uncategorized")return !cat;
-   return kategori==="all"||cat===kategori;
+   return kategori==="all"||financeNormalizeCategory(cat)===financeNormalizeCategory(kategori);
   }).map(r=>({id:r.id,waktu:r.created_at||r.transaction_date,tanggal:r.transaction_date,keterangan:r.description||"",jenis:r.transaction_type==="income"?"masuk":"keluar",nominal:Number(r.amount)||0,kategori:r.category||"",_sourceRole:r.created_by_role}));
  }else{
   sumber=transaksi.filter(t=>{
-   const k=tanggalKunci(t),cat=String(t.kategori||"").trim()||"__uncategorized";
-   return k!=="Tanggal lama"&&k>=kMulai&&k<=kAkhir&&(kategori==="all"||cat===kategori);
+   const k=tanggalKunci(t),cat=String(t.kategori||t.category||"").trim()||"__uncategorized";
+   return k!=="Tanggal lama"&&k>=kMulai&&k<=kAkhir&&(kategori==="all"||(kategori==="__uncategorized"?cat==="__uncategorized":financeNormalizeCategory(cat)===financeNormalizeCategory(kategori)));
   }).slice();
  }
  const data=sumber.slice().sort((a,b)=>{
@@ -699,10 +699,13 @@ async function buatPratinjauLaporan(){
  const baris=data.map(t=>"<tr><td>"+aman(formatTanggalTransaksi(t))+"</td><td>"+aman(formatJamTransaksi(t))+"</td><td>"+aman(t.keterangan||"")+"</td><td>"+(t.jenis==="masuk"?"Pemasukan":"Pengeluaran")+"</td><td class=\"amount income\">"+(t.jenis==="masuk"?format(t.nominal):"—")+"</td><td class=\"amount expense\">"+(t.jenis==="keluar"?format(t.nominal):"—")+"</td></tr>").join("");
  const sumberLabel=pakaiDataBersama?"data bersama usaha":"data lokal di perangkat ini";
  $("areaLaporanCetak").innerHTML="<h2>KasUsaha Lite — Laporan Transaksi</h2><p>Periode: "+aman(periode)+"</p><p>Kategori: "+aman(labelKategori)+"</p><p>Sumber: "+aman(sumberLabel)+"</p><p>Dicetak: "+aman(new Date().toLocaleString("id-ID"))+"</p><p><strong>Total pemasukan:</strong> "+format(masuk)+" &nbsp; <strong>Total pengeluaran:</strong> "+format(keluar)+" &nbsp; <strong>Selisih:</strong> "+format(masuk-keluar)+"</p><div class=\"table-wrap\"><table class=\"report-table\"><thead><tr><th>Tanggal</th><th>Jam</th><th>Keterangan</th><th>Jenis</th><th>Pemasukan</th><th>Pengeluaran</th></tr></thead><tbody>"+(baris||"<tr><td colspan=\"6\">Tidak ada transaksi pada periode ini.</td></tr>")+"</tbody></table></div><p>Total transaksi: "+data.length+"</p>";
- setStatusCetakLaporan("Laporan siap. "+data.length+" transaksi ditemukan untuk kategori "+labelKategori+" dari "+sumberLabel+".");
+ setStatusCetakLaporan("Laporan siap. "+data.length+" transaksi ditemukan untuk kategori "+labelKategori+" dari "+sumberLabel+". Tanggal ditampilkan dalam format HH/BB/TTTT.");
  return true;
 }
 function setStatusCetakLaporan(teks,error=false){const el=$("statusCetakLaporan");if(el){el.className=error?"status error":"status";el.textContent=teks;}}
+$('financeReportCategory')?.addEventListener('change',()=>renderFinanceReport());
+$('financeRoleFilter')?.addEventListener('change',()=>renderFinanceReport());
+$('kategoriLaporanLokal')?.addEventListener('change',()=>{if($('areaLaporanCetak')?.innerHTML)buatPratinjauLaporan();});
 async function cetakLaporan(){const siap=await buatPratinjauLaporan();if(siap)window.print();}
 function batalEditProduk(){ $('formProduk').reset(); $('fotoProduk').value=''; pratinjauFotoProduk(); $('idProdukEdit').value=''; $('stok').value=1; $('judulFormProduk').textContent='Tambah barang'; $('simpanProdukLokal').textContent='Simpan produk di HP'; $('batalEditProduk').hidden=true; }
 function pratinjauFotoProduk(){const nilai=$('fotoProduk').value.trim(),box=$('fotoPreviewBox'),img=$('fotoPreviewImg'),status=$('fotoPreviewStatus');if(!nilai){box.hidden=true;img.removeAttribute('src');status.textContent='';status.classList.remove('error');return;}box.hidden=false;img.onload=()=>{status.textContent='Pratinjau foto siap. Foto akan disimpan bersama produk di perangkat ini.';status.classList.remove('error');};img.onerror=()=>{status.textContent='Pratinjau foto tidak dapat dibuka. Silakan pilih foto lain.';status.classList.add('error');};img.src=nilai;}
@@ -1233,6 +1236,8 @@ function financePeriodBounds(){
  return {start,end};
 }
 function financeDateISO(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function financeFormatDate(value){const s=String(value||'').slice(0,10);const m=s.match(/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/);if(m)return m[3]+'/'+m[2]+'/'+m[1];const d=new Date(value);return Number.isFinite(d.getTime())?String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear():'—';}
+function financeNormalizeCategory(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ').toLocaleLowerCase('id-ID');}
 
 async function muatDanTampilkanLaporan(){
  const tbody=$('financeReportRows');if(tbody)tbody.innerHTML='<tr><td colspan="7">Memuat ulang transaksi untuk periode yang dipilih...</td></tr>';
@@ -1260,7 +1265,7 @@ function renderFinanceReport(){
  const bounds=financePeriodBounds();if(!bounds){tbody.innerHTML='<tr><td colspan="7">Pilih tanggal dimulai dan tanggal sampai yang valid. Tanggal dimulai tidak boleh melewati tanggal sampai.</td></tr>';return;}
  let rows=financeRows.filter(r=>r.transaction_date>=bounds.start&&r.transaction_date<=bounds.end);
  const category=$('financeReportCategory')?.value||'all';
- if(category!=='all')rows=rows.filter(r=>r.category===category);
+ if(category==='__uncategorized')rows=rows.filter(r=>!String(r.category||'').trim());else if(category!=='all'){const target=financeNormalizeCategory(category);rows=rows.filter(r=>financeNormalizeCategory(r.category)===target);}
  if(isEmployee){rows=rows.filter(r=>r.created_by===financeMemberUserId&&r.created_by_role==='employee'&&r.transaction_type==='income');}
  else{
   const filter=$('financeRoleFilter').value;
@@ -1275,7 +1280,7 @@ function renderFinanceReport(){
   :'<div class="finance-metric">Total pemasukan<strong>'+format(income)+'</strong></div><div class="finance-metric">Total pengeluaran<strong>'+format(expense)+'</strong></div><div class="finance-metric">Selisih periode<strong>'+format(income-expense)+'</strong></div>';
  $('financeReportTitle').textContent=isEmployee?'Laporan Pemasukan Karyawan':'Laporan Keuangan Lengkap (Owner)';
  $('financeReportCard').dataset.reportTitle=(isEmployee?'Laporan Pemasukan Karyawan — ':'Laporan Keuangan Lengkap — ')+'Periode '+bounds.start+' s.d. '+bounds.end;
- const rowHtml=rows.map(r=>{const d=new Date(r.created_at);const time=Number.isFinite(d.getTime())?d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'—';if(isEmployee)return '<tr><td>'+aman(r.transaction_date)+'<br>'+aman(time)+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+format(r.amount)+'</td></tr>';running+=r.transaction_type==='income'?Number(r.amount):-Number(r.amount);return '<tr><td>'+aman(r.transaction_date)+'<br>'+aman(time)+'</td><td>'+financeRoleLabel(r.created_by_role)+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+(r.transaction_type==='income'?format(r.amount):'—')+'</td><td class="amount expense">'+(r.transaction_type==='expense'?format(r.amount):'—')+'</td><td class="amount">'+format(running)+'</td></tr>';}).join('');
+ const rowHtml=rows.map(r=>{const d=new Date(r.created_at);const time=Number.isFinite(d.getTime())?d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'—';if(isEmployee)return '<tr><td>'+aman(financeFormatDate(r.transaction_date))+'<br>'+aman(time)+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+format(r.amount)+'</td></tr>';running+=r.transaction_type==='income'?Number(r.amount):-Number(r.amount);return '<tr><td>'+aman(financeFormatDate(r.transaction_date))+'<br>'+aman(time)+'</td><td>'+financeRoleLabel(r.created_by_role)+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+(r.transaction_type==='income'?format(r.amount):'—')+'</td><td class="amount expense">'+(r.transaction_type==='expense'?format(r.amount):'—')+'</td><td class="amount">'+format(running)+'</td></tr>';}).join('');
  $('financeReportHead').innerHTML=isEmployee?'<tr><th>Tanggal &amp; Jam</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th></tr>':'<tr><th>Tanggal &amp; Jam</th><th>Pencatat</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo periode</th></tr>';
  tbody.innerHTML=rowHtml||(isEmployee?'<tr><td colspan="4">Belum ada pemasukan pada periode ini. Karyawan hanya melihat pemasukan yang tersimpan di laporan bersama.</td></tr>':'<tr><td colspan="7">Tidak ada transaksi bersama pada periode ini. Jika catatan lama masih ada di perangkat ini, tekan “Pindahkan transaksi lokal ke laporan bersama”. Catatan lokal tidak akan dihapus.</td></tr>');
 }
