@@ -371,6 +371,31 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 @media(max-width:650px){#beranda .promo-products{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}#beranda .promo-product img{height:125px!important}#beranda .promo-product>div{padding:9px!important}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style id="affiliateCatalogDesign">
+#affiliateCampaigns{background:linear-gradient(145deg,#fff7ed 0%,#fff 52%,#f0fdf4 100%)!important;border-radius:20px!important;padding:clamp(14px,2vw,24px)!important;box-shadow:0 12px 35px rgba(15,23,42,.08)}
+#affiliateCampaigns>h3{font-size:clamp(1.25rem,2vw,1.7rem);letter-spacing:-.03em;margin:0 0 8px;color:#172554}
+#affiliateCampaignGrid{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))!important;gap:16px!important;margin-top:14px}
+.affiliate-campaign-card{overflow:hidden!important;padding:0!important;border:1px solid #e5e7eb!important;border-radius:16px!important;box-shadow:0 5px 18px rgba(15,23,42,.06)!important;transition:transform .18s ease,box-shadow .18s ease!important}
+.affiliate-campaign-card:hover{transform:translateY(-3px);box-shadow:0 12px 26px rgba(15,23,42,.12)!important}
+.affiliate-campaign-card>img{height:175px!important;border-radius:0!important;object-fit:cover!important;width:100%!important}
+.affiliate-campaign-card>div{margin-left:14px;margin-right:14px}
+.affiliate-campaign-card>div:nth-of-type(1){margin-top:4px}
+.affiliate-campaign-card>div:nth-of-type(2){font-size:12px;color:#64748b}
+.affiliate-campaign-card>a{margin:2px 14px 14px!important;border-radius:10px!important;font-weight:750!important;background:linear-gradient(135deg,#f97316,#ea580c)!important;color:#fff!important}
+#affiliateHomeCatalog{margin:28px 0;padding:clamp(16px,3vw,28px);border-radius:22px;background:linear-gradient(140deg,#fff7ed,#fff 50%,#eff6ff);border:1px solid #fed7aa;box-shadow:0 12px 32px rgba(15,23,42,.07)}
+#affiliateHomeCatalog .affiliate-home-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+#affiliateHomeCatalog h2{font-size:clamp(1.35rem,2.4vw,2rem);margin:0;color:#172554;letter-spacing:-.035em}
+#affiliateHomeCatalog p{color:#64748b;margin:7px 0 0}
+#affiliateHomeCatalog .affiliate-home-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,205px),1fr));gap:14px}
+#affiliateHomeCatalog .affiliate-home-card{overflow:hidden;background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 5px 16px rgba(15,23,42,.06);display:flex;flex-direction:column;min-width:0}
+#affiliateHomeCatalog .affiliate-home-card img{display:block;width:100%;height:150px;object-fit:cover;background:#f1f5f9}
+#affiliateHomeCatalog .affiliate-home-card .affiliate-home-body{padding:13px;display:flex;flex-direction:column;gap:9px;flex:1}
+#affiliateHomeCatalog .affiliate-home-card strong{font-size:1rem;color:#0f172a}
+#affiliateHomeCatalog .affiliate-home-card .affiliate-rate{align-self:flex-start;border-radius:999px;background:#dcfce7;color:#166534;padding:5px 9px;font-size:12px;font-weight:800}
+#affiliateHomeCatalog .affiliate-home-card a{display:block;text-align:center;text-decoration:none;padding:10px 12px;border-radius:10px;background:#ea580c;color:#fff;font-weight:750;margin-top:auto}
+#affiliateHomeCatalog .affiliate-home-more{display:inline-flex;align-items:center;justify-content:center;padding:10px 14px;border-radius:10px;background:#172554;color:#fff;text-decoration:none;font-weight:750}
+</style>
 </head>
 <body>
 <header class="ks-brand-header">
@@ -432,6 +457,14 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
   <div class="ks-float ks-float-lock"><span>♙</span><div><b>Akses per peran</b><small>Owner & karyawan</small></div></div>
  </div>
 </div>
+
+<section id="affiliateHomeCatalog" aria-label="Katalog rekomendasi Shopee Affiliate">
+<div class="affiliate-home-head"><div><h2>🛍️ Katalog Pilihan dari Shopee</h2><p>Jelajahi kategori populer dan buka produk di Shopee melalui tautan afiliasi.</p></div><a class="affiliate-home-more" href="#affiliateShopeePanel" onclick="buka('pasar',document.querySelectorAll('nav button')[3]);setTimeout(()=>document.getElementById('affiliateShopeePanel')?.scrollIntoView({behavior:'smooth',block:'start'}),150);return false;">Lihat semua kategori ↗</a></div>
+<div class="affiliate-home-grid">
+<article class="affiliate-home-card"><img src="https://images.unsplash.com/photo-1547887538-e3a2f32cb1cc?auto=format&fit=crop&w=700&q=80" alt="Inspirasi kategori Health" loading="lazy" decoding="async" onerror="this.style.display='none'"><div class="affiliate-home-body"><strong>Health</strong><span class="affiliate-rate">Komisi ekstra tertera 1,5%</span><a href="https://s.shopee.co.id/2BFqCoFshR" target="_blank" rel="noopener noreferrer sponsored">Lihat Produk di Shopee ↗</a></div></article><article class="affiliate-home-card"><img src="https://images.unsplash.com/photo-1611652022419-a9419f74343d?auto=format&fit=crop&w=700&q=80" alt="Inspirasi kategori Fashion Accessories" loading="lazy" decoding="async" onerror="this.style.display='none'"><div class="affiliate-home-body"><strong>Fashion Accessories</strong><span class="affiliate-rate">Komisi ekstra tertera 1,5%</span><a href="https://s.shopee.co.id/2LZGP7FFMU" target="_blank" rel="noopener noreferrer sponsored">Lihat Produk di Shopee ↗</a></div></article><article class="affiliate-home-card"><img src="https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=700&q=80" alt="Inspirasi kategori Electronics" loading="lazy" decoding="async" onerror="this.style.display='none'"><div class="affiliate-home-body"><strong>Electronics</strong><span class="affiliate-rate">Komisi ekstra tertera 0,5%</span><a href="https://s.shopee.co.id/2VsgbQEc1X" target="_blank" rel="noopener noreferrer sponsored">Lihat Produk di Shopee ↗</a></div></article><article class="affiliate-home-card"><img src="https://images.unsplash.com/photo-1618354691373-d851c5c3a990?auto=format&fit=crop&w=700&q=80" alt="Inspirasi kategori Fashion Pria" loading="lazy" decoding="async" onerror="this.style.display='none'"><div class="affiliate-home-body"><strong>Fashion Pria</strong><span class="affiliate-rate">Komisi ekstra tertera 1,5%</span><a href="https://s.shopee.co.id/1BLcpO864" target="_blank" rel="noopener noreferrer sponsored">Lihat Produk di Shopee ↗</a></div></article><article class="affiliate-home-card"><img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=700&q=80" alt="Inspirasi kategori Sepatu Pria" loading="lazy" decoding="async" onerror="this.style.display='none'"><div class="affiliate-home-body"><strong>Sepatu Pria</strong><span class="affiliate-rate">Komisi ekstra tertera 1,5%</span><a href="https://s.shopee.co.id/BUlp8NUl7" target="_blank" rel="noopener noreferrer sponsored">Lihat Produk di Shopee ↗</a></div></article><article class="affiliate-home-card"><img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=700&q=80" alt="Inspirasi kategori Aksesori Ponsel" loading="lazy" decoding="async" onerror="this.style.display='none'"><div class="affiliate-home-body"><strong>Aksesori Ponsel</strong><span class="affiliate-rate">Komisi ekstra tertera 0,5%</span><a href="https://s.shopee.co.id/LoC1RMrQA" target="_blank" rel="noopener noreferrer sponsored">Lihat Produk di Shopee ↗</a></div></article><article class="affiliate-home-card"><img src="https://images.unsplash.com/photo-1583391733956-6c78276477e1?auto=format&fit=crop&w=700&q=80" alt="Inspirasi kategori Fashion Muslim" loading="lazy" decoding="async" onerror="this.style.display='none'"><div class="affiliate-home-body"><strong>Fashion Muslim</strong><span class="affiliate-rate">Komisi ekstra tertera 1,5%</span><a href="https://s.shopee.co.id/W7cDkME5D" target="_blank" rel="noopener noreferrer sponsored">Lihat Produk di Shopee ↗</a></div></article><article class="affiliate-home-card"><img src="https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=700&q=80" alt="Inspirasi kategori Tas Wanita" loading="lazy" decoding="async" onerror="this.style.display='none'"><div class="affiliate-home-body"><strong>Tas Wanita</strong><span class="affiliate-rate">Komisi ekstra tertera 1,5%</span><a href="https://s.shopee.co.id/gR2Q3LakG" target="_blank" rel="noopener noreferrer sponsored">Lihat Produk di Shopee ↗</a></div></article>
+</div><p style="font-size:12px;margin-top:13px">Gambar merupakan ilustrasi kategori, bukan foto produk tertentu. Komisi mengikuti validasi dan ketentuan resmi Shopee.</p>
+</section>
+
 <h3 class="promo-section-title">🛍️ Lihat Beragam Inspirasi Produk</h3>
 <p class="promo-gallery-intro">Contoh tampilan produk usaha makanan, minuman, retail, dan kebutuhan harian. Galeri ini ditampilkan langsung di Beranda.</p>
 <div class="promo-products">
