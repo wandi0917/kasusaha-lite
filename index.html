@@ -607,7 +607,25 @@ function barisHarian(d){const kelas=d.laba<0?'expense':'income';return '<tr><td>
 function tampilLaporanHarian(){const laporan=dataLaporanHarian();const html=laporan.length?laporan.map(barisHarian).join(''):'<tr><td colspan="6">Belum ada transaksi untuk dilaporkan.</td></tr>';const a=$('laporanHarianBeranda'),b=$('laporanHarianTransaksi');if(a)a.innerHTML=html;if(b)b.innerHTML=html;}
 function tampilTransaksi(){const q=($('cariTransaksi').value||'').toLowerCase();const data=saldoBerjalan(transaksi).filter(x=>String(x.t.keterangan||'').toLowerCase().includes(q)).reverse();const tbody=$('riwayat');tbody.innerHTML=data.length?data.map(x=>barisLaporan(x.t,x.saldo,true)).join(''):'<tr><td colspan="7">Belum ada transaksi.</td></tr>';}
 function tanggalISO(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
-function buatPratinjauLaporan(){
+async function buatPratinjauLaporan(){
+ // Segarkan sesi dan data bersama sebelum menentukan sumber laporan.
+ // Jika pengguna sudah login tetapi akunnya belum terhubung ke usaha, jangan diam-diam mencetak laporan lokal kosong.
+ if(sb){
+  try{
+   const {data:sessionData,error:sessionError}=await sb.auth.getSession();
+   if(sessionError)throw sessionError;
+   if(sessionData.session){
+    await loadFinanceWorkspace();
+    if(!financeBusiness||!financeMemberRole){
+     setStatusCetakLaporan("Anda sudah login, tetapi akun belum terhubung ke usaha atau data bersama gagal dimuat. Periksa status login/usaha di bagian Keuangan, lalu coba lagi. Laporan lokal tidak dicetak agar data tidak keliru.",true);
+     return false;
+    }
+   }
+  }catch(err){
+   setStatusCetakLaporan("Gagal memuat data usaha dari Supabase: "+String(err.message||err).slice(0,180)+". Coba muat ulang situs dan login kembali.",true);
+   return false;
+  }
+ }
  const kMulai=$("tanggalMulaiLaporan").value,kAkhir=$("tanggalSampaiLaporan").value,kategori=$("kategoriLaporanLokal").value;
  if(!kMulai||!kAkhir||kMulai>kAkhir){setStatusCetakLaporan("Pilih tanggal mulai dan tanggal sampai yang valid. Tanggal mulai tidak boleh melewati tanggal sampai.",true);return false;}
  // Saat akun sudah terhubung, laporan cetak memakai sumber transaksi bersama yang sama dengan laporan Owner/Karyawan.
