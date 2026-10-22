@@ -690,7 +690,7 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 <div class="card"><strong>Pembayaran online</strong><p class="small">Pembayaran Sandbox Midtrans dapat diuji dari menu Pesanan Saya untuk pesanan berstatus Menunggu pembayaran. Status lunas tetap memerlukan verifikasi notifikasi server. Jangan mengirim barang hanya berdasarkan tangkapan layar pembayaran.</p></div></section>
 <section id="keranjang" class="tab">
 <details class="card usage-guide"><summary><strong>📘 Panduan penggunaan Keranjang &amp; Checkout</strong></summary><ol><li>Periksa produk, jumlah, dan total pada keranjang.</li><li>Lengkapi nama pembeli, nomor telepon, dan alamat pengiriman bila diminta.</li><li>Periksa kembali rincian sebelum membuat pesanan.</li><li>Ikuti instruksi pembayaran dan cek status pesanan melalui menu Pesanan Saya.</li><li>Perhatian: selama mode Midtrans Sandbox aktif, pembayaran hanya untuk pengujian dan bukan uang sungguhan. Ongkos kirim belum otomatis dihitung jika tertulis Rp0.</li></ol></details>
-<h2>Keranjang &amp; Pesanan</h2><div class="card"><p class="status warn">PENTING: pembayaran masih Midtrans Sandbox (bukan uang sungguhan). Ongkos kirim belum dihitung otomatis dan untuk saat ini tercatat Rp0. Jangan gunakan checkout ini untuk transaksi barang fisik yang memerlukan ongkir sampai integrasi kurir diaktifkan. Status lunas hanya ditentukan oleh verifikasi server.</p><div id="isiKeranjang"></div><div id="totalKeranjang" class="price">Total: Rp0</div><button class="secondary wide" type="button" onclick="kosongkanKeranjang()">Kosongkan keranjang</button></div><div class="card"><h3>Data pembeli</h3><form id="formCheckout"><label for="namaPembeli">Nama pembeli</label><input id="namaPembeli" maxlength="120" placeholder="Nama lengkap"><label for="waPembeli">Nomor WhatsApp</label><input id="waPembeli" inputmode="tel" maxlength="20" placeholder="Contoh: 628123456789"><label for="alamatPembeli">Alamat / catatan pengiriman</label><textarea id="alamatPembeli" maxlength="500" placeholder="Alamat atau cara serah terima"></textarea><button id="buatPesananBtn" class="primary wide" type="submit">Buat pesanan</button></form><div id="statusPesanan" class="status" role="status">Isi nama, nomor WhatsApp, alamat, dan pilih produk Pasar Online. Tekan Buat pesanan untuk melihat langkah berikutnya. Login Akun Pembeli diperlukan sebelum pesanan dikirim ke server.</div></div><div class="card"><h3>Riwayat pesanan di perangkat ini</h3><div id="riwayatPesanan"></div></div></section>
+<h2>Keranjang &amp; Pesanan</h2><div class="card"><p class="status warn">PENTING: pembayaran masih Midtrans Sandbox (bukan uang sungguhan). Untuk barang fisik, cek ongkir Biteship dan pilih layanan sebelum membuat pesanan. Harga ongkir diverifikasi server dan ditambahkan ke total; komisi platform 2,5% hanya dari subtotal produk setelah pembayaran terverifikasi.</p><div id="isiKeranjang"></div><div id="totalKeranjang" class="price">Total: Rp0</div><button class="secondary wide" type="button" onclick="kosongkanKeranjang()">Kosongkan keranjang</button></div><div class="card"><h3>Data pembeli</h3><form id="formCheckout"><label for="namaPembeli">Nama pembeli</label><input id="namaPembeli" maxlength="120" placeholder="Nama lengkap"><label for="waPembeli">Nomor WhatsApp</label><input id="waPembeli" inputmode="tel" maxlength="20" placeholder="Contoh: 628123456789"><label for="alamatPembeli">Alamat lengkap pengiriman</label><textarea id="alamatPembeli" maxlength="500" placeholder="Nama jalan, nomor rumah, kelurahan, kecamatan, kota/kabupaten, provinsi" required></textarea><label for="kodePosPembeli">Kode pos tujuan (5 digit)</label><input id="kodePosPembeli" inputmode="numeric" maxlength="5" pattern="[0-9]{5}" placeholder="Contoh: 29124" required><button id="cekOngkirBtn" class="secondary wide" type="button">Cek ongkir Biteship</button><label for="pilihanOngkir">Pilih kurir dan layanan</label><select id="pilihanOngkir" required><option value="">Cek ongkir terlebih dahulu</option></select><p id="ringkasanOngkir" class="small">Ongkos kirim akan dihitung dari kode pos asal penjual dan kode pos tujuan.</p><button id="buatPesananBtn" class="primary wide" type="submit">Buat pesanan</button></form><div id="statusPesanan" class="status" role="status">Isi nama, nomor WhatsApp, alamat, dan pilih produk Pasar Online. Tekan Buat pesanan untuk melihat langkah berikutnya. Login Akun Pembeli diperlukan sebelum pesanan dikirim ke server.</div></div><div class="card"><h3>Riwayat pesanan di perangkat ini</h3><div id="riwayatPesanan"></div></div></section>
 <section id="pesananSaya" class="tab">
 <details class="card usage-guide"><summary><strong>📘 Panduan penggunaan Pesanan Saya</strong></summary><ol><li>Login dengan akun pembeli yang digunakan saat membuat pesanan.</li><li>Klik Muat ulang pesanan untuk memperbarui status dari database.</li><li>Untuk pesanan yang menunggu pembayaran, gunakan tombol pembayaran yang tersedia.</li><li>Setelah membayar, muat ulang dan periksa status pesanan. Jika status belum berubah, simpan nomor pesanan untuk pengecekan.</li></ol></details>
 <h2>Pesanan Saya</h2><div class="card"><p class="small">Daftar pesanan yang dibuat oleh akun pembeli yang sedang login. Status berasal dari database Supabase.</p><button class="primary" type="button" onclick="muatPesananSaya()">Muat ulang pesanan</button><p class="small">Tombol pembayaran muncul di bawah pesanan berstatus Menunggu pembayaran. Pastikan login menggunakan akun pembeli yang membuat pesanan.</p><div id="statusPesananSaya" class="status" role="status">Login untuk melihat pesanan.</div><div id="daftarPesananSaya"></div></div></section>
@@ -999,6 +999,48 @@ function tampilKeranjang(){const box=$('isiKeranjang');if(!box)return;box.replac
 function tampilRiwayatPesanan(){const box=$('riwayatPesanan');if(!box)return;box.innerHTML=pesanan.length?pesanan.slice().reverse().map(p=>`<div class="item"><strong>${aman(p.nomor)}</strong><p>${aman(p.tanggal)} • ${format(p.total)}</p><p class="small">${aman(p.status)} — ${aman(p.nama)}</p><button class="secondary" type="button" onclick="salinPesanan('${String(p.id)}')">Salin ringkasan</button></div>`).join(''):'<p>Belum ada pesanan di perangkat ini.</p>';}
 function ringkasanPesanan(p){return 'PESANAN KASUSAHA LITE\nNomor: '+p.nomor+'\nNama: '+p.nama+'\nWhatsApp: '+p.wa+'\nAlamat/catatan: '+p.alamat+'\n\n'+p.items.map(x=>'- '+x.nama+' x'+x.qty+' = '+format(x.harga*x.qty)+' (penjual: '+x.penjual+')').join('\n')+'\n\nTOTAL: '+format(p.total)+'\nStatus: MENUNGGU KONFIRMASI PENJUAL. Pembayaran belum dilakukan melalui aplikasi.';}
 async function salinPesanan(id){const p=pesanan.find(x=>String(x.id)===String(id));if(!p)return;const t=ringkasanPesanan(p);try{await navigator.clipboard.writeText(t);alert('Ringkasan pesanan disalin. Kirim kepada penjual untuk konfirmasi.');}catch(e){prompt('Salin ringkasan pesanan berikut:',t);}}
+let biteshipQuoteId = null;
+let biteshipQuoteFingerprint = "";
+function fingerprintKeranjangFisik(){
+ return JSON.stringify(keranjang.filter(x=>Number(String(x.id).replace(/^online:/,''))!==7).map(x=>({product_id:Number(String(x.id).slice(7)),quantity:Number(x.qty)})).sort((a,b)=>a.product_id-b.product_id));
+}
+async function cekOngkirBiteship(){
+ const status=$('statusPesanan');
+ const select=$('pilihanOngkir');
+ const postal=$('kodePosPembeli').value.trim();
+ const items=keranjang.filter(x=>Number(String(x.id).slice(7))!==7).map(x=>({product_id:Number(String(x.id).slice(7)),quantity:Number(x.qty)}));
+ biteshipQuoteId=null;biteshipQuoteFingerprint="";select.replaceChildren(new Option('Memuat tarif...',''));
+ if(!items.length){select.replaceChildren(new Option('Produk digital tidak memerlukan ongkir',''));$('ringkasanOngkir').textContent='Keranjang tidak berisi barang fisik.';return;}
+ if(!/^\d{5}$/.test(postal)){select.replaceChildren(new Option('Masukkan kode pos tujuan',''));status.textContent='Masukkan kode pos tujuan 5 digit.';return;}
+ if(!sb){status.textContent='Supabase belum tersambung. Muat ulang halaman.';return;}
+ const {data:sd,error:se}=await sb.auth.getSession();
+ if(se||!sd.session){status.textContent='Login sebagai pembeli sebelum mengecek ongkir.';return;}
+ const btn=$('cekOngkirBtn');btn.disabled=true;btn.textContent='Menghitung ongkir...';
+ try{
+  const {data,error}=await sb.functions.invoke('biteship-rates',{body:{items,destination_postal_code:postal}});
+  if(error){let msg=error.message||'Gagal cek ongkir.';try{const c=error.context;if(c&&typeof c.json==='function'){const detail=await c.json();if(detail&&detail.error)msg=detail.error;}}catch(_){}throw new Error(msg);}
+  if(!data||data.success!==true||!Array.isArray(data.options)||!data.options.length)throw new Error((data&&data.error)||'Belum ada layanan pengiriman untuk alamat ini.');
+  select.replaceChildren(new Option('Pilih kurir dan layanan',''));
+  for(const o of data.options){
+   const label=o.courier_name+' — '+o.service_name+' • '+format(o.price)+(o.duration?' • '+o.duration:'');
+   const opt=new Option(label,o.quote_id);opt.dataset.price=String(o.price);select.add(opt);
+  }
+  biteshipQuoteFingerprint=fingerprintKeranjangFisik();
+  $('ringkasanOngkir').textContent='Asal kode pos '+data.origin_postal_code+' • Tujuan '+data.destination_postal_code+'. Tarif berlaku 20 menit dan terikat pada keranjang ini.';
+  status.textContent='Tarif Biteship tersedia: '+data.options.length+' pilihan. Pilih layanan yang diinginkan.';
+ }catch(err){
+  select.replaceChildren(new Option('Cek ongkir gagal — coba lagi',''));
+  $('ringkasanOngkir').textContent='Periksa kode pos asal pada data produk penjual dan pastikan API key Biteship sudah diatur di Supabase.';
+  status.textContent='Cek ongkir gagal: '+String(err.message||err).slice(0,220);
+ }finally{btn.disabled=false;btn.textContent='Cek ongkir Biteship';}
+}
+$('cekOngkirBtn').addEventListener('click',cekOngkirBiteship);
+$('pilihanOngkir').addEventListener('change',()=>{
+ const opt=$('pilihanOngkir').selectedOptions[0];
+ biteshipQuoteId=opt&&opt.value?opt.value:null;
+ const fee=opt&&opt.dataset.price?Number(opt.dataset.price):0;
+ $('ringkasanOngkir').textContent=biteshipQuoteId?'Ongkos kirim dipilih: '+format(fee)+'. Subtotal produk ditambah ongkos kirim saat pesanan dibuat.':'Pilih layanan pengiriman.';
+});
 $('formCheckout').addEventListener('submit',async e=>{
  e.preventDefault();
  const status=$('statusPesanan');
@@ -1012,17 +1054,20 @@ $('formCheckout').addEventListener('submit',async e=>{
  if(nonOnline){status.textContent='Checkout database hanya mendukung produk Pasar Online. Hapus produk lokal dari keranjang terlebih dahulu.';return;}
  const items=keranjang.map(x=>({product_id:Number(String(x.id).slice(7)),quantity:Number(x.qty)}));
  if(items.some(x=>!Number.isSafeInteger(x.product_id)||x.product_id<=0||!Number.isSafeInteger(x.quantity)||x.quantity<=0)){status.textContent='Data produk/jumlah di keranjang tidak valid. Hapus produk tersebut lalu tambahkan kembali dari Pasar Online.';return;}
+ const physicalItems=items.filter(x=>x.product_id!==7);
+ if(physicalItems.length && (!biteshipQuoteId || biteshipQuoteFingerprint!==fingerprintKeranjangFisik())){status.textContent='Untuk barang fisik, tekan Cek ongkir Biteship, lalu pilih layanan. Jika jumlah barang berubah, hitung ongkir kembali.';return;}
+ if(physicalItems.length && !$('kodePosPembeli').value.trim().match(/^\d{5}$/)){status.textContent='Kode pos tujuan harus 5 digit.';return;}
  const form=e.currentTarget,button=form.querySelector('button[type="submit"]');
  button.disabled=true;status.textContent='Mengirim pesanan ke server... Jangan tutup halaman.';
  try{
-   const {data,error}=await sb.functions.invoke('create-marketplace-order',{body:{items,buyer_name:nama,buyer_phone:wa,shipping_address:alamat}});
+   const {data,error}=await sb.functions.invoke('create-marketplace-order',{body:{items,buyer_name:nama,buyer_phone:wa,shipping_address:alamat,destination_postal_code:$('kodePosPembeli').value.trim(),shipping_quote_id:biteshipQuoteId}});
    if(error){let msg=error.message||'Permintaan checkout gagal.';try{const c=error.context;if(c&&typeof c.json==='function'){const detail=await c.json();if(detail&&detail.error)msg=detail.error;}}catch(_){}throw new Error(msg);}
    if(!data||data.success!==true||!data.order_id)throw new Error((data&&data.error)||'Server tidak mengembalikan nomor pesanan.');
    const order={id:data.order_id,nomor:data.order_id,tanggal:new Date().toLocaleString('id-ID'),nama,total:Number(data.total_amount||0),status:data.status||'pending_payment'};
    pesanan.push(order);
    try{localStorage.setItem('kasusaha_pesanan',JSON.stringify(pesanan));}catch(_){/* Pesanan tetap tersimpan di server. */}
    keranjang=[];simpanKeranjang();tampilKeranjang();tampilRiwayatPesanan();
-   status.textContent='Pesanan berhasil dibuat! Nomor pesanan: '+data.order_id+'. Total '+format(data.total_amount)+'. Status: '+(data.status||'pending_payment')+'. Pembayaran belum dilakukan.';
+   status.textContent='Pesanan berhasil dibuat! Nomor pesanan: '+data.order_id+'. Ongkir: '+format(data.shipping_amount||0)+'. Total: '+format(data.total_amount||0)+'. Status: '+(data.status||'pending_payment')+'. Pembayaran belum dilakukan.';
  }catch(err){console.error('Checkout online gagal:',err);status.textContent='Checkout gagal: '+String(err.message||err).slice(0,240)+'. Keranjang Anda tetap disimpan. Jika pesan menunjukkan hasil tidak pasti, periksa marketplace_orders sebelum mencoba lagi.';}
  finally{button.disabled=false;}
 });
