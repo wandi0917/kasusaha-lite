@@ -590,7 +590,29 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 </div>
 </div>
 <div class="card" id="financeEntryCard" hidden>
-<h3>Catat transaksi usaha</h3>
+<h3>Kasir cepat — penjualan barang</h3>
+<p class="small">Karyawan cukup mengetik kode awal barang, memilih nama yang muncul, lalu memasukkan jumlah. Harga satuan dan total dihitung otomatis. Penjualan langsung masuk ke laporan pemasukan usaha.</p>
+<form id="quickSaleForm" class="card" style="background:#f8fbff">
+<label for="quickSaleProduct">Kode / nama barang</label>
+<input id="quickSaleProduct" list="quickSaleProductOptions" autocomplete="off" required placeholder="Ketik kode awal, misalnya KOP">
+<datalist id="quickSaleProductOptions"></datalist>
+<div id="quickSaleProductInfo" class="status" role="status">Pilih barang dari daftar produk owner.</div>
+<div class="grid"><div><label for="quickSaleQty">Jumlah barang</label><input id="quickSaleQty" type="number" min="1" step="1" value="1" required></div><div><label for="quickSaleUnitPrice">Harga satuan (Rp)</label><input id="quickSaleUnitPrice" type="text" readonly value="Rp0"></div></div>
+<div class="card"><span>Total penjualan</span><strong id="quickSaleTotal" style="display:block;font-size:26px;color:#166534">Rp0</strong></div>
+<button id="quickSaleSave" class="primary wide" type="submit">Simpan penjualan</button>
+</form>
+<div id="ownerStoreCatalog" class="card" hidden>
+<h3>Daftar barang toko (Owner)</h3>
+<p class="small">Masukkan daftar barang dan harga saat usaha mulai digunakan. Kode barang sebaiknya singkat dan mudah diketik karyawan, misalnya KOP, TEH, MIE.</p>
+<form id="storeProductForm">
+<label for="storeProductCode">Kode barang (unik dalam usaha)</label><input id="storeProductCode" maxlength="24" required placeholder="Contoh: KOP">
+<label for="storeProductName">Nama barang</label><input id="storeProductName" maxlength="160" required placeholder="Contoh: Kopi Bubuk Premium">
+<label for="storeProductPrice">Harga jual satuan (Rp)</label><input id="storeProductPrice" type="number" min="1" step="1" required placeholder="35000">
+<button id="storeProductSave" type="submit" class="primary wide">Simpan barang dan harga</button>
+</form>
+<div id="storeProductStatus" class="status" role="status">Daftar barang tersimpan bersama untuk owner dan karyawan.</div>
+<div class="table-wrap"><table class="report-table"><thead><tr><th>Kode</th><th>Nama barang</th><th>Harga</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="storeProductRows"></tbody></table></div>
+</div>
 <form id="financeForm">
 <label for="financeDescription">Keterangan transaksi</label><input id="financeDescription" maxlength="300" required placeholder="Contoh: Penjualan harian / beli bahan baku">
 <div id="financeTypeWrap"><label for="financeType">Jenis transaksi</label><select id="financeType"><option value="income">Pemasukan</option><option value="expense">Pengeluaran</option></select></div>
@@ -1406,7 +1428,7 @@ async function loadFinanceWorkspace(){
   if(!member){document.body.classList.remove('employee-verified','owner-verified');financeBusiness=null;financeMemberRole=null;financeRows=[];setup.hidden=false;info.hidden=true;entry.hidden=true;report.hidden=false;const tbody=$('financeReportRows');if(tbody)tbody.innerHTML='<tr><td colspan="7">Laporan bersama belum dapat dimuat: akun '+aman(sd.session.user.email||'login ini')+' belum terhubung ke usaha. Masuk dengan akun Owner yang terdaftar atau hubungkan akun ini ke usaha terlebih dahulu. Data transaksi tidak dihapus.</td></tr>';const summary=$('financeReportSummary');if(summary)summary.innerHTML='';applyHomeFinanceRole();setFinanceStatus('Akun login terdeteksi ('+sd.session.user.email+'), tetapi belum terhubung ke usaha. Laporan bersama hanya bisa ditampilkan setelah akun yang benar terhubung.');return;}
   const {data:business,error:be}=await sb.from('business_workspaces').select('id,business_name,invite_code,owner_id').eq('id',member.business_id).single();
   if(be)throw be;
-  financeBusiness=business;financeMemberRole=member.role;document.body.classList.toggle('employee-verified',member.role==='employee');document.body.classList.toggle('owner-verified',member.role==='owner');setup.hidden=true;info.hidden=false;entry.hidden=false;report.hidden=false;
+  financeBusiness=business;financeMemberRole=member.role;document.body.classList.toggle('employee-verified',member.role==='employee');$('ownerStoreCatalog').hidden=member.role!=='owner';await loadStoreProducts();document.body.classList.toggle('owner-verified',member.role==='owner');setup.hidden=true;info.hidden=false;entry.hidden=false;report.hidden=false;
   info.innerHTML='<p><strong>Usaha:</strong> '+aman(business.business_name)+'<br><strong>Peran akun:</strong> '+financeRoleLabel(member.role)+(member.role==='owner'?'<br><strong>Kode undangan karyawan:</strong> <code>'+aman(business.invite_code)+'</code><br><span class="small">Bagikan kode ini hanya kepada karyawan yang Anda izinkan.</span>':'')+'</p>';
   const roleFilter=$('financeRoleFilter');if(member.role==='employee'){roleFilter.innerHTML='<option value="mine">Pemasukan saya</option>';roleFilter.value='mine';$('financeType').value='income';$('financeType').disabled=true;$('financeTypeWrap').hidden=true;$('financeReportTitle').textContent='Laporan Pemasukan Karyawan';$('financeRoleFilterWrap').hidden=true;}else{roleFilter.innerHTML='<option value="all">Semua transaksi</option><option value="owner">Transaksi Owner</option><option value="employee">Transaksi Karyawan</option><option value="mine">Transaksi saya</option>';$('financeType').disabled=false;$('financeTypeWrap').hidden=false;$('financeReportTitle').textContent='Laporan Keuangan Lengkap (Owner)';$('financeRoleFilterWrap').hidden=false;}
   if(!$('financeDate').value)$('financeDate').value=financeToday();if(!$('financeReportStart').value)$('financeReportStart').value=financeToday().slice(0,8)+'01';if(!$('financeReportEnd').value)$('financeReportEnd').value=financeToday();if(!$('tanggalMulaiLaporan').value)$('tanggalMulaiLaporan').value=financeToday().slice(0,8)+'01';if(!$('tanggalSampaiLaporan').value)$('tanggalSampaiLaporan').value=financeToday();
@@ -1422,6 +1444,63 @@ $('financeForm')?.addEventListener('submit',async function(e){
  try{const {data,error}=await sb.from('financial_transactions').insert({business_id:financeBusiness.id,created_by:financeMemberUserId,created_by_role:financeMemberRole,transaction_date:date,transaction_type:type,amount,description,category}).select('id').single();if(error)throw error;
  this.reset();$('financeDate').value=financeToday();await loadFinanceWorkspace();setFinanceStatus('Transaksi berhasil disimpan sebagai '+financeRoleLabel(financeMemberRole)+'.');
  }catch(err){setFinanceStatus('Transaksi gagal disimpan: '+String(err.message||err).slice(0,240),true);}finally{btn.disabled=false;}
+});
+let storeProductRows=[];
+function formatStoreRupiah(value){return 'Rp'+Number(value||0).toLocaleString('id-ID',{maximumFractionDigits:0});}
+function resolveStoreProduct(raw){
+ const q=String(raw||'').trim().toLocaleLowerCase('id-ID');
+ if(!q)return null;
+ return storeProductRows.find(p=>p.active&&String(p.product_code).toLocaleLowerCase('id-ID')===q)
+ ||storeProductRows.find(p=>p.active&&String(p.product_code).toLocaleLowerCase('id-ID').startsWith(q))
+ ||storeProductRows.find(p=>p.active&&String(p.product_name).toLocaleLowerCase('id-ID').startsWith(q))||null;
+}
+function updateQuickSalePreview(){
+ const raw=$('quickSaleProduct')?.value||'',p=resolveStoreProduct(raw),qty=Number($('quickSaleQty')?.value||0);
+ const info=$('quickSaleProductInfo');
+ if(p){$('quickSaleProduct').dataset.productId=p.id;$('quickSaleUnitPrice').value=formatStoreRupiah(p.price);$('quickSaleTotal').textContent=formatStoreRupiah(Number(p.price)*Math.max(0,qty));if(info){info.className='status';info.textContent=p.product_code+' — '+p.product_name+' | '+formatStoreRupiah(p.price)+' per unit';}}
+ else{$('quickSaleProduct').dataset.productId='';$('quickSaleUnitPrice').value=formatStoreRupiah(0);$('quickSaleTotal').textContent=formatStoreRupiah(0);if(info){info.className='status';info.textContent='Ketik kode awal atau nama barang, lalu pilih barang yang sesuai dari saran.';}}
+}
+async function loadStoreProducts(){
+ if(!sb||!financeBusiness)return;
+ const {data,error}=await sb.from('store_products').select('id,business_id,product_code,product_name,price,active,created_at').eq('business_id',financeBusiness.id).order('product_code',{ascending:true});
+ if(error)throw error;
+ storeProductRows=data||[];
+ const list=$('quickSaleProductOptions');if(list)list.replaceChildren(...storeProductRows.filter(p=>p.active).map(p=>{const o=document.createElement('option');o.value=p.product_code+' — '+p.product_name;o.label=formatStoreRupiah(p.price);return o;}));
+ const tbody=$('storeProductRows');
+ if(tbody){tbody.replaceChildren();if(!storeProductRows.length){const tr=document.createElement('tr');tr.innerHTML='<td colspan="5">Belum ada barang. Owner perlu mengisi daftar barang dan harga terlebih dahulu.</td>';tbody.appendChild(tr);}else storeProductRows.forEach(p=>{const tr=document.createElement('tr');const vals=[p.product_code,p.product_name,formatStoreRupiah(p.price),p.active?'Aktif':'Nonaktif'];vals.forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});const td=document.createElement('td');if(financeMemberRole==='owner'&&p.active){const b=document.createElement('button');b.type='button';b.className='secondary';b.textContent='Nonaktifkan';b.addEventListener('click',()=>deactivateStoreProduct(p.id));td.appendChild(b);}else td.textContent='—';tr.appendChild(td);tbody.appendChild(tr);});}
+ updateQuickSalePreview();
+}
+async function deactivateStoreProduct(id){
+ if(!confirm('Nonaktifkan barang ini? Riwayat penjualan lama tetap tersimpan.'))return;
+ try{const {error}=await sb.from('store_products').update({active:false,updated_at:new Date().toISOString()}).eq('id',id).eq('business_id',financeBusiness.id);if(error)throw error;await loadStoreProducts();const st=$('storeProductStatus');st.className='status';st.textContent='Barang dinonaktifkan. Riwayat penjualan tidak dihapus.';}
+ catch(e){const st=$('storeProductStatus');st.className='status error';st.textContent='Gagal mengubah barang: '+String(e.message||e).slice(0,180);}
+}
+$('storeProductForm')?.addEventListener('submit',async function(e){
+ e.preventDefault();if(financeMemberRole!=='owner'||!financeBusiness){return;}
+ const code=$('storeProductCode').value.trim().toUpperCase(),name=$('storeProductName').value.trim(),price=Number($('storeProductPrice').value);
+ if(!code||!name||!Number.isSafeInteger(price)||price<=0){$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Isi kode, nama, dan harga satuan dalam rupiah bulat positif.';return;}
+ const btn=$('storeProductSave');btn.disabled=true;
+ try{const {error}=await sb.from('store_products').insert({business_id:financeBusiness.id,product_code:code,product_name:name,price,active:true});if(error){if(error.code==='23505')throw new Error('Kode barang sudah dipakai. Gunakan kode yang berbeda.');throw error;}
+ this.reset();await loadStoreProducts();$('storeProductStatus').className='status';$('storeProductStatus').textContent='Barang '+code+' — '+name+' berhasil disimpan dan tersedia untuk karyawan.';}
+ catch(e){$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Gagal menyimpan barang: '+String(e.message||e).slice(0,200);}
+ finally{btn.disabled=false;}
+});
+$('quickSaleProduct')?.addEventListener('input',updateQuickSalePreview);
+$('quickSaleQty')?.addEventListener('input',updateQuickSalePreview);
+$('quickSaleForm')?.addEventListener('submit',async function(e){
+ e.preventDefault();if(!sb||!financeBusiness||!financeMemberRole||!financeMemberUserId){setFinanceStatus('Login dan hubungkan akun ke usaha terlebih dahulu.',true);return;}
+ const p=resolveStoreProduct($('quickSaleProduct').value),qty=Number($('quickSaleQty').value);
+ if(!p){setFinanceStatus('Pilih barang aktif dari saran kode/nama barang.',true);return;}
+ if(!Number.isSafeInteger(qty)||qty<1){setFinanceStatus('Jumlah barang harus bilangan bulat minimal 1.',true);return;}
+ const amount=Number(p.price)*qty;if(!Number.isSafeInteger(amount)||amount<=0){setFinanceStatus('Total penjualan tidak valid.',true);return;}
+ const btn=$('quickSaleSave');btn.disabled=true;
+ try{
+  const description='Penjualan '+p.product_name+' ['+p.product_code+'] × '+qty+' @ '+formatStoreRupiah(p.price);
+  const {error}=await sb.from('financial_transactions').insert({business_id:financeBusiness.id,created_by:financeMemberUserId,created_by_role:financeMemberRole,transaction_date:financeToday(),transaction_type:'income',amount,description,category:'Penjualan'}).select('id').single();
+  if(error)throw error;
+  this.reset();$('quickSaleQty').value='1';$('quickSaleUnitPrice').value=formatStoreRupiah(0);$('quickSaleTotal').textContent=formatStoreRupiah(0);$('quickSaleProductInfo').textContent='Penjualan tersimpan.';await loadFinanceWorkspace();$('quickSaleProduct').value='';updateQuickSalePreview();setFinanceStatus('Penjualan '+p.product_name+' sebanyak '+qty+' berhasil disimpan. Total '+formatStoreRupiah(amount)+'.');
+ }catch(err){setFinanceStatus('Penjualan gagal disimpan: '+String(err.message||err).slice(0,220),true);}
+ finally{btn.disabled=false;}
 });
 function financePeriodBounds(){
  const startInput=$('financeReportStart');
