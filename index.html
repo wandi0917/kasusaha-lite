@@ -1711,7 +1711,7 @@ async function simpanPengaturanAsalPengiriman(){
  const contact=$('sellerOriginContact').value.trim(),phone=$('sellerOriginPhone').value.trim(),address=$('sellerOriginAddress').value.trim(),postal=$('sellerOriginPostal').value.trim();
  const setStatus=(msg,isError=false)=>{if(status){status.textContent=msg;status.classList.toggle('error',isError);status.classList.toggle('warn',!isError);}};
  if(!sb){setStatus('Koneksi Supabase belum tersedia.',true);return;}
- if(contact.length<2||phone.length<6||address.length<10||!/^\\d{5}$/.test(postal)){setStatus('Lengkapi nama kontak, nomor telepon aktif, alamat lengkap, dan kode pos 5 digit.',true);return;}
+ if(contact.length<2||phone.length<6||address.length<10||!/^\d{5}$/.test(postal)){setStatus('Lengkapi nama kontak, nomor telepon aktif, alamat lengkap, dan kode pos 5 digit.',true);return;}
  const {data:sessionData,error:sessionError}=await sb.auth.getSession();
  if(sessionError||!sessionData.session){setStatus('Login dahulu dengan akun pemilik produk.',true);return;}
  if(!confirm('Data ini akan diterapkan ke semua produk fisik milik akun yang sedang login. Pastikan alamat dan kode pos benar-benar lokasi pengambilan barang. Lanjutkan?'))return;
