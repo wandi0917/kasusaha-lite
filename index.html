@@ -1558,7 +1558,9 @@ async function loadStoreProducts(){
  updateQuickSalePreview();
 }
 function attendanceToday(){
- return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+ const part=Object.fromEntries(parts.filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
+ return part.year+'-'+part.month+'-'+part.day;
 }
 function attendanceTime(value){
  if(!value)return '—';
@@ -1606,6 +1608,11 @@ async function absenPulang(){
   await loadAttendance();setFinanceStatus('Absen pulang berhasil dicatat.');
  }catch(e){$('attendanceStatus').className='status error';$('attendanceStatus').textContent='Absen pulang gagal: '+String(e.message||e).slice(0,200);btn.disabled=false;}
 }
+// Ikat aksi absensi secara eksplisit agar tombol tetap berfungsi walau inline handler tidak terpasang.
+window.absenMasuk=absenMasuk;
+window.absenPulang=absenPulang;
+document.getElementById('attendanceCheckIn')?.addEventListener('click',function(){absenMasuk();});
+document.getElementById('attendanceCheckOut')?.addEventListener('click',function(){absenPulang();});
 async function deactivateStoreProduct(id){
  if(!confirm('Nonaktifkan barang ini? Riwayat penjualan lama tetap tersimpan.'))return;
  try{const {error}=await sb.from('store_products').update({active:false,updated_at:new Date().toISOString()}).eq('id',id).eq('business_id',financeBusiness.id);if(error)throw error;await loadStoreProducts();const st=$('storeProductStatus');st.className='status';st.textContent='Barang dinonaktifkan. Riwayat penjualan tidak dihapus.';}
