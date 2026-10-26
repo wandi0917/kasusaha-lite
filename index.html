@@ -597,6 +597,7 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 <input id="quickSaleProduct" list="quickSaleProductOptions" autocomplete="off" required placeholder="Ketik kode awal, misalnya KOP">
 <datalist id="quickSaleProductOptions"></datalist>
 <div id="quickSaleProductInfo" class="status" role="status">Pilih barang dari daftar produk owner.</div>
+<label for="quickSaleTableNumber">Nomor meja (opsional)</label><input id="quickSaleTableNumber" type="text" maxlength="20" autocomplete="off" placeholder="Contoh: 01, 05, atau VIP-2">
 <div class="grid"><div><label for="quickSaleQty">Jumlah barang</label><input id="quickSaleQty" type="number" min="1" step="1" value="1" required></div><div><label for="quickSaleUnitPrice">Harga satuan (Rp)</label><input id="quickSaleUnitPrice" type="number" min="1" step="1" inputmode="numeric" required value="" placeholder="Masukkan harga satuan"></div></div>
 <div class="card"><span>Total penjualan</span><strong id="quickSaleTotal" style="display:block;font-size:26px;color:#166534">Rp0</strong></div>
 <button id="quickSaleSave" class="primary wide" type="submit">Simpan penjualan</button>
@@ -1581,10 +1582,11 @@ $('quickSaleForm')?.addEventListener('submit',async function(e){
  const amount=unitPrice*qty;if(!Number.isSafeInteger(amount)||amount<=0){setFinanceStatus('Total penjualan tidak valid.',true);return;}
  const btn=$('quickSaleSave');btn.disabled=true;
  try{
-  const description='Penjualan '+p.product_name+' ['+p.product_code+'] × '+qty+' @ '+formatStoreRupiah(unitPrice);
+  const tableNumber=String($('quickSaleTableNumber')?.value||'').trim().replace(/[<>]/g,'').slice(0,20);
+  const description=(tableNumber?'Meja '+tableNumber+' — ':'')+'Penjualan '+p.product_name+' ['+p.product_code+'] × '+qty+' @ '+formatStoreRupiah(unitPrice);
   const {error}=await sb.from('financial_transactions').insert({business_id:financeBusiness.id,created_by:financeMemberUserId,created_by_role:financeMemberRole,transaction_date:financeToday(),transaction_type:'income',amount,description,category:'Penjualan'}).select('id').single();
   if(error)throw error;
-  this.reset();$('quickSaleQty').value='1';$('quickSaleUnitPrice').value='';$('quickSaleTotal').textContent=formatStoreRupiah(0);$('quickSaleProductInfo').textContent='Penjualan tersimpan.';await loadFinanceWorkspace();$('quickSaleProduct').value='';updateQuickSalePreview();setFinanceStatus('Penjualan '+p.product_name+' sebanyak '+qty+' berhasil disimpan. Total '+formatStoreRupiah(amount)+'.');
+  this.reset();$('quickSaleQty').value='1';$('quickSaleUnitPrice').value='';$('quickSaleTableNumber').value='';$('quickSaleTotal').textContent=formatStoreRupiah(0);$('quickSaleProductInfo').textContent='Penjualan tersimpan.';await loadFinanceWorkspace();$('quickSaleProduct').value='';updateQuickSalePreview();setFinanceStatus('Penjualan '+p.product_name+' sebanyak '+qty+' berhasil disimpan. Total '+formatStoreRupiah(amount)+'.');
  }catch(err){setFinanceStatus('Penjualan gagal disimpan: '+String(err.message||err).slice(0,220),true);}
  finally{btn.disabled=false;}
 });
