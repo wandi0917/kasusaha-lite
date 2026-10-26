@@ -816,7 +816,47 @@ async function buka(id,tombol){
   document.querySelectorAll('main .tab').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   const panel=$(id);if(!panel)return;panel.classList.add('active');if(tombol)tombol.classList.add('active');
-  if(id==='transaksi'){const reportSelect=$('reportCategorySelect');if(reportSelect){reportSelect.onchange=()=>{const category=reportSelect.value;applyReportCategory(category);if(category==='sales'||category==='finance'||category==='income'){muatDanTampilkanLaporan().catch(e=>setFinanceStatus('Laporan gagal dimuat: '+String(e.message||e).slice(0,180),true));}else if(category==='daily'){tampilLaporanHarian();}else if(category==='history'){const localDetails=document.querySelector('#transaksi details.local-transaction-card');if(localDetails)localDetails.open=true;tampilTransaksi();}else if(category==='stock'){loadStoreProducts().catch(e=>console.error('Laporan stok gagal dimuat:',e));}};reportSelect.value='';applyReportCategory('');const localDetails=document.querySelector('#transaksi details.local-transaction-card');if(localDetails)localDetails.open=false;}}
+  if(id==='transaksi'){
+    const reportSelect=$('reportCategorySelect');
+    if(reportSelect){
+      const runSelectedReport=async()=>{
+        let category=reportSelect.value;
+        if(!category)return;
+        try{
+          if(!financeMemberRole) await loadFinanceWorkspace();
+          category=reportSelect.value;
+          if(!category)return;
+          applyReportCategory(category);
+          category=reportSelect.value;
+          if(!category)return;
+          if(category==='sales'||category==='finance'||category==='income'){
+            await muatDanTampilkanLaporan();
+          }else if(category==='daily'){
+            tampilLaporanHarian();
+          }else if(category==='history'){
+            const localDetails=document.querySelector('#transaksi details.local-transaction-card');
+            if(localDetails)localDetails.open=true;
+            tampilTransaksi();
+          }else if(category==='stock'){
+            await loadStoreProducts();
+          }
+        }catch(e){
+          const message='Laporan gagal dimuat: '+String(e.message||e).slice(0,180);
+          if(typeof setFinanceStatus==='function')setFinanceStatus(message,true);
+          const stockRows=$('stockReportRows');
+          if(category==='stock'&&stockRows)stockRows.innerHTML='<tr><td colspan="7">'+aman(message)+'</td></tr>';
+          console.error(message,e);
+        }
+      };
+      reportSelect.onchange=runSelectedReport;
+      if(reportSelect.value)runSelectedReport();
+      else {
+        applyReportCategory('');
+        const localDetails=document.querySelector('#transaksi details.local-transaction-card');
+        if(localDetails)localDetails.open=false;
+      }
+    }
+  }
   if(id==='pasar'){tampilPasarLokal();muatPasarOnline();muatProdukAfiliasi();muatLaporanAfiliasi();}
   if(id==='keranjang'){tampilKeranjang();tampilRiwayatPesanan();}
   if(id==='akun'){periksaSesi();tampilProdukLokalUntukOnline();}
