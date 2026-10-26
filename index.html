@@ -1717,7 +1717,7 @@ function applyReportCategory(category){
    category==='daily'?'localDailyReportCard':category==='history'?'localTransactionHistoryCard':'';
  if(reportPanel){const panel=$(reportPanel);if(panel){let printBtn=panel.querySelector(':scope > .report-print-action');if(!printBtn){printBtn=document.createElement('button');printBtn.type='button';printBtn.className='secondary wide report-print-action';printBtn.textContent='Cetak laporan / Simpan PDF';printBtn.addEventListener('click',printSelectedReport);panel.appendChild(printBtn);}}}
 }
-function printSelectedReport(){
+async function printSelectedReport(){
  const category=$('reportCategorySelect')?.value||'';
  const panelId=category==='stock'?'stockReportTableCard':
    (category==='sales'||category==='finance'||category==='income')?'financeReportCard':
@@ -1725,7 +1725,7 @@ function printSelectedReport(){
  const source=$(panelId),target=$('areaLaporanCetak');
  if(!source||!target){alert('Panel laporan yang dipilih tidak ditemukan.');return;}
  if(category==='sales'||category==='finance'||category==='income')renderFinanceReport();
- if(category==='stock')loadStoreProducts().catch(e=>alert('Data stok gagal dimuat: '+String(e.message||e).slice(0,180)));
+ if(category==='stock'){try{await loadStoreProducts();}catch(e){alert('Data stok gagal dimuat: '+String(e.message||e).slice(0,180));return;}}
  const clone=source.cloneNode(true);
  clone.hidden=false;clone.removeAttribute('hidden');clone.style.display='block';clone.style.visibility='visible';
  clone.querySelectorAll('.report-print-action,button,input,select,textarea,.row-actions').forEach(el=>el.remove());
