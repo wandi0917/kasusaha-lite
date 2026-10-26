@@ -866,10 +866,10 @@ async function buka(id,tombol){
         }
       };
       reportSelect.onchange=runSelectedReport;
-      applyReportCategory('');
       const localDetails=document.querySelector('#transaksi details.local-transaction-card');
       if(localDetails)localDetails.open=false;
-      // Keep the page clean until the user selects a report category.
+      // Jangan menyembunyikan laporan terpilih hanya karena tab Transaksi dibuka ulang.
+      if(reportSelect.value){runSelectedReport();}else{applyReportCategory('');}
     }
   }
   if(id==='pasar'){tampilPasarLokal();muatPasarOnline();muatProdukAfiliasi();muatLaporanAfiliasi();}
@@ -1684,29 +1684,30 @@ function applyReportCategory(category){
    if(!isOwner&&!isEmployee){category='';}
  }
  const ids=['financeTableSalesSummary','stockReportCard','stockReportTableCard','financeReportCard','financeTransactionsTableCard','localDailyReportCard','localTransactionHistoryCard'];
- ids.forEach(id=>{const el=$(id);if(el)el.hidden=true;});
+ ids.forEach(id=>{const el=$(id);if(el){el.hidden=true;el.style.display='none';}});
+ document.querySelectorAll('#transaksi .report-category-view').forEach(el=>{el.hidden=true;el.style.display='none';});
  const localDetails=document.querySelector('#transaksi details.local-transaction-card');if(localDetails)localDetails.open=(category==='history');
  const localDailyParent=$('ownerHomeReports');if(localDailyParent){localDailyParent.hidden=category!=='daily';const extras=localDailyParent.querySelectorAll(':scope > .card:not(#localDailyReportCard)');extras.forEach(el=>el.hidden=true);}
  if(!category)return;
  if(category==='sales'&&isOwner){
-   const reportCard=$('financeReportCard');if(reportCard)reportCard.hidden=false;
-   const el=$('financeTableSalesSummary');if(el)el.hidden=false;
+   const reportCard=$('financeReportCard');if(reportCard){reportCard.hidden=false;reportCard.style.display='block';}
+   const el=$('financeTableSalesSummary');if(el){el.hidden=false;el.style.display='block';}
  }else if(category==='stock'&&isOwner){
-   ['stockReportCard','stockReportTableCard'].forEach(id=>{const el=$(id);if(el)el.hidden=false;});
+   ['stockReportCard','stockReportTableCard'].forEach(id=>{const el=$(id);if(el){el.hidden=false;el.style.display='block';}});
    loadStoreProducts().catch(e=>{const b=$('stockReportRows');if(b)b.innerHTML='<tr><td colspan="7">Gagal memuat stok: '+String(e.message||e).replace(/[<>&]/g,'')+'</td></tr>';});
  }else if(category==='finance'&&isOwner){
-   const card=$('financeReportCard');if(card)card.hidden=false;
-   const detail=$('financeTransactionsTableCard');if(detail)detail.hidden=false;
+   const card=$('financeReportCard');if(card){card.hidden=false;card.style.display='block';}
+   const detail=$('financeTransactionsTableCard');if(detail){detail.hidden=false;detail.style.display='block';}
    const title=$('financeReportTitle');if(title)title.textContent='Laporan Keuangan Lengkap (Owner)';
-   const sales=$('financeTableSalesSummary');if(sales)sales.hidden=false;
+   const sales=$('financeTableSalesSummary');if(sales){sales.hidden=false;sales.style.display='block';}
  }else if(category==='income'&&isEmployee){
    const card=$('financeReportCard');if(card)card.hidden=false;
    const detail=$('financeTransactionsTableCard');if(detail)detail.hidden=false;
    const title=$('financeReportTitle');if(title)title.textContent='Laporan Pemasukan (Karyawan)';
  }else if(category==='daily'&&isOwner){
-   const el=$('localDailyReportCard');if(el)el.hidden=false;
+   const el=$('localDailyReportCard');if(el){el.hidden=false;el.style.display='block';}
  }else if(category==='history'&&isOwner){
-   const el=$('localTransactionHistoryCard');if(el)el.hidden=false;
+   const el=$('localTransactionHistoryCard');if(el){el.hidden=false;el.style.display='block';}
  }
 }
 async function loadStoreProducts(){
