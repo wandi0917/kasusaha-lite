@@ -1678,6 +1678,11 @@ async function loadAttendance(){
   if(financeMemberRole!=='owner')payrollQuery=payrollQuery.eq('user_id',financeMemberUserId);
   const {data:payrollRows,error:pe}=await payrollQuery.order('work_date',{ascending:false});
   if(pe)throw pe;
+  const latestRecordedWage=(payrollRows||[]).find(row=>Number(row.hourly_wage||0)>0)?.hourly_wage;
+  if($('attendanceHourlyWage')&&!$('attendanceHourlyWage').dataset.userEdited){
+   const preferredWage=Number(mine?.hourly_wage||0)>0?mine.hourly_wage:(savedWage!==null?savedWage:(latestRecordedWage??0));
+   $('attendanceHourlyWage').value=String(preferredWage);
+  }
   const summaries=new Map();
   (payrollRows||[]).forEach(row=>{
    const key=row.user_id,hrs=attendanceHours(row),rate=Number(row.hourly_wage||0);
