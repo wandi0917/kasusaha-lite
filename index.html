@@ -578,7 +578,7 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 <h3>Hubungkan akun ke usaha</h3>
 <p class="small">Laporan bersama disimpan di Supabase, sehingga owner dan karyawan dapat mengaksesnya dari perangkat berbeda. Login memakai akun yang sama dengan Akun Pembeli/Penjual. Catatan lokal lama tetap disimpan dan tidak otomatis digabung.</p>
 <div id="financeStatus" class="status" role="status">Memeriksa akun dan usaha...</div>
-<div class="card" id="attendanceCard"><h3>Absensi Harian</h3><p class="small">Absen menggunakan akun masing-masing. Usaha dan daftar barang tetap tersimpan; tidak perlu dibuat ulang setiap hari.</p><div id="attendanceStatus" class="status" role="status">Memuat absensi hari ini...</div><div class="grid"><button type="button" id="attendanceCheckIn" class="primary">Absen Masuk</button><button type="button" id="attendanceCheckOut" class="secondary">Absen Pulang</button></div><div id="attendanceOwnerList" class="table-wrap" hidden><h4>Absensi hari ini</h4><table class="report-table"><thead><tr><th>Akun</th><th>Masuk</th><th>Pulang</th></tr></thead><tbody id="attendanceRows"></tbody></table></div></div>
+<div class="card" id="attendanceCard"><h3>Absensi Harian</h3><p class="small">Absen menggunakan akun masing-masing. Usaha dan daftar barang tetap tersimpan; tidak perlu dibuat ulang setiap hari.</p><div id="attendanceStatus" class="status" role="status">Memuat absensi hari ini...</div><div class="grid"><button type="button" id="attendanceCheckIn" class="primary">Absen Masuk</button><button type="button" id="attendanceCheckOut" class="secondary">Absen Pulang</button></div><div id="attendanceOwnerList" class="table-wrap" hidden><h4>Absensi hari ini</h4><table class="report-table"><thead><tr><th>Akun</th><th>Masuk</th><th>Pulang</th></tr></thead><tbody id="attendanceRows"></tbody></table></div><div class="card" id="attendancePayrollCard"><h4>Perhitungan jam kerja dan gaji</h4><p class="small">Jam kerja dan total gaji dihitung dari catatan absen masuk-pulang yang lengkap. Isi gaji per jam akun Anda; perubahan disimpan bersama pada catatan absensi akun ini.</p><div class="grid"><div><label for="attendanceHourlyWage">Gaji per jam (Rp)</label><input id="attendanceHourlyWage" type="number" min="0" step="500" value="0" placeholder="Contoh: 15000"></div><div style="align-self:end"><button id="attendanceSaveWage" type="button" class="secondary wide">Simpan gaji per jam</button></div></div><div id="attendancePayrollStatus" class="status" role="status">Memuat jam kerja dan gaji...</div><div class="table-wrap"><table class="report-table"><thead><tr><th>Akun</th><th>Total jam tercatat</th><th>Gaji per jam</th><th>Total gaji</th></tr></thead><tbody id="attendancePayrollRows"><tr><td colspan="4">Memuat...</td></tr></tbody></table></div></div></div>
 <div id="financeWorkspaceInfo" hidden></div>
 <div id="financeSetupForms">
 <div id="financeSavedBusinesses" class="card" hidden><h4>Usaha yang sudah terdaftar</h4><p class="small">Klik nama usaha untuk memakai usaha yang sudah terhubung dengan akun ini.</p><div id="financeSavedBusinessList" class="grid"></div></div>
@@ -1626,12 +1626,31 @@ function attendanceTime(value){
  if(!value)return '—';
  return new Date(value).toLocaleTimeString('id-ID',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
 }
+function attendanceWageKey(){return 'kasusaha_attendance_wage_'+String(financeBusiness?.id||'')+'_'+String(financeMemberUserId||'');}
+function attendanceRupiah(value){return 'Rp '+Math.round(Number(value)||0).toLocaleString('id-ID');}
+function attendanceHours(row){
+ if(!row.check_in_at||!row.check_out_at)return 0;
+ const ms=new Date(row.check_out_at).getTime()-new Date(row.check_in_at).getTime();
+ return Number.isFinite(ms)&&ms>0?ms/3600000:0;
+}
+async function saveAttendanceWage(){
+ const status=$('attendancePayrollStatus'),btn=$('attendanceSaveWage');
+ const wage=Number($('attendanceHourlyWage').value);
+ if(!Number.isFinite(wage)||wage<0){status.className='status error';status.textContent='Masukkan gaji per jam yang valid (minimal Rp0).';return;}
+ try{
+  localStorage.setItem(attendanceWageKey(),String(wage));
+  const {error}=await sb.from('business_attendance').update({hourly_wage:wage}).eq('business_id',financeBusiness.id).eq('user_id',financeMemberUserId);
+  if(error)throw error;
+  status.className='status';status.textContent='Gaji per jam disimpan. Catatan absensi akun ini telah diperbarui.';
+  await loadAttendance();
+ }catch(e){status.className='status error';status.textContent='Gaji per jam tersimpan di perangkat ini, tetapi pembaruan catatan absensi gagal: '+String(e.message||e).slice(0,160);}
+}
 async function loadAttendance(){
  const status=$('attendanceStatus'),ownerBox=$('attendanceOwnerList'),tbody=$('attendanceRows');
  if(!sb||!financeBusiness||!financeMemberUserId){status.textContent='Login dan hubungkan akun ke usaha untuk menggunakan absensi.';$('attendanceCheckIn').disabled=true;$('attendanceCheckOut').disabled=true;return;}
  const today=attendanceToday();
  try{
-  const {data:mine,error:me}=await sb.from('business_attendance').select('id,business_id,user_id,work_date,check_in_at,check_out_at').eq('business_id',financeBusiness.id).eq('user_id',financeMemberUserId).eq('work_date',today).maybeSingle();
+  const {data:mine,error:me}=await sb.from('business_attendance').select('id,business_id,user_id,work_date,check_in_at,check_out_at,hourly_wage').eq('business_id',financeBusiness.id).eq('user_id',financeMemberUserId).eq('work_date',today).maybeSingle();
   if(me)throw me;
   const inBtn=$('attendanceCheckIn'),outBtn=$('attendanceCheckOut');
   if(mine){
@@ -1644,20 +1663,45 @@ async function loadAttendance(){
    inBtn.disabled=false;outBtn.disabled=true;
    inBtn.textContent='Absen Masuk';outBtn.textContent='Absen Pulang (setelah masuk)';
   }
+  const savedWage=localStorage.getItem(attendanceWageKey());
+  if($('attendanceHourlyWage')&&!$('attendanceHourlyWage').dataset.userEdited){
+   $('attendanceHourlyWage').value=String(mine?.hourly_wage??savedWage??0);
+  }
   if(financeMemberRole==='owner'){
-   const {data:rows,error:re}=await sb.from('business_attendance').select('user_id,work_date,check_in_at,check_out_at').eq('business_id',financeBusiness.id).eq('work_date',today).order('check_in_at',{ascending:true});
+   const {data:todayRows,error:re}=await sb.from('business_attendance').select('user_id,work_date,check_in_at,check_out_at,hourly_wage').eq('business_id',financeBusiness.id).eq('work_date',today).order('check_in_at',{ascending:true});
    if(re)throw re;
    ownerBox.hidden=false;tbody.replaceChildren();
-   if(!rows||!rows.length){const tr=document.createElement('tr');tr.innerHTML='<td colspan="3">Belum ada absensi hari ini.</td>';tbody.appendChild(tr);}
-   else rows.forEach(row=>{const tr=document.createElement('tr');[row.user_id===financeMemberUserId?'Owner (akun Anda)':'Karyawan/akun '+String(row.user_id).slice(0,8),attendanceTime(row.check_in_at),attendanceTime(row.check_out_at)].forEach(value=>{const td=document.createElement('td');td.textContent=value;tr.appendChild(td);});tbody.appendChild(tr);});
+   if(!todayRows||!todayRows.length){const tr=document.createElement('tr');tr.innerHTML='<td colspan="3">Belum ada absensi hari ini.</td>';tbody.appendChild(tr);}
+   else todayRows.forEach(row=>{const tr=document.createElement('tr');[row.user_id===financeMemberUserId?'Owner (akun Anda)':'Karyawan/akun '+String(row.user_id).slice(0,8),attendanceTime(row.check_in_at),attendanceTime(row.check_out_at)].forEach(value=>{const td=document.createElement('td');td.textContent=value;tr.appendChild(td);});tbody.appendChild(tr);});
   }else ownerBox.hidden=true;
+  let payrollQuery=sb.from('business_attendance').select('user_id,work_date,check_in_at,check_out_at,hourly_wage').eq('business_id',financeBusiness.id);
+  if(financeMemberRole!=='owner')payrollQuery=payrollQuery.eq('user_id',financeMemberUserId);
+  const {data:payrollRows,error:pe}=await payrollQuery.order('work_date',{ascending:false});
+  if(pe)throw pe;
+  const summaries=new Map();
+  (payrollRows||[]).forEach(row=>{
+   const key=row.user_id,hrs=attendanceHours(row),rate=Number(row.hourly_wage||0);
+   if(!summaries.has(key))summaries.set(key,{hours:0,wage:rate,total:0,days:0});
+   const item=summaries.get(key);item.hours+=hrs;item.total+=hrs*rate;if(rate>0)item.wage=rate;if(hrs>0)item.days++;
+  });
+  const payrollBody=$('attendancePayrollRows');payrollBody.replaceChildren();
+  const list=Array.from(summaries.entries());
+  if(!list.length){const tr=document.createElement('tr');tr.innerHTML='<td colspan="4">Belum ada catatan absensi.</td>';payrollBody.appendChild(tr);}
+  list.forEach(([uid,item])=>{
+   const tr=document.createElement('tr'),name=uid===financeMemberUserId?(financeMemberRole==='owner'?'Owner (akun Anda)':'Gaji Anda'):(financeMemberRole==='owner'?'Karyawan/akun '+String(uid).slice(0,8):'Akun Anda');
+   [name,item.hours.toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2})+' jam',attendanceRupiah(item.wage),attendanceRupiah(item.total)].forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;if(i===3){td.className='amount income';td.style.fontWeight='bold';}tr.appendChild(td);});payrollBody.appendChild(tr);
+  });
+  const totalHours=list.reduce((n,x)=>n+x[1].hours,0),totalPay=list.reduce((n,x)=>n+x[1].total,0);
+  $('attendancePayrollStatus').className='status';
+  $('attendancePayrollStatus').textContent=(financeMemberRole==='owner'?'Ringkasan semua akun usaha':'Ringkasan akun Anda')+': '+totalHours.toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2})+' jam tercatat lengkap; total gaji terhitung '+attendanceRupiah(totalPay)+'. Absensi yang belum absen pulang belum dihitung.';
+  $('attendanceSaveWage').disabled=false;
  }catch(e){status.className='status error';status.textContent='Absensi belum dapat dimuat: '+String(e.message||e).slice(0,200);$('attendanceCheckIn').disabled=true;$('attendanceCheckOut').disabled=true;}
 }
 async function absenMasuk(){
  if(!sb||!financeBusiness||!financeMemberUserId){setFinanceStatus('Login dan hubungkan akun ke usaha terlebih dahulu.',true);return;}
  const btn=$('attendanceCheckIn');btn.disabled=true;
  try{
-  const {data,error}=await sb.from('business_attendance').insert({business_id:financeBusiness.id,user_id:financeMemberUserId,work_date:attendanceToday(),check_in_at:new Date().toISOString()}).select('id').single();
+  const {data,error}=await sb.from('business_attendance').insert({business_id:financeBusiness.id,user_id:financeMemberUserId,work_date:attendanceToday(),check_in_at:new Date().toISOString(),hourly_wage:Number(localStorage.getItem(attendanceWageKey())||0)}).select('id').single();
   if(error){if(error.code==='23505')throw new Error('Anda sudah absen masuk hari ini.');throw error;}
   await loadAttendance();setFinanceStatus('Absen masuk berhasil dicatat. Usaha dan daftar barang tetap tersimpan untuk digunakan.');
  }catch(e){$('attendanceStatus').className='status error';$('attendanceStatus').textContent='Absen masuk gagal: '+String(e.message||e).slice(0,200);btn.disabled=false;}
@@ -1676,6 +1720,8 @@ window.absenMasuk=absenMasuk;
 window.absenPulang=absenPulang;
 document.getElementById('attendanceCheckIn')?.addEventListener('click',function(){absenMasuk();});
 document.getElementById('attendanceCheckOut')?.addEventListener('click',function(){absenPulang();});
+document.getElementById('attendanceSaveWage')?.addEventListener('click',function(){saveAttendanceWage();});
+document.getElementById('attendanceHourlyWage')?.addEventListener('input',function(){this.dataset.userEdited='1';});
 async function deactivateStoreProduct(id){
  if(!confirm('Nonaktifkan barang ini? Riwayat penjualan lama tetap tersimpan.'))return;
  try{const {error}=await sb.from('store_products').update({active:false,updated_at:new Date().toISOString()}).eq('id',id).eq('business_id',financeBusiness.id);if(error)throw error;await loadStoreProducts();const st=$('storeProductStatus');st.className='status';st.textContent='Barang dinonaktifkan. Riwayat penjualan tidak dihapus.';}
