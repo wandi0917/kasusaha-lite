@@ -641,7 +641,7 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 <div class="grid"><div id="financeRoleFilterWrap"><label for="financeRoleFilter">Pencatat</label><select id="financeRoleFilter"><option value="all">Semua transaksi</option><option value="owner">Transaksi Owner</option><option value="employee">Transaksi Karyawan</option><option value="mine">Transaksi saya</option></select></div><div><label for="financeReportCategory">Kategori transaksi</label><select id="financeReportCategory"><option value="all">Semua kategori</option><option>Penjualan</option><option>Modal</option><option>Belanja stok</option><option>Operasional</option><option>Gaji</option><option>Transportasi</option><option>Listrik/Air/Internet</option><option>Prive Owner</option><option>Lainnya</option><option value="__uncategorized">Transaksi tanpa kategori</option></select></div></div>
 <div class="row-actions"><button type="button" class="primary" onclick="muatDanTampilkanLaporan()">Tampilkan laporan</button><button type="button" class="secondary" onclick="muatDanTampilkanLaporan()">Muat ulang laporan</button><button type="button" id="importLocalFinanceBtn" class="secondary" onclick="imporTransaksiLokalKeBersama()">Pindahkan transaksi lokal ke laporan bersama</button><button type="button" class="secondary" onclick="printFinanceReport()">Cetak / Simpan PDF</button></div>
 <div id="financeReportSummary" class="grid"></div>
-<div class="card" id="financeTableSalesSummary"><h3>Ringkasan total penjualan per meja/kasir</h3><p class="small">Dikelompokkan berdasarkan meja/kasir dan waktu transaksi tersimpan. Setiap tagihan menampilkan rincian barang serta total yang dibayar.</p><div class="table-wrap"><table class="report-table"><thead><tr><th>Hari, tanggal &amp; waktu</th><th>Meja / kasir</th><th>Rincian barang</th><th>Total tagihan</th></tr></thead><tbody id="financeTableSalesRows"><tr><td colspan="4">Memuat ringkasan...</td></tr></tbody></table></div></div>
+<div class="card" id="financeTableSalesSummary"><h3>Ringkasan total penjualan per meja/kasir</h3><p class="small">Dikelompokkan berdasarkan meja/kasir dan waktu transaksi tersimpan. Setiap tagihan menampilkan rincian barang serta total yang dibayar.</p><div class="table-wrap"><table class="report-table"><thead><tr><th>Hari, tanggal &amp; waktu</th><th>Meja / kasir</th><th>Rincian barang</th><th>Total tagihan</th></tr></thead><tbody id="financeTableSalesRows"><tr><td colspan="4">Memuat ringkasan...</td></tr></tbody></table></div><div id="financeTableSalesTotals" class="grid" aria-live="polite" style="margin-top:14px"><div class="finance-metric">Total keseluruhan penjualan<strong>Memuat...</strong></div></div></div>
 <div class="table-wrap"><table class="report-table"><thead id="financeReportHead"><tr><th>Hari, Tanggal &amp; Jam</th><th>Pencatat</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo periode</th></tr></thead><tbody id="financeReportRows"><tr><td colspan="7">Memuat laporan...</td></tr></tbody></table></div>
 <p class="small">Owner dapat melihat transaksi owner dan seluruh karyawan. Karyawan hanya dapat melihat dan menghapus transaksi miliknya sendiri. Data dilindungi kebijakan akses Supabase.</p>
 </div>
@@ -1780,6 +1780,20 @@ function renderFinanceReport(){
    [dateText,g.location,g.items.join('\\n'),format(g.total)].forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;if(i===2)td.style.whiteSpace='pre-line';if(i===3){td.className='amount income';td.style.fontWeight='bold';}tr.appendChild(td);});
    salesTbody.appendChild(tr);
   });
+  // Total otomatis mengikuti tagihan yang lolos filter laporan yang sedang dipilih.
+  const overallTotal=groups.reduce((sum,g)=>sum+Number(g.total||0),0);
+  const locationTotals=new Map();
+  groups.forEach(g=>locationTotals.set(g.location,(locationTotals.get(g.location)||0)+Number(g.total||0)));
+  const totalsBox=$('financeTableSalesTotals');
+  if(totalsBox){
+   totalsBox.replaceChildren();
+   const overall=document.createElement('div');overall.className='finance-metric';overall.innerHTML='Total keseluruhan penjualan<strong>'+format(overallTotal)+'</strong>';
+   const count=document.createElement('div');count.className='finance-metric';count.innerHTML='Jumlah tagihan<strong>'+groups.length+' transaksi</strong>';
+   totalsBox.append(overall,count);
+   Array.from(locationTotals.entries()).sort((a,b)=>a[0].localeCompare(b[0],'id')).forEach(([location,total])=>{
+    const metric=document.createElement('div');metric.className='finance-metric';const label=document.createElement('span');label.textContent='Total '+location;const value=document.createElement('strong');value.textContent=format(total);metric.replaceChildren(label,value);totalsBox.appendChild(metric);
+   });
+  }
  }
  const income=rows.filter(r=>r.transaction_type==='income').reduce((a,r)=>a+Number(r.amount||0),0);
  const expense=rows.filter(r=>r.transaction_type==='expense').reduce((a,r)=>a+Number(r.amount||0),0);
