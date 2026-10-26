@@ -592,6 +592,7 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 <div class="card" id="financeEntryCard" hidden>
 <h3>Kasir cepat — penjualan barang</h3>
 <p class="small">Pilih barang dari daftar. Harga otomatis mengikuti harga katalog, tetapi dapat diisi atau disesuaikan sebelum transaksi disimpan. Total penjualan dihitung otomatis.</p>
+<div class="card" id="attendanceCard"><h3>Absensi Harian</h3><p class="small">Absen menggunakan akun masing-masing. Usaha dan daftar barang tetap tersimpan; tidak perlu dibuat ulang setiap hari.</p><div id="attendanceStatus" class="status" role="status">Memuat absensi hari ini...</div><div class="grid"><button type="button" id="attendanceCheckIn" class="primary" onclick="absenMasuk()">Absen Masuk</button><button type="button" id="attendanceCheckOut" class="secondary" onclick="absenPulang()">Absen Pulang</button></div><div id="attendanceOwnerList" class="table-wrap" hidden><h4>Absensi hari ini</h4><table class="report-table"><thead><tr><th>Akun</th><th>Masuk</th><th>Pulang</th></tr></thead><tbody id="attendanceRows"></tbody></table></div></div>
 <form id="quickSaleForm" class="card" style="background:#f8fbff">
 <label for="quickSaleProduct">Kode / nama barang</label>
 <input id="quickSaleProduct" list="quickSaleProductOptions" autocomplete="off" required placeholder="Ketik kode awal, misalnya KOP">
@@ -1509,7 +1510,7 @@ async function loadFinanceWorkspace(){
   if(!member){document.body.classList.remove('employee-verified','owner-verified');financeBusiness=null;financeMemberRole=null;financeRows=[];setup.hidden=false;info.hidden=true;entry.hidden=true;report.hidden=false;const tbody=$('financeReportRows');if(tbody)tbody.innerHTML='<tr><td colspan="7">Laporan bersama belum dapat dimuat: akun '+aman(sd.session.user.email||'login ini')+' belum terhubung ke usaha. Masuk dengan akun Owner yang terdaftar atau hubungkan akun ini ke usaha terlebih dahulu. Data transaksi tidak dihapus.</td></tr>';const summary=$('financeReportSummary');if(summary)summary.innerHTML='';applyHomeFinanceRole();setFinanceStatus('Akun login terdeteksi ('+sd.session.user.email+'), tetapi belum terhubung ke usaha. Laporan bersama hanya bisa ditampilkan setelah akun yang benar terhubung.');return;}
   const {data:business,error:be}=await sb.from('business_workspaces').select('id,business_name,invite_code,owner_id').eq('id',member.business_id).single();
   if(be)throw be;
-  financeBusiness=business;financeMemberRole=member.role;document.body.classList.toggle('employee-verified',member.role==='employee');$('ownerStoreCatalog').hidden=member.role!=='owner';await loadStoreProducts();$('financeForm').hidden=member.role==='employee';document.body.classList.toggle('owner-verified',member.role==='owner');setup.hidden=true;info.hidden=false;entry.hidden=false;report.hidden=false;
+  financeBusiness=business;financeMemberRole=member.role;document.body.classList.toggle('employee-verified',member.role==='employee');$('ownerStoreCatalog').hidden=member.role!=='owner';await loadStoreProducts();await loadAttendance();$('financeForm').hidden=member.role==='employee';document.body.classList.toggle('owner-verified',member.role==='owner');setup.hidden=true;info.hidden=false;entry.hidden=false;report.hidden=false;
   info.innerHTML='<p><strong>Usaha:</strong> '+aman(business.business_name)+'<br><strong>Peran akun:</strong> '+financeRoleLabel(member.role)+(member.role==='owner'?'<br><strong>Kode undangan karyawan:</strong> <code>'+aman(business.invite_code)+'</code><br><span class="small">Bagikan kode ini hanya kepada karyawan yang Anda izinkan.</span>':'')+'</p>';
   const roleFilter=$('financeRoleFilter');if(member.role==='employee'){roleFilter.innerHTML='<option value="mine">Pemasukan saya</option>';roleFilter.value='mine';$('financeType').value='income';$('financeType').disabled=true;$('financeTypeWrap').hidden=true;$('financeReportTitle').textContent='Laporan Pemasukan Karyawan';$('financeRoleFilterWrap').hidden=true;}else{roleFilter.innerHTML='<option value="all">Semua transaksi</option><option value="owner">Transaksi Owner</option><option value="employee">Transaksi Karyawan</option><option value="mine">Transaksi saya</option>';$('financeType').disabled=false;$('financeTypeWrap').hidden=false;$('financeReportTitle').textContent='Laporan Keuangan Lengkap (Owner)';$('financeRoleFilterWrap').hidden=false;}
   if(!$('financeDate').value)$('financeDate').value=financeToday();if(!$('financeReportStart').value)$('financeReportStart').value=financeToday().slice(0,8)+'01';if(!$('financeReportEnd').value)$('financeReportEnd').value=financeToday();if(!$('tanggalMulaiLaporan').value)$('tanggalMulaiLaporan').value=financeToday().slice(0,8)+'01';if(!$('tanggalSampaiLaporan').value)$('tanggalSampaiLaporan').value=financeToday();
@@ -1554,6 +1555,55 @@ async function loadStoreProducts(){
  const tbody=$('storeProductRows');
  if(tbody){tbody.replaceChildren();if(!storeProductRows.length){const tr=document.createElement('tr');tr.innerHTML='<td colspan="5">Belum ada barang. Owner perlu mengisi daftar barang dan harga terlebih dahulu.</td>';tbody.appendChild(tr);}else storeProductRows.forEach(p=>{const tr=document.createElement('tr');const vals=[p.product_code,p.product_name,formatStoreRupiah(p.price),p.active?'Aktif':'Nonaktif'];vals.forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});const td=document.createElement('td');if(financeMemberRole==='owner'&&p.active){const b=document.createElement('button');b.type='button';b.className='secondary';b.textContent='Nonaktifkan';b.addEventListener('click',()=>deactivateStoreProduct(p.id));td.appendChild(b);}else td.textContent='—';tr.appendChild(td);tbody.appendChild(tr);});}
  updateQuickSalePreview();
+}
+function attendanceToday(){
+ return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+}
+function attendanceTime(value){
+ if(!value)return '—';
+ return new Date(value).toLocaleTimeString('id-ID',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+}
+async function loadAttendance(){
+ const status=$('attendanceStatus'),ownerBox=$('attendanceOwnerList'),tbody=$('attendanceRows');
+ if(!sb||!financeBusiness||!financeMemberUserId)return;
+ const today=attendanceToday();
+ try{
+  const {data:mine,error:me}=await sb.from('business_attendance').select('id,business_id,user_id,work_date,check_in_at,check_out_at').eq('business_id',financeBusiness.id).eq('user_id',financeMemberUserId).eq('work_date',today).maybeSingle();
+  if(me)throw me;
+  const inBtn=$('attendanceCheckIn'),outBtn=$('attendanceCheckOut');
+  if(mine){
+   status.textContent='Tanggal '+today+' — masuk: '+attendanceTime(mine.check_in_at)+'; pulang: '+attendanceTime(mine.check_out_at)+'.';
+   inBtn.disabled=!!mine.check_in_at;outBtn.disabled=!mine.check_in_at||!!mine.check_out_at;
+  }else{
+   status.textContent='Belum absen hari ini ('+today+'). Tekan Absen Masuk saat mulai bekerja.';
+   inBtn.disabled=false;outBtn.disabled=true;
+  }
+  if(financeMemberRole==='owner'){
+   const {data:rows,error:re}=await sb.from('business_attendance').select('user_id,work_date,check_in_at,check_out_at').eq('business_id',financeBusiness.id).eq('work_date',today).order('check_in_at',{ascending:true});
+   if(re)throw re;
+   ownerBox.hidden=false;tbody.replaceChildren();
+   if(!rows||!rows.length){const tr=document.createElement('tr');tr.innerHTML='<td colspan="3">Belum ada absensi hari ini.</td>';tbody.appendChild(tr);}
+   else rows.forEach(row=>{const tr=document.createElement('tr');[row.user_id===financeMemberUserId?'Owner (akun Anda)':'Karyawan/akun '+String(row.user_id).slice(0,8),attendanceTime(row.check_in_at),attendanceTime(row.check_out_at)].forEach(value=>{const td=document.createElement('td');td.textContent=value;tr.appendChild(td);});tbody.appendChild(tr);});
+  }else ownerBox.hidden=true;
+ }catch(e){status.className='status error';status.textContent='Absensi belum dapat dimuat: '+String(e.message||e).slice(0,200);$('attendanceCheckIn').disabled=true;$('attendanceCheckOut').disabled=true;}
+}
+async function absenMasuk(){
+ if(!sb||!financeBusiness||!financeMemberUserId){setFinanceStatus('Login dan hubungkan akun ke usaha terlebih dahulu.',true);return;}
+ const btn=$('attendanceCheckIn');btn.disabled=true;
+ try{
+  const {data,error}=await sb.from('business_attendance').insert({business_id:financeBusiness.id,user_id:financeMemberUserId,work_date:attendanceToday(),check_in_at:new Date().toISOString()}).select('id').single();
+  if(error){if(error.code==='23505')throw new Error('Anda sudah absen masuk hari ini.');throw error;}
+  await loadAttendance();setFinanceStatus('Absen masuk berhasil dicatat. Usaha dan daftar barang tetap tersimpan untuk digunakan.');
+ }catch(e){$('attendanceStatus').className='status error';$('attendanceStatus').textContent='Absen masuk gagal: '+String(e.message||e).slice(0,200);btn.disabled=false;}
+}
+async function absenPulang(){
+ if(!sb||!financeBusiness||!financeMemberUserId)return;
+ const btn=$('attendanceCheckOut');btn.disabled=true;
+ try{
+  const {data,error}=await sb.from('business_attendance').update({check_out_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('business_id',financeBusiness.id).eq('user_id',financeMemberUserId).eq('work_date',attendanceToday()).is('check_out_at',null).select('id').maybeSingle();
+  if(error)throw error;if(!data)throw new Error('Absen masuk belum dilakukan atau absen pulang sudah tercatat.');
+  await loadAttendance();setFinanceStatus('Absen pulang berhasil dicatat.');
+ }catch(e){$('attendanceStatus').className='status error';$('attendanceStatus').textContent='Absen pulang gagal: '+String(e.message||e).slice(0,200);btn.disabled=false;}
 }
 async function deactivateStoreProduct(id){
  if(!confirm('Nonaktifkan barang ini? Riwayat penjualan lama tetap tersimpan.'))return;
