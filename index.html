@@ -1478,7 +1478,7 @@ async function muatProdukAsalPengiriman(){
  }catch(err){box.textContent='Produk tidak dapat dimuat: '+String(err.message||err).slice(0,220);}
 }
 
-let financeBusiness=null, financeMemberRole=null, financeMemberUserId=null, financeRows=[];
+let financeBusiness=null, financeMemberRole=null, financeMemberUserId=null, financeRows=[], financeSelectedBusinessId=null;
 function setFinanceStatus(message,isError=false){const el=$('financeStatus');if(el){el.className=isError?'status error':'status';el.textContent=message;}}
 function financeToday(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function financeRoleLabel(role){return role==='owner'?'Owner':'Karyawan';}
@@ -1506,7 +1506,7 @@ async function financeChooseSavedBusiness(businessId){
   const {data:sd,error:se}=await sb.auth.getSession();if(se)throw se;if(!sd.session)throw new Error('Login terlebih dahulu.');
   const {data:m,error:me}=await sb.from('business_members').select('business_id,user_id,role,active').eq('user_id',sd.session.user.id).eq('business_id',businessId).eq('active',true).maybeSingle();
   if(me)throw me;if(!m)throw new Error('Akun ini tidak memiliki akses ke usaha tersebut.');
-  await loadFinanceWorkspace();setFinanceStatus('Usaha dipilih. Data dimuat sesuai akses akun.');
+  financeSelectedBusinessId=businessId;await loadFinanceWorkspace();setFinanceStatus('Usaha dipilih. Data dimuat sesuai akses akun.');
  }catch(e){setFinanceStatus('Tidak dapat memilih usaha: '+String(e.message||e).slice(0,180),true);}
 }
 async function loadFinanceWorkspace(){
@@ -1518,7 +1518,8 @@ async function loadFinanceWorkspace(){
   financeMemberUserId=sd.session.user.id;
   const {data:memberRows,error:me}=await sb.from('business_members').select('business_id,user_id,role,active').eq('user_id',financeMemberUserId).eq('active',true);
   if(me)throw me;
-  const memberList=memberRows||[];
+  let memberList=memberRows||[];
+  if(financeSelectedBusinessId){memberList=memberList.filter(m=>m.business_id===financeSelectedBusinessId);}
   if(memberList.length>1){
    document.body.classList.remove('employee-verified','owner-verified');financeBusiness=null;financeMemberRole=null;financeRows=[];
    setup.hidden=false;info.hidden=true;entry.hidden=true;report.hidden=true;
