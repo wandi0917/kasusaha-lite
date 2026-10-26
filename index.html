@@ -602,8 +602,15 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 <div id="quickSaleProductInfo" class="status" role="status">Pilih barang dari daftar produk owner.</div>
 <label for="quickSaleTableNumber">Nomor meja (opsional)</label><input id="quickSaleTableNumber" type="text" maxlength="20" autocomplete="off" placeholder="Contoh: 01, 05, atau VIP-2">
 <div class="grid"><div><label for="quickSaleQty">Jumlah barang</label><input id="quickSaleQty" type="number" min="1" step="1" value="1" required></div><div><label for="quickSaleUnitPrice">Harga satuan (Rp)</label><input id="quickSaleUnitPrice" type="number" min="1" step="1" inputmode="numeric" required value="" placeholder="Masukkan harga satuan"></div></div>
-<div class="card"><span>Total penjualan</span><strong id="quickSaleTotal" style="display:block;font-size:26px;color:#166534">Rp0</strong></div>
-<button id="quickSaleSave" class="primary wide" type="submit">Simpan penjualan</button>
+<div class="card" id="quickSaleBillPreview" style="border:2px solid #2563eb;background:#eff6ff">
+<h4 style="margin-top:0">Rincian tagihan sebelum disimpan</h4>
+<p><strong>Lokasi pesanan:</strong> <span id="quickSaleBillLocation">Kasir</span></p>
+<p><strong>Barang:</strong> <span id="quickSaleBillItem">Belum memilih barang</span></p>
+<p><strong>Perhitungan:</strong> <span id="quickSaleBillCalculation">0 barang × Rp0</span></p>
+<div style="border-top:1px solid #93c5fd;padding-top:10px;margin-top:10px"><span><strong>TOTAL YANG HARUS DIBAYAR</strong></span><strong id="quickSaleTotal" style="display:block;font-size:28px;color:#166534">Rp0</strong></div>
+<p class="small" id="quickSaleBillHint">Pilih barang, isi jumlah, harga satuan, dan nomor meja bila ada. Periksa total sebelum menyimpan.</p>
+</div>
+<button id="quickSaleSave" class="primary wide" type="submit">Konfirmasi total &amp; simpan transaksi</button>
 </form>
 <div id="ownerStoreCatalog" class="card" hidden>
 <h3>Daftar barang toko (Owner)</h3>
@@ -1570,8 +1577,17 @@ function resolveStoreProduct(raw){
 function updateQuickSalePreview(useCatalogPrice=false){
  const raw=$('quickSaleProduct')?.value||'',p=resolveStoreProduct(raw),qty=Number($('quickSaleQty')?.value||0),priceInput=$('quickSaleUnitPrice');
  const info=$('quickSaleProductInfo');
- if(p){$('quickSaleProduct').dataset.productId=p.id;if(useCatalogPrice||priceInput.value==='')priceInput.value=String(Number(p.price)||'');const unitPrice=Number(priceInput.value)||0;$('quickSaleTotal').textContent=formatStoreRupiah(unitPrice*Math.max(0,qty));if(info){info.className='status';info.textContent=p.product_code+' — '+p.product_name+' | Harga katalog '+formatStoreRupiah(p.price)+'. Harga transaksi bisa disesuaikan.';}}
- else{$('quickSaleProduct').dataset.productId='';if(useCatalogPrice||!raw)priceInput.value='';$('quickSaleTotal').textContent=formatStoreRupiah(0);if(info){info.className='status';info.textContent='Ketik kode awal atau nama barang, lalu pilih barang yang sesuai dari saran.';}}
+ if(p){$('quickSaleProduct').dataset.productId=p.id;if(useCatalogPrice||priceInput.value==='')priceInput.value=String(Number(p.price)||'');if(info){info.className='status';info.textContent=p.product_code+' — '+p.product_name+' | Harga katalog '+formatStoreRupiah(p.price)+'. Harga transaksi bisa disesuaikan.';}}
+ else{$('quickSaleProduct').dataset.productId='';if(useCatalogPrice||!raw)priceInput.value='';if(info){info.className='status';info.textContent='Ketik kode awal atau nama barang, lalu pilih barang yang sesuai dari saran.';}}
+ const quantity=Number.isSafeInteger(qty)&&qty>0?qty:0,unitPrice=Number(priceInput.value),validPrice=Number.isSafeInteger(unitPrice)&&unitPrice>0,total=validPrice?quantity*unitPrice:0;
+ const table=String($('quickSaleTableNumber')?.value||'').trim();
+ const location=table?'Meja '+table:'Kasir';
+ const locationEl=$('quickSaleBillLocation'),itemEl=$('quickSaleBillItem'),calcEl=$('quickSaleBillCalculation'),totalEl=$('quickSaleTotal'),hintEl=$('quickSaleBillHint');
+ if(locationEl)locationEl.textContent=location;
+ if(itemEl)itemEl.textContent=p?p.product_name+' ('+p.product_code+')':'Belum memilih barang';
+ if(calcEl)calcEl.textContent=(quantity||0)+' × '+formatStoreRupiah(validPrice?unitPrice:0)+(validPrice?' per item':' — isi harga satuan yang benar');
+ if(totalEl)totalEl.textContent=formatStoreRupiah(Number.isSafeInteger(total)?total:0);
+ if(hintEl)hintEl.textContent=p&&quantity>0&&validPrice?'Periksa barang, lokasi pesanan, jumlah, dan total. Tekan “Konfirmasi total & simpan transaksi” hanya jika sudah benar.':'Lengkapi barang, jumlah, dan harga satuan agar total tagihan tampil dengan benar.';
 }
 async function loadStoreProducts(){
  if(!sb||!financeBusiness)return;
@@ -1660,6 +1676,7 @@ $('storeProductForm')?.addEventListener('submit',async function(e){
 $('quickSaleProduct')?.addEventListener('input',()=>updateQuickSalePreview(true));
 $('quickSaleQty')?.addEventListener('input',()=>updateQuickSalePreview(false));
 $('quickSaleUnitPrice')?.addEventListener('input',()=>updateQuickSalePreview(false));
+$('quickSaleTableNumber')?.addEventListener('input',()=>updateQuickSalePreview(false));
 $('quickSaleForm')?.addEventListener('submit',async function(e){
  e.preventDefault();if(!sb||!financeBusiness||!financeMemberRole||!financeMemberUserId){setFinanceStatus('Login dan hubungkan akun ke usaha terlebih dahulu.',true);return;}
  const p=resolveStoreProduct($('quickSaleProduct').value),qty=Number($('quickSaleQty').value),unitPrice=Number($('quickSaleUnitPrice').value);
@@ -1667,10 +1684,13 @@ $('quickSaleForm')?.addEventListener('submit',async function(e){
  if(!Number.isSafeInteger(qty)||qty<1){setFinanceStatus('Jumlah barang harus bilangan bulat minimal 1.',true);return;}
  if(!Number.isSafeInteger(unitPrice)||unitPrice<=0){setFinanceStatus('Isi harga satuan dengan angka rupiah bulat yang lebih besar dari nol.',true);return;}
  const amount=unitPrice*qty;if(!Number.isSafeInteger(amount)||amount<=0){setFinanceStatus('Total penjualan tidak valid.',true);return;}
+ const tableNumber=String($('quickSaleTableNumber')?.value||'').trim().replace(/[<>]/g,'').slice(0,20);
+ const locationLabel=tableNumber?'Meja '+tableNumber:'Kasir';
+ const confirmText='PERIKSA TAGIHAN\n\nLokasi: '+locationLabel+'\nBarang: '+p.product_name+' ('+p.product_code+')\nJumlah: '+qty+'\nHarga satuan: '+formatStoreRupiah(unitPrice)+'\nTOTAL BAYAR: '+formatStoreRupiah(amount)+'\n\nSimpan transaksi ini?';
+ if(!window.confirm(confirmText)){setFinanceStatus('Transaksi belum disimpan. Periksa atau ubah rincian tagihan terlebih dahulu.');return;}
  const btn=$('quickSaleSave');btn.disabled=true;
  try{
-  const tableNumber=String($('quickSaleTableNumber')?.value||'').trim().replace(/[<>]/g,'').slice(0,20);
-  const description=(tableNumber?'Meja '+tableNumber+' — ':'')+'Penjualan '+p.product_name+' ['+p.product_code+'] × '+qty+' @ '+formatStoreRupiah(unitPrice);
+  const description=(tableNumber?'Meja '+tableNumber+' — ':'Kasir — ')+'Penjualan '+p.product_name+' ['+p.product_code+'] × '+qty+' @ '+formatStoreRupiah(unitPrice);
   const {error}=await sb.from('financial_transactions').insert({business_id:financeBusiness.id,created_by:financeMemberUserId,created_by_role:financeMemberRole,transaction_date:financeToday(),transaction_type:'income',amount,description,category:'Penjualan'}).select('id').single();
   if(error)throw error;
   this.reset();$('quickSaleQty').value='1';$('quickSaleUnitPrice').value='';$('quickSaleTableNumber').value='';$('quickSaleTotal').textContent=formatStoreRupiah(0);$('quickSaleProductInfo').textContent='Penjualan tersimpan.';await loadFinanceWorkspace();$('quickSaleProduct').value='';updateQuickSalePreview();setFinanceStatus('Penjualan '+p.product_name+' sebanyak '+qty+' berhasil disimpan. Total '+formatStoreRupiah(amount)+'.');
