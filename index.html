@@ -1770,8 +1770,9 @@ async function employeeCheckRole(){
  try{
   const {data:sessionData,error:sessionError}=await sb.auth.getSession();if(sessionError)throw sessionError;
   if(!sessionData.session){employeeAuthMessage('Belum login sebagai karyawan. Masukkan kode undangan Owner.');return;}
+  if(!sessionData.session.user.is_anonymous){employeeAuthMessage('Sesi ini menggunakan akun email. Untuk login tanpa email, logout terlebih dahulu lalu gunakan kode undangan.',true);return;}
   const {data:member,error}=await sb.from('business_members').select('role,active,business_id').eq('user_id',sessionData.session.user.id).eq('active',true).maybeSingle();if(error)throw error;
-  if(!member){employeeAuthMessage('Sesi tersedia tetapi belum terhubung ke usaha. Masukkan kode undangan Owner.',true);return;}
+  if(!member){employeeAuthMessage('Sesi anonim belum terhubung ke usaha. Masukkan kode undangan Owner.',true);return;}
   if(member.role!=='employee'){await sb.auth.signOut();financeBusiness=null;financeMemberRole=null;financeMemberUserId=null;financeRows=[];document.body.classList.remove('employee-verified');applyHomeFinanceRole();employeeAuthMessage('Login ditolak: sesi ini bukan akun Karyawan. Silakan masuk menggunakan kode undangan.',true);return;}
   employeeAuthMessage('Login karyawan aktif. Hak akses dibatasi sesuai peran Karyawan.');
   await loadFinanceWorkspace();
@@ -1782,31 +1783,34 @@ $('employeeLogin').addEventListener('click',async()=>{
  const code=$('employeeInviteCode').value.trim().toUpperCase();
  if(!code)return employeeAuthMessage('Masukkan kode undangan yang diberikan Owner.',true);
  const btn=$('employeeLogin');btn.disabled=true;employeeAuthMessage('Memeriksa kode undangan...');
+ let createdAnonymous=false,joined=false;
  try{
   let {data:sessionData,error:sessionError}=await sb.auth.getSession();if(sessionError)throw sessionError;
   if(sessionData.session&&!sessionData.session.user.is_anonymous){
    const {data:existingMember,error:memberError}=await sb.from('business_members').select('role,active').eq('user_id',sessionData.session.user.id).eq('active',true).maybeSingle();
    if(memberError)throw memberError;
    if(!existingMember||existingMember.role!=='employee')throw new Error('Anda sedang login dengan akun Owner/Pembeli biasa. Klik Logout terlebih dahulu, lalu masuk kembali menggunakan kode undangan.');
+   throw new Error('Sesi yang aktif bukan sesi anonim. Logout terlebih dahulu, lalu gunakan kode undangan karyawan.');
   }
   if(!sessionData.session){
-   const {data,error}=await sb.auth.signInAnonymously();if(error)throw error;sessionData={session:data.session};
+   const {data,error}=await sb.auth.signInAnonymously();if(error)throw error;createdAnonymous=true;sessionData={session:data.session};
   }
   const {data,error}=await sb.rpc('join_business_workspace',{p_invite_code:code});if(error)throw error;
   if(!data||data.role!=='employee'){
-   await sb.auth.signOut();
    throw new Error('Kode ini tidak menghasilkan akses Karyawan. Pastikan kode berasal dari Owner usaha yang benar.');
   }
+  joined=true;
   await loadFinanceWorkspace();
   employeeAuthMessage('Berhasil masuk sebagai Karyawan di '+String(data.business_name||'usaha Anda')+'. Anda tidak perlu email untuk login.');
  }catch(e){
   const raw=String(e.message||e);
+  if(createdAnonymous&&!joined){try{await sb.auth.signOut();}catch(_cleanupError){}}
   const anonymousHint=/anonymous|anonymous sign|anonymous provider|disabled|not enabled/i.test(raw)?' Aktifkan Anonymous Sign-Ins di Supabase Dashboard > Authentication > Sign In / Providers, lalu coba lagi.':'';
   employeeAuthMessage('Login karyawan gagal: '+raw.slice(0,220)+anonymousHint,true);
  }finally{btn.disabled=false;}
 });
 $('employeeLogout').addEventListener('click',async()=>{
- try{if(!sb)throw new Error('Koneksi Supabase tidak tersedia.');const {error}=await sb.auth.signOut();if(error)throw error;financeBusiness=null;financeMemberRole=null;financeMemberUserId=null;financeRows=[];financeSelectedBusinessId=null;document.body.classList.remove('employee-verified','owner-verified');applyHomeFinanceRole();employeeAuthMessage('Anda sudah logout dari sesi karyawan.');}
+ try{if(!sb)throw new Error('Koneksi Supabase tidak tersedia.');const {error}=await sb.auth.signOut();if(error)throw error;financeBusiness=null;financeMemberRole=null;financeMemberUserId=null;financeRows=[];financeSelectedBusinessId=null;document.body.classList.remove('employee-verified','owner-verified');applyHomeFinanceRole();employeeAuthMessage('Anda sudah logout dari sesi karyawan. Saat masuk lagi, masukkan kode undangan kembali.');}
  catch(e){employeeAuthMessage('Logout gagal: '+String(e.message||e).slice(0,150),true);}
 });
 function pesanAkun(teks,error=false){$('pesanPenjual').className=error?'status error':'status';$('pesanPenjual').textContent=teks;}
@@ -2567,7 +2571,7 @@ function groupTransactionSetupControls(){
  else setup.parentNode.insertBefore(details,setup);
  details.appendChild(setup);details.appendChild(form);
 }
-groupTransactionSetupControls();simpanKeranjang();if(sb)loadFinanceWorkspace().catch(e=>{console.error('Startup laporan bersama gagal:',e);setFinanceStatus('Pemeriksaan usaha gagal: '+String(e.message||e).slice(0,180),true);});try{muat();}catch(e){console.error('Data lokal gagal dimuat:',e);setStatusOnline('Data lokal gagal dimuat: '+String(e.message||e).slice(0,160),true);}try{tampilKeranjang();}catch(e){console.error('Keranjang gagal ditampilkan:',e);}try{tampilRiwayatPesanan();}catch(e){console.error('Riwayat pesanan gagal ditampilkan:',e);}if(sb){periksaSesi();periksaSesiPembeli();periksaAktivasiLisensi();sb.auth.onAuthStateChange((_event,session)=>{financeBusiness=null;financeMemberRole=null;financeMemberUserId=null;financeRows=[];financeSelectedBusinessId=null;document.body.classList.remove('employee-verified');if($('homeSummaryGrid'))$('homeSummaryGrid').hidden=true;if($('ownerHomeReports'))$('ownerHomeReports').hidden=true;if($('employeeHomeReport'))$('employeeHomeReport').hidden=true;if($('financeWorkspaceInfo'))$('financeWorkspaceInfo').hidden=true;if($('financeEntryCard'))$('financeEntryCard').hidden=true;if($('financeReportCard'))$('financeReportCard').hidden=true;if(session){pesanAkun('Login aktif: '+session.user.email);pesanPembeli('Login aktif: '+session.user.email+'. Anda dapat membuat pesanan dan melihat Pesanan Saya.');if($('pesananSaya')&&$('pesananSaya').classList.contains('active'))muatPesananSaya();if($('pesananMasuk')&&$('pesananMasuk').classList.contains('active'))muatPesananMasuk();}else{if($('pesanPenjual'))pesanAkun('Belum login. Daftar akun atau login terlebih dahulu.');pesanPembeli('Belum login. Daftar akun pembeli atau login terlebih dahulu.');}setTimeout(()=>{periksaAktivasiLisensi();loadFinanceWorkspace();},0);});}else{setAksesLisensi(false);pesanAkun('Pustaka Supabase tidak tersedia. Periksa koneksi internet.',true);pesanPembeli('Pustaka Supabase tidak tersedia. Periksa koneksi internet.',true);setStatusOnline('Pustaka Supabase tidak tersedia. Periksa koneksi internet.',true);setStatusAktivasi('Supabase tidak tersedia; aktivasi belum dapat diperiksa.',true);}
+groupTransactionSetupControls();simpanKeranjang();if(sb)loadFinanceWorkspace().catch(e=>{console.error('Startup laporan bersama gagal:',e);setFinanceStatus('Pemeriksaan usaha gagal: '+String(e.message||e).slice(0,180),true);});try{muat();}catch(e){console.error('Data lokal gagal dimuat:',e);setStatusOnline('Data lokal gagal dimuat: '+String(e.message||e).slice(0,160),true);}try{tampilKeranjang();}catch(e){console.error('Keranjang gagal ditampilkan:',e);}try{tampilRiwayatPesanan();}catch(e){console.error('Riwayat pesanan gagal ditampilkan:',e);}if(sb){periksaSesi();periksaSesiPembeli();periksaAktivasiLisensi();sb.auth.onAuthStateChange((event,session)=>{if(event==='INITIAL_SESSION'&&session?.user?.is_anonymous){employeeCheckRole();}financeBusiness=null;financeMemberRole=null;financeMemberUserId=null;financeRows=[];financeSelectedBusinessId=null;document.body.classList.remove('employee-verified');if($('homeSummaryGrid'))$('homeSummaryGrid').hidden=true;if($('ownerHomeReports'))$('ownerHomeReports').hidden=true;if($('employeeHomeReport'))$('employeeHomeReport').hidden=true;if($('financeWorkspaceInfo'))$('financeWorkspaceInfo').hidden=true;if($('financeEntryCard'))$('financeEntryCard').hidden=true;if($('financeReportCard'))$('financeReportCard').hidden=true;if(session){const loginLabel=session.user.email|| (session.user.is_anonymous?'Karyawan tanpa email':'akun aktif');pesanAkun('Login aktif: '+loginLabel);pesanPembeli('Login aktif: '+loginLabel+'. Anda dapat membuat pesanan dan melihat Pesanan Saya.');if($('pesananSaya')&&$('pesananSaya').classList.contains('active'))muatPesananSaya();if($('pesananMasuk')&&$('pesananMasuk').classList.contains('active'))muatPesananMasuk();}else{if($('pesanPenjual'))pesanAkun('Belum login. Daftar akun atau login terlebih dahulu.');pesanPembeli('Belum login. Daftar akun pembeli atau login terlebih dahulu.');}setTimeout(()=>{periksaAktivasiLisensi();loadFinanceWorkspace();},0);});}else{setAksesLisensi(false);pesanAkun('Pustaka Supabase tidak tersedia. Periksa koneksi internet.',true);pesanPembeli('Pustaka Supabase tidak tersedia. Periksa koneksi internet.',true);setStatusOnline('Pustaka Supabase tidak tersedia. Periksa koneksi internet.',true);setStatusAktivasi('Supabase tidak tersedia; aktivasi belum dapat diperiksa.',true);}
 </script>
 <div id="areaLaporanCetak" aria-live="polite"></div>
 </body>
