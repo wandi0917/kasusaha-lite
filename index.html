@@ -1920,10 +1920,13 @@ $('storeProductForm')?.addEventListener('submit',async function(e){
   if(!stockUnit||stockUnit.length>24){$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Isi satuan stok, maksimal 24 karakter.';return;}
   const currentItem=editId?storeProductRows.find(p=>String(p.id)===String(editId)):null;
   const payload={product_code:code,product_name:name,price,stock_quantity:initialStock,stock_unit:stockUnit,item_type:itemType,active:editId?Boolean(currentItem?.active):true,updated_at:new Date().toISOString()};
-  let error;
+  let error,productId=editId;
   if(editId){({error}=await sb.from('store_products').update(payload).eq('id',editId).eq('business_id',financeBusiness.id));}
-  else{({error}=await sb.from('store_products').insert({...payload,business_id:financeBusiness.id}));}
+  else{const inserted=await sb.from('store_products').insert({...payload,business_id:financeBusiness.id}).select('id').single();error=inserted.error;productId=inserted.data?.id||null;}
   if(error){if(error.code==='23505')throw new Error('Kode barang sudah dipakai oleh barang lain dalam usaha ini. Periksa kode atau edit barang yang sudah ada.');throw error;}
+  if(!productId)throw new Error('Barang tersimpan tetapi ID barang tidak terbaca. Muat ulang daftar barang sebelum melanjutkan.');
+  const {error:costError}=await sb.rpc('set_store_product_cost',{p_product_id:productId,p_cost_price:costPrice});
+  if(costError)throw new Error('Data barang sudah tersimpan, tetapi harga modal belum berhasil disimpan: '+String(costError.message||costError));
   await loadStoreProducts();cancelStoreProductEdit();$('storeProductStatus').className='status';$('storeProductStatus').textContent=(editId?'Perubahan barang ':'Barang baru ')+code+' — '+name+' berhasil '+(editId?'diperbarui.':'disimpan dengan stok awal '+initialStock+' '+stockUnit+'.')+' Jenis: '+(itemType==='product'?'produk jual.':'bahan baku/persediaan.');
  }catch(e){$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Gagal menyimpan barang: '+String(e.message||e).slice(0,200);}
  finally{btn.disabled=false;}
