@@ -1947,8 +1947,9 @@ $('quickSaleForm')?.addEventListener('submit',async function(e){
  if(!window.confirm(confirmText)){setFinanceStatus('Transaksi belum disimpan. Periksa atau ubah rincian tagihan terlebih dahulu.');return;}
  const btn=$('quickSaleSave');btn.disabled=true;
  try{
-  const transactionRows=lines.map(d=>({business_id:financeBusiness.id,created_by:financeMemberUserId,created_by_role:financeMemberRole,transaction_date:financeToday(),transaction_type:'income',amount:d.subtotal,description:(tableNumber?'Meja '+tableNumber+' — ':'Kasir — ')+'Penjualan '+d.p.product_name+' ['+d.p.product_code+'] × '+d.qty+(financeMemberRole==='owner'?' | Modal/unit '+formatStoreRupiah(d.costPrice)+' | Jual/unit '+formatStoreRupiah(d.price)+' | Modal total '+formatStoreRupiah(d.costPrice*d.qty)+' | Laba kotor '+formatStoreRupiah(d.profitTotal):' | Harga jual/unit '+formatStoreRupiah(d.price)),category:'Penjualan'}));
-  const {error}=await sb.from('financial_transactions').insert(transactionRows).select('id');if(error)throw error;
+  const {data:result,error}=await sb.rpc('record_store_quick_sale',{p_business_id:financeBusiness.id,p_table_number:tableNumber||null,p_lines:lines.map(d=>({product_id:d.p.id,quantity:d.qty,unit_price:d.price}))});
+  if(error)throw error;
+  if(!result||result.ok!==true)throw new Error('Server belum mengonfirmasi penyimpanan penjualan.');
   this.reset();$('quickSaleTableNumber').value='';$('quickSaleItems').replaceChildren();addQuickSaleLine();await loadFinanceWorkspace();setFinanceStatus('Transaksi '+locationLabel+' berhasil disimpan: '+lines.length+' jenis barang, total '+formatStoreRupiah(amount)+'.');
  }catch(err){setFinanceStatus('Penjualan gagal disimpan: '+String(err.message||err).slice(0,220),true);}
  finally{btn.disabled=false;}
