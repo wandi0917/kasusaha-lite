@@ -1728,33 +1728,36 @@ function updateQuickSalePreview(useCatalogPrice=false){
 function bukaPanelTransaksi(tujuan){
  const isOwner=financeMemberRole==='owner',isEmployee=financeMemberRole==='employee';
  if(tujuan==='stok'&&!isOwner){const sel=$('reportCategorySelect');if(sel&&isEmployee){sel.value='income';applyReportCategory('income');setFinanceStatus('Menu pengelolaan barang dan stok hanya tersedia untuk Owner.');}return;}
- const targets={kasir:'financeEntryCard',absensi:'attendanceCard',catat:'financeForm',stok:'ownerStoreCatalog',laporan:'reportCategoryChooser'};
  if(tujuan==='laporan'){
   const sel=$('reportCategorySelect');if(sel){sel.value=isEmployee?'income':'';applyReportCategory(sel.value);}
+  const report=$('reportCategoryChooser');if(report){report.hidden=false;report.style.display='block';report.scrollIntoView({behavior:'smooth',block:'start'});return;}
  }
  if(tujuan==='catat'){
-  const details=document.querySelector('#transaksi details.local-transaction-card');
-  if(details)details.open=true;
   const form=$('financeForm');
   if(form){
-   let parent=form.parentElement;
-   while(parent&&parent.id!=='transaksi'){
-    if(parent.hidden){parent.hidden=false;parent.removeAttribute('hidden');}
-    if(getComputedStyle(parent).display==='none')parent.style.display='';
-    parent=parent.parentElement;
+   // Force the form and every ancestor to be visible, even if a prior report filter hid a container.
+   let node=form;
+   while(node){
+    node.hidden=false;
+    node.removeAttribute('hidden');
+    if(node.style&&node.style.display==='none')node.style.display='block';
+    if(node.id==='transaksi')break;
+    node=node.parentElement;
    }
-   form.scrollIntoView({behavior:'smooth',block:'start'});
+   form.style.display='block';
+   form.scrollIntoView({behavior:'auto',block:'center'});
    const field=$('financeDescription');
-   if(field)field.focus({preventScroll:true});
+   if(field){field.focus({preventScroll:true});}
    return;
   }
   const localForm=$('formKas');
-  if(localForm){localForm.scrollIntoView({behavior:'smooth',block:'start'});const field=$('keterangan');if(field)field.focus({preventScroll:true});return;}
-  setFinanceStatus('Form Catat Transaksi belum ditemukan. Muat ulang halaman dan coba lagi.');
+  if(localForm){localForm.scrollIntoView({behavior:'auto',block:'center'});const field=$('keterangan');if(field)field.focus({preventScroll:true});return;}
+  alert('Form Catat Transaksi tidak ditemukan pada halaman ini. Muat ulang halaman.');
   return;
  }
+ const targets={kasir:'financeEntryCard',absensi:'attendanceCard',stok:'ownerStoreCatalog'};
  const el=$(targets[tujuan]);
- if(el){if(el.hidden){el.hidden=false;el.style.display='';}el.scrollIntoView({behavior:'smooth',block:'start'});el.setAttribute('tabindex','-1');el.focus({preventScroll:true});}
+ if(el){el.hidden=false;el.removeAttribute('hidden');el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'start'});el.setAttribute('tabindex','-1');el.focus({preventScroll:true});}
  else if(tujuan==='stok'){
   const sel=$('reportCategorySelect');if(sel&&isOwner){sel.value='stock';applyReportCategory('stock');$('stockReportTableCard')?.scrollIntoView({behavior:'smooth',block:'start'});}
  }
