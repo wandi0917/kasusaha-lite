@@ -408,7 +408,38 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 .ks-convert-actions button{cursor:pointer}
 .ks-payment-note{margin:18px 0 0;padding:12px 14px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:12px;line-height:1.55}
 @media(max-width:680px){.ks-convert-grid{grid-template-columns:1fr}.ks-convert-card{display:grid;grid-template-columns:42px 1fr;column-gap:12px;align-items:start}.ks-convert-card h3{margin:1px 0 5px}.ks-convert-card p{grid-column:2}.ks-convert-actions{display:grid;grid-template-columns:1fr}.ks-convert-actions button{width:100%}}
-\n/* Judul Data transaksi lokal dibuat lebih menonjol */\nhtml body main details.local-transaction-card>summary{font-size:18px!important;font-weight:800!important;color:#0f766e!important;padding:12px 14px!important;background:linear-gradient(100deg,#ecfeff,#f0fdfa)!important;border:1px solid #99f6e4!important;border-radius:10px!important;box-shadow:0 3px 10px rgba(15,118,110,.08)!important}\nhtml body main details.local-transaction-card>summary strong{font-size:inherit!important;font-weight:800!important}\n\n/* Riwayat transaksi: rapatkan kolom agar saldo berjalan lebih mudah terlihat */\nhtml body main .transaction-history-wrap{overflow-x:auto!important;max-width:100%!important}\nhtml body main table.transaction-history-table{width:100%!important;min-width:0!important;table-layout:fixed!important;font-size:11px!important}\nhtml body main .transaction-history-table th,html body main .transaction-history-table td{padding:5px 4px!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;vertical-align:middle!important}\nhtml body main .transaction-history-table th{font-size:10px!important;line-height:1.25!important}\nhtml body main .transaction-history-table td.amount{font-size:10px!important;text-align:right!important;font-variant-numeric:tabular-nums}\nhtml body main .transaction-history-table .col-tanggal{width:13%}\nhtml body main .transaction-history-table .col-jam{width:8%}\nhtml body main .transaction-history-table .col-keterangan{width:18%}\nhtml body main .transaction-history-table .col-jenis{width:11%}\nhtml body main .transaction-history-table .col-pemasukan{width:13%}\nhtml body main .transaction-history-table .col-pengeluaran{width:13%}\nhtml body main .transaction-history-table .col-saldo{width:15%}\nhtml body main .transaction-history-table .col-aksi{width:9%}\nhtml body main .transaction-history-table td button{font-size:10px!important;padding:5px 4px!important}\n@media(max-width:650px){html body main .transaction-history-table{font-size:10px!important}html body main .transaction-history-table th,html body main .transaction-history-table td{padding:4px 3px!important}html body main .transaction-history-table th{font-size:9px!important}html body main .transaction-history-table td.amount{font-size:9px!important}}\n</style>
+\n/* Judul Data transaksi lokal dibuat lebih menonjol */\nhtml body main details.local-transaction-card>summary{font-size:18px!important;font-weight:800!important;color:#0f766e!important;padding:12px 14px!important;background:linear-gradient(100deg,#ecfeff,#f0fdfa)!important;border:1px solid #99f6e4!important;border-radius:10px!important;box-shadow:0 3px 10px rgba(15,118,110,.08)!important}\nhtml body main details.local-transaction-card>summary strong{font-size:inherit!important;font-weight:800!important}\n\n/* Riwayat transaksi: rapatkan kolom agar saldo berjalan lebih mudah terlihat */\nhtml body main .transaction-history-wrap{overflow-x:auto!important;max-width:100%!important}\nhtml body main table.transaction-history-table{width:100%!important;min-width:0!important;table-layout:fixed!important;font-size:11px!important}\nhtml body main .transaction-history-table th,html body main .transaction-history-table td{padding:5px 4px!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important;vertical-align:middle!important}\nhtml body main .transaction-history-table th{font-size:10px!important;line-height:1.25!important}\nhtml body main .transaction-history-table td.amount{font-size:10px!important;text-align:right!important;font-variant-numeric:tabular-nums}\nhtml body main .transaction-history-table .col-tanggal{width:13%}\nhtml body main .transaction-history-table .col-jam{width:8%}\nhtml body main .transaction-history-table .col-keterangan{width:18%}\nhtml body main .transaction-history-table .col-jenis{width:11%}\nhtml body main .transaction-history-table .col-pemasukan{width:13%}\nhtml body main .transaction-history-table .col-pengeluaran{width:13%}\nhtml body main .transaction-history-table .col-saldo{width:15%}\nhtml body main .transaction-history-table .col-aksi{width:9%}\nhtml body main .transaction-history-table td button{font-size:10px!important;padding:5px 4px!important}\n@media(max-width:650px){html body main .transaction-history-table{font-size:10px!important}html body main .transaction-history-table th,html body main .transaction-history-table td{padding:4px 3px!important}html body main .transaction-history-table th{font-size:9px!important}html body main .transaction-history-table td.amount{font-size:9px!important}}\n
+/* Penyegaran tampilan Transaksi: rapi, mudah dipahami, dan nyaman di HP */
+#transaksi{max-width:1180px;margin:0 auto;padding:clamp(12px,2.2vw,26px)}
+#transaksi>h2{font-size:clamp(22px,2.5vw,30px);letter-spacing:-.45px;margin:22px 0 12px;color:#172b4d}
+#transaksi .card{border:1px solid #e1e8f0;border-radius:16px;box-shadow:0 4px 16px rgba(28,48,75,.045);padding:clamp(14px,2vw,22px);margin:14px 0;background:#fff}
+#transaksi .card h3{font-size:18px;color:#172b4d;line-height:1.35;margin:0 0 8px}
+#transaksi .card h4{font-size:15px;color:#334155;margin:10px 0 8px}
+#transaksi .small{font-size:13px;line-height:1.65;color:#64748b}
+#transaksi label{display:block;font-weight:650;color:#334155;font-size:13px;margin:12px 0 6px}
+#transaksi input,#transaksi select,#transaksi textarea{width:100%;min-height:42px;border:1px solid #cbd5e1;border-radius:10px;padding:9px 11px;background:#fff;color:#0f172a;box-sizing:border-box}
+#transaksi button{border-radius:10px;min-height:40px;font-weight:650}
+#transaksi .primary{background:#2457c5;border-color:#2457c5;color:#fff}
+#transaksi .secondary{background:#f1f5f9;border:1px solid #dbe3ed;color:#1e293b}
+#transaksi .report-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;min-width:640px}
+#transaksi .report-table th{background:#f1f5f9;color:#334155;font-weight:700;text-align:left;white-space:nowrap}
+#transaksi .report-table th,#transaksi .report-table td{padding:11px 12px;border-bottom:1px solid #e8edf3;vertical-align:top}
+#transaksi .report-table tbody tr:nth-child(even){background:#fafcff}
+#transaksi .table-wrap{width:100%;overflow-x:auto;border:1px solid #e5eaf1;border-radius:12px;margin:10px 0}
+#transaksi .finance-metric{background:linear-gradient(135deg,#f8fbff,#f1f6ff);border:1px solid #dce7f8;border-radius:13px;padding:15px;color:#475569}
+#transaksi .finance-metric strong{font-size:20px;color:#173b78}
+#transaksi .transaction-shortcuts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:14px 0 20px}
+#transaksi .transaction-shortcut{display:flex;flex-direction:column;align-items:flex-start;gap:7px;min-height:100px;padding:15px;text-align:left;background:#fff;border:1px solid #dce5f0;color:#1e293b;box-shadow:0 3px 12px rgba(25,45,70,.04);cursor:pointer}
+#transaksi .transaction-shortcut:hover,#transaksi .transaction-shortcut:focus-visible{border-color:#7097e8;background:#f5f8ff;outline:2px solid #dbe7ff}
+#transaksi .transaction-shortcut .shortcut-icon{font-size:23px;line-height:1}
+#transaksi .transaction-shortcut strong{font-size:14px}
+#transaksi .transaction-shortcut span:last-child{font-size:12px;font-weight:400;color:#64748b;line-height:1.45}
+#transaksi .transaction-guide{background:#f5f8ff;border:1px solid #dbe7fb;border-radius:14px;padding:14px 16px;margin:10px 0 18px;color:#334155}
+#transaksi .transaction-guide strong{color:#1e40af}
+#transaksi .report-category-view[hidden],#transaksi [hidden]{display:none!important}
+@media(max-width:850px){#transaksi .transaction-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}#transaksi .transaction-shortcut:last-child{grid-column:span 2}}
+@media(max-width:480px){#transaksi{padding:10px}#transaksi .transaction-shortcuts{gap:8px}#transaksi .transaction-shortcut{padding:12px;min-height:92px}#transaksi .report-table{font-size:12px}#transaksi .report-table th,#transaksi .report-table td{padding:9px}}
+</style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style id="affiliateCatalogDesign">
@@ -585,6 +616,15 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 </section>
 
 <section id="transaksi" class="tab">
+<section class="transaction-guide" aria-label="Panduan menu transaksi"><strong>Mulai dari sini</strong><div style="margin-top:4px;font-size:13px;line-height:1.6">Pilih kegiatan yang ingin dilakukan. Gunakan menu laporan untuk melihat angka dan tabel yang sesuai. Laporan keuangan lengkap dan harga modal hanya tersedia untuk Owner.</div></section>
+<div class="transaction-shortcuts" aria-label="Menu cepat transaksi">
+<button type="button" class="transaction-shortcut" onclick="bukaPanelTransaksi('kasir')"><span class="shortcut-icon">🧾</span><strong>Kasir Cepat</strong><span>Catat penjualan barang</span></button>
+<button type="button" class="transaction-shortcut" onclick="bukaPanelTransaksi('absensi')"><span class="shortcut-icon">🕘</span><strong>Absensi</strong><span>Absen masuk dan pulang</span></button>
+<button type="button" class="transaction-shortcut" onclick="bukaPanelTransaksi('catat')"><span class="shortcut-icon">✍️</span><strong>Catat Transaksi</strong><span>Catat pemasukan atau pengeluaran</span></button>
+<button type="button" class="transaction-shortcut" onclick="bukaPanelTransaksi('stok')"><span class="shortcut-icon">📦</span><strong>Barang &amp; Stok</strong><span>Kelola produk dan persediaan</span></button>
+<button type="button" class="transaction-shortcut" onclick="bukaPanelTransaksi('laporan')"><span class="shortcut-icon">📊</span><strong>Laporan</strong><span>Pilih laporan yang diperlukan</span></button>
+</div>
+
 <div class="card" id="financeEntryCard" hidden>
 <h3>Kasir cepat — penjualan barang</h3>
 <p class="small">Pilih barang dari daftar. Harga otomatis mengikuti harga katalog, tetapi dapat diisi atau disesuaikan sebelum transaksi disimpan. Total penjualan dihitung otomatis.</p>
@@ -1684,6 +1724,20 @@ function updateQuickSalePreview(useCatalogPrice=false){
  if(totalEl)totalEl.textContent=formatStoreRupiah(Number.isSafeInteger(grandTotal)?grandTotal:0);
  if(hintEl)hintEl.textContent=allValid?'Laba kotor estimasi '+formatStoreRupiah(details.reduce((sum,d)=>sum+(d.profitTotal||0),0))+'. Periksa modal, harga jual, subtotal, lokasi, dan total sebelum menyimpan.':'Lengkapi kode barang, jumlah, dan harga jual pada setiap baris agar total tagihan akurat.';
  const info=$('quickSaleProductInfo');if(info){info.className='status';info.textContent=rows.length+' baris barang. Total sementara '+formatStoreRupiah(Number.isSafeInteger(grandTotal)?grandTotal:0)+'.';}
+}
+function bukaPanelTransaksi(tujuan){
+ const targets={kasir:'financeEntryCard',absensi:'attendanceCard',catat:'financeForm',stok:'ownerStoreCatalog',laporan:'reportCategoryChooser'};
+ if(tujuan==='laporan'){
+  const sel=$('reportCategorySelect');if(sel){const isEmployee=financeMemberRole==='employee';sel.value=isEmployee?'income':'';applyReportCategory(sel.value);}
+ }
+ if(tujuan==='catat'){
+  const details=document.querySelector('#transaksi details.local-transaction-card');if(details)details.open=true;
+ }
+ const el=$(targets[tujuan]);
+ if(el){if(el.hidden){el.hidden=false;el.style.display='';}el.scrollIntoView({behavior:'smooth',block:'start'});el.setAttribute('tabindex','-1');el.focus({preventScroll:true});}
+ else if(tujuan==='stok'){
+  const sel=$('reportCategorySelect');if(sel&&financeMemberRole==='owner'){sel.value='stock';applyReportCategory('stock');$('stockReportTableCard')?.scrollIntoView({behavior:'smooth',block:'start'});}
+ }
 }
 function applyReportCategory(category){
  const selector=$('reportCategorySelect'),isOwner=financeMemberRole==='owner',isEmployee=financeMemberRole==='employee';
