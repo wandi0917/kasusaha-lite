@@ -577,6 +577,14 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 </section>
 
 
+
+<section id="tiktokAffiliateHome" aria-label="TikTok Shop Affiliate" style="margin:24px 0;padding:clamp(18px,3vw,30px);border-radius:22px;background:linear-gradient(135deg,#111827 0%,#242424 48%,#0f766e 100%);color:#fff;box-shadow:0 14px 34px rgba(15,23,42,.16)">
+ <div style="display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap">
+  <div style="flex:1;min-width:240px"><span style="display:inline-block;padding:5px 10px;border:1px solid #ffffff45;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.04em">PROGRAM AFILIASI</span><h2 style="font-size:clamp(22px,3vw,32px);margin:12px 0 8px;color:#fff">🛍️ Rekomendasi Produk TikTok Shop</h2><p style="margin:0;max-width:680px;line-height:1.6;color:#e5e7eb">Tempat khusus untuk menampilkan produk TikTok Shop melalui tautan afiliasi resmi Anda. Tautan produk belum aktif sampai Anda mendaftar dan menempelkan tautan pelacakan dari TikTok.</p><p style="font-size:12px;color:#d1d5db;margin:10px 0 0">KasUsaha Lite tidak mengklaim komisi dari klik atau pembelian yang tidak diatribusikan oleh TikTok Shop.</p></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><a href="https://business.tiktokshop.com/id/affiliate" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:12px;background:#fff;color:#111827;text-decoration:none;font-weight:800">Daftar TikTok Affiliate ↗</a><button type="button" style="padding:12px 16px;border:1px solid #ffffff70;border-radius:12px;background:transparent;color:#fff;font-weight:800;cursor:pointer" onclick="buka('pasar',document.querySelectorAll('nav button')[3]);setTimeout(()=>document.getElementById('tiktokAffiliateSetup')?.scrollIntoView({behavior:'smooth',block:'start'}),180)">Pasang tautan produk</button></div>
+ </div>
+</section>
+
 <section id="tokopediaHomeCatalog" aria-label="Jelajahi kategori populer Tokopedia">
  <div class="tokopedia-head"><div><h2>🟢 Jelajahi Produk Populer Tokopedia</h2><p>Temukan produk yang sedang dicari pembeli melalui pencarian Tokopedia. Kategori ini merupakan pintasan pencarian, bukan daftar peringkat penjualan langsung.</p></div><a class="affiliate-home-more" href="https://tk.tokopedia.com/ZSgf6AqtA/" target="_blank" rel="noopener noreferrer sponsored">Buka Link Affiliate Saya ↗</a></div>
  <div class="tokopedia-grid">
@@ -731,6 +739,12 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 <section id="pasar" class="tab">
 <details class="card usage-guide"><summary><strong>📘 Panduan penggunaan Pasar Online</strong></summary><ol><li>Ketik nama atau deskripsi barang, lalu pilih kategori bila ingin mempersempit pencarian.</li><li>Klik Cari produk online untuk mencari produk di marketplace KasUsaha Lite.</li><li>Periksa nama penjual, harga, stok, dan rincian produk sebelum memilih barang.</li><li>Tambahkan produk yang diinginkan ke keranjang sesuai tombol yang tersedia.</li><li>Pastikan status pembayaran dan ongkos kirim yang ditampilkan sebelum melakukan transaksi. Jangan menganggap ongkir otomatis tersedia jika belum ditampilkan.</li></ol></details>
 <h2>Pasar Online KasUsaha Lite</h2><div class="card"><p>Cari produk yang dipasang di database online KasUsaha Lite.</p><label for="cariPasar">Nama atau deskripsi barang</label><input id="cariPasar" placeholder="Contoh: kopi, teh, pakaian..."><label for="filterKategori">Kategori</label><select id="filterKategori"><option value="">Semua kategori</option><option>Makanan &amp; Minuman</option><option>Fashion</option><option>Elektronik</option><option>Rumah Tangga</option><option>Kecantikan</option><option>Jasa</option><option>Pertanian</option><option>Lainnya</option></select><div class="row-actions"><button class="primary" type="button" onclick="muatPasarOnline()">Cari produk online</button><button class="secondary" type="button" onclick="resetFilterPasar()">Tampilkan semua</button></div><div id="statusOnline" class="status" role="status">Menyiapkan koneksi pasar online...</div></div><h3>Produk online</h3><div id="hasilOnline"></div><h3>Produk lokal di perangkat ini</h3><div id="hasilPasar"></div><section class="card" id="affiliateShopeePanel">
+<div id="tiktokAffiliateSetup" class="card" style="margin:14px 0;padding:18px;border:1px solid #d1d5db;border-radius:18px;background:linear-gradient(135deg,#f9fafb,#ecfeff)">
+<h3 style="margin-top:0">🎵 Integrasi TikTok Shop Affiliate</h3>
+<p class="small">Langkah pertama: daftar sebagai kreator melalui aplikasi TikTok. Dengan pengikut di bawah 600, periksa apakah akun Anda ditawari jalur <strong>Link-Share Only</strong>. Setelah lolos verifikasi, salin tautan afiliasi yang dibuat TikTok untuk produk yang ingin dipromosikan.</p>
+<div class="row-actions" style="display:flex;gap:10px;flex-wrap:wrap"><a class="primary" href="https://business.tiktokshop.com/id/affiliate" target="_blank" rel="noopener noreferrer" style="display:inline-block;text-decoration:none;padding:11px 14px;border-radius:10px">Buka Program Resmi TikTok Shop ↗</a><a href="https://shop.tiktok.com/business/id/creator?lang=id" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:11px 14px;border:1px solid #cbd5e1;border-radius:10px;text-decoration:none">Panduan Kreator ↗</a></div>
+<p class="small" style="margin-bottom:0"><strong>Status integrasi:</strong> menunggu tautan afiliasi resmi Anda. Tombol ini hanya membuka halaman resmi pendaftaran, bukan tautan produk yang menghasilkan komisi. Checkout KasUsaha Lite tetap terpisah dan tidak diubah.</p>
+</div>
 <div class="card" id="affiliateCampaigns" style="margin:16px 0;padding:16px;background:linear-gradient(135deg,#fff7ed,#fff);border:1px solid #fed7aa">
 <h3>✨ Rekomendasi kategori Shopee Affiliate</h3>
 <p class="small">Tautan kampanye afiliasi yang Anda berikan. Pilih kategori untuk membuka Shopee. Persentase adalah komisi ekstra yang tercantum pada data Anda, bukan jaminan komisi setiap pesanan. Shopee tetap menentukan atribusi, pesanan valid, pembatalan, dan pencairan.</p>
@@ -751,12 +765,12 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 <p class="small">Produk ditampilkan dari tautan afiliasi yang Anda masukkan sendiri. KasUsaha Lite mencatat klik; komisi yang disetujui tetap diverifikasi di dashboard resmi Shopee Affiliate. Klik bukan bukti penjualan atau komisi.</p>
 <div class="card" style="background:#fff7ed;border-color:#fed7aa">
 <strong>Tambah produk afiliasi (khusus akun Anda)</strong>
-<label for="affPlatform">Marketplace</label><select id="affPlatform"><option>Shopee</option><option>Tokopedia</option><option>TikTok Shop</option><option>Lazada</option><option>Lainnya</option></select>
+<label for="affPlatform">Marketplace</label><select id="affPlatform" onchange="ubahPetunjukTautanAfiliasi()"><option>Shopee</option><option>Tokopedia</option><option>TikTok Shop</option><option>Lazada</option><option>Lainnya</option></select>
 <label for="affName">Nama produk</label><input id="affName" maxlength="180" placeholder="Contoh: Blender portable">
 <label for="affCategory">Kategori</label><select id="affCategory"><option>Lainnya</option><option>Makanan &amp; Minuman</option><option>Fashion</option><option>Elektronik</option><option>Rumah Tangga</option><option>Kecantikan</option><option>Perlengkapan Bayi</option><option>Olahraga</option></select>
 <label for="affPrice">Harga (opsional, Rp)</label><input id="affPrice" type="number" min="0" step="1" placeholder="Contoh: 125000">
 <label for="affImage">URL foto HTTPS (opsional)</label><input id="affImage" type="url" placeholder="https://...">
-<label for="affUrl">Tautan afiliasi resmi Anda (HTTPS)</label><input id="affUrl" type="url" required placeholder="Tempel tautan afiliasi dari dashboard Shopee">
+<label for="affUrl">Tautan afiliasi resmi Anda (HTTPS)</label><input id="affUrl" type="url" required placeholder="Pilih marketplace, lalu tempel tautan afiliasi resmi">
 <label for="affDesc">Deskripsi singkat</label><textarea id="affDesc" maxlength="1000" placeholder="Keunggulan produk, tanpa klaim yang belum diverifikasi"></textarea>
 <button class="primary wide" type="button" onclick="simpanProdukAfiliasi()">Simpan produk afiliasi</button>
 <div id="affFormStatus" class="status" role="status">Login ke akun KasUsaha Lite untuk menyimpan produk.</div>
@@ -1090,6 +1104,14 @@ async function muatPasarOnline(){const hasil=$('hasilOnline');const nomorPermint
 
 function setAffStatus(msg,err=false){const e=$('affFormStatus');if(e){e.className=err?'status error':'status';e.textContent=msg;}}
 function safeHttps(value){try{const u=new URL(String(value||'').trim());return u.protocol==='https:'?u.href:'';}catch(e){return '';}}
+function ubahPetunjukTautanAfiliasi(){
+ const platform=$('affPlatform')?.value||'Shopee';
+ const input=$('affUrl');
+ if(!input)return;
+ input.placeholder=platform==='TikTok Shop'?'Tempel tautan produk afiliasi resmi dari TikTok Shop setelah akun disetujui':'Tempel tautan afiliasi resmi dari '+platform;
+ const status=$('affFormStatus');
+ if(status&&platform==='TikTok Shop')status.textContent='Gunakan hanya tautan afiliasi TikTok Shop yang dibuat oleh TikTok setelah verifikasi. Tautan biasa tidak menjamin komisi.';
+}
 function affiliateCard(p){
  const d=document.createElement('article');d.className='item';
  const badge=document.createElement('p');badge.className='small';badge.textContent=(p.platform||'Marketplace')+' • Tautan afiliasi';
