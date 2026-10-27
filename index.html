@@ -1726,9 +1726,11 @@ function updateQuickSalePreview(useCatalogPrice=false){
  const info=$('quickSaleProductInfo');if(info){info.className='status';info.textContent=rows.length+' baris barang. Total sementara '+formatStoreRupiah(Number.isSafeInteger(grandTotal)?grandTotal:0)+'.';}
 }
 function bukaPanelTransaksi(tujuan){
+ const isOwner=financeMemberRole==='owner',isEmployee=financeMemberRole==='employee';
+ if(tujuan==='stok'&&!isOwner){const sel=$('reportCategorySelect');if(sel&&isEmployee){sel.value='income';applyReportCategory('income');setFinanceStatus('Menu pengelolaan barang dan stok hanya tersedia untuk Owner.');}return;}
  const targets={kasir:'financeEntryCard',absensi:'attendanceCard',catat:'financeForm',stok:'ownerStoreCatalog',laporan:'reportCategoryChooser'};
  if(tujuan==='laporan'){
-  const sel=$('reportCategorySelect');if(sel){const isEmployee=financeMemberRole==='employee';sel.value=isEmployee?'income':'';applyReportCategory(sel.value);}
+  const sel=$('reportCategorySelect');if(sel){sel.value=isEmployee?'income':'';applyReportCategory(sel.value);}
  }
  if(tujuan==='catat'){
   const details=document.querySelector('#transaksi details.local-transaction-card');if(details)details.open=true;
@@ -1736,7 +1738,7 @@ function bukaPanelTransaksi(tujuan){
  const el=$(targets[tujuan]);
  if(el){if(el.hidden){el.hidden=false;el.style.display='';}el.scrollIntoView({behavior:'smooth',block:'start'});el.setAttribute('tabindex','-1');el.focus({preventScroll:true});}
  else if(tujuan==='stok'){
-  const sel=$('reportCategorySelect');if(sel&&financeMemberRole==='owner'){sel.value='stock';applyReportCategory('stock');$('stockReportTableCard')?.scrollIntoView({behavior:'smooth',block:'start'});}
+  const sel=$('reportCategorySelect');if(sel&&isOwner){sel.value='stock';applyReportCategory('stock');$('stockReportTableCard')?.scrollIntoView({behavior:'smooth',block:'start'});}
  }
 }
 function applyReportCategory(category){
