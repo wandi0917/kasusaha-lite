@@ -620,7 +620,7 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 <div class="transaction-shortcuts" aria-label="Menu cepat transaksi">
 <button type="button" class="transaction-shortcut" onclick="bukaPanelTransaksi('kasir')"><span class="shortcut-icon">🧾</span><strong>Kasir Cepat</strong><span>Catat penjualan barang</span></button>
 <button type="button" class="transaction-shortcut" onclick="bukaPanelTransaksi('absensi')"><span class="shortcut-icon">🕘</span><strong>Absensi</strong><span>Absen masuk dan pulang</span></button>
-<button type="button" class="transaction-shortcut" onclick="(function(){var f=document.getElementById('financeForm');if(f){var n=f;while(n){n.hidden=false;n.removeAttribute('hidden');if(n.style&&n.style.display==='none')n.style.display='';if(n.id==='transaksi')break;n=n.parentElement;}f.style.display='';f.scrollIntoView({behavior:'smooth',block:'start'});var x=document.getElementById('financeDescription');if(x)x.focus({preventScroll:true});return;}var l=document.getElementById('formKas');if(l){l.scrollIntoView({behavior:'smooth',block:'start'});var k=document.getElementById('keterangan');if(k)k.focus({preventScroll:true});return;}alert('Form Catat Transaksi tidak ditemukan. Silakan muat ulang halaman.');})()"><span class="shortcut-icon">✍️</span><strong>Catat Transaksi</strong><span>Catat pemasukan atau pengeluaran</span></button>
+ <button type="button" class="transaction-shortcut" onclick="bukaPanelTransaksi('catat')"><span class="shortcut-icon">✍️</span><strong>Catat Transaksi</strong><span>Catat pemasukan atau pengeluaran</span></button>
 <button type="button" class="transaction-shortcut" onclick="bukaPanelTransaksi('stok')"><span class="shortcut-icon">📦</span><strong>Barang &amp; Stok</strong><span>Kelola produk dan persediaan</span></button>
 <button type="button" class="transaction-shortcut" onclick="bukaPanelTransaksi('laporan')"><span class="shortcut-icon">📊</span><strong>Laporan</strong><span>Pilih laporan yang diperlukan</span></button>
 </div>
@@ -1655,7 +1655,7 @@ async function loadFinanceWorkspace(){
   if(!member){document.body.classList.remove('employee-verified','owner-verified');financeBusiness=null;financeMemberRole=null;financeRows=[];$('attendanceStatus').textContent='Akun ini belum terhubung ke usaha. Owner harus membuat usaha satu kali atau Karyawan bergabung memakai kode undangan.';$('attendanceCheckIn').disabled=true;$('attendanceCheckOut').disabled=true;setup.hidden=false;info.hidden=true;entry.hidden=true;report.hidden=false;const tbody=$('financeReportRows');if(tbody)tbody.innerHTML='<tr><td colspan="7">Laporan bersama belum dapat dimuat: akun '+aman(sd.session.user.email||'login ini')+' belum terhubung ke usaha. Masuk dengan akun Owner yang terdaftar atau hubungkan akun ini ke usaha terlebih dahulu. Data transaksi tidak dihapus.</td></tr>';const summary=$('financeReportSummary');if(summary)summary.innerHTML='';applyHomeFinanceRole();setFinanceStatus('Akun login terdeteksi ('+sd.session.user.email+'), tetapi belum terhubung ke usaha. Laporan bersama hanya bisa ditampilkan setelah akun yang benar terhubung.');return;}
   const {data:business,error:be}=await sb.from('business_workspaces').select('id,business_name,invite_code,owner_id').eq('id',member.business_id).single();
   if(be)throw be;
-  financeBusiness=business;financeMemberRole=member.role;document.body.classList.toggle('employee-verified',member.role==='employee');document.body.classList.toggle('owner-verified',member.role==='owner');if($('attendanceCard'))$('attendanceCard').hidden=false;if($('attendancePayrollCard'))$('attendancePayrollCard').hidden=false;if($('attendanceHourlyWage'))$('attendanceHourlyWage').disabled=false;if($('attendanceSaveWage'))$('attendanceSaveWage').disabled=false;$('ownerStoreCatalog').hidden=member.role!=='owner';$('financeForm').hidden=member.role==='employee';setup.hidden=true;info.hidden=false;entry.hidden=false;report.hidden=false;
+  financeBusiness=business;financeMemberRole=member.role;document.body.classList.toggle('employee-verified',member.role==='employee');document.body.classList.toggle('owner-verified',member.role==='owner');if($('attendanceCard'))$('attendanceCard').hidden=false;if($('attendancePayrollCard'))$('attendancePayrollCard').hidden=false;if($('attendanceHourlyWage'))$('attendanceHourlyWage').disabled=false;if($('attendanceSaveWage'))$('attendanceSaveWage').disabled=false;$('ownerStoreCatalog').hidden=member.role!=='owner';$('financeForm').hidden=false;setup.hidden=true;info.hidden=false;entry.hidden=false;report.hidden=false;
   info.innerHTML='<p><strong>Usaha:</strong> '+aman(business.business_name)+'<br><strong>Peran akun:</strong> '+financeRoleLabel(member.role)+(member.role==='owner'?'<br><strong>Kode undangan karyawan:</strong> <code>'+aman(business.invite_code)+'</code><br><span class="small">Bagikan kode ini hanya kepada karyawan yang Anda izinkan.</span>':'')+'</p>';
   // Nama usaha dan panel utama harus tampil walaupun modul katalog/absensi mengalami gangguan.
   const ancillaryErrors=[];try{await loadStoreProducts();}catch(auxError){console.error('Katalog usaha gagal dimuat:',auxError);ancillaryErrors.push('katalog barang: '+String(auxError.message||auxError).slice(0,100));}
@@ -1726,41 +1726,43 @@ function updateQuickSalePreview(useCatalogPrice=false){
  const info=$('quickSaleProductInfo');if(info){info.className='status';info.textContent=rows.length+' baris barang. Total sementara '+formatStoreRupiah(Number.isSafeInteger(grandTotal)?grandTotal:0)+'.';}
 }
 function bukaPanelTransaksi(tujuan){
- const isOwner=financeMemberRole==='owner',isEmployee=financeMemberRole==='employee';
- if(tujuan==='stok'&&!isOwner){const sel=$('reportCategorySelect');if(sel&&isEmployee){sel.value='income';applyReportCategory('income');setFinanceStatus('Menu pengelolaan barang dan stok hanya tersedia untuk Owner.');}return;}
- if(tujuan==='laporan'){
-  const sel=$('reportCategorySelect');if(sel){sel.value=isEmployee?'income':'';applyReportCategory(sel.value);}
-  const report=$('reportCategoryChooser');if(report){report.hidden=false;report.style.display='block';report.scrollIntoView({behavior:'smooth',block:'start'});return;}
- }
- if(tujuan==='catat'){
-  const form=$('financeForm');
-  if(form){
-   // Force the form and every ancestor to be visible, even if a prior report filter hid a container.
-   let node=form;
-   while(node){
-    node.hidden=false;
-    node.removeAttribute('hidden');
-    if(node.style&&node.style.display==='none')node.style.display='block';
-    if(node.id==='transaksi')break;
-    node=node.parentElement;
-   }
-   form.style.display='block';
-   form.scrollIntoView({behavior:'auto',block:'center'});
-   const field=$('financeDescription');
-   if(field){field.focus({preventScroll:true});}
-   return;
+  const isOwner=financeMemberRole==='owner',isEmployee=financeMemberRole==='employee';
+  if(tujuan==='stok'&&!isOwner){const sel=$('reportCategorySelect');if(sel&&isEmployee){sel.value='income';applyReportCategory('income');setFinanceStatus('Menu pengelolaan barang dan stok hanya tersedia untuk Owner.');}return;}
+  if(tujuan==='laporan'){
+   const sel=$('reportCategorySelect');if(sel){sel.value=isEmployee?'income':'';applyReportCategory(sel.value);}
+   const report=$('reportCategoryChooser');if(report){report.hidden=false;report.removeAttribute('hidden');report.style.display='block';report.scrollIntoView({behavior:'smooth',block:'start'});return;}
   }
-  const localForm=$('formKas');
-  if(localForm){localForm.scrollIntoView({behavior:'auto',block:'center'});const field=$('keterangan');if(field)field.focus({preventScroll:true});return;}
-  alert('Form Catat Transaksi tidak ditemukan pada halaman ini. Muat ulang halaman.');
-  return;
- }
- const targets={kasir:'financeEntryCard',absensi:'attendanceCard',stok:'ownerStoreCatalog'};
- const el=$(targets[tujuan]);
- if(el){el.hidden=false;el.removeAttribute('hidden');el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'start'});el.setAttribute('tabindex','-1');el.focus({preventScroll:true});}
- else if(tujuan==='stok'){
-  const sel=$('reportCategorySelect');if(sel&&isOwner){sel.value='stock';applyReportCategory('stock');$('stockReportTableCard')?.scrollIntoView({behavior:'smooth',block:'start'});}
- }
+  if(tujuan==='catat'){
+   const form=$('financeForm');
+   if(form){
+    let node=form;
+    while(node){
+     if(node.tagName==='DETAILS')node.open=true;
+     node.hidden=false;node.removeAttribute('hidden');
+     if(node.style&&node.style.display==='none')node.style.display='';
+     if(node.id==='transaksi')break;
+     node=node.parentElement;
+    }
+    form.hidden=false;form.removeAttribute('hidden');form.style.display='block';
+    const typeWrap=$('financeTypeWrap');if(typeWrap)typeWrap.hidden=isEmployee;
+    const type=$('financeType');if(type&&isEmployee){type.value='income';type.disabled=true;}
+    if(!isOwner&&!isEmployee){
+     const status=$('financeStatus');
+     if(status)status.scrollIntoView({behavior:'smooth',block:'center'});else form.scrollIntoView({behavior:'smooth',block:'center'});
+     setFinanceStatus('Untuk mencatat transaksi bersama, login dengan akun Owner atau Karyawan yang sudah terhubung ke usaha.',true);return;
+    }
+    form.scrollIntoView({behavior:'smooth',block:'center'});
+    const field=$('financeDescription');if(field)field.focus({preventScroll:true});
+    return;
+   }
+   const localForm=$('formKas');
+   if(localForm){const details=localForm.closest('details');if(details)details.open=true;localForm.scrollIntoView({behavior:'smooth',block:'center'});const field=$('keterangan');if(field)field.focus({preventScroll:true});return;}
+   alert('Form Catat Transaksi tidak ditemukan. Muat ulang halaman.');return;
+  }
+  const targets={kasir:'financeEntryCard',absensi:'attendanceCard',stok:'ownerStoreCatalog'};
+  const el=$(targets[tujuan]);
+  if(el){el.hidden=false;el.removeAttribute('hidden');el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'start'});el.setAttribute('tabindex','-1');el.focus({preventScroll:true});}
+  else if(tujuan==='stok'){const sel=$('reportCategorySelect');if(sel&&isOwner){sel.value='stock';applyReportCategory('stock');$('stockReportTableCard')?.scrollIntoView({behavior:'smooth',block:'start'});}}
 }
 function applyReportCategory(category){
  const selector=$('reportCategorySelect'),isOwner=financeMemberRole==='owner',isEmployee=financeMemberRole==='employee';
