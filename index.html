@@ -1733,7 +1733,25 @@ function bukaPanelTransaksi(tujuan){
   const sel=$('reportCategorySelect');if(sel){sel.value=isEmployee?'income':'';applyReportCategory(sel.value);}
  }
  if(tujuan==='catat'){
-  const details=document.querySelector('#transaksi details.local-transaction-card');if(details)details.open=true;
+  const details=document.querySelector('#transaksi details.local-transaction-card');
+  if(details)details.open=true;
+  const form=$('financeForm');
+  if(form){
+   let parent=form.parentElement;
+   while(parent&&parent.id!=='transaksi'){
+    if(parent.hidden){parent.hidden=false;parent.removeAttribute('hidden');}
+    if(getComputedStyle(parent).display==='none')parent.style.display='';
+    parent=parent.parentElement;
+   }
+   form.scrollIntoView({behavior:'smooth',block:'start'});
+   const field=$('financeDescription');
+   if(field)field.focus({preventScroll:true});
+   return;
+  }
+  const localForm=$('formKas');
+  if(localForm){localForm.scrollIntoView({behavior:'smooth',block:'start'});const field=$('keterangan');if(field)field.focus({preventScroll:true});return;}
+  setFinanceStatus('Form Catat Transaksi belum ditemukan. Muat ulang halaman dan coba lagi.');
+  return;
  }
  const el=$(targets[tujuan]);
  if(el){if(el.hidden){el.hidden=false;el.style.display='';}el.scrollIntoView({behavior:'smooth',block:'start'});el.setAttribute('tabindex','-1');el.focus({preventScroll:true});}
