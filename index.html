@@ -1800,7 +1800,7 @@ async function saveAttendanceWage(){
   await loadAttendance();
  }catch(e){status.className='status error';status.textContent='Gaji per jam tersimpan di perangkat ini, tetapi pembaruan catatan absensi gagal: '+String(e.message||e).slice(0,160);}
 }
-async function editAttendanceRecord(row){
+async async function editAttendanceRecord(row){
  if(financeMemberRole!=='owner'||!financeBusiness){alert('Hanya Owner yang dapat mengedit absensi.');return;}
  const currentIn=row.check_in_at?new Date(row.check_in_at).toLocaleTimeString('en-GB',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'';
  const currentOut=row.check_out_at?new Date(row.check_out_at).toLocaleTimeString('en-GB',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'';
