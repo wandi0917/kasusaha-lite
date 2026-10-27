@@ -1918,7 +1918,8 @@ $('storeProductForm')?.addEventListener('submit',async function(e){
  try{
   const itemType=$('storeProductSaleStatus')?.value||'product',stockUnit=String($('storeProductStockUnit')?.value||'unit').trim().toLowerCase();
   if(!stockUnit||stockUnit.length>24){$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Isi satuan stok, maksimal 24 karakter.';return;}
-  const payload={product_code:code,product_name:name,price,cost_price:costPrice,stock_quantity:initialStock,stock_unit:stockUnit,item_type:itemType,active:true,updated_at:new Date().toISOString()};
+  const currentItem=editId?storeProductRows.find(p=>String(p.id)===String(editId)):null;
+  const payload={product_code:code,product_name:name,price,stock_quantity:initialStock,stock_unit:stockUnit,item_type:itemType,active:editId?Boolean(currentItem?.active):true,updated_at:new Date().toISOString()};
   let error;
   if(editId){({error}=await sb.from('store_products').update(payload).eq('id',editId).eq('business_id',financeBusiness.id));}
   else{({error}=await sb.from('store_products').insert({...payload,business_id:financeBusiness.id}));}
