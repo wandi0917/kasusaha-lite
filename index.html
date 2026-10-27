@@ -18,6 +18,10 @@ body:not(.license-verified) main #cadangan{display:none!important}
 body.employee-verified:not(.license-verified) main #transaksi.active{display:block!important}
 body.owner-verified:not(.license-verified) main #transaksi.active{display:block!important}
 
+/* Kerahasiaan harga modal dan laba: hanya Owner */
+body.employee-verified #quickSaleItems .quick-sale-cost-wrap,body.employee-verified #quickSaleItems .quick-sale-profit-row,body.employee-verified #quickSaleItems .quick-sale-cost-note{display:none!important}
+body.employee-verified #quickSaleBillPreview th:nth-child(3),body.employee-verified #quickSaleBillPreview td:nth-child(3),body.employee-verified #quickSaleBillPreview th:nth-child(5),body.employee-verified #quickSaleBillPreview td:nth-child(5){display:none!important}
+body.employee-verified #reportCategorySelect option[value="finance"],body.employee-verified #reportCategorySelect option[value="daily"]{display:none!important}
 /* Laporan Transaksi: hanya kategori terpilih yang terlihat */
 #transaksi .report-category-view[hidden],
 #transaksi #ownerHomeReports[hidden],
@@ -831,6 +835,7 @@ async function buka(id,tombol){
     if(reportSelect){
       const runSelectedReport=async()=>{
         const requested=reportSelect.value;
+        if(financeMemberRole==='employee'&&(requested==='finance'||requested==='daily')){reportSelect.value='income';setFinanceStatus('Laporan keuangan lengkap, harga modal, dan laba rugi hanya tersedia untuk Owner.');return;}
         if(!requested)return;
         try{
           if(!financeMemberRole) await loadFinanceWorkspace();
@@ -1656,7 +1661,7 @@ function quickSaleLineData(row,useCatalogPrice=false){
 function addQuickSaleLine(){
  const host=$('quickSaleItems');if(!host)return;
  const row=document.createElement('div');row.className='card quick-sale-line';row.style.background='#fff';row.style.border='1px solid #cbd5e1';
- row.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><strong class="quick-sale-line-title">Barang 1</strong><button type="button" class="danger quick-sale-remove">Hapus</button></div><label>Kode / nama barang</label><input class="quick-sale-product" list="quickSaleProductOptions" autocomplete="off" required placeholder="Ketik kode atau nama barang"><div class="status quick-sale-line-info">Pilih barang dari saran daftar barang.</div><div class="grid"><div><label>Jumlah</label><input class="quick-sale-qty" type="number" min="1" step="1" value="1" required></div><div><label>Harga modal/unit (Rp)</label><input class="quick-sale-cost" type="number" min="0" step="1" inputmode="numeric" placeholder="Isi harga modal"></div><div><label>Harga jual/unit (Rp)</label><input class="quick-sale-price" type="number" min="1" step="1" inputmode="numeric" required placeholder="Harga satuan"></div></div><p class="small quick-sale-cost-note">Owner dapat mengisi harga modal. Perubahan disimpan ke daftar barang.</p><p><strong>Laba kotor barang: </strong><span class="quick-sale-profit">Isi harga modal dahulu</span></p><p><strong>Subtotal penjualan: </strong><span class="quick-sale-subtotal">Rp0</span></p>';
+ row.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><strong class="quick-sale-line-title">Barang 1</strong><button type="button" class="danger quick-sale-remove">Hapus</button></div><label>Kode / nama barang</label><input class="quick-sale-product" list="quickSaleProductOptions" autocomplete="off" required placeholder="Ketik kode atau nama barang"><div class="status quick-sale-line-info">Pilih barang dari saran daftar barang.</div><div class="grid"><div><label>Jumlah</label><input class="quick-sale-qty" type="number" min="1" step="1" value="1" required></div><div class="quick-sale-cost-wrap"><label>Harga modal/unit (Rp)</label><input class="quick-sale-cost" type="number" min="0" step="1" inputmode="numeric" placeholder="Isi harga modal"></div><div><label>Harga jual/unit (Rp)</label><input class="quick-sale-price" type="number" min="1" step="1" inputmode="numeric" required placeholder="Harga satuan"></div></div><p class="small quick-sale-cost-note">Owner dapat mengisi harga modal. Perubahan disimpan ke daftar barang.</p><p class="quick-sale-profit-row"><strong>Laba kotor barang: </strong><span class="quick-sale-profit">Isi harga modal dahulu</span></p><p><strong>Subtotal penjualan: </strong><span class="quick-sale-subtotal">Rp0</span></p>';
  const costInput=row.querySelector('.quick-sale-cost');
  if(financeMemberRole!=='owner'){costInput.readOnly=true;row.querySelector('.quick-sale-cost-note').textContent='Harga modal hanya dapat diubah oleh owner.';}
  row.querySelector('.quick-sale-product').addEventListener('input',()=>updateQuickSalePreview(true));
