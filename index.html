@@ -667,7 +667,7 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 <div class="grid"><div id="financeRoleFilterWrap"><label for="financeRoleFilter">Pencatat</label><select id="financeRoleFilter"><option value="all">Semua transaksi</option><option value="owner">Transaksi Owner</option><option value="employee">Transaksi Karyawan</option><option value="mine">Transaksi saya</option></select></div><div><label for="financeReportCategory">Kategori transaksi</label><select id="financeReportCategory"><option value="all">Semua kategori</option><option>Penjualan</option><option>Modal</option><option>Belanja stok</option><option>Operasional</option><option>Gaji</option><option>Transportasi</option><option>Listrik/Air/Internet</option><option>Prive Owner</option><option>Lainnya</option><option value="__uncategorized">Transaksi tanpa kategori</option></select></div></div>
 <div class="row-actions"><button type="button" class="primary" onclick="muatDanTampilkanLaporan()">Tampilkan laporan</button><button type="button" class="secondary" onclick="muatDanTampilkanLaporan()">Muat ulang laporan</button><button type="button" id="importLocalFinanceBtn" class="secondary" onclick="imporTransaksiLokalKeBersama()">Pindahkan transaksi lokal ke laporan bersama</button><button type="button" class="secondary" onclick="printFinanceReport()">Cetak / Simpan PDF</button></div>
 <div id="financeReportSummary" class="grid"></div>
-<div class="card report-category-view" id="financeTableSalesSummary" hidden><h3>Ringkasan total penjualan per meja/kasir</h3><p class="small">Dikelompokkan berdasarkan meja/kasir dan waktu transaksi tersimpan. Setiap tagihan menampilkan rincian barang serta total yang dibayar.</p><div class="table-wrap"><table class="report-table"><thead><tr><th>Hari, tanggal &amp; waktu</th><th>Meja / kasir</th><th>Rincian barang</th><th>Total tagihan</th></tr></thead><tbody id="financeTableSalesRows"><tr><td colspan="4">Memuat ringkasan...</td></tr></tbody></table></div><div id="financeTableSalesTotals" class="grid" aria-live="polite" style="margin-top:14px"><div class="finance-metric">Total keseluruhan penjualan<strong>Memuat...</strong></div></div></div>
+<div class="card report-category-view" id="financeTableSalesSummary" hidden><h3>Ringkasan total penjualan per meja/kasir</h3><p class="small">Dikelompokkan berdasarkan meja/kasir dan waktu transaksi tersimpan. Setiap tagihan menampilkan rincian barang serta total yang dibayar.</p><div class="table-wrap"><table class="report-table"><thead id="financeTableSalesHead"><tr><th>Hari, tanggal &amp; waktu</th><th>Meja / kasir</th><th>Rincian barang</th><th>Total modal</th><th>Laba kotor</th><th>Total tagihan</th></tr></thead><tbody id="financeTableSalesRows"><tr><td colspan="6">Memuat ringkasan...</td></tr></tbody></table></div><div id="financeTableSalesTotals" class="grid" aria-live="polite" style="margin-top:14px"><div class="finance-metric">Total keseluruhan penjualan<strong>Memuat...</strong></div></div></div>
 <div class="card report-category-view" id="financeTransactionsTableCard" hidden><h3>Tabel Rincian Laporan Keuangan</h3><div class="table-wrap"><table class="report-table"><thead id="financeReportHead"><tr><th>Hari, Tanggal &amp; Jam</th><th>Pencatat</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo periode</th></tr></thead><tbody id="financeReportRows"><tr><td colspan="7">Memuat laporan...</td></tr></tbody></table></div></div>
 <p class="small">Owner dapat melihat transaksi owner dan seluruh karyawan. Karyawan hanya dapat melihat dan menghapus transaksi miliknya sendiri. Data dilindungi kebijakan akses Supabase.</p>
 </div>
@@ -2010,36 +2010,63 @@ function renderFinanceReport(){
  // Ringkasan tagihan per meja/kasir berdasarkan waktu simpan. Setiap baris barang dalam satu operasi penyimpanan memiliki created_at yang sama dari PostgreSQL.
  const salesRows=rows.filter(r=>r.transaction_type==='income'&&financeNormalizeCategory(r.category)==='penjualan'&&/^(Meja .+|Kasir) — Penjualan /.test(String(r.description||'')));
  const salesGroups=new Map();
+ const isSalesOwner=financeMemberRole==='owner';
+ const salesProductByCode=new Map((Array.isArray(storeProductRows)?storeProductRows:[]).map(p=>[String(p.product_code||'').toUpperCase(),p]));
+ const parseRupiahText=value=>{const n=String(value||'').replace(/[^0-9-]/g,'');return n?Number(n):null;};
  salesRows.forEach(r=>{
   const description=String(r.description||''),match=description.match(/^(Meja .+?|Kasir) — Penjualan /),location=match?match[1]:'Kasir';
   const timestamp=String(r.created_at||r.transaction_date||''),key=[r.created_by||'',r.created_by_role||'',location,timestamp].join('|');
-  if(!salesGroups.has(key))salesGroups.set(key,{location,created_at:r.created_at,transaction_date:r.transaction_date,items:[],total:0});
-  const g=salesGroups.get(key);g.items.push(description.replace(/^(Meja .+?|Kasir) — /,''));g.total+=Number(r.amount||0);
+  if(!salesGroups.has(key))salesGroups.set(key,{location,created_at:r.created_at,transaction_date:r.transaction_date,items:[],total:0,modal:0,modalKnown:true,usedCurrentCost:false});
+  const g=salesGroups.get(key),amount=Number(r.amount||0);
+  g.items.push(description.replace(/^(Meja .+?|Kasir) — /,''));
+  g.total+=amount;
+  if(isSalesOwner){
+   const savedModal=description.match(/Modal total\s*Rp\s*([0-9.,]+)/i);
+   const codeMatch=description.match(/\[([^\]]+)\]/);
+   const qtyMatch=description.match(/×\s*(\d+)/);
+   let itemModal=savedModal?parseRupiahText(savedModal[1]):null;
+   if(itemModal===null&&codeMatch&&qtyMatch){
+    const product=salesProductByCode.get(String(codeMatch[1]).toUpperCase());
+    if(product&&Number.isFinite(Number(product.cost_price))){itemModal=Math.max(0,Number(product.cost_price))*Number(qtyMatch[1]);g.usedCurrentCost=true;}
+   }
+   if(itemModal===null){g.modalKnown=false;}else g.modal+=itemModal;
+  }
  });
  const salesTbody=$('financeTableSalesRows');
  if(salesTbody){
+  const salesHead=$('financeTableSalesHead');
+  if(salesHead)salesHead.innerHTML=isSalesOwner?'<tr><th>Hari, tanggal &amp; waktu</th><th>Meja / kasir</th><th>Rincian barang</th><th>Total modal</th><th>Laba kotor</th><th>Total tagihan</th></tr>':'<tr><th>Hari, tanggal &amp; waktu</th><th>Meja / kasir</th><th>Rincian barang</th><th>Total tagihan</th></tr>';
   const groups=Array.from(salesGroups.values()).sort((a,b)=>String(b.created_at||b.transaction_date).localeCompare(String(a.created_at||a.transaction_date)));
   salesTbody.replaceChildren();
-  if(!groups.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=4;td.textContent='Belum ada transaksi penjualan meja/kasir pada periode dan filter yang dipilih.';tr.appendChild(td);salesTbody.appendChild(tr);}
+  if(!groups.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=isSalesOwner?6:4;td.textContent='Belum ada transaksi penjualan meja/kasir pada periode dan filter yang dipilih.';tr.appendChild(td);salesTbody.appendChild(tr);}
   groups.forEach(g=>{
    const d=new Date(g.created_at||g.transaction_date),dateText=Number.isFinite(d.getTime())?d.toLocaleString('id-ID',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):String(g.transaction_date||'—');
    const tr=document.createElement('tr');
-   [dateText,g.location,g.items.join('\\n'),format(g.total)].forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;if(i===2)td.style.whiteSpace='pre-line';if(i===3){td.className='amount income';td.style.fontWeight='bold';}tr.appendChild(td);});
+   const values=isSalesOwner?[dateText,g.location,g.items.join('\n'),g.modalKnown?format(g.modal):'Tidak lengkap',g.modalKnown?format(g.total-g.modal):'Tidak lengkap',format(g.total)]:[dateText,g.location,g.items.join('\n'),format(g.total)];
+   values.forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;if(i===2)td.style.whiteSpace='pre-line';if((isSalesOwner&&i===5)||(!isSalesOwner&&i===3)){td.className='amount income';td.style.fontWeight='bold';}if(isSalesOwner&&(i===3||i===4)&&!g.modalKnown)td.title='Harga modal tidak tersedia untuk satu atau lebih barang pada tagihan ini.';tr.appendChild(td);});
    salesTbody.appendChild(tr);
   });
-  // Total otomatis mengikuti tagihan yang lolos filter laporan yang sedang dipilih.
   const overallTotal=groups.reduce((sum,g)=>sum+Number(g.total||0),0);
+  const modalKnownGroups=groups.filter(g=>g.modalKnown),overallModal=modalKnownGroups.reduce((sum,g)=>sum+Number(g.modal||0),0);
+  const overallProfit=modalKnownGroups.reduce((sum,g)=>sum+Number(g.total||0)-Number(g.modal||0),0);
   const locationTotals=new Map();
-  groups.forEach(g=>locationTotals.set(g.location,(locationTotals.get(g.location)||0)+Number(g.total||0)));
+  groups.forEach(g=>{if(!locationTotals.has(g.location))locationTotals.set(g.location,{total:0,modal:0,profit:0,known:0,count:0});const x=locationTotals.get(g.location);x.total+=g.total;x.count++;if(g.modalKnown){x.modal+=g.modal;x.profit+=g.total-g.modal;x.known++;}});
   const totalsBox=$('financeTableSalesTotals');
   if(totalsBox){
    totalsBox.replaceChildren();
-   const overall=document.createElement('div');overall.className='finance-metric';overall.innerHTML='Total keseluruhan penjualan<strong>'+format(overallTotal)+'</strong>';
-   const count=document.createElement('div');count.className='finance-metric';count.innerHTML='Jumlah tagihan<strong>'+groups.length+' transaksi</strong>';
-   totalsBox.append(overall,count);
-   Array.from(locationTotals.entries()).sort((a,b)=>a[0].localeCompare(b[0],'id')).forEach(([location,total])=>{
-    const metric=document.createElement('div');metric.className='finance-metric';const label=document.createElement('span');label.textContent='Total '+location;const value=document.createElement('strong');value.textContent=format(total);metric.replaceChildren(label,value);totalsBox.appendChild(metric);
+   const addMetric=(label,value,note='')=>{const metric=document.createElement('div');metric.className='finance-metric';const title=document.createElement('span');title.textContent=label;const strong=document.createElement('strong');strong.textContent=value;metric.replaceChildren(title,strong);if(note){const small=document.createElement('small');small.className='small';small.textContent=note;metric.appendChild(small);}totalsBox.appendChild(metric);};
+   addMetric('Total keseluruhan penjualan',format(overallTotal));
+   addMetric('Jumlah tagihan',groups.length+' transaksi');
+   if(isSalesOwner){
+    const allKnown=modalKnownGroups.length===groups.length;
+    addMetric('Total modal',allKnown?format(overallModal):format(overallModal)+' (data tersedia)',allKnown?'':'Modal/laba belum dapat dihitung untuk '+(groups.length-modalKnownGroups.length)+' tagihan karena data modal barang tidak tersedia.');
+    addMetric('Total laba kotor',allKnown?format(overallProfit):format(overallProfit)+' (data tersedia)',allKnown?'':'Laba kotor hanya menjumlahkan tagihan yang modalnya tersedia.');
+   }
+   Array.from(locationTotals.entries()).sort((a,b)=>a[0].localeCompare(b[0],'id')).forEach(([location,x])=>{
+    addMetric('Total '+location,format(x.total));
+    if(isSalesOwner){addMetric('Modal '+location,x.known===x.count?format(x.modal):format(x.modal)+' (data tersedia)',x.known===x.count?'':'Modal tidak tersedia untuk '+(x.count-x.known)+' tagihan.');addMetric('Laba kotor '+location,x.known===x.count?format(x.profit):format(x.profit)+' (data tersedia)',x.known===x.count?'':'Laba hanya menghitung tagihan dengan data modal tersedia.');}
    });
+   if(isSalesOwner&&groups.some(g=>g.usedCurrentCost)){const note=document.createElement('p');note.className='small';note.style.gridColumn='1 / -1';note.textContent='Catatan: untuk transaksi lama yang tidak menyimpan modal saat transaksi, modal dihitung memakai harga modal barang saat ini. Jika harga modal pernah berubah, laba historis tersebut merupakan perkiraan. “Tidak lengkap” berarti kode barang atau harga modal tidak tersedia.';totalsBox.appendChild(note);}
   }
  }
  const income=rows.filter(r=>r.transaction_type==='income').reduce((a,r)=>a+Number(r.amount||0),0);
