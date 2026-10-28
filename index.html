@@ -1992,7 +1992,7 @@ function updateQuickSalePreview(useCatalogPrice=false){
  if(locationEl)locationEl.textContent=location;
  if(tbody){tbody.replaceChildren();let any=false;details.forEach(d=>{if(!d.p)return;any=true;const tr=document.createElement('tr');[d.p.product_name+' ('+d.p.product_code+')',String(d.qty||0),formatStoreRupiah(d.costPrice||0),formatStoreRupiah(d.price||0),formatStoreRupiah(d.profitTotal||0),formatStoreRupiah(d.subtotal||0)].forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;if(i>0)td.style.textAlign='right';tr.appendChild(td);});tbody.appendChild(tr);});if(!any){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=6;td.textContent='Belum ada barang yang dipilih.';tr.appendChild(td);tbody.appendChild(tr);}}
  if(totalEl)totalEl.textContent=formatStoreRupiah(Number.isSafeInteger(grandTotal)?grandTotal:0);
- if(hintEl)hintEl.textContent=allValid?'Laba kotor estimasi '+formatStoreRupiah(details.reduce((sum,d)=>sum+(d.profitTotal||0),0))+'. Periksa modal, harga jual, subtotal, lokasi, dan total sebelum menyimpan.':'Lengkapi kode barang, jumlah, dan harga jual pada setiap baris agar total tagihan akurat.';
+ if(hintEl)hintEl.textContent=allValid?(financeMemberRole==='owner'?'Laba kotor estimasi '+formatStoreRupiah(details.reduce((sum,d)=>sum+(d.profitTotal||0),0))+'. Periksa modal, harga jual, subtotal, lokasi, dan total sebelum menyimpan.':'Periksa harga jual, jumlah, subtotal, lokasi, dan total sebelum menyimpan. Laba kotor hanya dapat dihitung oleh Owner berdasarkan harga modal yang tersimpan.'):'Lengkapi kode barang, jumlah, dan harga jual pada setiap baris agar total tagihan akurat.';
  const info=$('quickSaleProductInfo');if(info){info.className='status';info.textContent=rows.length+' baris barang. Total sementara '+formatStoreRupiah(Number.isSafeInteger(grandTotal)?grandTotal:0)+'.';}
 }
 async function bukaPanelTransaksi(tujuan){
@@ -2311,8 +2311,12 @@ $('quickSaleForm')?.addEventListener('submit',async function(e){
   const {data:result,error}=await sb.rpc('record_store_quick_sale',{p_business_id:financeBusiness.id,p_table_number:tableNumber||null,p_lines:lines.map(d=>({product_id:d.p.id,quantity:d.qty,unit_price:d.price}))});
   if(error)throw error;
   if(!result||result.ok!==true)throw new Error('Server belum mengonfirmasi penyimpanan penjualan.');
-  this.reset();$('quickSaleTableNumber').value='';$('quickSaleItems').replaceChildren();addQuickSaleLine();await loadFinanceWorkspace();setFinanceStatus('Transaksi '+locationLabel+' berhasil disimpan: '+lines.length+' jenis barang, total '+formatStoreRupiah(amount)+'.');
- }catch(err){setFinanceStatus('Penjualan gagal disimpan: '+String(err.message||err).slice(0,220),true);}
+  // Server sudah mengonfirmasi penyimpanan. Kegagalan muat ulang laporan tidak berarti transaksi gagal.
+  this.reset();$('quickSaleTableNumber').value='';$('quickSaleItems').replaceChildren();addQuickSaleLine();
+  setFinanceStatus('Transaksi '+locationLabel+' BERHASIL DISIMPAN: '+lines.length+' jenis barang, total '+formatStoreRupiah(amount)+'. Stok dan pemasukan sudah dicatat oleh server.');
+  try{await loadFinanceWorkspace();setFinanceStatus('Transaksi '+locationLabel+' BERHASIL DISIMPAN: '+lines.length+' jenis barang, total '+formatStoreRupiah(amount)+'. Stok dan laporan sudah diperbarui.');}
+  catch(refreshErr){console.error('Penjualan tersimpan, tetapi penyegaran laporan gagal:',refreshErr);setFinanceStatus('Transaksi SUDAH TERSIMPAN di server ('+formatStoreRupiah(amount)+'), tetapi laporan belum berhasil dimuat ulang. Klik Muat Ulang laporan. Detail: '+String(refreshErr.message||refreshErr).slice(0,150),true);}
+ }catch(err){setFinanceStatus('PENJUALAN BELUM TERSIMPAN: '+String(err.message||err).slice(0,350),true);}
  finally{btn.disabled=false;}
 });
 function financePeriodBounds(){
