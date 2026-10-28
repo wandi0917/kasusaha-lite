@@ -2074,9 +2074,12 @@ function applyReportCategory(category){
    const title=$('financeReportTitle');if(title)title.textContent='Laporan Keuangan Lengkap (Owner)';
    const sales=$('financeTableSalesSummary');if(sales){sales.hidden=false;sales.style.display='block';}
  }else if(category==='income'&&isEmployee){
-   const card=$('financeReportCard');if(card)card.hidden=false;
-   const detail=$('financeTransactionsTableCard');if(detail)detail.hidden=false;
-   const title=$('financeReportTitle');if(title)title.textContent='Laporan Pemasukan (Karyawan)';
+   const card=$('financeReportCard');if(card){card.hidden=false;card.style.display='block';}
+   const detail=$('financeTransactionsTableCard');if(detail){detail.hidden=false;detail.style.display='block';}
+   // Karyawan mendapat ringkasan tagihan dan rincian transaksi dalam tabel,
+   // tetapi tidak pernah melihat modal, laba, pengeluaran, atau data karyawan lain.
+   const sales=$('financeTableSalesSummary');if(sales){sales.hidden=false;sales.style.display='block';}
+   const title=$('financeReportTitle');if(title)title.textContent='Laporan Pemasukan Karyawan — Ringkasan Tagihan & Rincian';
  }else if(category==='daily'&&isOwner){
    const el=$('localDailyReportCard');if(el){el.hidden=false;el.style.display='block';}
  }else if(category==='history'&&isOwner){
