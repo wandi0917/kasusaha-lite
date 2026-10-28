@@ -1995,8 +1995,16 @@ function updateQuickSalePreview(useCatalogPrice=false){
  if(hintEl)hintEl.textContent=allValid?'Laba kotor estimasi '+formatStoreRupiah(details.reduce((sum,d)=>sum+(d.profitTotal||0),0))+'. Periksa modal, harga jual, subtotal, lokasi, dan total sebelum menyimpan.':'Lengkapi kode barang, jumlah, dan harga jual pada setiap baris agar total tagihan akurat.';
  const info=$('quickSaleProductInfo');if(info){info.className='status';info.textContent=rows.length+' baris barang. Total sementara '+formatStoreRupiah(Number.isSafeInteger(grandTotal)?grandTotal:0)+'.';}
 }
-function bukaPanelTransaksi(tujuan){
+async function bukaPanelTransaksi(tujuan){
+  // Pastikan peran dan usaha sudah termuat sebelum tombol modul menjalankan aksi.
+  if(!financeBusiness||!financeMemberRole||!financeMemberUserId){
+    try{await loadFinanceWorkspace();}catch(e){setFinanceStatus('Gagal memuat akses usaha: '+String(e.message||e).slice(0,180),true);return;}
+  }
   const isOwner=financeMemberRole==='owner',isEmployee=financeMemberRole==='employee';
+  if(['kasir','absensi','catat','laporan'].includes(tujuan)&&(!financeBusiness||!financeMemberRole||!financeMemberUserId)){
+    setFinanceStatus('Menu belum dapat digunakan karena sesi ini belum terhubung ke usaha. Muat ulang sesi atau minta Owner memeriksa keanggotaan akun.',true);
+    const status=$('financeStatus');if(status)status.scrollIntoView({behavior:'smooth',block:'center'});return;
+  }
   if(tujuan==='stok'&&!isOwner){const sel=$('reportCategorySelect');if(sel&&isEmployee){sel.value='income';applyReportCategory('income');setFinanceStatus('Menu pengelolaan barang dan stok hanya tersedia untuk Owner.');}return;}
   if(tujuan==='laporan'){
    const sel=$('reportCategorySelect');if(sel){sel.value=isEmployee?'income':'';applyReportCategory(sel.value);}
@@ -2031,7 +2039,10 @@ function bukaPanelTransaksi(tujuan){
   }
   const targets={kasir:'financeEntryCard',absensi:'attendanceCard',stok:'ownerStoreCatalog'};
   const el=$(targets[tujuan]);
-  if(el){el.hidden=false;el.removeAttribute('hidden');el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'start'});el.setAttribute('tabindex','-1');el.focus({preventScroll:true});}
+  if(el){el.hidden=false;el.removeAttribute('hidden');el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'start'});el.setAttribute('tabindex','-1');el.focus({preventScroll:true});
+    if(tujuan==='absensi')await loadAttendance();
+    if(tujuan==='kasir'){try{await loadStoreProducts();if(!quickSaleItemRows().length)addQuickSaleLine();updateQuickSalePreview();}catch(e){setFinanceStatus('Kasir belum dapat memuat daftar barang: '+String(e.message||e).slice(0,180),true);}}
+  }
   else if(tujuan==='stok'){const sel=$('reportCategorySelect');if(sel&&isOwner){sel.value='stock';applyReportCategory('stock');$('stockReportTableCard')?.scrollIntoView({behavior:'smooth',block:'start'});}}
 }
 function applyReportCategory(category){
