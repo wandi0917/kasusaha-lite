@@ -1780,7 +1780,7 @@ async function employeeCheckRole(){
 }
 $('employeeLogin').addEventListener('click',async()=>{
  if(!sb)return employeeAuthMessage('Koneksi Supabase tidak tersedia.',true);
- const employeeName=$('employeeNameInput').value.trim().replace(/\\s+/g,' ');
+ const employeeName=$('employeeNameInput').value.trim().replace(/\s+/g,' ');
  const code=$('employeeInviteCode').value.trim().toUpperCase();
  if(employeeName.length<2)return employeeAuthMessage('Nama lengkap karyawan wajib diisi (minimal 2 karakter).',true);
  if(!code)return employeeAuthMessage('Kode undangan dari Owner wajib diisi.',true);
