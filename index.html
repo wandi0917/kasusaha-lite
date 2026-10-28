@@ -495,6 +495,57 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 </style>
 
 
+<style>
+/* CUSTOMER-FIRST UX POLISH 2026-10-29 */
+:root{--ks-focus:#2563eb;--ks-radius:16px;--ks-border:#e2e8f0}
+html{scroll-padding-top:100px}
+body{line-height:1.55}
+body>header p{max-width:780px;line-height:1.6;opacity:.94}
+body>nav{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:7px;padding:10px clamp(10px,2vw,24px);box-shadow:0 5px 18px rgba(15,23,42,.12)}
+body>nav button{min-height:42px;padding:10px 13px;border-radius:11px;font-size:13px;letter-spacing:.05px;transition:transform .15s ease,background-color .15s ease,box-shadow .15s ease}
+body>nav button:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(15,23,42,.12)}
+body>nav button.active{box-shadow:0 3px 12px rgba(255,255,255,.18);font-weight:800}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid var(--ks-focus)!important;outline-offset:3px}
+input,select,textarea{min-height:44px;border-color:#cbd5e1;background:#fff}
+label{line-height:1.4;color:#24364b}
+.card,.item{border-radius:var(--ks-radius);border-color:var(--ks-border);box-shadow:0 5px 18px rgba(15,23,42,.035)}
+.card h2,.card h3{line-height:1.3}
+.primary,.secondary,.danger{min-height:42px;transition:filter .15s ease,transform .15s ease}
+.primary:hover,.secondary:hover{filter:brightness(.98);transform:translateY(-1px)}
+.report-table th{position:sticky;top:0;z-index:1}
+.status{line-height:1.55}
+.small{line-height:1.55}
+#pasar .item,#keranjang .item,#pesananSaya .item,#pesananMasuk .item{overflow-wrap:anywhere}
+#pasar img.product-photo{width:100%;max-height:240px;object-fit:contain;background:#f8fafc;border:1px solid #edf2f7;padding:6px}
+@media(max-width:650px){
+ body>nav{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;padding:9px 10px}
+ body>nav button{flex:0 0 auto;scroll-snap-align:start;min-height:44px}
+ main{padding:10px}
+ .card{padding:13px}
+ .primary,.secondary{max-width:100%;white-space:normal;line-height:1.4}
+ .report-table{font-size:12px}
+ .report-table th,.report-table td{padding:8px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+</style>
+<style>
+
+.ks-pricing-intro{background:linear-gradient(120deg,#eff6ff,#fff 55%,#fff7ed);border:1px solid #dbeafe}
+.ks-pricing-kicker,.ks-plan-label{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.09em;color:#1d4ed8}
+.ks-pricing-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:16px 0}
+.ks-pricing-card{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.ks-pricing-card h3{margin:0}
+.ks-price{font-size:clamp(22px,3vw,30px);font-weight:850;line-height:1.2;margin:4px 0}
+.ks-price small{display:block;font-size:12px;font-weight:500;color:#64748b;margin-top:5px}
+.ks-pricing-card ul,.ks-pricing-policy ul{padding-left:20px;margin:0 0 12px}
+.ks-pricing-card li,.ks-pricing-policy li{margin:8px 0}
+.ks-pricing-card button{margin-top:auto}
+.ks-pricing-featured{border:2px solid #93c5fd;background:linear-gradient(180deg,#eff6ff,#fff 60%)}
+.ks-plan-note{font-size:13px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px;color:#7c2d12}
+.ks-pricing-policy{background:#f8fafc}
+@media(max-width:850px){.ks-pricing-grid{grid-template-columns:1fr}}
+
+</style>
 </head>
 <body>
 <header class="ks-brand-header">
@@ -517,7 +568,7 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
 <div class="ks-brand-accent" aria-hidden="true"><span></span><span></span><span></span></div>
 </header>
 <nav aria-label="Navigasi utama">
-<button class="active" type="button" onclick="buka('beranda',this)">Beranda</button><button type="button" onclick="buka('transaksi',this)">Transaksi</button><button type="button" onclick="buka('produk',this)">Produk Saya</button><button type="button" onclick="buka('pasar',this)">Pasar Online</button><button type="button" onclick="buka('keranjang',this)">Keranjang <span id="jumlahKeranjang">0</span></button><button type="button" onclick="buka('cadangan',this)">Cadangan</button><button type="button" onclick="buka('akun',this)">Login Owner / Penjual</button><button type="button" onclick="buka('loginKaryawan',this)">Login Karyawan</button><button type="button" onclick="buka('akunPembeli',this)">Akun Pembeli</button><button type="button" onclick="buka('pesananSaya',this)">Pesanan Saya</button><button type="button" onclick="buka('pesananMasuk',this)">Pesanan Masuk</button>
+<button class="active" type="button" onclick="buka('beranda',this)">Beranda</button><button type="button" onclick="buka('transaksi',this)">Transaksi</button><button type="button" onclick="buka('produk',this)">Produk Saya</button><button type="button" onclick="buka('pasar',this)">Pasar Online</button><button type="button" onclick="buka('paketKasUsaha',this)">Paket &amp; Harga</button><button type="button" onclick="buka('keranjang',this)">Keranjang <span id="jumlahKeranjang">0</span></button><button type="button" onclick="buka('cadangan',this)">Cadangan</button><button type="button" onclick="buka('akun',this)">Login Owner / Penjual</button><button type="button" onclick="buka('loginKaryawan',this)">Login Karyawan</button><button type="button" onclick="buka('akunPembeli',this)">Akun Pembeli</button><button type="button" onclick="buka('pesananSaya',this)">Pesanan Saya</button><button type="button" onclick="buka('pesananMasuk',this)">Pesanan Masuk</button>
 </nav>
 <main>
 <section id="beranda" class="tab active">
@@ -1114,6 +1165,63 @@ async function bagikanKasUsahaLite(){
 <section id="akunPembeli" class="tab">
 <details class="card usage-guide"><summary><strong>📘 Panduan penggunaan Akun Pembeli &amp; Aktivasi Lisensi</strong></summary><ol><li>Login menggunakan akun yang sama dengan akun saat membeli KasUsaha Lite.</li><li>Buka menu Pesanan Saya untuk memeriksa pesanan dan status pembayaran.</li><li>Masukkan kode lisensi yang diterima setelah pembelian terverifikasi, sesuai petunjuk di halaman.</li><li>Jika kode belum tersedia atau aktivasi gagal, pastikan pembayaran sudah terverifikasi dan simpan nomor pesanan untuk pemeriksaan.</li><li>Jangan bagikan kode lisensi atau kata sandi kepada orang lain.</li></ol></details>
 <h2>Akun Pembeli &amp; Aktivasi Lisensi</h2><div class="card"><p>Login menggunakan akun Supabase yang sama dengan akun saat membeli KasUsaha Lite. Setelah login, masukkan kode lisensi dari menu Pesanan Saya.</p><div id="pesanPembeli" class="status" role="status">Memeriksa koneksi akun...</div><label for="emailPembeliAkun">Email</label><input id="emailPembeliAkun" type="email" autocomplete="email" placeholder="Email aktif Anda"><label for="sandiPembeliAkun">Kata sandi (minimal 6 karakter)</label><input id="sandiPembeliAkun" type="password" autocomplete="new-password" placeholder="Kata sandi"><div class="row-actions"><button id="daftarPembeli" class="primary" type="button">Daftar Akun Pembeli</button><button id="resendBuyerConfirmation" class="secondary" type="button">Kirim Ulang Konfirmasi</button><button id="loginPembeli" class="primary" type="button">Login Pembeli</button><button id="keluarPembeli" class="secondary" type="button">Logout</button><button class="secondary" type="button" onclick="buka('pesananSaya',document.querySelector('nav button[onclick*=\"pesananSaya\"]'))">Pesanan Saya</button></div></div><div class="card"><h3>Aktivasi KasUsaha Lite</h3><p class="small">Kode lisensi hanya dapat diaktifkan oleh akun pembeli pemilik pesanan yang sudah dibayar dan lisensinya masih aktif.</p><div id="statusAktivasiLisensi" class="status" role="status">Login untuk memeriksa lisensi.</div><label for="kodeAktivasiLisensi">Kode lisensi</label><input id="kodeAktivasiLisensi" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="80" placeholder="Contoh: KS-XXXXXXXXXXXX"><button id="tombolAktivasiLisensi" class="primary wide" type="button">Verifikasi &amp; Aktifkan Lisensi</button><p class="small">Aktivasi diverifikasi di server Supabase. Jangan berikan kode lisensi kepada orang lain.</p></div></section>
+
+<section id="paketKasUsaha" class="tab">
+  <div class="card ks-pricing-intro">
+    <span class="ks-pricing-kicker">PAKET DAN LAYANAN</span>
+    <h2>Pilih layanan KasUsaha Lite</h2>
+    <p>Harga dibuat transparan. Perbaikan bug dan pembaruan keamanan dasar untuk aplikasi yang dibeli tidak dikenakan biaya tambahan. Layanan opsional hanya dibayar jika Anda memilih dan menyetujuinya.</p>
+  </div>
+  <div class="ks-pricing-grid">
+    <article class="card ks-pricing-card">
+      <span class="ks-plan-label">LISENSI SEKALI BAYAR</span>
+      <h3>KasUsaha Lite</h3>
+      <p class="ks-price">Rp49.000 <small>/ sekali bayar</small></p>
+      <ul>
+        <li>Akses lisensi sesuai ketentuan pembelian</li>
+        <li>Perbaikan bug aplikasi dan pembaruan keamanan dasar</li>
+        <li>Bantuan penggunaan dasar secara wajar</li>
+        <li>Tidak ada biaya perpanjangan otomatis</li>
+      </ul>
+      <button class="primary" type="button" onclick="buka('pasar',document.querySelector('nav button[onclick*=\'pasar\']'))">Lihat produk di Pasar Online</button>
+    </article>
+    <article class="card ks-pricing-card ks-pricing-featured">
+      <span class="ks-plan-label">LAYANAN OPSIONAL</span>
+      <h3>KasUsaha Plus</h3>
+      <p class="ks-price">Rp19.000 <small>/ bulan (usulan)</small></p>
+      <ul>
+        <li>Rencana untuk layanan tambahan dan bantuan prioritas</li>
+        <li>Fitur cloud/backup premium hanya jika tersedia dan dijelaskan</li>
+        <li>Berlangganan bersifat sukarela</li>
+        <li>Tidak mengubah hak lisensi yang sudah dibeli</li>
+      </ul>
+      <p class="ks-plan-note"><strong>Belum tersedia untuk pembayaran otomatis.</strong> Jangan membayar di luar checkout resmi. Paket ini baru dapat diaktifkan setelah sistem langganan dan ketentuan layanannya siap.</p>
+    </article>
+    <article class="card ks-pricing-card">
+      <span class="ks-plan-label">BANTUAN PERSONAL</span>
+      <h3>Jasa Bantuan</h3>
+      <p class="ks-price">Mulai Rp50.000 <small>/ sesi</small></p>
+      <ul>
+        <li>Panduan pengaturan awal</li>
+        <li>Pelatihan penggunaan untuk pemilik/karyawan</li>
+        <li>Bantuan impor data berdasarkan kesepakatan</li>
+        <li>Harga akhir disetujui sebelum pekerjaan dimulai</li>
+      </ul>
+      <button class="secondary" type="button" onclick="if(navigator.share){navigator.share({title:'Permintaan Jasa KasUsaha Lite',text:'Saya ingin menanyakan jasa bantuan KasUsaha Lite mulai Rp50.000 per sesi.'}).catch(()=>{});}else{navigator.clipboard?.writeText('Saya ingin menanyakan jasa bantuan KasUsaha Lite mulai Rp50.000 per sesi.');alert('Pesan permintaan jasa disiapkan untuk disalin. Silakan hubungi penjual melalui kontak resmi.');}">Tanyakan jasa bantuan</button>
+    </article>
+  </div>
+  <div class="card ks-pricing-policy">
+    <h3>Kebijakan biaya yang jelas</h3>
+    <ul>
+      <li><strong>Gratis:</strong> perbaikan bug aplikasi dan pembaruan keamanan dasar yang menjadi tanggung jawab pengembang.</li>
+      <li><strong>Berbayar setelah disetujui:</strong> pelatihan personal, impor data, pekerjaan khusus, dan layanan tambahan yang dijelaskan terlebih dahulu.</li>
+      <li><strong>Langganan:</strong> tidak akan ditagih otomatis sebelum sistem pembayaran, pembatalan, dan ketentuan layanan tersedia.</li>
+      <li><strong>Pelanggan lama:</strong> hak lisensi yang sudah dibeli tidak berubah karena penambahan paket baru.</li>
+      <li><strong>Biaya pihak ketiga:</strong> biaya pembayaran atau layanan eksternal harus ditampilkan secara transparan sebelum transaksi.</li>
+    </ul>
+  </div>
+</section>
+
 </main><footer>KasUsaha Lite • Pencatatan usaha dan katalog produk</footer>
 <script>
 function filterKampanyeAfiliasi(){
@@ -2826,36 +2934,3 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
 <div id="areaLaporanCetak" aria-live="polite"></div>
 </body>
 </html>
-
-
-/* CUSTOMER-FIRST UX POLISH 2026-10-29 */
-:root{--ks-focus:#2563eb;--ks-radius:16px;--ks-border:#e2e8f0}
-html{scroll-padding-top:100px}
-body{line-height:1.55}
-body>header p{max-width:780px;line-height:1.6;opacity:.94}
-body>nav{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:7px;padding:10px clamp(10px,2vw,24px);box-shadow:0 5px 18px rgba(15,23,42,.12)}
-body>nav button{min-height:42px;padding:10px 13px;border-radius:11px;font-size:13px;letter-spacing:.05px;transition:transform .15s ease,background-color .15s ease,box-shadow .15s ease}
-body>nav button:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(15,23,42,.12)}
-body>nav button.active{box-shadow:0 3px 12px rgba(255,255,255,.18);font-weight:800}
-button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid var(--ks-focus)!important;outline-offset:3px}
-input,select,textarea{min-height:44px;border-color:#cbd5e1;background:#fff}
-label{line-height:1.4;color:#24364b}
-.card,.item{border-radius:var(--ks-radius);border-color:var(--ks-border);box-shadow:0 5px 18px rgba(15,23,42,.035)}
-.card h2,.card h3{line-height:1.3}
-.primary,.secondary,.danger{min-height:42px;transition:filter .15s ease,transform .15s ease}
-.primary:hover,.secondary:hover{filter:brightness(.98);transform:translateY(-1px)}
-.report-table th{position:sticky;top:0;z-index:1}
-.status{line-height:1.55}
-.small{line-height:1.55}
-#pasar .item,#keranjang .item,#pesananSaya .item,#pesananMasuk .item{overflow-wrap:anywhere}
-#pasar img.product-photo{width:100%;max-height:240px;object-fit:contain;background:#f8fafc;border:1px solid #edf2f7;padding:6px}
-@media(max-width:650px){
- body>nav{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;padding:9px 10px}
- body>nav button{flex:0 0 auto;scroll-snap-align:start;min-height:44px}
- main{padding:10px}
- .card{padding:13px}
- .primary,.secondary{max-width:100%;white-space:normal;line-height:1.4}
- .report-table{font-size:12px}
- .report-table th,.report-table td{padding:8px}
-}
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
