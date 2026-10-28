@@ -9,7 +9,12 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="KasUsaha Lite">
-<meta name="description" content="KasUsaha Lite: kasir sederhana, pencatatan keuangan, produk dan pasar online Indonesia.">
+<meta name="description" content="KasUsaha Lite membantu UMKM mencatat transaksi, mengelola produk, dan melihat laporan usaha. Lisensi sekali bayar Rp49.000. Jelajahi juga rekomendasi produk Shopee Affiliate.">
+<meta name="keywords" content="aplikasi kasir UMKM, pencatatan keuangan usaha, stok barang, laporan penjualan, KasUsaha Lite, perlengkapan usaha, Shopee Affiliate">
+<meta property="og:type" content="website">
+<meta property="og:title" content="KasUsaha Lite — Bantu Usaha Lebih Tertata">
+<meta property="og:description" content="Catat transaksi, kelola produk, pantau laporan usaha. Lisensi KasUsaha Lite Rp49.000 sekali bayar.">
+<meta property="og:url" content="https://wandi0917.github.io/kasusaha-lite/">
 <meta name="kasusaha-build" content="2026-10-28-audit-stock-guard-1">
 <title>KasUsaha Lite</title>
 <style>
@@ -569,8 +574,44 @@ body>header.ks-brand-header p{position:relative;z-index:1;margin:8px 0 0!importa
   </div>
 </section>
 
+<section id="kasusahaSharePromo" aria-label="Bagikan KasUsaha Lite" style="margin:20px auto;padding:clamp(16px,3vw,26px);border-radius:20px;background:linear-gradient(125deg,#eef2ff,#fff 52%,#fff7ed);border:1px solid #c7d2fe;box-shadow:0 10px 28px rgba(30,41,59,.07)">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:18px;align-items:center">
+    <div><span style="display:inline-block;background:#e0e7ff;color:#3730a3;font-size:12px;font-weight:800;padding:6px 10px;border-radius:999px">BANTU UMKM LEBIH TERTATA</span>
+      <h2 style="margin:12px 0 8px;color:#172554;font-size:clamp(22px,3vw,30px)">Punya teman yang punya usaha?</h2>
+      <p style="margin:0;color:#475569;line-height:1.65">Bagikan KasUsaha Lite kepada pemilik warung, kedai, dan UMKM. Mereka bisa melihat fitur dan mencoba alur aplikasi sendiri. Tidak ada janji keuntungan; keputusan pembelian tetap di tangan pengguna.</p>
+      <p style="margin:10px 0 0;font-size:13px;color:#64748b">Lisensi Rp49.000 sekali bayar. Pembayaran produksi harus aktif dan terverifikasi sebelum transaksi uang sungguhan.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button type="button" class="primary" onclick="bagikanKasUsahaLiteWA()" style="background:#15803d">Bagikan lewat WhatsApp ↗</button>
+      <button type="button" class="secondary" onclick="bagikanKasUsahaLite()" style="background:#fff;border-color:#a5b4fc;color:#3730a3">Bagikan / Salin tautan</button>
+      <button type="button" class="secondary" onclick="buka('akunPembeli',document.querySelectorAll('nav button')[8])">Lihat aktivasi lisensi</button>
+      <p id="kasusahaShareStatus" aria-live="polite" style="font-size:12px;color:#475569;margin:0">Pilih tombol untuk membagikan tautan situs; pesan tidak dikirim otomatis.</p>
+    </div>
+  </div>
+</section>
+<script>
+function teksPromosiKasUsahaLite(){
+ return "Pemilik warung dan UMKM, yuk rapikan pencatatan usaha dengan KasUsaha Lite!\n\n✅ Catat transaksi usaha\n✅ Kelola produk dan stok\n✅ Pantau laporan usaha\n\nLisensi Rp49.000 sekali bayar. Lihat fitur dan ketentuan pembayaran di situs resmi:\nhttps://wandi0917.github.io/kasusaha-lite/\n\nSilakan cek sendiri apakah cocok untuk usaha Anda.";
+}
+function bagikanKasUsahaLiteWA(){
+ const url="https://wa.me/?text="+encodeURIComponent(teksPromosiKasUsahaLite());
+ window.open(url,"_blank","noopener,noreferrer");
+ const status=document.getElementById("kasusahaShareStatus");
+ if(status) status.textContent="WhatsApp dibuka dengan draf pesan. Periksa lalu kirim sendiri ke kontak atau grup yang relevan.";
+}
+async function bagikanKasUsahaLite(){
+ const text=teksPromosiKasUsahaLite();
+ const status=document.getElementById("kasusahaShareStatus");
+ try{
+  if(navigator.share){await navigator.share({title:"KasUsaha Lite",text:text,url:"https://wandi0917.github.io/kasusaha-lite/"});if(status)status.textContent="Menu berbagi perangkat telah dibuka.";}
+  else if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(text);if(status)status.textContent="Teks promosi dan tautan berhasil disalin. Tempelkan di media sosial Anda.";}
+  else{window.open("https://wa.me/?text="+encodeURIComponent(text),"_blank","noopener,noreferrer");if(status)status.textContent="WhatsApp dibuka dengan draf promosi.";}
+ }catch(e){if(status)status.textContent="Berbagi dibatalkan atau tidak tersedia. Gunakan tombol WhatsApp untuk membuka draf pesan.";}
+}
+</script>
+
 <section id="affiliateHomeCatalog" aria-label="Katalog produk Shopee Affiliate">
-<div class="affiliate-home-head"><div><h2>🛍️ Produk Pilihan Shopee Affiliate</h2><p>35 rekomendasi produk pilihan. Buka produk melalui tautan affiliate yang disediakan untuk melihat detail dan harga terbaru di Shopee.</p></div><a class="affiliate-home-more" href="#affiliateShopeePanel" onclick="buka('pasar',document.querySelectorAll('nav button')[3]);setTimeout(()=>document.getElementById('affiliateShopeePanel')?.scrollIntoView({behavior:'smooth',block:'start'}),150);return false;">Lihat Pasar Online ↗</a></div>
+<div class="affiliate-home-head"><div><h2>🛍️ Produk Pilihan Shopee Affiliate</h2><p>36 rekomendasi produk pilihan. Buka produk melalui tautan affiliate yang disediakan untuk melihat detail dan harga terbaru di Shopee.</p></div><a class="affiliate-home-more" href="#affiliateShopeePanel" onclick="buka('pasar',document.querySelectorAll('nav button')[3]);setTimeout(()=>document.getElementById('affiliateShopeePanel')?.scrollIntoView({behavior:'smooth',block:'start'}),150);return false;">Lihat Pasar Online ↗</a></div>
 <div class="affiliate-home-grid"><article class="affiliate-home-card" data-product-id="41561442154" data-category="tumbler">
 <div style="padding:12px 13px 0;display:flex;justify-content:space-between;gap:8px;align-items:center"><span style="font-size:11px;color:#64748b">ID 41561442154</span><span class="affiliate-rate">Komisi 11,5%</span></div>
 <div class="affiliate-home-body"><span style="font-size:11px;color:#ea580c;font-weight:750;text-transform:uppercase;letter-spacing:.04em">Tumbler</span><strong>Botol Tumbler 900ml Stainless Steel Tahan Panas Dingin</strong><span style="font-size:20px;font-weight:850;color:#0f766e">Rp64.000</span><span style="font-size:12px;color:#64748b">Toko: HLF24oke</span><span style="font-size:12px;color:#475569">Komisi tertera: <strong>Rp7.039</strong></span><a href="https://s.shopee.co.id/30p5o4bnzV" target="_blank" rel="noopener noreferrer sponsored">Beli di Shopee ↗</a></div></article><article class="affiliate-home-card" data-product-id="41830356970" data-category="parfum">
