@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+<title id="title">KasUsaha Lite</title>
+<desc id="desc">Ikon aplikasi KasUsaha Lite berupa huruf K dan grafik keuangan.</desc>
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f46e5"/><stop offset="1" stop-color="#0f766e"/></linearGradient><linearGradient id="card" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#e0e7ff"/></linearGradient></defs>
+<rect width="512" height="512" rx="112" fill="url(#bg)"/>
+<circle cx="390" cy="122" r="72" fill="#ffffff" opacity=".12"/><circle cx="116" cy="402" r="94" fill="#ffffff" opacity=".08"/>
+<rect x="94" y="92" width="324" height="328" rx="42" fill="url(#card)"/>
+<path d="M154 164h48v74l75-74h62l-91 92 98 105h-65l-79-85v85h-48z" fill="#3730a3"/>
+<path d="M307 303l32-36 26 20 35-47" fill="none" stroke="#0f766e" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="307" cy="303" r="8" fill="#0f766e"/><circle cx="339" cy="267" r="8" fill="#0f766e"/><circle cx="365" cy="287" r="8" fill="#0f766e"/><circle cx="400" cy="240" r="8" fill="#0f766e"/>
+</svg>
