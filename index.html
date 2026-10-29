@@ -723,6 +723,12 @@ footer{line-height:1.7}
 .ks-suggestion-card .status{margin-top:12px}
 .ks-suggestion-card .status.error{background:#fff0f0;color:#8a1c1c}
 @media(max-width:650px){.ks-suggestion-heading{gap:10px}.ks-suggestion-icon{flex-basis:40px;width:40px;height:40px}}
+
+#navKasUsahaSaran{position:relative}
+.ks-suggestion-toast{position:fixed;right:18px;bottom:18px;z-index:10050;max-width:min(420px,calc(100vw - 32px));padding:14px 16px;border-radius:14px;box-shadow:0 12px 36px rgba(15,23,42,.22);background:#ecfdf5;border:1px solid #86efac;color:#14532d;display:flex;align-items:flex-start;gap:10px;font-weight:600}
+.ks-suggestion-toast[hidden]{display:none}
+.ks-suggestion-toast.error{background:#fff1f2;border-color:#fda4af;color:#9f1239}
+.ks-suggestion-toast button{border:0;background:transparent;color:inherit;font-size:20px;line-height:1;cursor:pointer;padding:0 2px}
 </style>
 
 </head>
@@ -750,7 +756,7 @@ footer{line-height:1.7}
 <div class="kasusaha-pwa-install"><button id="kasusahaInstallButton" type="button" class="kasusaha-install-button" aria-describedby="kasusahaInstallStatus">Cara pasang aplikasi</button><div id="kasusahaInstallHelp" hidden><p id="kasusahaInstallStatus" role="status" aria-live="polite">Pasang KasUsaha Lite sebagai aplikasi di perangkat Anda.</p></div><p id="kasusahaInstallStatusFallback" class="kasusaha-install-caption">Bisa dibuka sebagai website atau dipasang ke layar utama.</p></div>
 </header>
 <nav aria-label="Navigasi utama">
-<button class="active" type="button" onclick="buka('beranda',this)">Beranda</button><button id="navCompleteGuide" type="button" onclick="buka('panduanLengkap',this)">📘 Panduan Lengkap</button><button type="button" onclick="buka('transaksi',this)">Transaksi</button><button type="button" onclick="buka('produk',this)">Produk Saya</button><button type="button" onclick="buka('pasar',this)">Pasar Online</button><button type="button" onclick="buka('paketKasUsaha',this)">Paket &amp; Harga</button><button type="button" onclick="buka('keranjang',this)">Keranjang <span id="jumlahKeranjang">0</span></button><button type="button" onclick="buka('cadangan',this)">Cadangan</button><button type="button" onclick="buka('akun',this)">Login Owner / Penjual</button><button type="button" onclick="buka('loginKaryawan',this)">Login Karyawan</button><button type="button" onclick="buka('akunPembeli',this)">Akun Pembeli</button><button type="button" onclick="buka('pesananSaya',this)">Pesanan Saya</button><button type="button" onclick="buka('pesananMasuk',this)">Pesanan Masuk</button>
+<button class="active" type="button" onclick="buka('beranda',this)">Beranda</button><button id="navCompleteGuide" type="button" onclick="buka('panduanLengkap',this)">📘 Panduan Lengkap</button><button type="button" onclick="buka('transaksi',this)">Transaksi</button><button type="button" onclick="buka('produk',this)">Produk Saya</button><button type="button" onclick="buka('pasar',this)">Pasar Online</button><button type="button" onclick="buka('paketKasUsaha',this)">Paket &amp; Harga</button><button type="button" onclick="buka('keranjang',this)">Keranjang <span id="jumlahKeranjang">0</span></button><button type="button" onclick="buka('cadangan',this)">Cadangan</button><button type="button" onclick="buka('akun',this)">Login Owner / Penjual</button><button type="button" onclick="buka('loginKaryawan',this)">Login Karyawan</button><button type="button" onclick="buka('akunPembeli',this)">Akun Pembeli</button><button type="button" onclick="buka('pesananSaya',this)">Pesanan Saya</button><button type="button" onclick="buka('pesananMasuk',this)">Pesanan Masuk</button><button type="button" id="navKasUsahaSaran" onclick="bukaKotakSaran(this)">💬 Kotak Saran</button>
 </nav>
 <section id="kasusahaPaymentReturnNotice" class="kasusaha-payment-return" hidden role="status" aria-live="polite"><strong id="kasusahaPaymentReturnTitle">Memeriksa pembayaran…</strong><p id="kasusahaPaymentReturnText">Status pembayaran sedang diverifikasi oleh server.</p><div class="kasusaha-payment-return-actions"><button type="button" class="primary" id="kasusahaPaymentOpenAccount">Buka Akun Pembeli &amp; Lisensi</button><button type="button" class="secondary" id="kasusahaPaymentOpenInstall">Panduan instal PWA</button></div><div class="kasusaha-install-after-payment"><h3>Pasang KasUsaha Lite setelah pembayaran</h3><p><strong>HP Android (Chrome):</strong> tekan menu ⋮ di Chrome, lalu pilih Instal aplikasi atau Tambahkan ke layar utama. Ikuti konfirmasi.</p><p><strong>iPhone/iPad:</strong> buka situs melalui Safari, tekan Bagikan, pilih Add to Home Screen / Tambahkan ke Layar Utama, lalu Tambah.</p><p><strong>Komputer (Chrome/Edge):</strong> gunakan ikon Instal di bilah alamat atau menu browser, lalu pilih Install KasUsaha Lite bila tersedia.</p><p>Sesudah terpasang, buka ikon aplikasi dan login dengan akun pembeli yang sama.</p><p class="small">Pemasangan perlu persetujuan pengguna dan tidak berlangsung otomatis. Jika opsi belum muncul, gunakan situs melalui browser yang didukung. Jangan membayar ulang saat status sedang diperiksa.</p></div></section>
 <main>
@@ -3441,6 +3447,42 @@ sb.auth.onAuthStateChange((event,session)=>{financeBusiness=null;financeMemberRo
 </script>
 <div id="areaLaporanCetak" aria-live="polite"></div>
 
+
+<div id="ksSuggestionToast" class="ks-suggestion-toast" role="status" aria-live="polite" hidden>
+  <span id="ksSuggestionToastIcon" aria-hidden="true">✓</span>
+  <span id="ksSuggestionToastText">Notifikasi kotak saran</span>
+  <button type="button" id="ksSuggestionToastClose" aria-label="Tutup notifikasi">×</button>
+</div>
+<script id="ks-suggestion-navigation">
+(() => {
+  const toast = document.getElementById('ksSuggestionToast');
+  const toastText = document.getElementById('ksSuggestionToastText');
+  const toastIcon = document.getElementById('ksSuggestionToastIcon');
+  const close = document.getElementById('ksSuggestionToastClose');
+  window.tampilkanNotifikasiSaran = (message, isError = false) => {
+    if (!toast) return;
+    toastText.textContent = message;
+    toastIcon.textContent = isError ? '!' : '✓';
+    toast.classList.toggle('error', Boolean(isError));
+    toast.hidden = false;
+  };
+  if (close) close.addEventListener('click', () => { toast.hidden = true; });
+  window.bukaKotakSaran = (button) => {
+    const berandaButton = document.querySelector('nav[aria-label="Navigasi utama"] button[onclick*="buka(\\'beranda"]') || document.querySelector('nav[aria-label="Navigasi utama"] button');
+    if (typeof window.buka === 'function') window.buka('beranda', berandaButton);
+    const target = document.getElementById('ksSuggestionTitle');
+    window.setTimeout(() => {
+      const form = document.getElementById('kasusahaSuggestionForm');
+      if (target) target.scrollIntoView({behavior:'smooth', block:'start'});
+      if (form) {
+        const message = document.getElementById('ksSuggestionMessage');
+        if (message) message.focus({preventScroll:true});
+      }
+    }, 120);
+  };
+})();
+</script>
+
 <script id="ks-suggestion-submit">
 (() => {
   const form = document.getElementById('kasusahaSuggestionForm');
@@ -3453,6 +3495,7 @@ sb.auth.onAuthStateChange((event,session)=>{financeBusiness=null;financeMemberRo
     if (!navigator.onLine) {
       status.hidden = false; status.classList.add('error');
       status.textContent = 'Koneksi internet tidak tersedia. Sambungkan internet lalu kirim kembali saran Anda.';
+      if (typeof window.tampilkanNotifikasiSaran === 'function') window.tampilkanNotifikasiSaran('Saran belum terkirim. Sambungkan internet lalu coba kembali.', true);
       return;
     }
     if (typeof sb === 'undefined' || !sb) {
@@ -3481,10 +3524,12 @@ sb.auth.onAuthStateChange((event,session)=>{financeBusiness=null;financeMemberRo
       if (error) throw error;
       form.reset();
       status.textContent = 'Terima kasih! Saran Anda berhasil dikirim kepada pengelola KasUsaha Lite.';
+      if (typeof window.tampilkanNotifikasiSaran === 'function') window.tampilkanNotifikasiSaran('Saran berhasil masuk ke sistem KasUsaha Lite. Terima kasih atas masukan Anda.');
     } catch (error) {
       console.warn('Pengiriman saran KasUsaha Lite gagal:', error);
       status.classList.add('error');
       status.textContent = 'Saran belum berhasil dikirim. Periksa koneksi internet dan coba lagi. Jika masih gagal, hubungi pengelola.';
+      if (typeof window.tampilkanNotifikasiSaran === 'function') window.tampilkanNotifikasiSaran('Pengiriman saran gagal. Periksa koneksi lalu coba kembali.', true);
     } finally {
       button.disabled = false; button.textContent = 'Kirim saran';
     }
