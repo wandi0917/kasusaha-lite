@@ -833,26 +833,7 @@ async function bagikanKasUsahaLite(){
 <section id="transaksi" class="tab">
 <div id="financeWorkspaceInfo" class="finance-workspace-top" hidden></div>
 <div id="offlineTransactionBanner" class="offline-transaction-banner" role="status" aria-live="polite" hidden></div>
-<div id="financeSetupForms">
-<div class="card" id="financeFirstBusinessGuide"><h4>Langkah pertama: buat data usaha</h4><p>Akun Anda sudah login. Untuk mulai memakai fitur utama KasUsaha Lite, buka menu <strong>Transaksi</strong>, lengkapi data usaha di bawah, lalu tekan <strong>Simpan Usaha</strong>. Setelah tersimpan, menu kasir, absensi, dan laporan usaha akan terbuka.</p></div>
-<div id="financeSavedBusinesses" class="card" hidden><h4>Usaha yang sudah terdaftar</h4><p class="small">Klik nama usaha untuk memakai usaha yang sudah terhubung dengan akun ini.</p><div id="financeSavedBusinessList" class="grid"></div></div>
-<label for="financeBusinessName">Nama usaha <span class="required">*</span></label>
-<input id="financeBusinessName" maxlength="120" required placeholder="Contoh: Kedai Kopi Seroja">
-<label for="financeBusinessType">Jenis usaha <span class="required">*</span></label>
-<select id="financeBusinessType" required><option value="">Pilih jenis usaha</option><option>Warung / Sembako</option><option>Restoran / Kedai / Kafe</option><option>Toko Retail</option><option>Jasa</option><option>Produksi / Manufaktur</option><option>Usaha Online</option><option>Salon / Kecantikan</option><option>Bengkel</option><option>Pertanian / Perikanan</option><option>Lainnya</option></select>
-<label for="financeBusinessPhone">Nomor telepon usaha (opsional)</label>
-<input id="financeBusinessPhone" maxlength="40" inputmode="tel" placeholder="Contoh: 081234567890">
-<label for="financeBusinessAddress">Alamat usaha (opsional)</label>
-<input id="financeBusinessAddress" maxlength="300" placeholder="Nama jalan, nomor, atau patokan">
-<label for="financeBusinessCity">Kota / Kabupaten (opsional)</label>
-<input id="financeBusinessCity" maxlength="100" placeholder="Contoh: Tanjungpinang">
-<button id="financeCreateBusiness" type="button" class="primary wide" onclick="financeCreateBusiness()">Simpan Usaha</button>
-<hr>
-<h4>Sudah menjadi Karyawan?</h4><p class="small">Karyawan tidak perlu membuat usaha baru. Masukkan kode undangan dari Owner.</p>
-<label for="financeInviteInput">Kode undangan dari Owner</label>
-<input id="financeInviteInput" maxlength="20" autocapitalize="characters" placeholder="Masukkan kode undangan">
-<button id="financeJoinBusiness" type="button" class="secondary wide" onclick="financeJoinBusiness()">Gabung sebagai Karyawan</button>
-</div>
+
 <section id="transactionGuide" class="transaction-guide" aria-label="Panduan menu transaksi"><strong>Mulai dari sini</strong><div style="margin-top:4px;font-size:13px;line-height:1.6">Pilih kegiatan yang ingin dilakukan. Gunakan menu laporan untuk melihat angka dan tabel yang sesuai. Laporan keuangan lengkap dan harga modal hanya tersedia untuk Owner.</div></section>
 <div id="transactionShortcuts" class="transaction-shortcuts" aria-label="Menu cepat transaksi">
 <button type="button" class="transaction-shortcut" onclick="bukaPanelTransaksi('kasir')"><span class="shortcut-icon">🧾</span><strong>Kasir Cepat</strong><span>Catat penjualan barang</span></button>
@@ -904,6 +885,26 @@ async function bagikanKasUsahaLite(){
 <div class="card" id="attendanceCard"><h3>Absensi Harian</h3><p id="attendanceActivePerson" class="status" aria-live="polite">Petugas: menunggu login.</p><p class="small">Absen menggunakan akun masing-masing. Usaha dan daftar barang tetap tersimpan; tidak perlu dibuat ulang setiap hari.</p><div id="attendanceStatus" class="status" role="status">Memuat absensi hari ini...</div><div class="grid"><button type="button" id="attendanceCheckIn" class="primary">Absen Masuk</button><button type="button" id="attendanceCheckOut" class="secondary">Absen Pulang</button></div><div id="attendanceOwnerList" class="table-wrap" hidden><h4>Absensi hari ini</h4><p class="small">Owner dapat mengedit jam masuk dan pulang jika ada catatan yang perlu dikoreksi.</p><table class="report-table"><thead><tr><th>Akun</th><th>Masuk</th><th>Pulang</th><th>Aksi</th></tr></thead><tbody id="attendanceRows"></tbody></table></div><div class="card" id="attendancePayrollCard"><h4>Perhitungan jam kerja dan gaji</h4><p class="small">Menu ini tersedia untuk Owner dan Karyawan. Setiap akun mengisi gaji per jamnya sendiri. Total jam dihitung dari catatan absen masuk-pulang lengkap; Owner melihat ringkasan semua akun, sedangkan Karyawan hanya melihat ringkasan akunnya sendiri.</p><div class="grid"><div><label for="attendanceHourlyWage">Gaji per jam (Rp)</label><input id="attendanceHourlyWage" type="number" min="0" step="500" value="0" placeholder="Contoh: 15000"></div><div style="align-self:end"><button id="attendanceSaveWage" type="button" class="secondary wide">Simpan gaji per jam</button></div></div><div id="attendancePayrollStatus" class="status" role="status">Memuat jam kerja dan gaji...</div><div class="table-wrap"><table class="report-table"><thead><tr><th>Akun</th><th>Hari kerja tercatat</th><th>Total jam tercatat</th><th>Gaji per jam</th><th>Total gaji</th></tr></thead><tbody id="attendancePayrollRows"><tr><td colspan="5">Memuat...</td></tr></tbody></table></div></div></div>
 <div class="card" id="reportCategoryChooser"><h3>Pilih Menu dan Kategori Laporan</h3><p class="small">Pilih kategori untuk menampilkan laporan yang diperlukan. Setiap tabel memiliki judul tersendiri.</p><label for="reportCategorySelect">Menu laporan</label><select id="reportCategorySelect"><option value="">— Pilih kategori laporan —</option><option value="sales">Laporan Penjualan</option><option value="stock">Laporan Stok Barang</option><option value="finance">Laporan Keuangan Lengkap (Owner)</option><option value="income">Laporan Pemasukan (Karyawan)</option><option value="daily">Laporan Keuangan Harian (Lokal)</option><option value="history">Riwayat Transaksi (Lokal)</option></select></div>
 
+<div id="financeSetupForms">
+<div class="card" id="financeFirstBusinessGuide"><h4>Langkah pertama: buat data usaha</h4><p>Akun Anda sudah login. Untuk mulai memakai fitur utama KasUsaha Lite, buka menu <strong>Transaksi</strong>, lengkapi data usaha di bawah, lalu tekan <strong>Simpan Usaha</strong>. Setelah tersimpan, menu kasir, absensi, dan laporan usaha akan terbuka.</p></div>
+<div id="financeSavedBusinesses" class="card" hidden><h4>Usaha yang sudah terdaftar</h4><p class="small">Klik nama usaha untuk memakai usaha yang sudah terhubung dengan akun ini.</p><div id="financeSavedBusinessList" class="grid"></div></div>
+<label for="financeBusinessName">Nama usaha <span class="required">*</span></label>
+<input id="financeBusinessName" maxlength="120" required placeholder="Contoh: Kedai Kopi Seroja">
+<label for="financeBusinessType">Jenis usaha <span class="required">*</span></label>
+<select id="financeBusinessType" required><option value="">Pilih jenis usaha</option><option>Warung / Sembako</option><option>Restoran / Kedai / Kafe</option><option>Toko Retail</option><option>Jasa</option><option>Produksi / Manufaktur</option><option>Usaha Online</option><option>Salon / Kecantikan</option><option>Bengkel</option><option>Pertanian / Perikanan</option><option>Lainnya</option></select>
+<label for="financeBusinessPhone">Nomor telepon usaha (opsional)</label>
+<input id="financeBusinessPhone" maxlength="40" inputmode="tel" placeholder="Contoh: 081234567890">
+<label for="financeBusinessAddress">Alamat usaha (opsional)</label>
+<input id="financeBusinessAddress" maxlength="300" placeholder="Nama jalan, nomor, atau patokan">
+<label for="financeBusinessCity">Kota / Kabupaten (opsional)</label>
+<input id="financeBusinessCity" maxlength="100" placeholder="Contoh: Tanjungpinang">
+<button id="financeCreateBusiness" type="button" class="primary wide" onclick="financeCreateBusiness()">Simpan Usaha</button>
+<hr>
+<h4>Sudah menjadi Karyawan?</h4><p class="small">Karyawan tidak perlu membuat usaha baru. Masukkan kode undangan dari Owner.</p>
+<label for="financeInviteInput">Kode undangan dari Owner</label>
+<input id="financeInviteInput" maxlength="20" autocapitalize="characters" placeholder="Masukkan kode undangan">
+<button id="financeJoinBusiness" type="button" class="secondary wide" onclick="financeJoinBusiness()">Gabung sebagai Karyawan</button>
+</div>
 
 </div>
 <form id="financeForm">
@@ -2155,7 +2156,8 @@ function setTransactionBusinessSetupMode(active){
  const guide=$('transactionGuide');
  const shortcuts=$('transactionShortcuts');
  const chooser=$('reportCategoryChooser');
- if(setup)setup.hidden=false;
+ const transaction=$('transaksi');
+ if(setup){setup.hidden=false;if(active&&transaction&&guide)transaction.insertBefore(setup,guide);}
  if(guide)guide.hidden=!!active;
  if(shortcuts)shortcuts.hidden=!!active;
  if(chooser)chooser.hidden=!!active;
