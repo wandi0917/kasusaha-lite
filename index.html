@@ -864,7 +864,7 @@ async function bagikanKasUsahaLite(){
 <button id="quickSaleSave" class="primary wide" type="submit">Simpan transaksi setelah periksa total</button>
 </form>
 <div id="ownerStoreCatalog" class="card" hidden>
-<h3>Daftar barang toko (Owner)</h3>
+<h3>Langkah berikutnya: isikan barang di toko Anda</h3>
 <p class="small">Masukkan daftar barang dan harga saat usaha mulai digunakan. Kode barang sebaiknya singkat dan mudah diketik karyawan, misalnya KOP, TEH, MIE.</p>
 <form id="storeProductForm">
 <input id="storeProductEditId" type="hidden" value="">
@@ -2178,8 +2178,17 @@ async function financeCreateBusiness(){
   const {data:sd,error:se}=await sb.auth.getSession();if(se)throw se;if(!sd.session)throw new Error('Login terlebih dahulu melalui menu Akun Pembeli atau Akun Penjual.');
   const {data,error}=await sb.rpc('create_business_workspace_details',{p_business_name:name,p_business_type:type,p_phone:phone||null,p_address:address||null,p_city:city||null});if(error)throw error;
   await loadFinanceWorkspace();
-  setFinanceStatus((data.business_name||name)+' berhasil disimpan. Peran akun: Owner. Anda sekarang dapat memakai Kasir Cepat, Absensi, dan laporan.');
   const guide=$('financeFirstBusinessGuide');if(guide)guide.hidden=true;
+  if(financeBusiness&&financeMemberRole==='owner'){
+   const catalog=$('ownerStoreCatalog');
+   const heading=catalog?.querySelector('h3');
+   if(heading)heading.textContent='Langkah berikutnya: isikan barang di toko Anda';
+   if(catalog){catalog.hidden=false;catalog.scrollIntoView({behavior:'smooth',block:'start'});}
+   const codeField=$('storeProductCode');if(codeField){setTimeout(()=>codeField.focus({preventScroll:true}),350);}
+   setFinanceStatus((data.business_name||name)+' berhasil disimpan. Berikutnya, isikan barang di toko Anda: kode, nama, harga modal, harga jual, stok awal, dan satuan. Setelah barang disimpan, Anda bisa mulai memakai Kasir Cepat.');
+  }else{
+   setFinanceStatus((data.business_name||name)+' berhasil disimpan. Usaha belum terpilih sebagai Owner; pilih usaha yang sesuai untuk mengisi barang toko.');
+  }
  }catch(e){setFinanceStatus('Usaha belum berhasil disimpan: '+String(e.message||e).slice(0,220),true);}finally{btn.disabled=false;}
 }
 async function financeJoinBusiness(){
