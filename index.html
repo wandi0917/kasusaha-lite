@@ -1637,7 +1637,7 @@ function kosongkanKeranjang(){if(!keranjang.length)return;if(confirm('Kosongkan 
 function perbaruiModePengirimanCheckout(){
  const digitalOnly=keranjang.length>0&&keranjang.every(x=>String(x.id).startsWith('online:')&&Number(String(x.id).slice(7))===7);
  const ids=['alamatPembeli','kodePosPembeli','cekOngkirBtn','pilihanOngkir','ringkasanOngkir'];
- ids.forEach(id=>{const el=$(id);if(!el)return;el.hidden=digitalOnly;const label=el.previousElementSibling;if(label&&label.tagName==='LABEL')label.hidden=digitalOnly;});
+ ids.forEach(id=>{const el=$(id);if(!el)return;el.hidden=digitalOnly;el.style.display=digitalOnly?'none':'';const label=el.previousElementSibling;if(label&&label.tagName==='LABEL'){label.hidden=digitalOnly;label.style.display=digitalOnly?'none':'';}});
  const address=$('alamatPembeli');if(address)address.required=!digitalOnly;
  const select=$('pilihanOngkir');if(select){select.required=!digitalOnly;if(digitalOnly){select.replaceChildren(new Option('Produk digital tidak memerlukan ongkir',''));biteshipQuoteId=null;biteshipQuoteFingerprint='';$('ringkasanOngkir').textContent='Keranjang hanya berisi produk digital. Tidak ada ongkos kirim.';}else if(!select.value){select.replaceChildren(new Option('Cek ongkir terlebih dahulu',''));}}
  const btn=$('cekOngkirBtn');if(btn)btn.hidden=digitalOnly;
