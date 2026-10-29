@@ -731,6 +731,13 @@ footer{line-height:1.7}
 .ks-suggestion-toast button{border:0;background:transparent;color:inherit;font-size:20px;line-height:1;cursor:pointer;padding:0 2px}
 </style>
 
+<style id="ks-suggestion-inbox-style">
+#navKasUsahaSaranMasuk[hidden],#ksSuggestionInboxPanel[hidden]{display:none!important}
+.ks-suggestion-inbox-item{padding:13px;margin:10px 0;border:1px solid #dbe3f0;border-radius:12px;background:#fff;overflow-wrap:anywhere}
+.ks-suggestion-inbox-item h3{margin:0 0 6px;color:#312e81;font-size:15px}
+.ks-suggestion-inbox-item p{white-space:pre-wrap;line-height:1.55;margin:8px 0}
+.ks-suggestion-inbox-meta{font-size:12px;color:#64748b;line-height:1.6}
+</style>
 </head>
 <body>
 <header class="ks-brand-header">
@@ -757,9 +764,18 @@ footer{line-height:1.7}
 </header>
 <nav aria-label="Navigasi utama">
 <button class="active" type="button" onclick="buka('beranda',this)">Beranda</button><button id="navCompleteGuide" type="button" onclick="buka('panduanLengkap',this)">📘 Panduan Lengkap</button><button type="button" onclick="buka('transaksi',this)">Transaksi</button><button type="button" onclick="buka('produk',this)">Produk Saya</button><button type="button" onclick="buka('pasar',this)">Pasar Online</button><button type="button" onclick="buka('paketKasUsaha',this)">Paket &amp; Harga</button><button type="button" onclick="buka('keranjang',this)">Keranjang <span id="jumlahKeranjang">0</span></button><button type="button" onclick="buka('cadangan',this)">Cadangan</button><button type="button" onclick="buka('akun',this)">Login Owner / Penjual</button><button type="button" onclick="buka('loginKaryawan',this)">Login Karyawan</button><button type="button" onclick="buka('akunPembeli',this)">Akun Pembeli</button><button type="button" onclick="buka('pesananSaya',this)">Pesanan Saya</button><button type="button" onclick="buka('pesananMasuk',this)">Pesanan Masuk</button><button type="button" id="navKasUsahaSaran" onclick="bukaKotakSaran(this)">💬 Kotak Saran</button>
+<button type="button" id="navKasUsahaSaranMasuk" onclick="bukaKotakSaranMasuk(this)" hidden>🔔 Saran Masuk <span id="ksSuggestionInboxBadge" style="display:inline-block;margin-left:4px;padding:2px 7px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px">0</span></button>
 </nav>
 <section id="kasusahaPaymentReturnNotice" class="kasusaha-payment-return" hidden role="status" aria-live="polite"><strong id="kasusahaPaymentReturnTitle">Memeriksa pembayaran…</strong><p id="kasusahaPaymentReturnText">Status pembayaran sedang diverifikasi oleh server.</p><div class="kasusaha-payment-return-actions"><button type="button" class="primary" id="kasusahaPaymentOpenAccount">Buka Akun Pembeli &amp; Lisensi</button><button type="button" class="secondary" id="kasusahaPaymentOpenInstall">Panduan instal PWA</button></div><div class="kasusaha-install-after-payment"><h3>Pasang KasUsaha Lite setelah pembayaran</h3><p><strong>HP Android (Chrome):</strong> tekan menu ⋮ di Chrome, lalu pilih Instal aplikasi atau Tambahkan ke layar utama. Ikuti konfirmasi.</p><p><strong>iPhone/iPad:</strong> buka situs melalui Safari, tekan Bagikan, pilih Add to Home Screen / Tambahkan ke Layar Utama, lalu Tambah.</p><p><strong>Komputer (Chrome/Edge):</strong> gunakan ikon Instal di bilah alamat atau menu browser, lalu pilih Install KasUsaha Lite bila tersedia.</p><p>Sesudah terpasang, buka ikon aplikasi dan login dengan akun pembeli yang sama.</p><p class="small">Pemasangan perlu persetujuan pengguna dan tidak berlangsung otomatis. Jika opsi belum muncul, gunakan situs melalui browser yang didukung. Jangan membayar ulang saat status sedang diperiksa.</p></div></section>
 <main>
+<section id="ksSuggestionInboxPanel" class="card" hidden aria-labelledby="ksSuggestionInboxTitle" style="max-width:1000px;margin:12px auto;border:1px solid #c7d2fe;background:#f8faff">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+    <div><h2 id="ksSuggestionInboxTitle" style="margin:0;color:#3730a3">🔔 Saran Masuk — Pengelola</h2><p class="small" style="margin:6px 0">Hanya akun Owner resmi yang dapat membaca masukan pengguna.</p></div>
+    <button type="button" class="secondary" onclick="muatKotakSaranMasuk()">↻ Muat ulang</button>
+  </div>
+  <p id="ksSuggestionInboxStatus" class="status" role="status" aria-live="polite">Memeriksa akses Owner…</p>
+  <div id="ksSuggestionInboxList"></div>
+</section>
 <section id="beranda" class="tab active">
 <section class="ks-home-showcase" aria-label="Promosi fitur KasUsaha Lite">
   <div class="ks-showcase-copy">
@@ -3662,5 +3678,112 @@ sb.auth.onAuthStateChange((event,session)=>{financeBusiness=null;financeMemberRo
 })();
 </script>
 
+<script id="ks-suggestion-inbox-script">
+(() => {
+  const $s = (id) => document.getElementById(id);
+  let ownerAllowed = false;
+  let loading = false;
+  const safeText = (value) => String(value == null ? '' : value);
+  function showToast(message, isError=false) {
+    let toast = $s('ksSuggestionToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'ksSuggestionToast';
+      toast.setAttribute('role','status');
+      toast.setAttribute('aria-live','polite');
+      toast.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:9999;max-width:min(420px,calc(100vw - 32px));padding:13px 16px;border-radius:12px;box-shadow:0 8px 28px #0002;font-size:14px;line-height:1.5;';
+      document.body.appendChild(toast);
+    }
+    toast.style.background = isError ? '#fee2e2' : '#dcfce7';
+    toast.style.color = isError ? '#991b1b' : '#14532d';
+    toast.textContent = message;
+    toast.hidden = false;
+    if (toast._hideTimer) clearTimeout(toast._hideTimer);
+    toast._hideTimer = setTimeout(() => { toast.hidden = true; }, 6000);
+  }
+  window.tampilkanNotifikasiSaran = showToast;
+  function setInboxStatus(message, error=false) {
+    const status=$s('ksSuggestionInboxStatus');
+    if(status){status.hidden=false;status.className=error?'status error':'status';status.textContent=message;}
+  }
+  async function checkOwner() {
+    if (typeof sb === 'undefined' || !sb) return false;
+    const {data:{user},error:userError}=await sb.auth.getUser();
+    if(userError || !user) return false;
+    const {data,error}=await sb.from('business_members').select('role,active')
+      .eq('user_id',user.id).eq('role','owner').eq('active',true).limit(1);
+    if(error) return false;
+    return Array.isArray(data) && data.length>0;
+  }
+  window.muatKotakSaranMasuk = async function() {
+    if(loading)return;
+    loading=true;
+    const list=$s('ksSuggestionInboxList');
+    const button=$s('navKasUsahaSaranMasuk');
+    try {
+      ownerAllowed=await checkOwner();
+      if(!ownerAllowed) {
+        if(button)button.hidden=true;
+        const panel=$s('ksSuggestionInboxPanel');if(panel)panel.hidden=true;
+        return;
+      }
+      if(button)button.hidden=false;
+      const {count,error:countError}=await sb.from('kasusaha_suggestions').select('id',{count:'exact',head:true});
+      if(countError)throw countError;
+      const badge=$s('ksSuggestionInboxBadge');
+      if(badge)badge.textContent=String(count||0);
+      if(!list)return;
+      const {data,error}=await sb.from('kasusaha_suggestions')
+        .select('id,category,sender_name,contact,message,created_at')
+        .order('created_at',{ascending:false}).limit(30);
+      if(error)throw error;
+      list.replaceChildren();
+      if(!data || !data.length) {
+        setInboxStatus('Belum ada saran masuk.');
+        return;
+      }
+      setInboxStatus('Menampilkan '+data.length+' saran terbaru'+((count||0)>data.length?' dari '+count+' saran total.':' .'));
+      data.forEach(item=>{
+        const card=document.createElement('article');card.className='ks-suggestion-inbox-item';
+        const title=document.createElement('h3');title.textContent=safeText(item.category||'Saran umum');
+        const meta=document.createElement('div');meta.className='ks-suggestion-inbox-meta';
+        const when=item.created_at?new Date(item.created_at).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}):'Waktu tidak tersedia';
+        meta.textContent=when+' • '+(item.sender_name||'Pengguna tanpa nama')+(item.contact?' • Kontak: '+item.contact:'');
+        const message=document.createElement('p');message.textContent=safeText(item.message);
+        card.append(title,meta,message);list.appendChild(card);
+      });
+      setInboxStatus('Saran terbaru berhasil dimuat. Total tersimpan: '+(count||0)+'.');
+    } catch(error) {
+      console.warn('Kotak Saran Masuk gagal dimuat:',error);
+      setInboxStatus('Saran belum dapat dimuat. Periksa koneksi dan akses Owner.',true);
+    } finally { loading=false; }
+  };
+  window.bukaKotakSaranMasuk = async function(button) {
+    const panel=$s('ksSuggestionInboxPanel');
+    if(!panel)return;
+    panel.hidden=false;
+    await window.muatKotakSaranMasuk();
+    if(typeof window.buka==='function' && button) {
+      // Keep the current page intact; the inbox is a global Owner panel.
+    }
+    panel.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+  async function refreshInboxVisibility() {
+    const button=$s('navKasUsahaSaranMasuk');
+    const panel=$s('ksSuggestionInboxPanel');
+    try {
+      ownerAllowed=await checkOwner();
+      if(button)button.hidden=!ownerAllowed;
+      if(panel && !ownerAllowed)panel.hidden=true;
+      if(ownerAllowed)await window.muatKotakSaranMasuk();
+    } catch(_) { if(button)button.hidden=true; }
+  }
+  if(typeof sb!=='undefined' && sb && sb.auth) {
+    sb.auth.onAuthStateChange(()=>{setTimeout(refreshInboxVisibility,900);});
+    window.addEventListener('focus',()=>{if(ownerAllowed)window.muatKotakSaranMasuk();});
+    setTimeout(refreshInboxVisibility,1200);
+  }
+})();
+</script>
 </body>
 </html>
