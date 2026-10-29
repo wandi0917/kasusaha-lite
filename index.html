@@ -885,12 +885,22 @@ async function bagikanKasUsahaLite(){
 <div class="card" id="reportCategoryChooser"><h3>Pilih Menu dan Kategori Laporan</h3><p class="small">Pilih kategori untuk menampilkan laporan yang diperlukan. Setiap tabel memiliki judul tersendiri.</p><label for="reportCategorySelect">Menu laporan</label><select id="reportCategorySelect"><option value="">— Pilih kategori laporan —</option><option value="sales">Laporan Penjualan</option><option value="stock">Laporan Stok Barang</option><option value="finance">Laporan Keuangan Lengkap (Owner)</option><option value="income">Laporan Pemasukan (Karyawan)</option><option value="daily">Laporan Keuangan Harian (Lokal)</option><option value="history">Riwayat Transaksi (Lokal)</option></select></div>
 
 <div id="financeSetupForms">
+<div class="card" id="financeFirstBusinessGuide"><h4>Langkah pertama: buat data usaha</h4><p>Akun Anda sudah login. Untuk mulai memakai fitur utama KasUsaha Lite, buka menu <strong>Transaksi</strong>, lengkapi data usaha di bawah, lalu tekan <strong>Simpan Usaha</strong>. Setelah tersimpan, menu kasir, absensi, dan laporan usaha akan terbuka.</p></div>
 <div id="financeSavedBusinesses" class="card" hidden><h4>Usaha yang sudah terdaftar</h4><p class="small">Klik nama usaha untuk memakai usaha yang sudah terhubung dengan akun ini.</p><div id="financeSavedBusinessList" class="grid"></div></div>
-<label for="financeBusinessName">Nama usaha (untuk owner)</label>
-<input id="financeBusinessName" maxlength="120" placeholder="Contoh: Toko KasUsaha Lite">
-<button id="financeCreateBusiness" type="button" class="primary wide" onclick="financeCreateBusiness()">Buat usaha sebagai Owner</button>
+<label for="financeBusinessName">Nama usaha <span class="required">*</span></label>
+<input id="financeBusinessName" maxlength="120" required placeholder="Contoh: Kedai Kopi Seroja">
+<label for="financeBusinessType">Jenis usaha <span class="required">*</span></label>
+<select id="financeBusinessType" required><option value="">Pilih jenis usaha</option><option>Warung / Sembako</option><option>Restoran / Kedai / Kafe</option><option>Toko Retail</option><option>Jasa</option><option>Produksi / Manufaktur</option><option>Usaha Online</option><option>Salon / Kecantikan</option><option>Bengkel</option><option>Pertanian / Perikanan</option><option>Lainnya</option></select>
+<label for="financeBusinessPhone">Nomor telepon usaha (opsional)</label>
+<input id="financeBusinessPhone" maxlength="40" inputmode="tel" placeholder="Contoh: 081234567890">
+<label for="financeBusinessAddress">Alamat usaha (opsional)</label>
+<input id="financeBusinessAddress" maxlength="300" placeholder="Nama jalan, nomor, atau patokan">
+<label for="financeBusinessCity">Kota / Kabupaten (opsional)</label>
+<input id="financeBusinessCity" maxlength="100" placeholder="Contoh: Tanjungpinang">
+<button id="financeCreateBusiness" type="button" class="primary wide" onclick="financeCreateBusiness()">Simpan Usaha</button>
 <hr>
-<label for="financeInviteInput">Kode undangan dari owner (untuk karyawan)</label>
+<h4>Sudah menjadi Karyawan?</h4><p class="small">Karyawan tidak perlu membuat usaha baru. Masukkan kode undangan dari Owner.</p>
+<label for="financeInviteInput">Kode undangan dari Owner</label>
 <input id="financeInviteInput" maxlength="20" autocapitalize="characters" placeholder="Masukkan kode undangan">
 <button id="financeJoinBusiness" type="button" class="secondary wide" onclick="financeJoinBusiness()">Gabung sebagai Karyawan</button>
 </div>
@@ -2081,9 +2091,9 @@ $('employeeLogout').addEventListener('click',async()=>{
 });
 function pesanAkun(teks,error=false){$('pesanPenjual').className=error?'status error':'status';$('pesanPenjual').textContent=teks;}
 async function periksaSesi(){if(!sb){pesanAkun('Pustaka login gagal dimuat. Periksa koneksi internet.',true);return null;}try{const {data,error}=await sb.auth.getSession();if(error)throw error;if(data.session)pesanAkun('Login aktif: '+data.session.user.email);else pesanAkun('Belum login. Daftar akun atau login terlebih dahulu.');return data.session;}catch(e){pesanAkun('Tidak dapat memeriksa sesi: '+String(e.message||e).slice(0,160),true);return null;}}
-$('daftarPenjual').addEventListener('click',async()=>{if(!sb)return pesanAkun('Pustaka login belum tersedia.',true);const email=$('emailPenjual').value.trim(),password=$('sandiPenjual').value;if(!email||password.length<6)return pesanAkun('Masukkan email valid dan kata sandi minimal 6 karakter.',true);$('daftarPenjual').disabled=true;pesanAkun('Sedang mendaftarkan akun...');try{const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:'https://wandi0917.github.io/kasusaha-lite/'}});if(error)throw error;if(data.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0){pesanAkun('Akun dengan email ini sudah terdaftar. Silakan gunakan tombol Login, bukan Daftar Akun.');}else if(data.session)pesanAkun('Akun berhasil dibuat dan login aktif.');else pesanAkun('Permintaan pendaftaran diterima, tetapi email belum tentu terkirim. Periksa Inbox/Spam. Jika tidak ada, atur custom SMTP di Supabase Authentication > SMTP Settings.');}catch(e){pesanAkun('Pendaftaran gagal: '+String(e.message||'Periksa pengaturan Supabase.').slice(0,220),true);}finally{$('daftarPenjual').disabled=false;}});
+$('daftarPenjual').addEventListener('click',async()=>{if(!sb)return pesanAkun('Pustaka login belum tersedia.',true);const email=$('emailPenjual').value.trim(),password=$('sandiPenjual').value;if(!email||password.length<6)return pesanAkun('Masukkan email valid dan kata sandi minimal 6 karakter.',true);$('daftarPenjual').disabled=true;pesanAkun('Sedang mendaftarkan akun...');try{const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:'https://wandi0917.github.io/kasusaha-lite/'}});if(error)throw error;if(data.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0){pesanAkun('Akun dengan email ini sudah terdaftar. Silakan gunakan tombol Login, bukan Daftar Akun.');}else if(data.session)pesanAkun('Akun berhasil dibuat dan login aktif. Langkah berikutnya: klik menu Transaksi, isi nama dan jenis usaha, lalu tekan Simpan Usaha untuk mulai menggunakan fitur utama.');else pesanAkun('Permintaan pendaftaran diterima, tetapi email belum tentu terkirim. Periksa Inbox/Spam. Jika tidak ada, atur custom SMTP di Supabase Authentication > SMTP Settings.');}catch(e){pesanAkun('Pendaftaran gagal: '+String(e.message||'Periksa pengaturan Supabase.').slice(0,220),true);}finally{$('daftarPenjual').disabled=false;}});
 $('resendOwnerConfirmation').addEventListener('click',()=>kirimUlangKonfirmasi($('emailPenjual').value,pesanAkun));
- $('loginPenjual').addEventListener('click',async()=>{if(!sb)return pesanAkun('Pustaka login belum tersedia.',true);const email=$('emailPenjual').value.trim(),password=$('sandiPenjual').value;if(!email||!password)return pesanAkun('Masukkan email dan kata sandi.',true);$('loginPenjual').disabled=true;pesanAkun('Sedang login...');try{const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;pesanAkun('Login berhasil: '+data.user.email);tampilProdukLokalUntukOnline();await muatProdukAsalPengiriman();await loadFinanceWorkspace();}catch(e){pesanAkun('Login gagal: '+String(e.message||'Pastikan email sudah dikonfirmasi dan kata sandi benar.').slice(0,180),true);}finally{$('loginPenjual').disabled=false;}});
+ $('loginPenjual').addEventListener('click',async()=>{if(!sb)return pesanAkun('Pustaka login belum tersedia.',true);const email=$('emailPenjual').value.trim(),password=$('sandiPenjual').value;if(!email||!password)return pesanAkun('Masukkan email dan kata sandi.',true);$('loginPenjual').disabled=true;pesanAkun('Sedang login...');try{const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;pesanAkun('Login berhasil: '+data.user.email+'. Untuk mulai menggunakan fitur utama, klik menu Transaksi. Jika ini akun Owner baru, isi nama dan jenis usaha lalu tekan Simpan Usaha.');tampilProdukLokalUntukOnline();await muatProdukAsalPengiriman();await loadFinanceWorkspace();if(!financeBusiness)pesanAkun('Akun aktif. Langkah berikutnya: klik menu Transaksi, lengkapi formulir Buat Usaha, lalu tekan Simpan Usaha sebelum mulai mencatat transaksi.');}catch(e){pesanAkun('Login gagal: '+String(e.message||'Pastikan email sudah dikonfirmasi dan kata sandi benar.').slice(0,180),true);}finally{$('loginPenjual').disabled=false;}});
 $('keluarPenjual').addEventListener('click',async()=>{if(!sb)return pesanAkun('Pustaka login belum tersedia.',true);try{const {error}=await sb.auth.signOut();if(error)throw error;pesanAkun('Anda sudah logout.');}catch(e){pesanAkun('Logout gagal: '+String(e.message||e).slice(0,160),true);}});
 function isiFormOnline(id){const p=produk.find(x=>String(x.id)===String(id));if(!p)return;localSelectedId=p.id;$('namaProdukOnline').value=p.nama||'';$('kategoriProdukOnline').value=p.kategori||'Lainnya';$('hargaProdukOnline').value=p.harga??'';$('stokProdukOnline').value=p.stok??1;$('deskripsiProdukOnline').value=p.deskripsi||'';$('fotoProdukOnline').value=(p.foto&&!p.foto.startsWith('data:image/'))?p.foto:'';buka('akun',document.querySelectorAll('nav button')[6]);}
 function tampilProdukLokalUntukOnline(){const box=$('produkLokalUntukOnline');if(!box)return;const data=produk.filter(p=>!p.onlineId);box.innerHTML=data.length?data.map(p=>`<div class="item"><strong>${aman(p.nama)}</strong> — ${format(p.harga)}<button class="secondary" style="margin-left:8px" type="button" onclick="isiFormOnline('${String(p.id)}')">Pilih produk ini</button></div>`).join(''):'<p>Tidak ada produk lokal yang belum dikaitkan dengan produk online.</p>';}
@@ -2143,12 +2153,21 @@ function financeToday(){const d=new Date();return d.getFullYear()+'-'+String(d.g
 function financeRoleLabel(role){return role==='owner'?'Owner':'Karyawan';}
 async function financeCreateBusiness(){
  if(!sb){setFinanceStatus('Supabase tidak tersedia.',true);return;}
- const name=$('financeBusinessName').value.trim();if(!name){setFinanceStatus('Isi nama usaha terlebih dahulu.',true);return;}
+ const name=$('financeBusinessName').value.trim();
+ const type=$('financeBusinessType').value;
+ const phone=$('financeBusinessPhone').value.trim();
+ const address=$('financeBusinessAddress').value.trim();
+ const city=$('financeBusinessCity').value.trim();
+ if(!name){setFinanceStatus('Isi nama usaha terlebih dahulu.',true);$('financeBusinessName').focus();return;}
+ if(!type){setFinanceStatus('Pilih jenis usaha terlebih dahulu.',true);$('financeBusinessType').focus();return;}
  const btn=$('financeCreateBusiness');btn.disabled=true;
- try{const {data:sd,error:se}=await sb.auth.getSession();if(se)throw se;if(!sd.session)throw new Error('Login terlebih dahulu melalui menu Akun Pembeli atau Akun Penjual.');
- const {data,error}=await sb.rpc('create_business_workspace',{p_business_name:name});if(error)throw error;
- await loadFinanceWorkspace();setFinanceStatus(data.business_name+' siap digunakan. Peran akun: '+financeRoleLabel(data.role)+'.');
- }catch(e){setFinanceStatus('Usaha belum berhasil dibuat: '+String(e.message||e).slice(0,220),true);}finally{btn.disabled=false;}
+ try{
+  const {data:sd,error:se}=await sb.auth.getSession();if(se)throw se;if(!sd.session)throw new Error('Login terlebih dahulu melalui menu Akun Pembeli atau Akun Penjual.');
+  const {data,error}=await sb.rpc('create_business_workspace_details',{p_business_name:name,p_business_type:type,p_phone:phone||null,p_address:address||null,p_city:city||null});if(error)throw error;
+  await loadFinanceWorkspace();
+  setFinanceStatus((data.business_name||name)+' berhasil disimpan. Peran akun: Owner. Anda sekarang dapat memakai Kasir Cepat, Absensi, dan laporan.');
+  const guide=$('financeFirstBusinessGuide');if(guide)guide.hidden=true;
+ }catch(e){setFinanceStatus('Usaha belum berhasil disimpan: '+String(e.message||e).slice(0,220),true);}finally{btn.disabled=false;}
 }
 async function financeJoinBusiness(){
  if(!sb){setFinanceStatus('Supabase tidak tersedia.',true);return;}
