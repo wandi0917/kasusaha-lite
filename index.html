@@ -2394,7 +2394,7 @@ async function loadOwnerDeviceActivations(businessIdOverride){
     const pay=status==='paid'?'':'<button type="button" class="primary owner-device-pay" data-activation-id="'+String(device.id||'')+'">Bayar Aktivasi Rp10.000</button>';
     const check=status==='paid'?'':'<button type="button" class="secondary owner-device-check" data-activation-id="'+String(device.id||'')+'">Periksa Pembayaran</button>';
     return '<div class="item"><strong>'+aman(String(device.device_label||'Perangkat karyawan'))+'</strong><p>Status perangkat: <strong>'+aman(state)+'</strong></p>'+(device.paid_at?'<p class="small">Pembayaran terverifikasi: '+aman(new Date(device.paid_at).toLocaleString('id-ID'))+'</p>':'')+'<div class="row-actions">'+pay+check+'</div></div>';
-   }).join(''):'<p class="small">Belum ada permintaan aktivasi perangkat dari karyawan ini.</p>';
+   }).join(''):'<div class="status warn"><strong>Belum ada permintaan aktivasi perangkat.</strong><p style="margin:6px 0 0">Minta karyawan ini login kembali melalui menu Karyawan pada perangkat yang akan dipakai. Sistem akan mencatat perangkat tersebut otomatis; setelah muncul di sini, Owner dapat menekan Bayar Aktivasi Rp10.000. Demi keamanan, Owner tidak dapat membayar perangkat yang ID-nya belum tercatat.</p><button type="button" class="secondary" onclick="loadOwnerDeviceActivations()">Periksa Ulang</button></div>';
    const toggle=active
     ?'<button type="button" class="secondary owner-employee-deactivate" data-user-id="'+uid+'">Nonaktifkan Karyawan</button>'
     :'<button type="button" class="primary owner-employee-reactivate" data-user-id="'+uid+'">Aktifkan Kembali</button>';
