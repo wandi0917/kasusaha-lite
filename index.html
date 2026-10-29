@@ -2179,6 +2179,20 @@ async function loadFinanceWorkspace(){
   if(me)throw me;
   let memberList=memberRows||[];
   if(financeSelectedBusinessId){memberList=memberList.filter(m=>m.business_id===financeSelectedBusinessId);}
+  // Pemulihan aman: jika akun adalah owner_id usaha yang sudah ada tetapi baris keanggotaannya hilang,
+  // gunakan RPC resmi yang memulihkan keanggotaan Owner hanya untuk usaha milik akun login ini.
+  if(memberList.length===0){
+   const {data:ownedBusiness,error:ownedError}=await sb.from('business_workspaces').select('id,invite_code').eq('owner_id',financeMemberUserId).maybeSingle();
+   if(ownedError)throw ownedError;
+   if(ownedBusiness&&(!financeSelectedBusinessId||financeSelectedBusinessId===ownedBusiness.id)){
+    const {error:restoreError}=await sb.rpc('join_business_workspace',{p_invite_code:ownedBusiness.invite_code});
+    if(restoreError)throw restoreError;
+    const {data:restoredRows,error:restoredError}=await sb.from('business_members').select('business_id,user_id,role,active').eq('user_id',financeMemberUserId).eq('active',true);
+    if(restoredError)throw restoredError;
+    memberList=restoredRows||[];
+    if(financeSelectedBusinessId){memberList=memberList.filter(m=>m.business_id===financeSelectedBusinessId);}
+   }
+  }
   if(memberList.length>1){
    document.body.classList.remove('employee-verified','owner-verified');financeBusiness=null;financeMemberRole=null;financeRows=[];
    setup.hidden=false;info.hidden=true;entry.hidden=true;report.hidden=true;
