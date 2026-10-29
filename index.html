@@ -1427,7 +1427,7 @@ async function bagikanKasUsahaLite(){
 <div class="card"><h3>Terbitkan produk lokal</h3><p class="small">Pilih produk yang sudah disimpan di menu Produk Saya untuk mengisi formulir penerbitan.</p><div id="produkLokalUntukOnline"></div></div></section>
 <section id="loginKaryawan" class="tab">
 <details class="card usage-guide"><summary><strong>📘 Panduan penggunaan Login Karyawan</strong></summary><ol><li>Karyawan tidak perlu mendaftar atau memasukkan email.</li><li>Isi nama lengkap karyawan dan kode undangan dari Owner. Keduanya wajib diisi.</li><li>Gunakan perangkat/browser yang sama agar sesi karyawan tetap tersimpan.</li><li>Laporan karyawan hanya menampilkan pemasukan yang dicatat oleh akun karyawan tersebut.</li><li>Jangan gunakan atau bagikan akun Owner.</li></ol></details>
-<h2>Login Karyawan dengan Kode Undangan</h2><div class="card"><p>Masukkan kode undangan dari Owner. Sistem membuat sesi karyawan tanpa email, lalu menghubungkan sesi tersebut ke usaha sesuai kode. Jangan bagikan kode kepada orang yang tidak diizinkan Owner.</p><div id="employeeAuthStatus" class="status" role="status">Belum login sebagai karyawan. Masukkan kode undangan Owner.</div><div id="employeeDevicePaywall" class="card employee-device-paywall" hidden><h3>Aktivasi Perangkat Karyawan</h3><p>Perangkat tambahan dikenakan biaya aktivasi satu kali sebesar <strong>Rp10.000 per HP atau laptop</strong>. Akun karyawan tetap terkunci sampai pembayaran terverifikasi oleh server.</p><p id="employeeDeviceStatus" class="status" role="status">Memeriksa status perangkat…</p><button id="employeeDevicePayButton" class="primary wide" type="button">Bayar Aktivasi Rp10.000</button><button id="employeeDeviceCheckButton" class="secondary wide" type="button">Periksa Pembayaran</button><p class="small">Perangkat yang sama tidak ditagih ulang selama ID perangkat tersimpan. Jangan hapus data situs/browser sebelum aktivasi terverifikasi.</p></div><label for="employeeNameInput">Nama lengkap karyawan (wajib)</label><input id="employeeNameInput" type="text" maxlength="80" autocomplete="name" required placeholder="Masukkan nama lengkap"><label for="employeeInviteCode">Kode undangan Owner (wajib)</label><input id="employeeInviteCode" type="text" maxlength="20" autocomplete="one-time-code" autocapitalize="characters" required placeholder="Contoh: KODE DARI OWNER"><div class="row-actions"><button id="employeeLogin" type="button" class="primary">Masuk dengan Kode</button><button id="employeeLogout" type="button" class="secondary">Logout Karyawan</button></div><p class="small">Login tanpa email memerlukan fitur Anonymous Sign-Ins aktif di Supabase Authentication. Sesi tersimpan di browser ini; jika data browser dihapus atau berganti perangkat, karyawan mungkin perlu masuk kembali. Hak akses tetap ditentukan oleh data keanggotaan di server.</p><button type="button" class="primary wide" onclick="buka('transaksi',document.querySelector('nav button[onclick*=\\"transaksi\\"]'))">Buka Laporan Karyawan</button></div></section>
+<h2>Login Karyawan dengan Kode Undangan</h2><div class="card"><p>Masukkan kode undangan dari Owner. Sistem membuat sesi karyawan tanpa email, lalu menghubungkan sesi tersebut ke usaha sesuai kode. Jangan bagikan kode kepada orang yang tidak diizinkan Owner.</p><div id="employeeAuthStatus" class="status" role="status">Belum login sebagai karyawan. Masukkan kode undangan Owner.</div><div id="employeeDevicePaywall" class="card employee-device-paywall" hidden><h3>Menunggu Aktivasi Owner</h3><p>Permintaan akses perangkat ini sudah tercatat. <strong>Pembayaran Rp10.000 dilakukan oleh Owner</strong>, bukan oleh karyawan.</p><p id="employeeDeviceStatus" class="status" role="status">Memeriksa status aktivasi…</p><button id="employeeDeviceCheckButton" class="secondary wide" type="button">Periksa Status Aktivasi</button><p class="small">Fitur karyawan akan terbuka otomatis setelah server mengonfirmasi pembayaran Owner.</p></div><label for="employeeNameInput">Nama lengkap karyawan (wajib)</label><input id="employeeNameInput" type="text" maxlength="80" autocomplete="name" required placeholder="Masukkan nama lengkap"><label for="employeeInviteCode">Kode undangan Owner (wajib)</label><input id="employeeInviteCode" type="text" maxlength="20" autocomplete="one-time-code" autocapitalize="characters" required placeholder="Contoh: KODE DARI OWNER"><div class="row-actions"><button id="employeeLogin" type="button" class="primary">Masuk dengan Kode</button><button id="employeeLogout" type="button" class="secondary">Logout Karyawan</button></div><p class="small">Login tanpa email memerlukan fitur Anonymous Sign-Ins aktif di Supabase Authentication. Sesi tersimpan di browser ini; jika data browser dihapus atau berganti perangkat, karyawan mungkin perlu masuk kembali. Hak akses tetap ditentukan oleh data keanggotaan di server.</p><button type="button" class="primary wide" onclick="buka('transaksi',document.querySelector('nav button[onclick*=\\"transaksi\\"]'))">Buka Laporan Karyawan</button></div></section>
 <section id="akunPembeli" class="tab">
 <details class="card usage-guide"><summary><strong>📘 Panduan penggunaan Akun Pembeli &amp; Aktivasi Lisensi</strong></summary><ol><li>Login menggunakan akun yang sama dengan akun saat membeli KasUsaha Lite.</li><li>Buka menu Pesanan Saya untuk memeriksa pesanan dan status pembayaran.</li><li>Masukkan kode lisensi yang diterima setelah pembelian terverifikasi, sesuai petunjuk di halaman.</li><li>Jika kode belum tersedia atau aktivasi gagal, pastikan pembayaran sudah terverifikasi dan simpan nomor pesanan untuk pemeriksaan.</li><li>Jangan bagikan kode lisensi atau kata sandi kepada orang lain.</li></ol></details>
 <h2>Akun Pembeli &amp; Aktivasi Lisensi</h2><div class="card"><p>Login menggunakan akun Supabase yang sama dengan akun saat membeli KasUsaha Lite. Setelah login, masukkan kode lisensi dari menu Pesanan Saya.</p><div id="pesanPembeli" class="status" role="status">Memeriksa koneksi akun...</div><label for="emailPembeliAkun">Email</label><input id="emailPembeliAkun" type="email" autocomplete="email" placeholder="Email aktif Anda"><label for="sandiPembeliAkun">Kata sandi (minimal 6 karakter)</label><input id="sandiPembeliAkun" type="password" autocomplete="new-password" placeholder="Kata sandi"><div class="row-actions"><button id="daftarPembeli" class="primary" type="button">Daftar Akun Pembeli</button><button id="resendBuyerConfirmation" class="secondary" type="button">Kirim Ulang Konfirmasi</button><button id="loginPembeli" class="primary" type="button">Login Pembeli</button><button id="keluarPembeli" class="secondary" type="button">Logout</button><button class="secondary" type="button" onclick="buka('pesananSaya',document.querySelector('nav button[onclick*=\"pesananSaya\"]'))">Pesanan Saya</button></div></div><div class="card"><h3>Aktivasi KasUsaha Lite</h3><p class="small">Kode lisensi hanya dapat diaktifkan oleh akun pembeli pemilik pesanan yang sudah dibayar dan lisensinya masih aktif.</p><div id="statusAktivasiLisensi" class="status" role="status">Login untuk memeriksa lisensi.</div><label for="kodeAktivasiLisensi">Kode lisensi</label><input id="kodeAktivasiLisensi" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="80" placeholder="Contoh: KS-XXXXXXXXXXXX"><button id="tombolAktivasiLisensi" class="primary wide" type="button">Verifikasi &amp; Aktifkan Lisensi</button><p class="small">Aktivasi diverifikasi di server Supabase. Jangan berikan kode lisensi kepada orang lain.</p></div></section>
@@ -2346,18 +2346,89 @@ function employeeDeviceId(){
 }
 function employeeDeviceLabel(){const ua=String(navigator.userAgent||'');return /Android|iPhone|iPad|Mobile/i.test(ua)?'HP/Tablet karyawan':'Laptop/Komputer karyawan';}
 function employeeDeviceStatus(message,isError=false){const el=$('employeeDeviceStatus');if(el){el.className=isError?'status error':'status';el.textContent=message;}}
-async function callEmployeeDeviceActivation(action){
- if(!sb)throw new Error('Koneksi Supabase belum tersedia.');const {data:sessionData,error:sessionError}=await sb.auth.getSession();if(sessionError)throw sessionError;if(!sessionData.session)throw new Error('Login karyawan terlebih dahulu.');
- const {data,error}=await sb.functions.invoke('employee-device-activation',{body:{action,device_id:employeeDeviceId(),device_label:employeeDeviceLabel()}});
- if(error){let msg=error.message||'Permintaan aktivasi gagal.';try{if(error.context&&typeof error.context.json==='function'){const d=await error.context.json();if(d.message)msg=d.message;}}catch(_){}throw new Error(msg);}if(!data||data.success===false)throw new Error(data?.message||'Server belum mengonfirmasi status aktivasi.');return data;
+async function callEmployeeDeviceActivation(action,extra={}){
+ if(!sb)throw new Error('Koneksi Supabase belum tersedia.');
+ const {data:sessionData,error:sessionError}=await sb.auth.getSession();
+ if(sessionError)throw sessionError;
+ if(!sessionData.session)throw new Error('Silakan login terlebih dahulu.');
+ const {data,error}=await sb.functions.invoke('employee-device-activation',{body:{action,device_id:employeeDeviceId(),device_label:employeeDeviceLabel(),...extra}});
+ if(error){let msg=error.message||'Permintaan aktivasi gagal.';try{if(error.context&&typeof error.context.json==='function'){const d=await error.context.json();if(d.message)msg=d.message;}}catch(_){}throw new Error(msg);}
+ if(!data||data.success===false)throw new Error(data?.message||'Server belum mengonfirmasi status aktivasi.');
+ return data;
 }
 async function ensureEmployeeDeviceActivation(){
- const panel=$('employeeDevicePaywall');if(!panel)return true;if(financeMemberRole!=='employee'){panel.hidden=true;document.body.classList.remove('employee-device-pending');return true;}
- try{const result=await callEmployeeDeviceActivation('status');if(result.active===true){panel.hidden=true;document.body.classList.remove('employee-device-pending');return true;}panel.hidden=false;document.body.classList.add('employee-device-pending');employeeDeviceStatus('Perangkat belum aktif. Biaya aktivasi Rp10.000. Selesaikan pembayaran, lalu tekan Periksa Pembayaran.',false);return false;}
- catch(e){panel.hidden=false;document.body.classList.add('employee-device-pending');employeeDeviceStatus('Status perangkat belum dapat diverifikasi: '+String(e.message||e).slice(0,200)+'. Fitur karyawan tetap terkunci.',true);return false;}
+ const panel=$('employeeDevicePaywall');
+ if(!panel)return true;
+ if(financeMemberRole!=='employee'){panel.hidden=true;document.body.classList.remove('employee-device-pending');return true;}
+ try{
+  const result=await callEmployeeDeviceActivation('status');
+  if(result.active===true){panel.hidden=true;document.body.classList.remove('employee-device-pending');return true;}
+  panel.hidden=false;document.body.classList.add('employee-device-pending');
+  employeeDeviceStatus('Menunggu Owner membayar dan mengonfirmasi aktivasi perangkat ini. Anda tidak perlu melakukan pembayaran.',false);
+  return false;
+ }catch(e){
+  panel.hidden=false;document.body.classList.add('employee-device-pending');
+  employeeDeviceStatus('Status aktivasi belum dapat diverifikasi: '+String(e.message||e).slice(0,200)+'. Fitur tetap terkunci sampai Owner menyelesaikan aktivasi.',true);
+  return false;
+ }
 }
-$('employeeDevicePayButton')?.addEventListener('click',async()=>{const button=$('employeeDevicePayButton');button.disabled=true;employeeDeviceStatus('Membuat pembayaran aktivasi Rp10.000 melalui Midtrans…');try{const result=await callEmployeeDeviceActivation('create');if(result.active===true){employeeDeviceStatus('Perangkat sudah aktif. Memuat ulang hak akses…');await loadFinanceWorkspace();return;}if(!result.payment_url)throw new Error('Server belum memberikan tautan pembayaran.');employeeDeviceStatus('Tautan pembayaran siap. Selesaikan pembayaran pada halaman Midtrans. Setelah kembali, tekan Periksa Pembayaran.');window.location.href=result.payment_url;}catch(e){employeeDeviceStatus('Pembayaran belum dapat dibuat: '+String(e.message||e).slice(0,200),true);}finally{button.disabled=false;}});
-$('employeeDeviceCheckButton')?.addEventListener('click',async()=>{const button=$('employeeDeviceCheckButton');button.disabled=true;employeeDeviceStatus('Memeriksa status pembayaran langsung ke server Midtrans…');try{const result=await callEmployeeDeviceActivation('check');if(result.active===true){employeeDeviceStatus('Pembayaran terverifikasi. Perangkat aktif. Memuat fitur karyawan…');const panel=$('employeeDevicePaywall');if(panel)panel.hidden=true;document.body.classList.remove('employee-device-pending');await loadFinanceWorkspace();return;}employeeDeviceStatus(result.message||'Pembayaran belum terverifikasi. Fitur karyawan tetap terkunci.',false);}catch(e){employeeDeviceStatus('Verifikasi belum berhasil: '+String(e.message||e).slice(0,200),true);}finally{button.disabled=false;}});
+async function loadOwnerDeviceActivations(){
+ const host=$('ownerEmployeeActivationRows');
+ if(!host)return;
+ host.innerHTML='<p class="small">Memuat daftar aktivasi karyawan…</p>';
+ try{
+  const result=await callEmployeeDeviceActivation('owner_list');
+  const rows=Array.isArray(result.activations)?result.activations:[];
+  if(!rows.length){host.innerHTML='<p class="small">Belum ada permintaan aktivasi perangkat karyawan. Setelah karyawan mengajukan akses dengan kode undangan, permintaannya akan tampil di sini.</p>';return;}
+  host.innerHTML=rows.map(r=>{
+   const status=String(r.status||'pending_payment');
+   const label=String(r.device_label||'Perangkat karyawan');
+   const uid=String(r.user_id||'');
+   const state=status==='paid'?'Aktif':status==='revoked'?'Dinonaktifkan':'Menunggu Aktivasi';
+   const button=status==='paid'?'':status==='revoked'?'':'<button type="button" class="primary owner-device-pay" data-activation-id="'+String(r.id||'')+'">Bayar Aktivasi Rp10.000</button>';
+   const check=status==='paid'?'':'<button type="button" class="secondary owner-device-check" data-activation-id="'+String(r.id||'')+'">Periksa Pembayaran</button>';
+   return '<div class="item"><strong>'+aman(label)+'</strong><p class="small">ID akun karyawan: '+aman(uid.slice(0,8)+(uid.length>8?'…':''))+'</p><p>Status: <strong>'+aman(state)+'</strong></p>'+(r.paid_at?'<p class="small">Aktif sejak: '+aman(new Date(r.paid_at).toLocaleString('id-ID'))+'</p>':'')+'<div class="row-actions">'+button+check+'</div></div>';
+  }).join('');
+ }catch(e){host.innerHTML='<p class="status error">Daftar aktivasi belum dapat dimuat: '+aman(String(e.message||e).slice(0,200))+'</p>';}
+}
+async function ownerDeviceActivationAction(action,activationId){
+ const host=$('ownerEmployeeActivationRows');
+ try{
+  if(action==='owner_create'){
+   if(!confirm('Buat pembayaran aktivasi Rp10.000 untuk perangkat karyawan ini? Pembayaran hanya dianggap aktif setelah diverifikasi server.'))return;
+  }
+  const result=await callEmployeeDeviceActivation(action,{activation_id:activationId});
+  if(action==='owner_create'){
+   if(result.active){setFinanceStatus('Perangkat karyawan sudah aktif.');}
+   else if(result.payment_url){window.location.href=result.payment_url;return;}
+   else setFinanceStatus(result.message||'Pembayaran belum tersedia.',true);
+  }else{
+   setFinanceStatus(result.active?'Pembayaran terverifikasi. Akun/perangkat karyawan sekarang aktif.':(result.message||'Pembayaran belum terverifikasi.'));
+  }
+ }catch(e){setFinanceStatus('Aktivasi karyawan: '+String(e.message||e).slice(0,220),true);}
+ await loadOwnerDeviceActivations();
+}
+document.addEventListener('click',event=>{
+ const pay=event.target.closest('.owner-device-pay');
+ const check=event.target.closest('.owner-device-check');
+ if(pay){pay.disabled=true;ownerDeviceActivationAction('owner_create',pay.dataset.activationId).finally(()=>{pay.disabled=false;});}
+ if(check){check.disabled=true;ownerDeviceActivationAction('owner_check',check.dataset.activationId).finally(()=>{check.disabled=false;});}
+});
+$('employeeDeviceCheckButton')?.addEventListener('click',async()=>{
+ const button=$('employeeDeviceCheckButton');button.disabled=true;
+ employeeDeviceStatus('Memeriksa status aktivasi pada server…');
+ try{
+  const result=await callEmployeeDeviceActivation('status');
+  if(result.active===true){
+   employeeDeviceStatus('Owner sudah mengaktifkan perangkat. Membuka fitur karyawan…');
+   const panel=$('employeeDevicePaywall');if(panel)panel.hidden=true;
+   document.body.classList.remove('employee-device-pending');
+   await loadFinanceWorkspace();return;
+  }
+  employeeDeviceStatus('Masih menunggu Owner membayar aktivasi Rp10.000. Anda tidak perlu membayar dari akun karyawan.',false);
+ }catch(e){employeeDeviceStatus('Pemeriksaan belum berhasil: '+String(e.message||e).slice(0,200),true);}
+ finally{button.disabled=false;}
+});
 async function employeeCheckRole(){
  if(!sb)return employeeAuthMessage('Koneksi Supabase tidak tersedia.',true);
  try{
@@ -2573,6 +2644,10 @@ async function loadFinanceWorkspace(){
   }else{document.body.classList.remove('employee-device-pending');const devicePanel=$('employeeDevicePaywall');if(devicePanel)devicePanel.hidden=true;}
   financeBusiness=business;financeMemberRole=member.role;saveOfflineWorkspace(business,member,sd.session.user);offlineTransactionMode=false;updateFinanceActivePerson();document.body.classList.toggle('employee-verified',member.role==='employee');document.body.classList.toggle('owner-verified',member.role==='owner');if($('attendanceCard'))$('attendanceCard').hidden=false;if($('attendancePayrollCard'))$('attendancePayrollCard').hidden=false;if($('attendanceHourlyWage'))$('attendanceHourlyWage').disabled=false;if($('attendanceSaveWage'))$('attendanceSaveWage').disabled=false;$('ownerStoreCatalog').hidden=member.role!=='owner';$('financeForm').hidden=false;setup.hidden=true;info.hidden=false;entry.hidden=false;report.hidden=false;setTransactionBusinessSetupMode(false);
   info.innerHTML='<p><strong>Usaha:</strong> '+aman(business.business_name)+'<br><strong>Peran akun:</strong> '+financeRoleLabel(member.role)+(member.role==='owner'?'<br><strong>Kode undangan karyawan:</strong> <code>'+aman(business.invite_code)+'</code><br><span class="small">Bagikan kode ini hanya kepada karyawan yang Anda izinkan.</span>':'')+'</p><p class="small" style="margin-top:8px;padding:10px;border:1px solid var(--border,#dbe3ef);border-radius:10px"><strong>Akses lintas perangkat:</strong> buka situs KasUsaha Lite dari HP, komputer, atau tablet lain lalu login dengan akun yang sama dan pilih usaha ini. Laporan bersama dimuat dari server. Catatan lama yang hanya tersimpan di perangkat perlu diimpor satu kali oleh Owner; jangan hapus data lokal sebelum memeriksa hasilnya.</p>';
+  if(member.role==='owner'){
+   info.insertAdjacentHTML('beforeend','<div id="ownerEmployeeActivationPanel" class="card"><h3>Aktivasi Akun/Perangkat Karyawan</h3><p class="small">Owner yang melakukan pembayaran. Setiap HP/laptop tambahan dikenakan Rp10.000. Status berubah menjadi Aktif setelah pembayaran diverifikasi server.</p><div id="ownerEmployeeActivationRows"><p class="small">Memuat daftar aktivasi…</p></div><button type="button" class="secondary wide" onclick="loadOwnerDeviceActivations()">Muat Ulang Daftar Karyawan</button></div>');
+   await loadOwnerDeviceActivations();
+  }
   // Nama usaha dan panel utama harus tampil walaupun modul katalog/absensi mengalami gangguan.
   const ancillaryErrors=[];try{await loadStoreProducts();}catch(auxError){console.error('Katalog usaha gagal dimuat:',auxError);ancillaryErrors.push('katalog barang: '+String(auxError.message||auxError).slice(0,100));}
   try{await loadAttendance();}catch(auxError){console.error('Absensi gagal dimuat:',auxError);ancillaryErrors.push('absensi: '+String(auxError.message||auxError).slice(0,100));}
