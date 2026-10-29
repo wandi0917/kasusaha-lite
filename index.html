@@ -2386,7 +2386,8 @@ async function loadOwnerDeviceActivations(businessIdOverride){
    const active=employee.active===true;
    const devices=Array.isArray(employee.devices)?employee.devices:[];
    const hasPaidDevice=devices.some(device=>device.status==='paid');
-   const accountState=!active?'Nonaktif':hasPaidDevice?'Aktif':'Menunggu Aktivasi Owner';
+   const hasPendingDevice=devices.some(device=>device.status==='pending_payment');
+   const accountState=!active?'Nonaktif':hasPaidDevice?(hasPendingDevice?'Sudah diaktivasi (ada perangkat lain menunggu)':'Sudah diaktivasi'):'Belum diaktivasi';
    const deviceHtml=devices.length?devices.map(device=>{
     const status=String(device.status||'pending_payment');
     const state=status==='paid'?'Aktif':status==='revoked'?'Dicabut':status==='failed'?'Gagal':'Menunggu Pembayaran';
@@ -2397,7 +2398,7 @@ async function loadOwnerDeviceActivations(businessIdOverride){
    const toggle=active
     ?'<button type="button" class="secondary owner-employee-deactivate" data-user-id="'+uid+'">Nonaktifkan Karyawan</button>'
     :'<button type="button" class="primary owner-employee-reactivate" data-user-id="'+uid+'">Aktifkan Kembali</button>';
-   return '<div class="card"><h4>'+aman(String(employee.name||'Nama belum diisi'))+'</h4><p class="small">ID akun: '+aman(uid.slice(0,8)+(uid.length>8?'…':''))+'</p><p>Status akun: <strong>'+(active?'Aktif':'Nonaktif')+'</strong></p><p class="small">Bergabung: '+aman(employee.joined_at?new Date(employee.joined_at).toLocaleDateString('id-ID'):'—')+'</p><div class="row-actions">'+toggle+'</div><h5>Aktivasi perangkat</h5>'+deviceHtml+'</div>';
+   return '<div class="card"><h4>'+aman(String(employee.name||'Nama belum diisi'))+'</h4><p class="small">ID akun: '+aman(uid.slice(0,8)+(uid.length>8?'…':''))+'</p><p>Status akun: <strong>'+(active?'Aktif':'Nonaktif')+'</strong></p><p>Status aktivasi: <strong>'+aman(accountState)+'</strong></p><p class="small">Bergabung: '+aman(employee.joined_at?new Date(employee.joined_at).toLocaleDateString('id-ID'):'—')+'</p><div class="row-actions">'+toggle+'</div><h5>Aktivasi perangkat</h5>'+deviceHtml+'</div>';
   }).join('');
  }catch(e){host.innerHTML='<p class="status error">Daftar karyawan belum dapat dimuat: '+aman(String(e.message||e).slice(0,200))+'</p>';}
 }
