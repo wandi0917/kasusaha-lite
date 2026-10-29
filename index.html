@@ -2385,6 +2385,8 @@ async function loadOwnerDeviceActivations(businessIdOverride){
    const uid=String(employee.user_id||'');
    const active=employee.active===true;
    const devices=Array.isArray(employee.devices)?employee.devices:[];
+   const hasPaidDevice=devices.some(device=>device.status==='paid');
+   const accountState=!active?'Nonaktif':hasPaidDevice?'Aktif':'Menunggu Aktivasi Owner';
    const deviceHtml=devices.length?devices.map(device=>{
     const status=String(device.status||'pending_payment');
     const state=status==='paid'?'Aktif':status==='revoked'?'Dicabut':status==='failed'?'Gagal':'Menunggu Pembayaran';
