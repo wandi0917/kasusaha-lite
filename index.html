@@ -2372,12 +2372,12 @@ async function ensureEmployeeDeviceActivation(){
   return false;
  }
 }
-async function loadOwnerDeviceActivations(){
+async function loadOwnerDeviceActivations(businessIdOverride){
  const host=$('ownerEmployeeActivationRows');
  if(!host)return;
  host.innerHTML='<p class="small">Memuat daftar aktivasi karyawan…</p>';
  try{
-  const result=await callEmployeeDeviceActivation('owner_list');
+  const result=await callEmployeeDeviceActivation('owner_list',{business_id:businessIdOverride||financeBusiness?.id||''});
   const rows=Array.isArray(result.activations)?result.activations:[];
   if(!rows.length){host.innerHTML='<p class="small">Belum ada permintaan aktivasi perangkat karyawan. Setelah karyawan mengajukan akses dengan kode undangan, permintaannya akan tampil di sini.</p>';return;}
   host.innerHTML=rows.map(r=>{
@@ -2397,7 +2397,7 @@ async function ownerDeviceActivationAction(action,activationId){
   if(action==='owner_create'){
    if(!confirm('Buat pembayaran aktivasi Rp10.000 untuk perangkat karyawan ini? Pembayaran hanya dianggap aktif setelah diverifikasi server.'))return;
   }
-  const result=await callEmployeeDeviceActivation(action,{activation_id:activationId});
+  const result=await callEmployeeDeviceActivation(action,{activation_id:activationId,business_id:financeBusiness?.id||''});
   if(action==='owner_create'){
    if(result.active){setFinanceStatus('Perangkat karyawan sudah aktif.');}
    else if(result.payment_url){window.location.href=result.payment_url;return;}
@@ -2646,7 +2646,7 @@ async function loadFinanceWorkspace(){
   info.innerHTML='<p><strong>Usaha:</strong> '+aman(business.business_name)+'<br><strong>Peran akun:</strong> '+financeRoleLabel(member.role)+(member.role==='owner'?'<br><strong>Kode undangan karyawan:</strong> <code>'+aman(business.invite_code)+'</code><br><span class="small">Bagikan kode ini hanya kepada karyawan yang Anda izinkan.</span>':'')+'</p><p class="small" style="margin-top:8px;padding:10px;border:1px solid var(--border,#dbe3ef);border-radius:10px"><strong>Akses lintas perangkat:</strong> buka situs KasUsaha Lite dari HP, komputer, atau tablet lain lalu login dengan akun yang sama dan pilih usaha ini. Laporan bersama dimuat dari server. Catatan lama yang hanya tersimpan di perangkat perlu diimpor satu kali oleh Owner; jangan hapus data lokal sebelum memeriksa hasilnya.</p>';
   if(member.role==='owner'){
    info.insertAdjacentHTML('beforeend','<div id="ownerEmployeeActivationPanel" class="card"><h3>Aktivasi Akun/Perangkat Karyawan</h3><p class="small">Owner yang melakukan pembayaran. Setiap HP/laptop tambahan dikenakan Rp10.000. Status berubah menjadi Aktif setelah pembayaran diverifikasi server.</p><div id="ownerEmployeeActivationRows"><p class="small">Memuat daftar aktivasi…</p></div><button type="button" class="secondary wide" onclick="loadOwnerDeviceActivations()">Muat Ulang Daftar Karyawan</button></div>');
-   await loadOwnerDeviceActivations();
+   await loadOwnerDeviceActivations(business.id);
   }
   // Nama usaha dan panel utama harus tampil walaupun modul katalog/absensi mengalami gangguan.
   const ancillaryErrors=[];try{await loadStoreProducts();}catch(auxError){console.error('Katalog usaha gagal dimuat:',auxError);ancillaryErrors.push('katalog barang: '+String(auxError.message||auxError).slice(0,100));}
