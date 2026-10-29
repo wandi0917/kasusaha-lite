@@ -2402,7 +2402,7 @@ async function loadOwnerDeviceActivations(businessIdOverride){
     :'<button type="button" class="primary owner-employee-reactivate" data-user-id="'+uid+'">Aktifkan Kembali</button>';
    return '<div class="card"><h4>'+aman(String(employee.name||'Nama belum diisi'))+'</h4><p class="small">ID akun: '+aman(uid.slice(0,8)+(uid.length>8?'…':''))+'</p><p>Status akun: <strong>'+(active?'Aktif':'Nonaktif')+'</strong></p><p>Status aktivasi: <strong>'+aman(accountState)+'</strong></p><p class="small">Bergabung: '+aman(employee.joined_at?new Date(employee.joined_at).toLocaleDateString('id-ID'):'—')+'</p><div class="row-actions">'+toggle+'</div><h5>Aktivasi perangkat</h5>'+deviceHtml+'</div>';
   }).join('');
-  if(recentlyPaid.length){host.insertAdjacentHTML('afterbegin','<div class="status" role="status"><strong>Pembayaran terverifikasi.</strong> Akun karyawan '+aman(recentlyPaid.join(', '))+' sudah aktif. Karyawan dapat masuk kembali menggunakan kode undangan Owner.</div>');}
+  if(recentlyPaid.length){host.insertAdjacentHTML('afterbegin','<div class="status" role="status"><strong>Pembayaran terverifikasi.</strong> Aktivasi untuk karyawan '+aman(recentlyPaid.join(', '))+' sudah terverifikasi dan status akun/perangkatnya diperbarui. Jika akun baru saja diaktifkan, karyawan dapat masuk menggunakan kode undangan Owner.</div>');}
  }catch(e){host.innerHTML='<p class="status error">Daftar karyawan belum dapat dimuat: '+aman(String(e.message||e).slice(0,200))+'</p>'; }
 }
 async function ownerDeviceActivationAction(action,targetId){
