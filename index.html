@@ -15,7 +15,7 @@
 <meta property="og:title" content="KasUsaha Lite — Bantu Usaha Lebih Tertata">
 <meta property="og:description" content="Bantu usaha lebih tertata: catat transaksi, kelola produk dan stok, tinjau laporan. Lisensi Rp49.000 sekali bayar. Pelajari fitur dan alur aktivasi di situs resmi.">
 <meta property="og:url" content="https://wandi0917.github.io/kasusaha-lite/">
-<meta name="kasusaha-build" content="2026-10-29-payment-return-pwa-1">
+<meta name="kasusaha-build" content="2026-10-29-payment-return-pwa-2">
 <title>KasUsaha Lite</title>
 <style>
 *{box-sizing:border-box}.table-wrap{width:100%;overflow-x:auto;margin-top:10px}.report-table{width:100%;border-collapse:collapse;background:#fff;font-size:13px}.report-table th,.report-table td{border:1px solid #d7ded9;padding:9px;text-align:left;vertical-align:top}.report-table th{background:#e8f1eb;color:#164e2c;white-space:nowrap}.report-table td.amount{white-space:nowrap;text-align:right}.report-table .income{color:#166534}.report-table .expense{color:#b42318}.report-table tr:nth-child(even){background:#f8faf8}body{margin:0;font-family:Arial,sans-serif;background:#f3f6f4;color:#17211b}header{background:#166534;color:white;padding:18px}header h1{margin:0;font-size:24px}header p{margin:6px 0 0}nav{display:flex;gap:6px;overflow-x:auto;background:white;padding:10px;position:sticky;top:0;z-index:5}nav button{padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#166534;font-weight:bold;white-space:nowrap}nav button.active,.primary{background:#166534;color:white}#navCompleteGuide{display:none}body.license-verified nav #navCompleteGuide,body.owner-verified nav #navCompleteGuide,body.employee-verified nav #navCompleteGuide{display:inline-flex}main{max-width:850px;margin:auto;padding:12px}.tab{display:none}.tab.active{display:block}.card{background:white;border-radius:12px;padding:15px;margin-bottom:12px;border:1px solid #ddd}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}label{display:block;font-weight:bold;margin:10px 0 5px}input,select,textarea{width:100%;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:15px}button{cursor:pointer}.primary{border:0;border-radius:8px;padding:12px;font-weight:bold}.primary:disabled{opacity:.58;cursor:not-allowed;filter:grayscale(.25)}.secondary{background:#e5eee7;color:#166534;border:1px solid #b7d0bd;border-radius:8px;padding:10px;font-weight:bold}.secondary:disabled{opacity:.58;cursor:not-allowed;filter:grayscale(.3)}#attendanceCard .grid{gap:12px}#attendanceCard button{min-height:46px;white-space:normal;line-height:1.35}#attendanceCard button:disabled{box-shadow:none}.danger{background:#fee2e2;color:#991b1b;border:0;border-radius:8px;padding:8px}.wide{width:100%;margin-top:12px}.item{background:white;border:1px solid #ddd;border-radius:9px;padding:12px;margin-top:9px;overflow-wrap:anywhere}.price{font-weight:bold;color:#166534;font-size:18px}.small{font-size:12px;color:#666}.status{padding:10px;background:#eef5ef;border-radius:8px;margin:10px 0;overflow-wrap:anywhere}.status.error{background:#fff0f0;color:#8a1c1c}.status.warn{background:#fff8e1;color:#785600}footer{text-align:center;padding:20px;color:#666;font-size:12px}img.product-photo{display:block;max-width:100%;max-height:220px;object-fit:contain;margin:8px 0;border-radius:8px}.foto-preview-box{margin-top:8px;padding:8px;border:1px dashed #b7d0bd;border-radius:8px}.foto-preview-box img{display:block;max-width:100%;max-height:220px;object-fit:contain;margin:8px auto}.foto-preview-status{font-size:12px;color:#666}.foto-preview-status.error{color:#991b1b}.row-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}@media(max-width:480px){.grid{grid-template-columns:1fr}header h1{font-size:22px}}
@@ -3173,12 +3173,12 @@ sb.auth.onAuthStateChange((event,session)=>{financeBusiness=null;financeMemberRo
     if (text) text.textContent = message || 'Status belum diperbarui oleh server. Buka Pesanan Saya beberapa saat lagi. Jangan membayar ulang sebelum memeriksa status pesanan.';
   };
   const verifyReturn = async () => {
-    if (!window.sb || !midtransOrderId) {
+    if (typeof sb === 'undefined' || !sb || !midtransOrderId) {
       showUnconfirmed('Sambungkan internet dan login ke akun pembeli yang digunakan saat checkout, lalu buka Pesanan Saya untuk memeriksa status.');
       return;
     }
     try {
-      const {data: sessionData, error: sessionError} = await window.sb.auth.getSession();
+      const {data: sessionData, error: sessionError} = await sb.auth.getSession();
       if (sessionError) throw sessionError;
       if (!sessionData || !sessionData.session || !sessionData.session.user) {
         showUnconfirmed('Login ke akun pembeli yang sama dengan akun saat checkout. Setelah login, buka Pesanan Saya untuk memeriksa pembayaran.');
@@ -3188,7 +3188,7 @@ sb.auth.onAuthStateChange((event,session)=>{financeBusiness=null;financeMemberRo
       let lastError = null;
       /* Midtrans sends its transaction order_id (KS-...). Webhook remains the source of truth. */
       for (let attempt = 0; attempt < 15; attempt++) {
-        const result = await window.sb.from('marketplace_orders')
+        const result = await sb.from('marketplace_orders')
           .select('id,status,paid_at,payment_review_required')
           .eq('buyer_id', sessionData.session.user.id)
           .eq('provider_transaction_id', midtransOrderId)
