@@ -2372,7 +2372,7 @@ async function callEmployeeDeviceActivation(action,extra={}){
  const {data:sessionData,error:sessionError}=await sb.auth.getSession();
  if(sessionError)throw sessionError;
  if(!sessionData.session)throw new Error('Silakan login terlebih dahulu.');
- const {data,error}=await sb.functions.invoke('employee-device-activation',{body:{action,device_id:employeeDeviceId(sessionData.session.user.id),device_label:employeeDeviceLabel(),...extra}});
+ const {data,error}=await sb.functions.invoke('employee-device-activation',{body:{action,...extra}});
  if(error){let msg=error.message||'Permintaan aktivasi gagal.';try{if(error.context&&typeof error.context.json==='function'){const d=await error.context.json();if(d.message)msg=d.message;}}catch(_){}throw new Error(msg);}
  if(!data||data.success===false)throw new Error(data?.message||'Server belum mengonfirmasi status aktivasi.');
  return data;
@@ -2390,7 +2390,7 @@ async function ensureEmployeeDeviceActivation(){
   const result=await callEmployeeDeviceActivation('status');
   if(result.active===true){panel.hidden=true;document.body.classList.remove('employee-device-pending');setEmployeeLoginFormVisible(false);return true;}
   panel.hidden=false;document.body.classList.add('employee-device-pending');
-  setEmployeeLoginFormVisible(false);employeeDeviceStatus('Aktivasi perangkat untuk akun karyawan ini belum dibayar. Owner perlu membuka menu Keuangan Usaha, lalu memilih Bayar Aktivasi pada baris akun/perangkat yang sama. Pembayaran akun karyawan lain tidak otomatis mengaktifkan akun ini. Anda tidak perlu membayar sendiri.',false);
+  setEmployeeLoginFormVisible(false);employeeDeviceStatus('ID akun karyawan ini belum aktif. Owner perlu membuka menu Keuangan Usaha dan membayar aktivasi Rp10.000 pada ID akun yang tepat. Pembayaran melekat pada ID karyawan, bukan perangkat; setelah aktif, akun dapat digunakan dari HP atau komputer mana saja. Karyawan tidak perlu membayar sendiri.',false);
   return false;
  }catch(e){
   panel.hidden=false;document.body.classList.add('employee-device-pending');setEmployeeLoginFormVisible(false);
@@ -2408,19 +2408,19 @@ async function loadOwnerDeviceActivations(businessIdOverride){
   const employees=Array.isArray(result.employees)?result.employees:[];
   const recentlyPaid=Array.isArray(result.recently_paid)?result.recently_paid:[];
   if(!employees.length){host.innerHTML='<p class="small">Belum ada akun karyawan yang bergabung. Bagikan kode undangan hanya kepada karyawan yang diizinkan.</p>';return;}
-  host.innerHTML='<div class="employee-management-wrap"><table class="employee-management-table"><thead><tr><th>Nama Karyawan / ID</th><th>Status Akun</th><th>Status Aktivasi</th><th>Perangkat & Pembayaran</th><th>Bergabung</th><th>Tindakan</th></tr></thead><tbody>'+employees.map(employee=>{
+  host.innerHTML='<div class="employee-management-wrap"><table class="employee-management-table"><thead><tr><th>Nama Karyawan / ID</th><th>Status Akun</th><th>Status Aktivasi</th><th>ID Karyawan & Pembayaran</th><th>Bergabung</th><th>Tindakan</th></tr></thead><tbody>'+employees.map(employee=>{
     const uid=String(employee.user_id||'');
     const active=employee.active===true;
     const devices=Array.isArray(employee.devices)?employee.devices:[];
-    const hasPaidDevice=devices.some(device=>device.status==='paid');
-    const hasPendingDevice=devices.some(device=>device.status==='pending_payment');
+    const hasPaidDevice=devices.some(device=>device.status==='paid'&&device.activation_kind==='account');
+    const hasPendingDevice=devices.some(device=>device.status==='pending_payment'&&device.activation_kind==='account');
     const accountState=!active?'Nonaktif':hasPaidDevice?(hasPendingDevice?'Sudah diaktivasi (ada perangkat lain menunggu)':'Sudah diaktivasi'):'Belum diaktivasi';
     const deviceHtml=devices.length?devices.map(device=>{
      const status=String(device.status||'pending_payment');
      const isAccount=device.activation_kind==='account';
      const state=status==='paid'?(isAccount?'Akun Aktif':'Perangkat Aktif'):status==='revoked'?'Dicabut':status==='failed'?'Gagal':'Menunggu Pembayaran Owner';
      const canPay=active&&status!=='paid'&&status!=='revoked';
-     const pay=canPay?'<button type="button" class="primary owner-device-pay" data-activation-id="'+String(device.id||'')+'">'+(isAccount?'Bayar Aktivasi Akun Rp10.000':'Bayar Aktivasi Perangkat Rp10.000')+'</button>':'';
+     const pay=canPay?'<button type="button" class="primary owner-device-pay" data-activation-id="'+String(device.id||'')+'">'+(isAccount?'Bayar Aktivasi Akun Rp10.000':'Bayar Aktivasi ID Karyawan Rp10.000')+'</button>':'';
      const check=canPay?'<button type="button" class="secondary owner-device-check" data-activation-id="'+String(device.id||'')+'">Periksa Pembayaran</button>':'';
      return '<div class="employee-device-entry"><strong>'+aman(String(device.device_label||'Perangkat karyawan'))+'</strong><br>Status: <strong>'+aman(state)+'</strong>'+(device.paid_at?'<br><span class="small">Terverifikasi: '+aman(new Date(device.paid_at).toLocaleString('id-ID'))+'</span>':'')+(!active?'<br><span class="small">Akun nonaktif; pembayaran dinonaktifkan.</span>':'')+'<div class="row-actions">'+pay+check+'</div></div>';
     }).join(''):'<span class="small">Belum ada perangkat tercatat. Minta karyawan login dari perangkat yang akan dipakai, lalu muat ulang daftar.</span>';
@@ -2436,9 +2436,9 @@ async function loadOwnerDeviceActivations(businessIdOverride){
 }
 async function ownerDeviceActivationAction(action,targetId){
  try{
-  if(action==='owner_create'&&!confirm('Owner akan membayar Rp10.000 untuk aktivasi akun/perangkat karyawan ini. Lanjutkan?'))return;
+  if(action==='owner_create'&&!confirm('Owner akan membayar Rp10.000 untuk mengaktifkan ID karyawan ini. Aktivasi berlaku di perangkat apa pun. Lanjutkan?'))return;
   if(action==='owner_deactivate'&&!confirm('Nonaktifkan karyawan ini? Akses ke usaha dan perangkat karyawan akan dicabut.'))return;
-  if(action==='owner_reactivate'&&!confirm('Aktifkan kembali akun karyawan ini? Perangkat yang sudah pernah dibayar akan dipulihkan; perangkat baru tetap perlu aktivasi.'))return;
+  if(action==='owner_reactivate'&&!confirm('Aktifkan kembali ID akun karyawan ini? Setelah aktif, akun dapat digunakan di perangkat apa pun. Lanjutkan?'))return;
   if(action==='owner_delete_inactive'&&!confirm('Hapus keanggotaan karyawan nonaktif ini dari usaha? Data aktivasi perangkat akan dihapus. Riwayat transaksi/keuangan dan akun login global tidak dihapus. Tindakan ini tidak dapat dibatalkan.'))return;
   const payload={business_id:financeBusiness?.id||''};
   if(action==='owner_create'||action==='owner_check')payload.activation_id=targetId;
