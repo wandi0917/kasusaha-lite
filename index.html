@@ -2380,6 +2380,7 @@ async function loadOwnerDeviceActivations(businessIdOverride){
   const businessId=businessIdOverride||financeBusiness?.id||'';
   const result=await callEmployeeDeviceActivation('owner_list',{business_id:businessId});
   const employees=Array.isArray(result.employees)?result.employees:[];
+  const recentlyPaid=Array.isArray(result.recently_paid)?result.recently_paid:[];
   if(!employees.length){host.innerHTML='<p class="small">Belum ada akun karyawan yang bergabung. Bagikan kode undangan hanya kepada karyawan yang diizinkan.</p>';return;}
   host.innerHTML=employees.map(employee=>{
    const uid=String(employee.user_id||'');
@@ -2390,8 +2391,9 @@ async function loadOwnerDeviceActivations(businessIdOverride){
    const accountState=!active?'Nonaktif':hasPaidDevice?(hasPendingDevice?'Sudah diaktivasi (ada perangkat lain menunggu)':'Sudah diaktivasi'):'Belum diaktivasi';
    const deviceHtml=devices.length?devices.map(device=>{
     const status=String(device.status||'pending_payment');
-    const state=status==='paid'?'Aktif':status==='revoked'?'Dicabut':status==='failed'?'Gagal':'Menunggu Pembayaran';
-    const pay=status==='paid'?'':'<button type="button" class="primary owner-device-pay" data-activation-id="'+String(device.id||'')+'">Bayar Aktivasi Rp10.000</button>';
+    const isAccount=device.activation_kind==='account';
+    const state=status==='paid'?(isAccount?'Akun Aktif':'Perangkat Aktif'):status==='revoked'?'Dicabut':status==='failed'?'Gagal':'Menunggu Pembayaran Owner';
+    const pay=status==='paid'?'':'<button type="button" class="primary owner-device-pay" data-activation-id="'+String(device.id||'')+'">'+(isAccount?'Bayar Aktivasi Akun Rp10.000':'Bayar Aktivasi Perangkat Rp10.000')+'</button>';
     const check=status==='paid'?'':'<button type="button" class="secondary owner-device-check" data-activation-id="'+String(device.id||'')+'">Periksa Pembayaran</button>';
     return '<div class="item"><strong>'+aman(String(device.device_label||'Perangkat karyawan'))+'</strong><p>Status perangkat: <strong>'+aman(state)+'</strong></p>'+(device.paid_at?'<p class="small">Pembayaran terverifikasi: '+aman(new Date(device.paid_at).toLocaleString('id-ID'))+'</p>':'')+'<div class="row-actions">'+pay+check+'</div></div>';
    }).join(''):'<div class="status warn"><strong>Belum ada permintaan aktivasi perangkat.</strong><p style="margin:6px 0 0">Minta karyawan ini login kembali melalui menu Karyawan pada perangkat yang akan dipakai. Sistem akan mencatat perangkat tersebut otomatis; setelah muncul di sini, Owner dapat menekan Bayar Aktivasi Rp10.000. Demi keamanan, Owner tidak dapat membayar perangkat yang ID-nya belum tercatat.</p><button type="button" class="secondary" onclick="loadOwnerDeviceActivations()">Periksa Ulang</button></div>';
@@ -2400,11 +2402,12 @@ async function loadOwnerDeviceActivations(businessIdOverride){
     :'<button type="button" class="primary owner-employee-reactivate" data-user-id="'+uid+'">Aktifkan Kembali</button>';
    return '<div class="card"><h4>'+aman(String(employee.name||'Nama belum diisi'))+'</h4><p class="small">ID akun: '+aman(uid.slice(0,8)+(uid.length>8?'…':''))+'</p><p>Status akun: <strong>'+(active?'Aktif':'Nonaktif')+'</strong></p><p>Status aktivasi: <strong>'+aman(accountState)+'</strong></p><p class="small">Bergabung: '+aman(employee.joined_at?new Date(employee.joined_at).toLocaleDateString('id-ID'):'—')+'</p><div class="row-actions">'+toggle+'</div><h5>Aktivasi perangkat</h5>'+deviceHtml+'</div>';
   }).join('');
- }catch(e){host.innerHTML='<p class="status error">Daftar karyawan belum dapat dimuat: '+aman(String(e.message||e).slice(0,200))+'</p>';}
+  if(recentlyPaid.length){host.insertAdjacentHTML('afterbegin','<div class="status" role="status"><strong>Pembayaran terverifikasi.</strong> Akun karyawan '+aman(recentlyPaid.join(', '))+' sudah aktif. Karyawan dapat masuk kembali menggunakan kode undangan Owner.</div>');}
+ }catch(e){host.innerHTML='<p class="status error">Daftar karyawan belum dapat dimuat: '+aman(String(e.message||e).slice(0,200))+'</p>'; }
 }
 async function ownerDeviceActivationAction(action,targetId){
  try{
-  if(action==='owner_create'&&!confirm('Owner akan membayar Rp10.000 untuk aktivasi perangkat karyawan ini. Lanjutkan?'))return;
+  if(action==='owner_create'&&!confirm('Owner akan membayar Rp10.000 untuk aktivasi akun/perangkat karyawan ini. Lanjutkan?'))return;
   if(action==='owner_deactivate'&&!confirm('Nonaktifkan karyawan ini? Akses ke usaha dan perangkat karyawan akan dicabut.'))return;
   if(action==='owner_reactivate'&&!confirm('Aktifkan kembali akun karyawan ini? Perangkat yang sudah pernah dibayar akan dipulihkan; perangkat baru tetap perlu aktivasi.'))return;
   const payload={business_id:financeBusiness?.id||''};
