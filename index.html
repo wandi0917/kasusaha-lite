@@ -571,6 +571,82 @@ label{line-height:1.4;color:#24364b}
 @media(max-width:850px){.ks-pricing-grid{grid-template-columns:1fr}}
 
 </style>
+<style id="ks-ux-polish">
+/* KasUsaha Lite UI polish: presentational only; preserves existing navigation and business logic. */
+:root{--ks-green:#166534;--ks-green-dark:#14532d;--ks-ink:#17211b;--ks-muted:#647067;--ks-line:#dbe5dd;--ks-surface:#fff;--ks-soft:#f3f8f4;--ks-focus:#4f46e5}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{color:var(--ks-ink);background:linear-gradient(180deg,#f5f8f6 0%,#edf3ef 100%);line-height:1.5}
+header.ks-brand-header{position:relative;overflow:hidden;background:linear-gradient(120deg,#14532d 0%,#166534 55%,#0f766e 100%);padding:22px clamp(14px,3vw,34px);box-shadow:0 8px 24px rgba(20,83,45,.14)}
+header.ks-brand-header h1{font-size:clamp(24px,3vw,32px);letter-spacing:-.035em;line-height:1.15}
+header.ks-brand-header>p{color:#e4f7e9;line-height:1.5}
+nav[aria-label="Navigasi utama"]{gap:7px;padding:10px clamp(10px,2vw,24px);border-bottom:1px solid #dce7df;box-shadow:0 5px 18px rgba(20,40,25,.06);scrollbar-width:thin}
+nav[aria-label="Navigasi utama"] button{min-height:42px;padding:10px 13px;border-radius:999px;border-color:#d9e5dc;color:#245b37;background:#fff;transition:background .15s ease,color .15s ease,border-color .15s ease,transform .15s ease}
+nav[aria-label="Navigasi utama"] button:hover{background:#eff8f1;border-color:#8bb99a}
+nav[aria-label="Navigasi utama"] button.active{background:#166534;color:#fff;border-color:#166534;box-shadow:0 3px 9px rgba(22,101,52,.18)}
+main{max-width:1180px;padding:clamp(12px,2.3vw,26px)}
+.tab{min-width:0}
+.card{border:1px solid var(--ks-line);border-radius:16px;padding:clamp(14px,2vw,22px);box-shadow:0 5px 18px rgba(28,55,36,.045);margin-bottom:16px}
+.card h2,.card h3{letter-spacing:-.02em;line-height:1.3}
+.item{border-color:var(--ks-line);border-radius:12px;box-shadow:0 3px 12px rgba(20,40,25,.035)}
+input,select,textarea{border-color:#cbd8ce;background:#fff;min-height:44px;transition:border-color .15s ease,box-shadow .15s ease}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:3px solid rgba(79,70,229,.24);outline-offset:2px;border-color:var(--ks-focus)}
+button{transition:filter .15s ease,transform .15s ease}
+button:hover:not(:disabled){filter:brightness(.98)}
+button:active:not(:disabled){transform:translateY(1px)}
+.primary{background:linear-gradient(135deg,#166534,#15803d);box-shadow:0 3px 8px rgba(22,101,52,.12);min-height:42px}
+.secondary{border-color:#c7d9cb;background:#f0f7f1;min-height:40px}
+.status{border:1px solid #d8e8da;line-height:1.5}
+.status.error{border-color:#fecaca}.status.warn{border-color:#fde68a}
+.beginner-start{background:linear-gradient(135deg,#fff 0%,#f4faf5 100%);border-color:#cfe3d3}
+.beginner-start-head{display:flex;align-items:flex-start;gap:12px}
+.beginner-start-head h2{margin:0 0 4px}
+.beginner-start-head p{margin:0;color:var(--ks-muted)}
+.beginner-start-grid{gap:12px}
+.beginner-start-grid button,.transaction-shortcut{min-width:0;border:1px solid #d8e5db;border-radius:14px;background:#fff;box-shadow:0 4px 14px rgba(24,54,34,.04);text-align:left;transition:transform .15s ease,box-shadow .15s ease,border-color .15s ease}
+.beginner-start-grid button:hover,.transaction-shortcut:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(24,54,34,.09);border-color:#8fbea0}
+.promo-home{border-radius:20px;overflow:hidden}
+.promo-hero{gap:clamp(18px,3vw,34px);border-radius:20px}
+.promo-kicker{letter-spacing:.07em}
+.ks-license-price{border-radius:14px}
+.promo-primary,.promo-secondary{min-height:44px;border-radius:999px}
+.promo-benefit{border:1px solid #dce8df;border-radius:13px;background:#fff;padding:14px;box-shadow:0 4px 12px rgba(24,54,34,.035)}
+.affiliate-home-card,.affiliate-extra-card{border-radius:14px;border-color:#dce6df;box-shadow:0 4px 14px rgba(24,54,34,.04)}
+.transaction-guide{border:1px solid #cfe1d2;border-radius:14px;background:linear-gradient(110deg,#f0f8f1,#fff);padding:14px 16px;margin-bottom:14px;line-height:1.6}
+.transaction-shortcuts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:12px 0 18px}
+.transaction-shortcut{display:flex;flex-direction:column;gap:7px;padding:16px;min-height:138px}
+.transaction-shortcut strong{color:#164e2c;line-height:1.35}
+.transaction-shortcut>span:last-child{font-size:13px;color:#647067;line-height:1.45}
+.shortcut-icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#e8f5eb;font-size:22px}
+.finance-metric{border-radius:13px;background:linear-gradient(145deg,#fff,#f5faf6);border-color:#dce8df;min-width:0}
+.finance-metric strong{font-size:clamp(16px,2vw,21px);color:#14532d;line-height:1.35}
+.report-category-view{border-radius:16px}
+.table-wrap{border:1px solid #dce5de;border-radius:12px;background:#fff}
+.report-table{min-width:560px}
+.report-table th{background:#e8f4eb;color:#174d2b}
+.report-table th,.report-table td{padding:11px 12px}
+.report-table tr:hover td{background:#f7fbf8}
+#areaLaporanCetak{background:#fff}
+.kasusaha-install-after-payment,.kasusaha-payment-return{box-shadow:0 8px 24px rgba(55,48,163,.07)}
+footer{line-height:1.7}
+@media(min-width:1000px){nav[aria-label="Navigasi utama"]{flex-wrap:wrap;justify-content:center}nav[aria-label="Navigasi utama"] button{font-size:13px} }
+@media(max-width:999px){.transaction-shortcuts{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:600px){
+ header.ks-brand-header{padding:17px 14px}
+ nav[aria-label="Navigasi utama"]{top:0;gap:6px;padding:8px;scroll-snap-type:x proximity}
+ nav[aria-label="Navigasi utama"] button{font-size:12px;min-height:40px;padding:9px 12px;scroll-snap-align:start}
+ main{padding:12px 10px 24px}
+ .card{border-radius:14px;padding:14px;margin-bottom:12px}
+ .beginner-start-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .transaction-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .transaction-shortcut{min-height:122px;padding:12px}
+ .promo-hero{padding:16px}
+ .promo-actions{display:grid;grid-template-columns:1fr;gap:9px}
+ .promo-actions button{width:100%}
+ .promo-benefits{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .report-table th,.report-table td{padding:9px;font-size:12px}
+}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important;animation:none!important}}
+</style>
 </head>
 <body>
 <header class="ks-brand-header">
