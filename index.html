@@ -725,6 +725,33 @@ footer{line-height:1.7}
 <section id="kasusahaPaymentReturnNotice" class="kasusaha-payment-return" hidden role="status" aria-live="polite"><strong id="kasusahaPaymentReturnTitle">Memeriksa pembayaran…</strong><p id="kasusahaPaymentReturnText">Status pembayaran sedang diverifikasi oleh server.</p><div class="kasusaha-payment-return-actions"><button type="button" class="primary" id="kasusahaPaymentOpenAccount">Buka Akun Pembeli &amp; Lisensi</button><button type="button" class="secondary" id="kasusahaPaymentOpenInstall">Panduan instal PWA</button></div><div class="kasusaha-install-after-payment"><h3>Pasang KasUsaha Lite setelah pembayaran</h3><p><strong>HP Android (Chrome):</strong> tekan menu ⋮ di Chrome, lalu pilih Instal aplikasi atau Tambahkan ke layar utama. Ikuti konfirmasi.</p><p><strong>iPhone/iPad:</strong> buka situs melalui Safari, tekan Bagikan, pilih Add to Home Screen / Tambahkan ke Layar Utama, lalu Tambah.</p><p><strong>Komputer (Chrome/Edge):</strong> gunakan ikon Instal di bilah alamat atau menu browser, lalu pilih Install KasUsaha Lite bila tersedia.</p><p>Sesudah terpasang, buka ikon aplikasi dan login dengan akun pembeli yang sama.</p><p class="small">Pemasangan perlu persetujuan pengguna dan tidak berlangsung otomatis. Jika opsi belum muncul, gunakan situs melalui browser yang didukung. Jangan membayar ulang saat status sedang diperiksa.</p></div></section>
 <main>
 <section id="beranda" class="tab active">
+<section class="ks-home-showcase" aria-label="Promosi fitur KasUsaha Lite">
+  <div class="ks-showcase-copy">
+    <span class="ks-showcase-eyebrow">USAHA LEBIH TERTATA</span>
+    <h2>Dari transaksi harian sampai laporan usaha, <em>semua lebih mudah dipantau.</em></h2>
+    <p>Catat penjualan, kelola barang, dan lihat laporan dalam satu tempat. Mulai dari kebutuhan sederhana, lalu kembangkan sesuai cara kerja usaha Anda.</p>
+    <div class="ks-showcase-points">
+      <span><b>✓</b> Catatan penjualan dan pengeluaran</span>
+      <span><b>✓</b> Daftar produk dan informasi stok</span>
+      <span><b>✓</b> Laporan sesuai akses akun</span>
+    </div>
+    <button type="button" class="ks-showcase-cta" onclick="buka('transaksi',document.querySelector('nav button[onclick*=\'transaksi\']'))">Lihat fitur transaksi <span aria-hidden="true">↗</span></button>
+  </div>
+  <div class="ks-showcase-art" role="img" aria-label="Ilustrasi aplikasi kasir dengan grafik, laporan, dan kartu produk">
+    <div class="ks-art-spark ks-art-spark-a">✦</div><div class="ks-art-spark ks-art-spark-b">✧</div>
+    <div class="ks-art-orb"></div>
+    <div class="ks-art-phone">
+      <div class="ks-art-phone-top"><span class="ks-art-logo">k</span><span><b>KasUsaha</b><small>Ringkasan usaha</small></span><span class="ks-art-menu">•••</span></div>
+      <div class="ks-art-welcome">Kelola usaha dengan lebih rapi <span>✦</span></div>
+      <div class="ks-art-stat-row"><div><small>Penjualan</small><b>Harian</b><i>▥</i></div><div><small>Persediaan</small><b>Produk</b><i>▦</i></div></div>
+      <div class="ks-art-chart-card"><div class="ks-art-card-title">Aktivitas usaha <span>7 hari</span></div><svg viewBox="0 0 320 112" aria-hidden="true" focusable="false"><defs><linearGradient id="ksShowcaseGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6ee7a0" stop-opacity=".48"/><stop offset="100%" stop-color="#6ee7a0" stop-opacity="0"/></linearGradient></defs><path d="M0 85 C24 78 36 57 58 66 S91 43 112 52 S145 29 166 43 S204 53 224 31 S265 44 286 20 S307 26 320 12 L320 112 L0 112Z" fill="url(#ksShowcaseGradient)"/><path d="M0 85 C24 78 36 57 58 66 S91 43 112 52 S145 29 166 43 S204 53 224 31 S265 44 286 20 S307 26 320 12" fill="none" stroke="#16834b" stroke-width="4" stroke-linecap="round"/><path d="M0 98 C30 88 44 93 64 84 S103 94 125 79 S164 90 190 75 S228 88 254 68 S296 77 320 63" fill="none" stroke="#f0a06c" stroke-width="3" stroke-linecap="round"/></svg><div class="ks-art-days"><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span></div></div>
+      <div class="ks-art-product-row"><span class="ks-art-product-icon">▤</span><span><b>Produk & transaksi</b><small>Catatan terorganisir</small></span><span class="ks-art-check">✓</span></div>
+    </div>
+    <div class="ks-art-floating ks-art-floating-one"><span>✓</span><div><b>Lebih teratur</b><small>Catat setiap hari</small></div></div>
+    <div class="ks-art-floating ks-art-floating-two"><span>▥</span><div><b>Ringkasan usaha</b><small>Informasi dalam satu tempat</small></div></div>
+  </div>
+</section>
+
 <details class="card usage-guide" open><summary><strong>📘 Panduan singkat — mulai dalam 3 langkah</strong></summary><ol><li><strong>Siapkan usaha:</strong> buka <em>Produk Saya</em> untuk menambahkan nama barang, harga, dan stok. Untuk usaha jasa, Anda bisa langsung mencatat pemasukan.</li><li><strong>Catat kegiatan:</strong> buka <em>Transaksi</em>, pilih <em>Kasir Cepat</em> untuk penjualan atau pilih pencatatan pemasukan/pengeluaran yang tersedia.</li><li><strong>Periksa hasil:</strong> buka menu laporan dan pilih kategori serta periode yang ingin dilihat. Cetak atau ekspor jika tombol tersedia.</li></ol><p class="small">Tips: gunakan akun yang sama dan pilih usaha yang sama saat berpindah HP, komputer, atau tablet. Data yang hanya tersimpan di satu perangkat mungkin perlu disinkronkan terlebih dahulu. Jangan hapus data perangkat sebelum memastikan laporan sudah lengkap.</p><hr><h3>Panduan instal aplikasi (PWA)</h3><p>Setelah pembayaran lisensi berhasil dan terverifikasi, aplikasi dapat dipasang melalui browser. Pembayaran tidak memasang aplikasi secara otomatis.</p><ul><li><strong>HP Android:</strong> Chrome → menu ⋮ → Instal aplikasi atau Tambahkan ke layar utama.</li><li><strong>iPhone/iPad:</strong> Safari → Bagikan → Add to Home Screen / Tambahkan ke Layar Utama → Tambah.</li><li><strong>Komputer:</strong> Chrome/Edge → ikon instal di bilah alamat atau menu browser → Install KasUsaha Lite jika tersedia.</li></ul><p>Jika opsi instal belum tersedia, pastikan situs dibuka lewat HTTPS dan browser mendukung PWA. Anda tetap bisa memakai situs langsung di browser. Setelah terpasang, buka ikon aplikasi dan login dengan akun pembeli yang sama.</p></details>
 <section class="card beginner-start" aria-label="Mulai menggunakan KasUsaha Lite"><div class="beginner-start-head"><span class="beginner-start-icon" aria-hidden="true">✨</span><div><h2>Mulai dari sini</h2><p>Pilih pekerjaan yang ingin Anda lakukan. Anda bisa kembali ke Beranda kapan saja.</p></div></div><div class="beginner-start-grid"><button type="button" onclick="buka('transaksi',document.querySelector('nav button[onclick*=\'transaksi\']'))"><span aria-hidden="true">🧾</span><strong>Catat penjualan</strong><small>Buka menu transaksi dan kasir</small></button><button type="button" onclick="buka('produk',document.querySelector('nav button[onclick*=\'produk\']'))"><span aria-hidden="true">📦</span><strong>Tambah barang</strong><small>Kelola produk dan persediaan</small></button><button type="button" onclick="buka('pasar',document.querySelector('nav button[onclick*=\'pasar\']'))"><span aria-hidden="true">🛍️</span><strong>Buka toko online</strong><small>Lihat produk di Pasar Online</small></button><button type="button" onclick="buka('akunPenjual',document.querySelector('nav button[onclick*=\'akunPenjual\']'))"><span aria-hidden="true">👤</span><strong>Atur akun penjual</strong><small>Periksa informasi akun usaha</small></button></div></section>
 
@@ -997,32 +1024,7 @@ async function bagikanKasUsahaLite(){
 <div class="promo-benefit"><b>📊 Laporan jelas</b><span>Bantu memahami kondisi usaha dari catatan.</span></div>
 <div class="promo-benefit"><b>👥 Owner & karyawan</b><span>Akses sesuai peran akun masing-masing.</span></div>
 </div>
-<section class="ks-home-showcase" aria-label="Promosi fitur KasUsaha Lite">
-  <div class="ks-showcase-copy">
-    <span class="ks-showcase-eyebrow">USAHA LEBIH TERTATA</span>
-    <h2>Dari transaksi harian sampai laporan usaha, <em>semua lebih mudah dipantau.</em></h2>
-    <p>Catat penjualan, kelola barang, dan lihat laporan dalam satu tempat. Mulai dari kebutuhan sederhana, lalu kembangkan sesuai cara kerja usaha Anda.</p>
-    <div class="ks-showcase-points">
-      <span><b>✓</b> Catatan penjualan dan pengeluaran</span>
-      <span><b>✓</b> Daftar produk dan informasi stok</span>
-      <span><b>✓</b> Laporan sesuai akses akun</span>
-    </div>
-    <button type="button" class="ks-showcase-cta" onclick="buka('transaksi',document.querySelector('nav button[onclick*=\'transaksi\']'))">Lihat fitur transaksi <span aria-hidden="true">↗</span></button>
-  </div>
-  <div class="ks-showcase-art" role="img" aria-label="Ilustrasi aplikasi kasir dengan grafik, laporan, dan kartu produk">
-    <div class="ks-art-spark ks-art-spark-a">✦</div><div class="ks-art-spark ks-art-spark-b">✧</div>
-    <div class="ks-art-orb"></div>
-    <div class="ks-art-phone">
-      <div class="ks-art-phone-top"><span class="ks-art-logo">k</span><span><b>KasUsaha</b><small>Ringkasan usaha</small></span><span class="ks-art-menu">•••</span></div>
-      <div class="ks-art-welcome">Kelola usaha dengan lebih rapi <span>✦</span></div>
-      <div class="ks-art-stat-row"><div><small>Penjualan</small><b>Harian</b><i>▥</i></div><div><small>Persediaan</small><b>Produk</b><i>▦</i></div></div>
-      <div class="ks-art-chart-card"><div class="ks-art-card-title">Aktivitas usaha <span>7 hari</span></div><svg viewBox="0 0 320 112" aria-hidden="true" focusable="false"><defs><linearGradient id="ksShowcaseGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6ee7a0" stop-opacity=".48"/><stop offset="100%" stop-color="#6ee7a0" stop-opacity="0"/></linearGradient></defs><path d="M0 85 C24 78 36 57 58 66 S91 43 112 52 S145 29 166 43 S204 53 224 31 S265 44 286 20 S307 26 320 12 L320 112 L0 112Z" fill="url(#ksShowcaseGradient)"/><path d="M0 85 C24 78 36 57 58 66 S91 43 112 52 S145 29 166 43 S204 53 224 31 S265 44 286 20 S307 26 320 12" fill="none" stroke="#16834b" stroke-width="4" stroke-linecap="round"/><path d="M0 98 C30 88 44 93 64 84 S103 94 125 79 S164 90 190 75 S228 88 254 68 S296 77 320 63" fill="none" stroke="#f0a06c" stroke-width="3" stroke-linecap="round"/></svg><div class="ks-art-days"><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span></div></div>
-      <div class="ks-art-product-row"><span class="ks-art-product-icon">▤</span><span><b>Produk & transaksi</b><small>Catatan terorganisir</small></span><span class="ks-art-check">✓</span></div>
-    </div>
-    <div class="ks-art-floating ks-art-floating-one"><span>✓</span><div><b>Lebih teratur</b><small>Catat setiap hari</small></div></div>
-    <div class="ks-art-floating ks-art-floating-two"><span>▥</span><div><b>Ringkasan usaha</b><small>Informasi dalam satu tempat</small></div></div>
-  </div>
-</section>
+
 
 </section>
 
