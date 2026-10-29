@@ -2341,8 +2341,12 @@ $('keluarPembeli').addEventListener('click',async()=>{if(!sb)return pesanPembeli
 function setEmployeeLoginFormVisible(visible){const form=$('employeeLoginForm');if(form)form.hidden=!visible;const intro=$('employeeLoginIntro');if(intro)intro.hidden=!visible;}
 function employeeAuthMessage(message,isError=false){const el=$('employeeAuthStatus');if(el){el.className=isError?'status error':'status';el.textContent=message;}}
 const EMPLOYEE_DEVICE_KEY='kasusaha_employee_device_id_v1';
-function employeeDeviceId(){
- let id='';try{id=localStorage.getItem(EMPLOYEE_DEVICE_KEY)||'';if(!/^[a-zA-Z0-9_-]{16,120}$/.test(id)){id='ksdev_'+crypto.randomUUID().replace(/-/g,'');localStorage.setItem(EMPLOYEE_DEVICE_KEY,id);}}catch(e){id='ksdev_'+crypto.randomUUID().replace(/-/g,'');}
+function employeeDeviceId(userId=''){
+ // Device ID harus unik per akun karyawan di usaha yang sama. Browser yang dipakai
+ // bergantian oleh beberapa akun tidak boleh memakai ID perangkat bersama.
+ const uid=String(userId||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,80);
+ const storageKey=uid?EMPLOYEE_DEVICE_KEY+'_'+uid:EMPLOYEE_DEVICE_KEY;
+ let id='';try{id=localStorage.getItem(storageKey)||'';if(!/^[a-zA-Z0-9_-]{16,120}$/.test(id)){id='ksdev_'+crypto.randomUUID().replace(/-/g,'');localStorage.setItem(storageKey,id);}}catch(e){id='ksdev_'+crypto.randomUUID().replace(/-/g,'');}
  return id;
 }
 function employeeDeviceLabel(){const ua=String(navigator.userAgent||'');return /Android|iPhone|iPad|Mobile/i.test(ua)?'HP/Tablet karyawan':'Laptop/Komputer karyawan';}
@@ -2352,7 +2356,7 @@ async function callEmployeeDeviceActivation(action,extra={}){
  const {data:sessionData,error:sessionError}=await sb.auth.getSession();
  if(sessionError)throw sessionError;
  if(!sessionData.session)throw new Error('Silakan login terlebih dahulu.');
- const {data,error}=await sb.functions.invoke('employee-device-activation',{body:{action,device_id:employeeDeviceId(),device_label:employeeDeviceLabel(),...extra}});
+ const {data,error}=await sb.functions.invoke('employee-device-activation',{body:{action,device_id:employeeDeviceId(sessionData.session.user.id),device_label:employeeDeviceLabel(),...extra}});
  if(error){let msg=error.message||'Permintaan aktivasi gagal.';try{if(error.context&&typeof error.context.json==='function'){const d=await error.context.json();if(d.message)msg=d.message;}}catch(_){}throw new Error(msg);}
  if(!data||data.success===false)throw new Error(data?.message||'Server belum mengonfirmasi status aktivasi.');
  return data;
