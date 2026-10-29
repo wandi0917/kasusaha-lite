@@ -2338,7 +2338,7 @@ async function kirimUlangKonfirmasi(email, tampilkan){
 $('resendBuyerConfirmation').addEventListener('click',()=>kirimUlangKonfirmasi($('emailPembeliAkun').value,pesanPembeli));
  $('loginPembeli').addEventListener('click',async()=>{if(!sb)return pesanPembeli('Pustaka login belum tersedia.',true);const email=$('emailPembeliAkun').value.trim(),password=$('sandiPembeliAkun').value;if(!email||!password)return pesanPembeli('Masukkan email dan kata sandi.',true);$('loginPembeli').disabled=true;pesanPembeli('Sedang login sebagai pembeli...');try{const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;pesanPembeli('Login berhasil: '+data.user.email+'. Anda dapat melanjutkan belanja.');await periksaAktivasiLisensi();}catch(e){pesanPembeli('Login gagal: '+String(e.message||'Pastikan email sudah dikonfirmasi dan kata sandi benar.').slice(0,180),true);}finally{$('loginPembeli').disabled=false;}});
 $('keluarPembeli').addEventListener('click',async()=>{if(!sb)return pesanPembeli('Pustaka login belum tersedia.',true);try{const {error}=await sb.auth.signOut();if(error)throw error;pesanPembeli('Anda sudah logout dari aplikasi.');}catch(e){pesanPembeli('Logout gagal: '+String(e.message||e).slice(0,160),true);}});
-function setEmployeeLoginFormVisible(visible){const form=$('employeeLoginForm');if(form)form.hidden=!visible;const logout=$('employeeLogout');if(logout)logout.hidden=visible;}
+function setEmployeeLoginFormVisible(visible){const form=$('employeeLoginForm');if(form)form.hidden=!visible;}
 function employeeAuthMessage(message,isError=false){const el=$('employeeAuthStatus');if(el){el.className=isError?'status error':'status';el.textContent=message;}}
 const EMPLOYEE_DEVICE_KEY='kasusaha_employee_device_id_v1';
 function employeeDeviceId(){
@@ -2441,10 +2441,10 @@ async function employeeCheckRole(){
  try{
   const {data:sessionData,error:sessionError}=await sb.auth.getSession();if(sessionError)throw sessionError;
   if(!sessionData.session){setEmployeeLoginFormVisible(true);employeeAuthMessage('Belum login sebagai karyawan. Masukkan kode undangan Owner.');return;}
-  if(!sessionData.session.user.is_anonymous){employeeAuthMessage('Sesi ini menggunakan akun email. Untuk login tanpa email, logout terlebih dahulu lalu gunakan kode undangan.',true);return;}
+  if(!sessionData.session.user.is_anonymous){setEmployeeLoginFormVisible(true);employeeAuthMessage('Sesi ini menggunakan akun email. Klik Logout Karyawan terlebih dahulu, lalu gunakan kode undangan.',true);return;}
   const {data:member,error}=await sb.from('business_members').select('role,active,business_id').eq('user_id',sessionData.session.user.id).eq('active',true).maybeSingle();if(error)throw error;
-  if(!member){employeeAuthMessage('Sesi anonim belum terhubung ke usaha. Masukkan kode undangan Owner.',true);return;}
-  if(member.role!=='employee'){await sb.auth.signOut();financeBusiness=null;financeMemberRole=null;financeMemberUserId=null;financeRows=[];document.body.classList.remove('employee-verified');applyHomeFinanceRole();employeeAuthMessage('Login ditolak: sesi ini bukan akun Karyawan. Silakan masuk menggunakan kode undangan.',true);return;}
+  if(!member){setEmployeeLoginFormVisible(true);employeeAuthMessage('Sesi anonim belum terhubung ke usaha. Masukkan kode undangan Owner.',true);return;}
+  if(member.role!=='employee'){await sb.auth.signOut();financeBusiness=null;financeMemberRole=null;financeMemberUserId=null;financeRows=[];document.body.classList.remove('employee-verified');setEmployeeLoginFormVisible(true);applyHomeFinanceRole();employeeAuthMessage('Login ditolak: sesi ini bukan akun Karyawan. Silakan masuk menggunakan kode undangan.',true);return;}
   setEmployeeLoginFormVisible(false);employeeAuthMessage('Login karyawan aktif. Hak akses dibatasi sesuai peran Karyawan.');
   await loadFinanceWorkspace();
  }catch(e){employeeAuthMessage('Gagal memeriksa peran karyawan: '+String(e.message||e).slice(0,180),true);}
