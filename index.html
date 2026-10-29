@@ -646,6 +646,56 @@ footer{line-height:1.7}
  .report-table th,.report-table td{padding:9px;font-size:12px}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important;animation:none!important}}
+
+/* Homepage promotional showcase illustration */
+.ks-home-showcase{position:relative;isolation:isolate;display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,.88fr);align-items:center;gap:clamp(22px,4vw,52px);overflow:hidden;margin:clamp(22px,4vw,40px) 0;padding:clamp(22px,4vw,44px);border:1px solid #c9e4d1;border-radius:24px;background:radial-gradient(circle at 88% 18%,rgba(185,243,202,.8),transparent 32%),linear-gradient(120deg,#f1fbf3 0%,#ffffff 50%,#e6f8ec 100%);box-shadow:0 16px 42px rgba(22,101,52,.09)}
+.ks-showcase-copy{position:relative;z-index:2;max-width:560px}
+.ks-showcase-eyebrow{display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border:1px solid #c4e5ce;border-radius:999px;background:#fff;color:#166534;font-size:11px;font-weight:800;letter-spacing:.12em}
+.ks-showcase-copy h2{margin:15px 0 12px;font-size:clamp(25px,3.2vw,39px);line-height:1.15;letter-spacing:-.045em;color:#153d27}
+.ks-showcase-copy h2 em{font-style:normal;color:#16834b}
+.ks-showcase-copy>p{max-width:510px;color:#53665a;line-height:1.75;font-size:15px}
+.ks-showcase-points{display:grid;gap:10px;margin:20px 0 24px}
+.ks-showcase-points span{display:flex;align-items:center;gap:10px;color:#304b39;font-size:14px;font-weight:600}
+.ks-showcase-points b{display:grid;place-items:center;flex:0 0 22px;width:22px;height:22px;border-radius:50%;background:#d6f5df;color:#16713b;font-size:13px}
+.ks-showcase-cta{display:inline-flex;align-items:center;gap:12px;min-height:46px;padding:12px 19px;border:0;border-radius:999px;background:linear-gradient(135deg,#166534,#16834b);color:#fff;font-weight:750;box-shadow:0 7px 16px rgba(22,101,52,.18)}
+.ks-showcase-cta span{font-size:18px}
+.ks-showcase-art{position:relative;display:grid;place-items:center;min-height:350px;isolation:isolate}
+.ks-art-orb{position:absolute;width:min(94%,360px);aspect-ratio:1;border-radius:50%;background:linear-gradient(140deg,#b9f2c9,#e2f8e8 65%,#d4f0dc);box-shadow:inset -14px -18px 40px rgba(28,126,65,.08)}
+.ks-art-phone{position:relative;z-index:2;width:min(84%,330px);padding:17px;border:1px solid rgba(255,255,255,.95);border-radius:24px;background:rgba(255,255,255,.94);box-shadow:0 22px 48px rgba(23,73,42,.17);transform:rotate(-2deg)}
+.ks-art-phone-top{display:flex;align-items:center;gap:9px;padding-bottom:14px;border-bottom:1px solid #e5eee7}
+.ks-art-logo{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:#166534;color:#fff;font-weight:900;font-size:22px}
+.ks-art-phone-top b,.ks-art-phone-top small{display:block}
+.ks-art-phone-top b{font-size:13px;color:#173e27}
+.ks-art-phone-top small{font-size:10px;color:#748278;margin-top:2px}
+.ks-art-menu{margin-left:auto;color:#7e9283;letter-spacing:2px}
+.ks-art-welcome{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 0 12px;font-size:12px;font-weight:750;color:#2b4934}
+.ks-art-welcome span{color:#e7a83d;font-size:20px}
+.ks-art-stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ks-art-stat-row>div{position:relative;display:grid;gap:5px;padding:12px;border:1px solid #e0eee3;border-radius:13px;background:linear-gradient(140deg,#f7fcf8,#fff)}
+.ks-art-stat-row small{font-size:10px;color:#718176}
+.ks-art-stat-row b{font-size:13px;color:#1c6035}
+.ks-art-stat-row i{position:absolute;right:10px;top:10px;color:#219653;font-size:18px;font-style:normal}
+.ks-art-chart-card{margin-top:11px;padding:12px 10px 9px;border:1px solid #e1eee4;border-radius:14px;background:#fff}
+.ks-art-card-title{display:flex;justify-content:space-between;gap:8px;font-size:11px;font-weight:800;color:#2d4b35}
+.ks-art-card-title span{font-size:10px;font-weight:500;color:#819087}
+.ks-art-chart-card svg{display:block;width:100%;height:95px;margin-top:8px;overflow:visible}
+.ks-art-days{display:flex;justify-content:space-between;color:#829087;font-size:9px}
+.ks-art-product-row{display:flex;align-items:center;gap:10px;margin-top:11px;padding:10px;border-radius:12px;background:#f2faf4}
+.ks-art-product-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#d8f3df;color:#16713b;font-size:19px}
+.ks-art-product-row b,.ks-art-product-row small{display:block}
+.ks-art-product-row b{font-size:11px;color:#2a4933}
+.ks-art-product-row small{font-size:9px;color:#819087;margin-top:3px}
+.ks-art-check{display:grid;place-items:center;width:23px;height:23px;margin-left:auto;border-radius:50%;background:#d3f4dc;color:#16713b;font-weight:900}
+.ks-art-spark{position:absolute;z-index:3;color:#e5a53d;font-size:28px}
+.ks-art-spark-a{top:9%;right:10%}.ks-art-spark-b{bottom:13%;left:6%;font-size:36px;color:#219653}
+.ks-art-floating{position:absolute;z-index:4;display:flex;align-items:center;gap:9px;padding:11px 13px;border:1px solid #e0eee3;border-radius:14px;background:rgba(255,255,255,.97);box-shadow:0 10px 24px rgba(22,73,40,.13)}
+.ks-art-floating>span{display:grid;place-items:center;width:32px;height:32px;border-radius:10px;background:#e1f7e7;color:#17753b;font-weight:900}
+.ks-art-floating b,.ks-art-floating small{display:block;white-space:nowrap}
+.ks-art-floating b{font-size:11px;color:#24472e}
+.ks-art-floating small{margin-top:3px;font-size:9px;color:#748278}
+.ks-art-floating-one{top:19%;left:-1%}.ks-art-floating-two{right:-1%;bottom:15%}
+@media(max-width:760px){.ks-home-showcase{grid-template-columns:1fr;gap:12px;padding:22px 17px;border-radius:19px}.ks-showcase-copy h2{font-size:29px}.ks-showcase-art{min-height:330px;margin-top:3px}.ks-art-phone{width:min(78%,315px)}.ks-art-floating-one{left:0;top:12%}.ks-art-floating-two{right:0;bottom:9%}.ks-art-floating{padding:9px 10px}.ks-art-floating b{font-size:10px}.ks-art-floating small{font-size:8px}}
+@media(max-width:390px){.ks-showcase-copy h2{font-size:25px}.ks-showcase-art{min-height:300px}.ks-art-phone{width:82%;padding:13px}.ks-art-floating-one{left:-5px}.ks-art-floating-two{right:-5px}.ks-art-floating{gap:6px}.ks-art-floating>span{width:27px;height:27px}}
 </style>
 </head>
 <body>
@@ -947,6 +997,33 @@ async function bagikanKasUsahaLite(){
 <div class="promo-benefit"><b>📊 Laporan jelas</b><span>Bantu memahami kondisi usaha dari catatan.</span></div>
 <div class="promo-benefit"><b>👥 Owner & karyawan</b><span>Akses sesuai peran akun masing-masing.</span></div>
 </div>
+<section class="ks-home-showcase" aria-label="Promosi fitur KasUsaha Lite">
+  <div class="ks-showcase-copy">
+    <span class="ks-showcase-eyebrow">USAHA LEBIH TERTATA</span>
+    <h2>Dari transaksi harian sampai laporan usaha, <em>semua lebih mudah dipantau.</em></h2>
+    <p>Catat penjualan, kelola barang, dan lihat laporan dalam satu tempat. Mulai dari kebutuhan sederhana, lalu kembangkan sesuai cara kerja usaha Anda.</p>
+    <div class="ks-showcase-points">
+      <span><b>✓</b> Catatan penjualan dan pengeluaran</span>
+      <span><b>✓</b> Daftar produk dan informasi stok</span>
+      <span><b>✓</b> Laporan sesuai akses akun</span>
+    </div>
+    <button type="button" class="ks-showcase-cta" onclick="buka('transaksi',document.querySelector('nav button[onclick*=\'transaksi\']'))">Lihat fitur transaksi <span aria-hidden="true">↗</span></button>
+  </div>
+  <div class="ks-showcase-art" role="img" aria-label="Ilustrasi aplikasi kasir dengan grafik, laporan, dan kartu produk">
+    <div class="ks-art-spark ks-art-spark-a">✦</div><div class="ks-art-spark ks-art-spark-b">✧</div>
+    <div class="ks-art-orb"></div>
+    <div class="ks-art-phone">
+      <div class="ks-art-phone-top"><span class="ks-art-logo">k</span><span><b>KasUsaha</b><small>Ringkasan usaha</small></span><span class="ks-art-menu">•••</span></div>
+      <div class="ks-art-welcome">Kelola usaha dengan lebih rapi <span>✦</span></div>
+      <div class="ks-art-stat-row"><div><small>Penjualan</small><b>Harian</b><i>▥</i></div><div><small>Persediaan</small><b>Produk</b><i>▦</i></div></div>
+      <div class="ks-art-chart-card"><div class="ks-art-card-title">Aktivitas usaha <span>7 hari</span></div><svg viewBox="0 0 320 112" aria-hidden="true" focusable="false"><defs><linearGradient id="ksShowcaseGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6ee7a0" stop-opacity=".48"/><stop offset="100%" stop-color="#6ee7a0" stop-opacity="0"/></linearGradient></defs><path d="M0 85 C24 78 36 57 58 66 S91 43 112 52 S145 29 166 43 S204 53 224 31 S265 44 286 20 S307 26 320 12 L320 112 L0 112Z" fill="url(#ksShowcaseGradient)"/><path d="M0 85 C24 78 36 57 58 66 S91 43 112 52 S145 29 166 43 S204 53 224 31 S265 44 286 20 S307 26 320 12" fill="none" stroke="#16834b" stroke-width="4" stroke-linecap="round"/><path d="M0 98 C30 88 44 93 64 84 S103 94 125 79 S164 90 190 75 S228 88 254 68 S296 77 320 63" fill="none" stroke="#f0a06c" stroke-width="3" stroke-linecap="round"/></svg><div class="ks-art-days"><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span></div></div>
+      <div class="ks-art-product-row"><span class="ks-art-product-icon">▤</span><span><b>Produk & transaksi</b><small>Catatan terorganisir</small></span><span class="ks-art-check">✓</span></div>
+    </div>
+    <div class="ks-art-floating ks-art-floating-one"><span>✓</span><div><b>Lebih teratur</b><small>Catat setiap hari</small></div></div>
+    <div class="ks-art-floating ks-art-floating-two"><span>▥</span><div><b>Ringkasan usaha</b><small>Informasi dalam satu tempat</small></div></div>
+  </div>
+</section>
+
 </section>
 
 </section>
