@@ -3468,7 +3468,8 @@ sb.auth.onAuthStateChange((event,session)=>{financeBusiness=null;financeMemberRo
   };
   if (close) close.addEventListener('click', () => { toast.hidden = true; });
   window.bukaKotakSaran = (button) => {
-    const berandaButton = document.querySelector('nav[aria-label="Navigasi utama"] button[onclick*="buka(\\'beranda"]') || document.querySelector('nav[aria-label="Navigasi utama"] button');
+    const nav = document.querySelector('nav[aria-label="Navigasi utama"]');
+    const berandaButton = nav ? Array.from(nav.querySelectorAll('button')).find((item) => item.textContent.trim().startsWith('Beranda')) : null;
     if (typeof window.buka === 'function') window.buka('beranda', berandaButton);
     const target = document.getElementById('ksSuggestionTitle');
     window.setTimeout(() => {
