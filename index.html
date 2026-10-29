@@ -2400,7 +2400,7 @@ async function loadOwnerDeviceActivations(businessIdOverride){
     }).join(''):'<span class="small">Belum ada perangkat tercatat. Minta karyawan login dari perangkat yang akan dipakai, lalu muat ulang daftar.</span>';
     const toggle=active
      ?'<button type="button" class="secondary owner-employee-deactivate" data-user-id="'+uid+'">Nonaktifkan</button>'
-     :'<button type="button" class="primary owner-employee-reactivate" data-user-id="'+uid+'">Aktifkan Kembali</button>';
+     :'<div class="row-actions"><button type="button" class="primary owner-employee-reactivate" data-user-id="'+uid+'">Aktifkan Kembali</button><button type="button" class="danger owner-employee-delete" data-user-id="'+uid+'">Hapus Data</button></div>';
     return '<tr><td><strong>'+aman(String(employee.name||'Nama belum diisi'))+'</strong><br><span class="small">ID: '+aman(uid.slice(0,8)+(uid.length>8?'…':''))+'</span></td><td><strong>'+(active?'Aktif':'Nonaktif')+'</strong></td><td>'+aman(accountState)+'</td><td>'+deviceHtml+'</td><td>'+aman(employee.joined_at?new Date(employee.joined_at).toLocaleDateString('id-ID'):'—')+'</td><td><div class="row-actions">'+toggle+'</div></td></tr>';
    }).join('')+'</tbody></table></div>';
  }catch(e){host.innerHTML='<p class="status error">Daftar karyawan belum dapat dimuat: '+aman(String(e.message||e).slice(0,200))+'</p>'; }
@@ -2410,6 +2410,7 @@ async function ownerDeviceActivationAction(action,targetId){
   if(action==='owner_create'&&!confirm('Owner akan membayar Rp10.000 untuk aktivasi akun/perangkat karyawan ini. Lanjutkan?'))return;
   if(action==='owner_deactivate'&&!confirm('Nonaktifkan karyawan ini? Akses ke usaha dan perangkat karyawan akan dicabut.'))return;
   if(action==='owner_reactivate'&&!confirm('Aktifkan kembali akun karyawan ini? Perangkat yang sudah pernah dibayar akan dipulihkan; perangkat baru tetap perlu aktivasi.'))return;
+  if(action==='owner_delete_inactive'&&!confirm('Hapus keanggotaan karyawan nonaktif ini dari usaha? Data aktivasi perangkat akan dihapus. Riwayat transaksi/keuangan dan akun login global tidak dihapus. Tindakan ini tidak dapat dibatalkan.'))return;
   const payload={business_id:financeBusiness?.id||''};
   if(action==='owner_create'||action==='owner_check')payload.activation_id=targetId;
   else payload.user_id=targetId;
@@ -2427,10 +2428,12 @@ document.addEventListener('click',event=>{
  const check=event.target.closest('.owner-device-check');
  const deactivate=event.target.closest('.owner-employee-deactivate');
  const reactivate=event.target.closest('.owner-employee-reactivate');
+  const deleteInactive=event.target.closest('.owner-employee-delete');
  if(pay){pay.disabled=true;ownerDeviceActivationAction('owner_create',pay.dataset.activationId).finally(()=>{pay.disabled=false;});}
  if(check){check.disabled=true;ownerDeviceActivationAction('owner_check',check.dataset.activationId).finally(()=>{check.disabled=false;});}
  if(deactivate){deactivate.disabled=true;ownerDeviceActivationAction('owner_deactivate',deactivate.dataset.userId).finally(()=>{deactivate.disabled=false;});}
  if(reactivate){reactivate.disabled=true;ownerDeviceActivationAction('owner_reactivate',reactivate.dataset.userId).finally(()=>{reactivate.disabled=false;});}
+  if(deleteInactive){deleteInactive.disabled=true;ownerDeviceActivationAction('owner_delete_inactive',deleteInactive.dataset.userId).finally(()=>{deleteInactive.disabled=false;});}
 });
 async function employeeCheckRole(){
  if(!sb)return employeeAuthMessage('Koneksi Supabase tidak tersedia.',true);
