@@ -712,6 +712,19 @@ footer{line-height:1.7}
 @media(max-width:760px){.ks-home-showcase{grid-template-columns:1fr;gap:12px;padding:22px 17px;border-radius:19px}.ks-showcase-copy h2{font-size:29px}.ks-showcase-art{min-height:330px;margin-top:3px}.ks-art-phone{width:min(78%,315px)}.ks-art-floating-one{left:0;top:12%}.ks-art-floating-two{right:0;bottom:9%}.ks-art-floating{padding:9px 10px}.ks-art-floating b{font-size:10px}.ks-art-floating small{font-size:8px}}
 @media(max-width:390px){.ks-showcase-copy h2{font-size:25px}.ks-showcase-art{min-height:300px}.ks-art-phone{width:82%;padding:13px}.ks-art-floating-one{left:-5px}.ks-art-floating-two{right:-5px}.ks-art-floating{gap:6px}.ks-art-floating>span{width:27px;height:27px}}
 </style>
+
+<style id="ks-suggestion-style">
+.ks-suggestion-card{margin-top:22px;border:1px solid #c7d2fe;background:linear-gradient(135deg,#fff 0%,#f5f3ff 55%,#eff6ff 100%)}
+.ks-suggestion-heading{display:flex;gap:13px;align-items:flex-start;margin-bottom:14px}
+.ks-suggestion-heading h2{margin:0 0 5px;color:#312e81}
+.ks-suggestion-heading p{margin:0;color:#526079;line-height:1.6}
+.ks-suggestion-icon{display:grid;place-items:center;flex:0 0 46px;width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#dbeafe,#ede9fe);font-size:23px}
+.ks-suggestion-card textarea{resize:vertical;min-height:110px}
+.ks-suggestion-card .status{margin-top:12px}
+.ks-suggestion-card .status.error{background:#fff0f0;color:#8a1c1c}
+@media(max-width:650px){.ks-suggestion-heading{gap:10px}.ks-suggestion-icon{flex-basis:40px;width:40px;height:40px}}
+</style>
+
 </head>
 <body>
 <header class="ks-brand-header">
@@ -1043,6 +1056,24 @@ async function bagikanKasUsahaLite(){
 </div>
 
 
+</section>
+
+
+<section class="card ks-suggestion-card" aria-labelledby="ksSuggestionTitle">
+  <div class="ks-suggestion-heading"><span class="ks-suggestion-icon" aria-hidden="true">💬</span><div><h2 id="ksSuggestionTitle">Kotak Saran KasUsaha Lite</h2><p>Bantu kami memperbaiki aplikasi. Kirim saran, laporkan kendala, atau usulkan fitur yang Anda butuhkan.</p></div></div>
+  <form id="kasusahaSuggestionForm">
+    <div class="grid">
+      <div><label for="ksSuggestionCategory">Jenis masukan</label><select id="ksSuggestionCategory" name="category" required><option value="Saran umum">Saran umum</option><option value="Bug atau kendala">Bug atau kendala</option><option value="Fitur baru">Usulan fitur baru</option><option value="Pembayaran atau lisensi">Pembayaran atau lisensi</option><option value="Tampilan aplikasi">Tampilan aplikasi</option><option value="Lainnya">Lainnya</option></select></div>
+      <div><label for="ksSuggestionName">Nama (opsional)</label><input id="ksSuggestionName" name="sender_name" maxlength="100" autocomplete="name" placeholder="Nama Anda"></div>
+    </div>
+    <label for="ksSuggestionContact">Email atau WhatsApp (opsional)</label>
+    <input id="ksSuggestionContact" name="contact" maxlength="160" autocomplete="email" placeholder="Isi jika ingin dihubungi">
+    <label for="ksSuggestionMessage">Saran atau kendala</label>
+    <textarea id="ksSuggestionMessage" name="message" rows="4" minlength="5" maxlength="2000" required placeholder="Ceritakan saran atau kendala Anda (5–2.000 karakter)"></textarea>
+    <button class="primary wide" id="ksSuggestionSubmit" type="submit">Kirim saran</button>
+    <p id="ksSuggestionStatus" class="status" role="status" aria-live="polite" hidden></p>
+    <p class="small">Kontak tidak wajib. Masukan disimpan secara privat untuk ditinjau pengelola KasUsaha Lite. Jangan cantumkan kata sandi, PIN, atau kunci pembayaran.</p>
+  </form>
 </section>
 
 </section>
@@ -3409,5 +3440,57 @@ sb.auth.onAuthStateChange((event,session)=>{financeBusiness=null;financeMemberRo
 })();
 </script>
 <div id="areaLaporanCetak" aria-live="polite"></div>
+
+<script id="ks-suggestion-submit">
+(() => {
+  const form = document.getElementById('kasusahaSuggestionForm');
+  if (!form) return;
+  const button = document.getElementById('ksSuggestionSubmit');
+  const status = document.getElementById('ksSuggestionStatus');
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!form.reportValidity()) return;
+    if (!navigator.onLine) {
+      status.hidden = false; status.classList.add('error');
+      status.textContent = 'Koneksi internet tidak tersedia. Sambungkan internet lalu kirim kembali saran Anda.';
+      return;
+    }
+    if (typeof sb === 'undefined' || !sb) {
+      status.hidden = false; status.classList.add('error');
+      status.textContent = 'Layanan belum tersambung. Silakan coba lagi beberapa saat lagi.';
+      return;
+    }
+    const message = document.getElementById('ksSuggestionMessage').value.trim();
+    if (message.length < 5 || message.length > 2000) {
+      document.getElementById('ksSuggestionMessage').setCustomValidity('Masukan harus terdiri dari 5 sampai 2.000 karakter.');
+      form.reportValidity();
+      document.getElementById('ksSuggestionMessage').setCustomValidity('');
+      return;
+    }
+    const payload = {
+      category: document.getElementById('ksSuggestionCategory').value,
+      sender_name: document.getElementById('ksSuggestionName').value.trim() || null,
+      contact: document.getElementById('ksSuggestionContact').value.trim() || null,
+      message
+    };
+    button.disabled = true; button.textContent = 'Mengirim…';
+    status.hidden = false; status.classList.remove('error');
+    status.textContent = 'Mengirim saran dengan aman…';
+    try {
+      const { error } = await sb.from('kasusaha_suggestions').insert(payload);
+      if (error) throw error;
+      form.reset();
+      status.textContent = 'Terima kasih! Saran Anda berhasil dikirim kepada pengelola KasUsaha Lite.';
+    } catch (error) {
+      console.warn('Pengiriman saran KasUsaha Lite gagal:', error);
+      status.classList.add('error');
+      status.textContent = 'Saran belum berhasil dikirim. Periksa koneksi internet dan coba lagi. Jika masih gagal, hubungi pengelola.';
+    } finally {
+      button.disabled = false; button.textContent = 'Kirim saran';
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
