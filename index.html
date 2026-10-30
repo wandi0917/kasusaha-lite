@@ -1716,7 +1716,7 @@ async function buka(id,tombol){
  }
  function aman(teks){return String(teks==null?'':teks).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function formatWaktuTransaksi(t){const nilai=t.waktu||t.createdAt||t.timestamp;const d=nilai?new Date(nilai):null;if(d&&Number.isFinite(d.getTime()))return d.toLocaleString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).replace(/\./g,':');return t.tanggal||'Waktu transaksi lama tidak tersedia';}
-function catat(keterangan,jenis,nominal,kategori='Lainnya',offlinePending=false){const jumlah=Number(nominal);if(!String(keterangan||'').trim()||!Number.isFinite(jumlah)||jumlah<=0||!Number.isSafeInteger(jumlah)){alert('Isi keterangan dan jumlah rupiah bulat yang benar.');return false;}const sekarang=new Date();transaksi.unshift({id:Date.now()+Math.random(),waktu:sekarang.toISOString(),tanggal:sekarang.toLocaleDateString('id-ID'),keterangan:String(keterangan).trim(),jenis,nominal:jumlah,kategori:String(kategori||'Lainnya'),offline_pending:!!offlinePending});simpan();tampil();return true;}
+function catat(keterangan,jenis,nominal,kategori='Lainnya',offlinePending=false){const jumlah=Number(nominal);if(!String(keterangan||'').trim()||!Number.isFinite(jumlah)||jumlah<=0||!Number.isSafeInteger(jumlah)){alert('Isi keterangan dan jumlah rupiah bulat yang benar.');return false;}const sekarang=new Date();const offlineContext=offlinePending&&financeBusiness&&financeMemberUserId&&['owner','employee'].includes(financeMemberRole)?{offline_business_id:financeBusiness.id,offline_user_id:financeMemberUserId,offline_role:financeMemberRole}:{};transaksi.unshift({id:Date.now()+Math.random(),waktu:sekarang.toISOString(),tanggal:sekarang.toLocaleDateString('id-ID'),keterangan:String(keterangan).trim(),jenis,nominal:jumlah,kategori:String(kategori||'Lainnya'),offline_pending:!!offlinePending,...offlineContext});simpan();tampil();return true;}
 $('formKas').addEventListener('submit',async function(e){
  e.preventDefault();
  const description=$('keterangan').value.trim(),amount=Number($('nominal').value),category=$('kategoriLokal').value;
@@ -3336,53 +3336,66 @@ async function imporTransaksiLokalKeBersama(options={}){
  const btn=$('importLocalFinanceBtn');
  if(btn)btn.disabled=true;
  try{
-  // Pastikan sesi, peran, dan usaha dimuat ulang sebelum impor.
   if(!sb)throw new Error('Koneksi Supabase belum tersedia. Muat ulang situs dan login kembali.');
   const {data:sessionData,error:sessionError}=await sb.auth.getSession();
   if(sessionError)throw sessionError;
-  if(!sessionData.session)throw new Error('Silakan login dengan akun Owner terlebih dahulu.');
-  if(!financeBusiness||financeMemberRole!=='owner'||!financeMemberUserId)await loadFinanceWorkspace();
-  if(!financeBusiness||financeMemberRole!=='owner'||!financeMemberUserId)throw new Error('Akun yang login belum terhubung sebagai Owner ke usaha. Periksa status akun dan usaha di atas laporan.');
+  if(!sessionData?.session||sessionData.session.user?.is_anonymous)throw new Error('Silakan login dengan akun Owner atau Karyawan terlebih dahulu.');
+  if(!financeBusiness||!financeMemberRole||!financeMemberUserId)await loadFinanceWorkspace();
+  const sessionUserId=sessionData.session.user.id;
+  if(!financeBusiness||!['owner','employee'].includes(financeMemberRole)||financeMemberUserId!==sessionUserId)throw new Error('Akun yang login belum terhubung ke usaha dengan peran yang dapat menyinkronkan catatan.');
   if(!Array.isArray(transaksi)||transaksi.length===0){
-   setFinanceStatus('Belum ada catatan lokal di browser ini untuk dipindahkan. Periksa bagian “Data transaksi (Lokal)”. Data di HP/komputer lain tidak dapat dibaca otomatis.',true);
+   setFinanceStatus('Belum ada catatan lokal di browser ini untuk disinkronkan.',true);
+   return;
+  }
+  const role=financeMemberRole,businessId=financeBusiness.id;
+  const eligible=transaksi.map((t,i)=>({t,i})).filter(({t})=>{
+   if(t.offline_synced_at)return false;
+   const tagged=!!(t.offline_user_id||t.offline_business_id||t.offline_role);
+   if(role==='employee')return tagged&&t.offline_pending===true&&t.offline_user_id===sessionUserId&&t.offline_business_id===businessId&&t.offline_role==='employee'&&t.jenis==='masuk';
+   if(tagged)return t.offline_pending===true&&t.offline_user_id===sessionUserId&&t.offline_business_id===businessId&&t.offline_role==='owner';
+   return true;
+  });
+  if(!eligible.length){
+   setFinanceStatus(role==='employee'?'Tidak ada catatan offline milik akun Karyawan ini yang menunggu sinkronisasi. Catatan pengguna lain tidak akan dipindahkan.':'Tidak ada catatan lokal baru yang menunggu dipindahkan.',true);
    return;
   }
   const valid=[],skipped=[];
-  transaksi.forEach((t,i)=>{
+  eligible.forEach(({t,i})=>{
    const amount=Number(t.nominal),kind=t.jenis==='masuk'?'income':t.jenis==='keluar'?'expense':null;
    let date='';
    const raw=t.waktu||t.createdAt||t.timestamp;
    if(raw){const d=new Date(raw);if(Number.isFinite(d.getTime()))date=financeDateISO(d);}
    if(!date){const m=String(t.tanggal||'').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(m)date=m[3]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0');}
    const desc=String(t.keterangan||t.description||'').trim();
-   if(!kind||!date||!desc||!Number.isSafeInteger(amount)||amount<=0){skipped.push(i);return;}
+   if(!kind||!date||!desc||!Number.isSafeInteger(amount)||amount<=0||(role==='employee'&&kind!=='income')){skipped.push(i);return;}
    const rawId=t.id!==undefined&&t.id!==null?String(t.id):(raw||date+':'+desc+':'+amount+':'+i);
    const category=String(t.kategori||t.category||'Lainnya').trim().slice(0,80)||'Lainnya';
-   const row={business_id:financeBusiness.id,created_by:financeMemberUserId,created_by_role:'owner',transaction_date:date,transaction_type:kind,amount,description:desc.slice(0,300),category,legacy_ref:'local:'+rawId.slice(0,180)};
+   const legacyRef=role==='employee'?'local:'+sessionUserId+':'+rawId.slice(0,150):'local:'+rawId.slice(0,180);
+   const row={business_id:businessId,created_by:sessionUserId,created_by_role:role,transaction_date:date,transaction_type:kind,amount,description:desc.slice(0,300),category,legacy_ref:legacyRef};
    if(raw){const d=new Date(raw);if(Number.isFinite(d.getTime()))row.created_at=d.toISOString();}
-   valid.push(row);
+   valid.push({row,localId:String(t.id)});
   });
-  if(!valid.length)throw new Error('Ditemukan '+transaksi.length+' catatan lokal, tetapi tidak ada yang valid untuk dipindahkan. Catatan harus memiliki tanggal, keterangan, jenis, dan nominal positif.');
-  if(!automatic&&!confirm('Impor '+valid.length+' dari '+transaksi.length+' catatan lokal ke laporan bersama usaha '+financeBusiness.business_name+'? Catatan yang sudah pernah diimpor akan dilewati. Data lokal tidak akan dihapus.'))return;
-  if(automatic)setFinanceStatus('Sinkronisasi otomatis: memeriksa '+valid.length+' transaksi lokal. Catatan lokal tetap dipertahankan.');
-  setFinanceStatus('Sedang memindahkan '+valid.length+' transaksi lokal ke laporan bersama...');
+  if(!valid.length)throw new Error('Ditemukan catatan offline, tetapi tidak ada yang valid untuk disinkronkan. Periksa tanggal, keterangan, jenis, dan nominalnya.');
+  if(!automatic&&!confirm('Sinkronkan '+valid.length+' dari '+eligible.length+' catatan lokal ke usaha '+financeBusiness.business_name+' sebagai '+(role==='owner'?'Owner':'Karyawan')+'? Catatan lokal tidak dihapus.'))return;
+  setFinanceStatus((automatic?'Sinkronisasi otomatis: ':'')+'Mengirim '+valid.length+' catatan offline ke laporan bersama...');
   let inserted=0;
   for(let i=0;i<valid.length;i+=50){
-   const batch=valid.slice(i,i+50);
+   const batch=valid.slice(i,i+50).map(x=>x.row);
    const {data,error}=await sb.from('financial_transactions').upsert(batch,{onConflict:'business_id,legacy_ref',ignoreDuplicates:true}).select('id');
    if(error)throw error;
    inserted+=(data||[]).length;
   }
   await loadFinanceWorkspace();
-  const importedLocalCount=valid.length;
-  if(financeRows.length===0)throw new Error('Impor selesai dikirim, tetapi Supabase belum mengembalikan transaksi. Periksa kebijakan akses (RLS) dan status usaha; jangan hapus catatan lokal.');
-  setFinanceStatus((automatic?'Sinkron otomatis selesai. ':'Pemeriksaan selesai: ')+financeRows.length+' transaksi tersedia di laporan bersama. Baru ditambahkan pada impor ini: '+inserted+'. Catatan lokal yang valid: '+importedLocalCount+'. Catatan dilewati karena tidak valid: '+skipped.length+'. Data lokal tetap tersimpan.');
+  if(!financeBusiness||financeMemberUserId!==sessionUserId)throw new Error('Akun atau usaha berubah setelah pengiriman. Catatan lokal tetap dipertahankan; periksa laporan sebelum mengulangi.');
+  const syncedAt=new Date().toISOString(),syncedIds=new Set(valid.map(x=>x.localId));
+  transaksi=transaksi.map(t=>syncedIds.has(String(t.id))?{...t,offline_pending:false,offline_synced_at:syncedAt}:t);
+  simpan();
+  setFinanceStatus((automatic?'Sinkronisasi otomatis selesai. ':'Sinkronisasi selesai. ')+inserted+' catatan baru ditambahkan; '+(valid.length-inserted)+' sudah pernah tercatat. '+skipped.length+' catatan tidak valid dilewati. Data lokal tetap disimpan.');
   renderFinanceReport();
  }catch(e){
-  setFinanceStatus('Impor transaksi gagal: '+String(e.message||e).slice(0,260)+'. Catatan lokal tetap tersimpan; periksa pesan ini sebelum mencoba lagi.',true);
+  setFinanceStatus('Sinkronisasi transaksi offline gagal: '+String(e.message||e).slice(0,260)+'. Catatan lokal tetap tersimpan; periksa laporan sebelum mencoba lagi.',true);
  }finally{if(btn)btn.disabled=false;}
 }
-
 async function autoSyncLocalTransactionsIfReady(){
  if(window.__kasusahaAutoSyncRunning||offlineTransactionMode||!navigator.onLine||!sb||!Array.isArray(transaksi)||transaksi.length===0)return;
  window.__kasusahaAutoSyncRunning=true;
@@ -3390,9 +3403,13 @@ async function autoSyncLocalTransactionsIfReady(){
   const {data:sessionData,error:sessionError}=await sb.auth.getSession();
   if(sessionError||!sessionData?.session||sessionData.session.user?.is_anonymous)return;
   if(!financeBusiness||!financeMemberRole||!financeMemberUserId)await loadFinanceWorkspace();
-  // Hanya akun Owner yang boleh memindahkan catatan lokal ke laporan usaha bersama.
-  if(financeMemberRole==='owner'&&financeMemberUserId===sessionData.session.user.id){
-   await imporTransaksiLokalKeBersama({auto:true});
+  if(financeMemberUserId!==sessionData.session.user.id)return;
+  if(financeMemberRole==='owner'){
+   const hasPending=transaksi.some(t=>!t.offline_synced_at&&(!t.offline_user_id||t.offline_user_id===sessionData.session.user.id)&&(!t.offline_business_id||t.offline_business_id===financeBusiness?.id));
+   if(hasPending)await imporTransaksiLokalKeBersama({auto:true});
+  }else if(financeMemberRole==='employee'){
+   const hasOwnPending=transaksi.some(t=>t.offline_pending===true&&!t.offline_synced_at&&t.offline_user_id===sessionData.session.user.id&&t.offline_business_id===financeBusiness?.id&&t.offline_role==='employee'&&t.jenis==='masuk');
+   if(hasOwnPending)await imporTransaksiLokalKeBersama({auto:true});
   }
  }catch(e){console.warn('Sinkronisasi otomatis transaksi lokal belum berhasil; data lokal tetap disimpan.',e);}
  finally{window.__kasusahaAutoSyncRunning=false;}
