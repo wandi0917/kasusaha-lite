@@ -4566,12 +4566,15 @@ body>header.ks-brand-header .kasusaha-banner-image-button{
  box-shadow:none!important;cursor:pointer!important;line-height:0!important;
 }
 body>header.ks-brand-header .kasusaha-banner-image-button img{
- display:block!important;width:100%!important;height:auto!important;max-height:none!important;
+ display:block!important;width:calc(100% - 32px)!important;max-width:960px!important;
+ height:auto!important;max-height:none!important;margin:0 auto!important;
  object-fit:contain!important;border:0!important;border-radius:0!important;
 }
 body>header.ks-brand-header .kasusaha-pwa-install .kasusaha-install-caption{display:none!important}
 @media(max-width:760px){
- body>header.ks-brand-header .kasusaha-banner-image-button img{width:100%!important;height:auto!important}
+ body>header.ks-brand-header .kasusaha-banner-image-button img{
+  width:calc(100% - 16px)!important;max-width:100%!important;height:auto!important;
+ }
 }
 
 /* Kontras tinggi untuk petunjuk pemasangan PWA yang dibuka dari banner */
