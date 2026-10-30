@@ -1725,6 +1725,8 @@ async function buka(id,tombol){
   document.querySelectorAll('main .tab').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   const panel=$(id);if(!panel)return;panel.classList.add('active');if(tombol)tombol.classList.add('active');
+  // Setiap perpindahan menu mengembalikan tampilan ke awal halaman agar konten tab langsung terlihat.
+  requestAnimationFrame(()=>window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'}));
   if(id==='platformMarketplaceFinance')await muatKeuanganMarketplace();
   if(id==='transaksi'){
     const reportSelect=$('reportCategorySelect');
