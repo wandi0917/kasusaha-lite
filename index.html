@@ -1183,10 +1183,9 @@ async function bagikanKasUsahaLite(){
 <input id="financeBusinessCity" maxlength="100" placeholder="Contoh: Tanjungpinang">
 <button id="financeCreateBusiness" type="button" class="primary wide" onclick="financeCreateBusiness()">Simpan Usaha</button>
 <hr>
-<h4>Sudah menjadi Karyawan?</h4><p class="small">Karyawan tidak perlu membuat usaha baru. Masukkan kode undangan dari Owner.</p>
-<label for="financeInviteInput">Kode undangan dari Owner</label>
-<input id="financeInviteInput" maxlength="20" autocapitalize="characters" placeholder="Masukkan kode undangan">
-<button id="financeJoinBusiness" type="button" class="secondary wide" onclick="financeJoinBusiness()">Gabung sebagai Karyawan</button>
+<h4>Sudah menjadi Karyawan?</h4>
+<p class="small">Untuk keamanan, Karyawan masuk menggunakan ID unik dan nama yang didaftarkan Owner. Kode undangan usaha tidak digunakan untuk membuat akun Karyawan baru.</p>
+<button type="button" class="secondary wide" onclick="buka('loginKaryawan',document.querySelector('nav button[onclick*=&quot;loginKaryawan&quot;]'))">Buka Login Karyawan</button>
 </div>
 
 </div>
@@ -2639,15 +2638,7 @@ async function financeCreateBusiness(){
   }
  }catch(e){setFinanceStatus('Usaha belum berhasil disimpan: '+String(e.message||e).slice(0,220),true);}finally{btn.disabled=false;}
 }
-async function financeJoinBusiness(){
- if(!sb){setFinanceStatus('Supabase tidak tersedia.',true);return;}
- const code=$('financeInviteInput').value.trim().toUpperCase();if(!code){setFinanceStatus('Masukkan kode undangan dari owner.',true);return;}
- const btn=$('financeJoinBusiness');btn.disabled=true;
- try{const {data:sd,error:se}=await sb.auth.getSession();if(se)throw se;if(!sd.session)throw new Error('Login terlebih dahulu melalui menu Akun Pembeli atau Akun Penjual.');
- const {data,error}=await sb.rpc('join_business_workspace',{p_invite_code:code});if(error)throw error;
- await loadFinanceWorkspace();setFinanceStatus('Berhasil terhubung ke '+data.business_name+' sebagai '+financeRoleLabel(data.role)+'.');
- }catch(e){setFinanceStatus('Belum berhasil bergabung: '+String(e.message||e).slice(0,220),true);}finally{btn.disabled=false;}
-}
+
 async function financeChooseSavedBusiness(businessId){
  if(!sb||!businessId)return;
  try{
