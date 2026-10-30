@@ -3286,14 +3286,31 @@ function renderFinanceReport(){
  const income=rows.filter(r=>r.transaction_type==='income').reduce((a,r)=>a+Number(r.amount||0),0);
  const expense=rows.filter(r=>r.transaction_type==='expense').reduce((a,r)=>a+Number(r.amount||0),0);
  let running=0;
- $('financeReportSummary').innerHTML=isEmployee
-  ?'<div class="finance-metric">Total pemasukan<strong>'+format(income)+'</strong></div>'
-  :'<div class="finance-metric">Total pemasukan<strong>'+format(income)+'</strong></div><div class="finance-metric">Total pengeluaran<strong>'+format(expense)+'</strong></div><div class="finance-metric">Selisih periode<strong>'+format(income-expense)+'</strong></div>';
+ const salesTotalForPeriod=salesRows.reduce((sum,r)=>sum+Number(r.amount||0),0);
+ const periodSalesGroups=Array.from(salesGroups.values());
+ const knownModalForPeriod=periodSalesGroups.filter(g=>g.modalKnown).reduce((sum,g)=>sum+Number(g.modal||0),0);
+ const knownGrossProfitForPeriod=periodSalesGroups.filter(g=>g.modalKnown).reduce((sum,g)=>sum+Number(g.total||0)-Number(g.modal||0),0);
+ const knownSalesGroups=periodSalesGroups.filter(g=>g.modalKnown).length;
+ const summaryRows=[
+  ['Total penjualan',format(salesTotalForPeriod)],
+  ['Total seluruh pemasukan',format(income)],
+  ...(!isEmployee?[['Total pengeluaran',format(expense)],['Selisih pemasukan - pengeluaran',format(income-expense)],['Total modal penjualan',knownSalesGroups?format(knownModalForPeriod)+(knownSalesGroups===periodSalesGroups.length?'':' (data tersedia)'):'Tidak tersedia'],['Total laba kotor penjualan',knownSalesGroups?format(knownGrossProfitForPeriod)+(knownSalesGroups===periodSalesGroups.length?'':' (data tersedia)'):'Tidak tersedia']]:[])
+ ];
+ $('financeReportSummary').innerHTML='<div class="table-wrap" style="grid-column:1/-1"><table class="report-table"><thead><tr><th colspan="2">Ringkasan total periode '+aman(bounds.start)+' s.d. '+aman(bounds.end)+'</th></tr></thead><tbody>'+summaryRows.map(x=>'<tr><th>'+aman(x[0])+'</th><td class="amount">'+aman(x[1])+'</td></tr>').join('')+'</tbody></table></div>'+
+  (!isEmployee&&knownSalesGroups<periodSalesGroups.length?'<p class="small" style="grid-column:1/-1">Catatan: modal dan laba kotor hanya dijumlahkan dari '+knownSalesGroups+' dari '+periodSalesGroups.length+' tagihan yang memiliki data modal lengkap. Data yang tidak tersedia tidak dianggap nol.</p>':'');
  $('financeReportTitle').textContent=isEmployee?'Laporan Pemasukan Karyawan':'Laporan Keuangan Lengkap (Owner)';
  $('financeReportCard').dataset.reportTitle=(isEmployee?'Laporan Pemasukan Karyawan — ':'Laporan Keuangan Lengkap — ')+'Periode '+bounds.start+' s.d. '+bounds.end;
  const rowHtml=rows.map(r=>{const d=new Date(r.created_at);const time=Number.isFinite(d.getTime())?d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'—';if(isEmployee)return '<tr><td>'+aman(formatHariTanggal(r.transaction_date))+'<br>'+aman(time)+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+format(r.amount)+'</td></tr>';running+=r.transaction_type==='income'?Number(r.amount):-Number(r.amount);return '<tr><td>'+aman(formatHariTanggal(r.transaction_date))+'<br>'+aman(time)+'</td><td>'+aman(r.created_by===financeMemberUserId?financeCurrentUserName+' ('+financeRoleLabel(r.created_by_role)+')':financeRoleLabel(r.created_by_role)+' / akun '+String(r.created_by||'').slice(0,8))+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+(r.transaction_type==='income'?format(r.amount):'—')+'</td><td class="amount expense">'+(r.transaction_type==='expense'?format(r.amount):'—')+'</td><td class="amount">'+format(running)+'</td><td><div class="row-actions"><button type="button" class="secondary" onclick="mulaiEditFinanceTransaction(\''+String(r.id)+'\')">Edit</button><button type="button" class="danger" onclick="hapusFinanceTransaction(\''+String(r.id)+'\')">Hapus</button></div></td></tr>';}).join('');
  $('financeReportHead').innerHTML=isEmployee?'<tr><th>Hari, Tanggal &amp; Jam</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th></tr>':'<tr><th>Hari, Tanggal &amp; Jam</th><th>Pencatat</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo periode</th><th>Aksi</th></tr>';
  tbody.innerHTML=rowHtml||(isEmployee?'<tr><td colspan="4">Belum ada pemasukan pada periode ini. Karyawan hanya melihat pemasukan yang tersimpan di laporan bersama.</td></tr>':'<tr><td colspan="8">Tidak ada transaksi bersama pada periode ini. Jika catatan lama masih ada di perangkat ini, tekan “Pindahkan transaksi lokal ke laporan bersama”. Catatan lokal tidak akan dihapus.</td></tr>');
+ const detailTable=$('financeReportRows')?.closest('table');
+ if(detailTable){
+  detailTable.querySelector('tfoot')?.remove();
+  const foot=document.createElement('tfoot'),tr=document.createElement('tr');
+  const cells=isEmployee?['TOTAL PERIODE','','',format(income)]:['TOTAL PERIODE','','','',format(income),format(expense),format(income-expense),''];
+  cells.forEach((value,i)=>{const cell=document.createElement(i===0?'th':'td');cell.textContent=value;if(i>=4)cell.className='amount';tr.appendChild(cell);});
+  foot.appendChild(tr);detailTable.appendChild(foot);
+ }
 }
 function batalEditFinanceTransaction(){const form=$('financeForm');if(!form)return;form.reset();$('financeEditId').value='';$('financeDate').value=financeToday();$('financeSave').textContent='Simpan transaksi bersama';$('financeCancelEdit').hidden=true;if(financeMemberRole==='employee')$('financeTypeWrap').hidden=true;else $('financeTypeWrap').hidden=false;}
 function mulaiEditFinanceTransaction(id){if(financeMemberRole!=='owner'){alert('Edit transaksi hanya tersedia untuk Owner.');return;}const r=financeRows.find(x=>String(x.id)===String(id));if(!r){alert('Transaksi tidak ditemukan. Muat ulang laporan.');return;}const form=$('financeForm');if(!form)return;$('financeEditId').value=String(r.id);$('financeDescription').value=r.description||'';$('financeType').value=r.transaction_type;$('financeAmount').value=Number(r.amount||0);$('financeDate').value=r.transaction_date||financeToday();$('financeCategory').value=r.category||'Lainnya';$('financeSave').textContent='Simpan perubahan transaksi';$('financeCancelEdit').hidden=false;$('financeTypeWrap').hidden=false;form.scrollIntoView({behavior:'smooth',block:'center'});$('financeDescription').focus();}
@@ -3920,6 +3937,14 @@ body>main>#beranda .beginner-start{
   body>main>#beranda.tab.active{margin:3px auto 9px!important;padding:8px!important}
   body>main>#beranda .ks-home-showcase{margin:0 0 10px!important}
 }
+
+/* Laporan keuangan: tabel ringkasan dan total periode */
+#financeReportSummary .report-table{width:100%;border-collapse:collapse}
+#financeReportSummary .report-table thead th{background:#eef3f8;text-align:left}
+#financeReportSummary .report-table tbody th{font-weight:650;text-align:left}
+#financeReportSummary .report-table td.amount{text-align:right;font-weight:700}
+#financeReportRows tfoot th,#financeReportRows tfoot td{font-weight:800;background:#eaf2fb;border-top:2px solid #64748b;padding:12px 10px}
+#financeReportRows tfoot td.amount{text-align:right}
 </style>
 </body>
 </html>
