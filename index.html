@@ -3268,19 +3268,35 @@ function renderFinanceReport(){
   const totalsBox=$('financeTableSalesTotals');
   if(totalsBox){
    totalsBox.replaceChildren();
-   const addMetric=(label,value,note='')=>{const metric=document.createElement('div');metric.className='finance-metric';const title=document.createElement('span');title.textContent=label;const strong=document.createElement('strong');strong.textContent=value;metric.replaceChildren(title,strong);if(note){const small=document.createElement('small');small.className='small';small.textContent=note;metric.appendChild(small);}totalsBox.appendChild(metric);};
-   addMetric('Total keseluruhan penjualan',format(overallTotal));
-   addMetric('Jumlah tagihan',groups.length+' transaksi');
-   if(isSalesOwner){
-    const allKnown=modalKnownGroups.length===groups.length;
-    addMetric('Total modal',allKnown?format(overallModal):format(overallModal)+' (data tersedia)',allKnown?'':'Modal/laba belum dapat dihitung untuk '+(groups.length-modalKnownGroups.length)+' tagihan karena data modal barang tidak tersedia.');
-    addMetric('Total laba kotor',allKnown?format(overallProfit):format(overallProfit)+' (data tersedia)',allKnown?'':'Laba kotor hanya menjumlahkan tagihan yang modalnya tersedia.');
-   }
-   Array.from(locationTotals.entries()).sort((a,b)=>a[0].localeCompare(b[0],'id')).forEach(([location,x])=>{
-    addMetric('Total '+location,format(x.total));
-    if(isSalesOwner){addMetric('Modal '+location,x.known===x.count?format(x.modal):format(x.modal)+' (data tersedia)',x.known===x.count?'':'Modal tidak tersedia untuk '+(x.count-x.known)+' tagihan.');addMetric('Laba kotor '+location,x.known===x.count?format(x.profit):format(x.profit)+' (data tersedia)',x.known===x.count?'':'Laba hanya menghitung tagihan dengan data modal tersedia.');}
+   const wrap=document.createElement('div');wrap.className='table-wrap';wrap.style.gridColumn='1 / -1';
+   const table=document.createElement('table');table.className='report-table';
+   const thead=document.createElement('thead');const headRow=document.createElement('tr');
+   ['Kasir / Meja','Jumlah Tagihan','Total Penjualan',...(isSalesOwner?['Total Modal','Laba Kotor']:[])].forEach(label=>{const th=document.createElement('th');th.textContent=label;headRow.appendChild(th);});
+   thead.appendChild(headRow);table.appendChild(thead);
+   const body=document.createElement('tbody');
+   const detailRows=Array.from(locationTotals.entries()).sort((a,b)=>a[0].localeCompare(b[0],'id',{numeric:true,sensitivity:'base'}));
+   detailRows.forEach(([location,x])=>{
+    const tr=document.createElement('tr');
+    const label=document.createElement('th');label.scope='row';label.textContent=location;tr.appendChild(label);
+    const count=document.createElement('td');count.textContent=String(x.count);count.className='amount';tr.appendChild(count);
+    const total=document.createElement('td');total.textContent=format(x.total);total.className='amount';tr.appendChild(total);
+    if(isSalesOwner){
+     const modal=document.createElement('td');modal.textContent=x.known===x.count?format(x.modal):format(x.modal)+' (data tersedia)';modal.className='amount';tr.appendChild(modal);
+     const profit=document.createElement('td');profit.textContent=x.known===x.count?format(x.profit):format(x.profit)+' (data tersedia)';profit.className='amount';tr.appendChild(profit);
+    }
+    body.appendChild(tr);
    });
-   if(isSalesOwner&&groups.some(g=>g.usedCurrentCost)){const note=document.createElement('p');note.className='small';note.style.gridColumn='1 / -1';note.textContent='Catatan: untuk transaksi lama yang tidak menyimpan modal saat transaksi, modal dihitung memakai harga modal barang saat ini. Jika harga modal pernah berubah, laba historis tersebut merupakan perkiraan. “Tidak lengkap” berarti kode barang atau harga modal tidak tersedia.';totalsBox.appendChild(note);}
+   const foot=document.createElement('tfoot');const totalRow=document.createElement('tr');
+   const totalLabel=document.createElement('th');totalLabel.textContent='TOTAL KESELURUHAN';totalRow.appendChild(totalLabel);
+   const billCount=document.createElement('td');billCount.textContent=String(groups.length);billCount.className='amount';totalRow.appendChild(billCount);
+   const grandTotal=document.createElement('td');grandTotal.textContent=format(overallTotal);grandTotal.className='amount';totalRow.appendChild(grandTotal);
+   if(isSalesOwner){
+    const modalTotal=document.createElement('td');modalTotal.textContent=modalKnownGroups.length===groups.length?format(overallModal):format(overallModal)+' (data tersedia)';modalTotal.className='amount';totalRow.appendChild(modalTotal);
+    const profitTotal=document.createElement('td');profitTotal.textContent=modalKnownGroups.length===groups.length?format(overallProfit):format(overallProfit)+' (data tersedia)';profitTotal.className='amount';totalRow.appendChild(profitTotal);
+   }
+   foot.appendChild(totalRow);table.appendChild(body);table.appendChild(foot);wrap.appendChild(table);totalsBox.appendChild(wrap);
+   if(isSalesOwner&&modalKnownGroups.length<groups.length){const note=document.createElement('p');note.className='small';note.textContent='Catatan: modal dan laba kotor hanya dihitung dari '+modalKnownGroups.length+' dari '+groups.length+' tagihan yang memiliki data modal lengkap. Tagihan tanpa data modal tidak dianggap bermodal nol.';totalsBox.appendChild(note);}
+   if(isSalesOwner&&groups.some(g=>g.usedCurrentCost)){const note=document.createElement('p');note.className='small';note.textContent='Catatan: untuk transaksi lama yang tidak menyimpan modal saat transaksi, modal dihitung memakai harga modal barang saat ini. Jika harga modal pernah berubah, laba historis tersebut merupakan perkiraan. “Tidak lengkap” berarti kode barang atau harga modal tidak tersedia.';totalsBox.appendChild(note);}
   }
  }
  const income=rows.filter(r=>r.transaction_type==='income').reduce((a,r)=>a+Number(r.amount||0),0);
