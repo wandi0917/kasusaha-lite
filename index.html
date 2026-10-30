@@ -760,9 +760,13 @@ footer{line-height:1.7}
 </svg></div>
 <h1>KasUsaha Lite</h1><p>Kasir • Keuangan • Produk • Pasar Online Indonesia</p>
 <div class="ks-brand-accent" aria-hidden="true"><span></span><span></span><span></span></div>
-<div class="kasusaha-pwa-install">
-<button id="kasusahaInstallButton" type="button" class="kasusaha-install-button" aria-describedby="kasusahaInstallStatus">Cara pasang aplikasi</button>
-<div class="kasusaha-install-guide" aria-label="Petunjuk pemasangan aplikasi">
+<div class="kasusaha-pwa-install" style="max-width:760px;margin:18px auto 0">
+<div role="img" aria-label="Promosi KasUsaha Lite" style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px;border-radius:18px;background:linear-gradient(115deg,#172554,#4338ca,#7c3aed);color:#fff;text-align:left;box-shadow:0 12px 28px #312e8140">
+<div style="display:flex;flex-direction:column;gap:8px"><span style="font-size:10px;font-weight:800;letter-spacing:1px">WEBSITE • PWA</span><strong style="font-size:clamp(21px,3vw,30px);line-height:1.15">Usaha lebih tertata,<br>akses lebih mudah.</strong><span style="font-size:13px;color:#e0e7ff">Kasir, keuangan, produk, dan stok dalam satu aplikasi.</span></div>
+<div aria-hidden="true" style="flex:0 0 145px;padding:14px;border:3px solid #c7d2fe;border-radius:14px;background:#fff;color:#312e81;box-shadow:0 10px 20px #11182755;transform:rotate(4deg)"><div style="font-size:24px">📊</div><b>KasUsaha</b><small style="display:block;color:#64748b">Penjualan hari ini</small><strong style="display:block;color:#166534;font-size:17px">Rp 1.250.000</strong><div style="color:#7c3aed;letter-spacing:3px">▂ ▅ ▃ ▇ ▆</div></div>
+</div>
+<button id="kasusahaInstallButton" type="button" class="kasusaha-install-button" aria-expanded="false" aria-controls="kasusahaInstallGuide" style="margin-top:12px">Klik di sini untuk cara pasang Aplikasi</button>
+<div id="kasusahaInstallGuide" class="kasusaha-install-guide" aria-label="Petunjuk pemasangan aplikasi" hidden>
 <strong class="kasusaha-install-guide-title">Pasang KasUsaha Lite di perangkat Anda</strong>
 <div class="kasusaha-install-guide-grid">
 <div><b>Android · Chrome</b><p>Tekan menu ⋮ di kanan atas, pilih <strong>Instal aplikasi</strong> atau <strong>Tambahkan ke layar utama</strong>, lalu ikuti konfirmasi.</p></div>
@@ -770,6 +774,7 @@ footer{line-height:1.7}
 <div><b>Komputer · Chrome / Edge</b><p>Tekan ikon <strong>Instal</strong> di bilah alamat atau buka menu browser, lalu pilih <strong>Install KasUsaha Lite</strong> jika tersedia.</p></div>
 </div>
 <p class="kasusaha-install-guide-note">Jika pilihan instal belum muncul, gunakan browser yang disebutkan di atas. Pemasangan memerlukan persetujuan Anda.</p>
+<button id="kasusahaNativeInstallButton" type="button" class="kasusaha-install-button" hidden>＋ Pasang KasUsaha Lite sekarang</button>
 </div>
 <div id="kasusahaInstallHelp" hidden><p id="kasusahaInstallStatus" role="status" aria-live="polite">Pasang KasUsaha Lite sebagai aplikasi di perangkat Anda.</p></div>
 <p id="kasusahaInstallStatusFallback" class="kasusaha-install-caption">Dapat digunakan langsung melalui website atau dipasang sebagai aplikasi.</p>
@@ -3603,8 +3608,17 @@ sb.auth.onAuthStateChange((event,session)=>{financeBusiness=null;financeMemberRo
 (() => {
   let deferredInstallPrompt = null;
   const installButton = document.getElementById('kasusahaInstallButton');
+  const installGuide = document.getElementById('kasusahaInstallGuide');
+  const nativeInstallButton = document.getElementById('kasusahaNativeInstallButton');
   const installHelp = document.getElementById('kasusahaInstallHelp');
   const installStatus = document.getElementById('kasusahaInstallStatus');
+  if (installButton) installButton.addEventListener('click', () => {
+    const opening = Boolean(installGuide && installGuide.hidden);
+    if (installGuide) installGuide.hidden = !opening;
+    installButton.setAttribute('aria-expanded', String(opening));
+    installButton.textContent = opening ? 'Tutup petunjuk pemasangan' : 'Klik di sini untuk cara pasang Aplikasi';
+    if (opening && installGuide) installGuide.scrollIntoView({behavior:'smooth',block:'nearest'});
+  });
   const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   const showHelp = (message) => {
     if (installHelp) installHelp.hidden = false;
@@ -3617,11 +3631,7 @@ sb.auth.onAuthStateChange((event,session)=>{financeBusiness=null;financeMemberRo
   window.addEventListener('beforeinstallprompt', (event) => {
     event.preventDefault();
     deferredInstallPrompt = event;
-    if (installButton) {
-      installButton.hidden = false;
-      installButton.textContent = '＋ Pasang KasUsaha Lite';
-      installButton.disabled = false;
-    }
+    if (nativeInstallButton) nativeInstallButton.hidden = false;
     if (installStatus) installStatus.textContent = 'Aplikasi siap dipasang pada perangkat ini.';
   });
   window.addEventListener('appinstalled', () => {
@@ -3629,24 +3639,16 @@ sb.auth.onAuthStateChange((event,session)=>{financeBusiness=null;financeMemberRo
     if (installButton) installButton.textContent = '✓ KasUsaha sudah terpasang';
     showHelp('Berhasil dipasang. Buka KasUsaha Lite dari ikon aplikasi di perangkat Anda.');
   });
-  if (installButton) installButton.addEventListener('click', async () => {
-    if (deferredInstallPrompt) {
-      deferredInstallPrompt.prompt();
-      const choice = await deferredInstallPrompt.userChoice;
-      deferredInstallPrompt = null;
-      if (choice && choice.outcome === 'accepted') {
-        if (installStatus) installStatus.textContent = 'Permintaan pemasangan diterima. Ikuti petunjuk pada perangkat.';
-      } else {
-        showHelp('Pemasangan belum dilakukan. Anda dapat mencoba lagi atau memakai menu browser.');
-      }
-      return;
-    }
-    showHelp('Jika tombol pasang otomatis belum tersedia: di Chrome Android buka menu ⋮ lalu pilih “Instal aplikasi” atau “Tambahkan ke layar utama”. Di iPhone/iPad, buka lewat Safari, tekan Bagikan, lalu “Add to Home Screen”. Di komputer, gunakan ikon instal di bilah alamat Chrome/Edge jika tersedia.');
+  if (nativeInstallButton) nativeInstallButton.addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    const choice = await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    nativeInstallButton.hidden = true;
+    if (choice && choice.outcome === 'accepted') showHelp('Permintaan pemasangan diterima. Ikuti konfirmasi pada perangkat.');
+    else showHelp('Pemasangan belum dilakukan. Anda dapat mencoba lagi melalui menu browser.');
   });
-  if (installButton && !isStandalone()) {
-    installButton.hidden = false;
-    installButton.textContent = 'Cara pasang aplikasi';
-  }
+
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js', {scope:'./'})
