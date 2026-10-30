@@ -1732,8 +1732,11 @@ async function buka(id,tombol){
   document.querySelectorAll('nav[aria-label="Navigasi utama"] button').forEach(item=>item.classList.remove('active'));
   panel.classList.add('active');
   if(tombol && tombol.isConnected)tombol.classList.add('active');
-  // Setiap perpindahan menu mengembalikan tampilan ke awal halaman agar konten tab langsung terlihat.
-  requestAnimationFrame(()=>window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'}));
+  // Arahkan ke bagian paling atas panel yang dipilih, bukan ke banner/header situs.
+  requestAnimationFrame(()=>{
+    const behavior=window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';
+    panel.scrollIntoView({behavior,block:'start'});
+  });
   if(id==='platformMarketplaceFinance')await muatKeuanganMarketplace();
   if(id==='transaksi'){
     const reportSelect=$('reportCategorySelect');
