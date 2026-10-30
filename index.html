@@ -4237,6 +4237,137 @@ body>header.ks-brand-header .kasusaha-install-caption{
   }
 }
 
+
+/* Tata letak ringkas: navigasi cepat terlihat, banner tidak mendominasi */
+body>header.ks-brand-header{
+  padding:7px 14px 9px!important;
+  gap:0!important;
+}
+body>header.ks-brand-header .ks-brand-float{display:none!important}
+body>header.ks-brand-header .ks-brand-logo{
+  width:48px!important;height:48px!important;flex-basis:48px!important;
+  margin:0 0 3px!important;
+}
+body>header.ks-brand-header h1{
+  font-size:clamp(21px,2.5vw,27px)!important;
+  line-height:1.08!important;margin:0!important;
+}
+body>header.ks-brand-header>p{
+  margin:3px 0 0!important;font-size:11px!important;line-height:1.3!important;
+}
+body>header.ks-brand-header .ks-brand-accent{display:none!important}
+body>header.ks-brand-header .kasusaha-pwa-install{
+  width:min(100%,760px)!important;margin:7px auto 0!important;gap:4px!important;
+}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]{
+  min-height:0!important;padding:9px 13px!important;gap:12px!important;
+  border-radius:13px!important;box-shadow:0 5px 14px rgba(3,35,45,.16)!important;
+}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child{gap:3px!important}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child>strong{
+  font-size:clamp(17px,2vw,21px)!important;line-height:1.12!important;
+}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child>span:last-child{
+  font-size:11px!important;line-height:1.35!important;
+}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:last-child{
+  flex:0 0 88px!important;width:88px!important;padding:7px!important;
+  border-width:1px!important;border-radius:10px!important;
+}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:last-child>div:first-child{font-size:17px!important}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:last-child b{font-size:11px!important}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:last-child small{font-size:9px!important}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:last-child strong{font-size:13px!important}
+body>header.ks-brand-header .kasusaha-pwa-install .kasusaha-install-button{
+  min-height:30px!important;margin-top:5px!important;padding:5px 12px!important;font-size:11px!important;
+}
+body>header.ks-brand-header .kasusaha-install-caption{margin:3px 0 0!important;font-size:10px!important;line-height:1.25!important}
+nav[aria-label="Navigasi utama"]{
+  position:relative!important;margin:0!important;padding:6px 10px!important;
+  gap:5px!important;min-height:0!important;
+}
+nav[aria-label="Navigasi utama"] button{
+  min-height:34px!important;padding:7px 10px!important;font-size:12px!important;
+}
+body>main{padding-top:8px!important}
+body>main>#beranda.tab.active{margin:7px auto 12px!important;padding:12px!important}
+body>main>#beranda .ks-home-showcase{
+  grid-template-columns:minmax(0,1.15fr) minmax(210px,.85fr)!important;
+  gap:16px!important;margin:0 0 12px!important;padding:17px!important;
+  border-radius:17px!important;
+}
+body>main>#beranda .ks-showcase-eyebrow{padding:5px 9px!important;font-size:9px!important}
+body>main>#beranda .ks-showcase-copy h2{
+  margin:8px 0 7px!important;font-size:clamp(21px,2.5vw,29px)!important;line-height:1.14!important;
+}
+body>main>#beranda .ks-showcase-copy>p{margin:5px 0!important;font-size:12px!important;line-height:1.45!important}
+body>main>#beranda .ks-showcase-points{gap:5px!important;margin:9px 0 11px!important}
+body>main>#beranda .ks-showcase-points span{gap:7px!important;font-size:11px!important}
+body>main>#beranda .ks-showcase-points b{flex-basis:18px!important;width:18px!important;height:18px!important;font-size:11px!important}
+body>main>#beranda .ks-showcase-cta{min-height:34px!important;padding:8px 13px!important;font-size:11px!important}
+body>main>#beranda .ks-showcase-art{min-height:225px!important}
+body>main>#beranda .ks-art-phone{width:min(78%,235px)!important;padding:11px!important;border-radius:17px!important}
+body>main>#beranda .ks-art-phone-top{padding-bottom:8px!important}
+body>main>#beranda .ks-art-welcome{padding:8px 0!important;font-size:10px!important}
+body>main>#beranda .ks-art-stat-row{gap:6px!important}
+body>main>#beranda .ks-art-stat-row>div{padding:8px!important}
+body>main>#beranda .ks-art-chart-card{margin-top:7px!important;padding:8px!important}
+body>main>#beranda .ks-art-chart-card svg{height:58px!important;margin-top:4px!important}
+body>main>#beranda .ks-art-product-row{margin-top:7px!important;padding:7px!important}
+body>main>#beranda .ks-art-floating{padding:7px 8px!important;gap:6px!important}
+body>main>#beranda .ks-art-floating>span{width:25px!important;height:25px!important}
+body>main>#beranda .ks-art-floating b{font-size:9px!important}
+body>main>#beranda .ks-art-floating small{font-size:8px!important}
+@media(max-width:760px){
+  body>header.ks-brand-header{padding:6px 10px 8px!important}
+  body>header.ks-brand-header .ks-brand-logo{width:40px!important;height:40px!important;flex-basis:40px!important}
+  body>header.ks-brand-header h1{font-size:21px!important}
+  body>header.ks-brand-header>p{font-size:10px!important}
+  body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]{
+    flex-direction:row!important;align-items:center!important;text-align:left!important;
+    padding:8px 10px!important;gap:8px!important;
+  }
+  body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child{
+    align-items:flex-start!important;text-align:left!important;width:auto!important;
+  }
+  body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:last-child{display:none!important}
+  body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child>strong{font-size:16px!important}
+  body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child>span:last-child{font-size:10px!important}
+  nav[aria-label="Navigasi utama"]{padding:5px 8px!important;gap:4px!important}
+  nav[aria-label="Navigasi utama"] button{min-height:32px!important;padding:6px 9px!important;font-size:11px!important}
+  body>main>#beranda.tab.active{margin:5px auto 9px!important;padding:8px!important}
+  body>main>#beranda .ks-home-showcase{
+    grid-template-columns:minmax(0,1fr)!important;gap:5px!important;
+    padding:13px!important;margin:0 0 9px!important;
+  }
+  body>main>#beranda .ks-showcase-copy h2{font-size:22px!important;margin:7px 0!important}
+  body>main>#beranda .ks-showcase-copy>p{font-size:11px!important;line-height:1.4!important}
+  body>main>#beranda .ks-showcase-points{grid-template-columns:1fr 1fr!important;gap:5px 8px!important;margin:8px 0!important}
+  body>main>#beranda .ks-showcase-points span{font-size:10px!important;align-items:flex-start!important}
+  body>main>#beranda .ks-showcase-points b{flex-basis:16px!important;width:16px!important;height:16px!important}
+  body>main>#beranda .ks-showcase-art{min-height:145px!important;margin:0!important}
+  body>main>#beranda .ks-art-orb{width:145px!important}
+  body>main>#beranda .ks-art-phone{width:150px!important;padding:8px!important;border-radius:13px!important}
+  body>main>#beranda .ks-art-phone-top{gap:5px!important;padding-bottom:5px!important}
+  body>main>#beranda .ks-art-logo{width:24px!important;height:24px!important;font-size:16px!important}
+  body>main>#beranda .ks-art-phone-top b{font-size:10px!important}
+  body>main>#beranda .ks-art-phone-top small{font-size:8px!important}
+  body>main>#beranda .ks-art-welcome{font-size:8px!important;padding:5px 0!important}
+  body>main>#beranda .ks-art-stat-row>div{padding:5px!important;gap:2px!important}
+  body>main>#beranda .ks-art-stat-row small{font-size:8px!important}
+  body>main>#beranda .ks-art-stat-row b{font-size:9px!important}
+  body>main>#beranda .ks-art-chart-card{margin-top:5px!important;padding:5px!important}
+  body>main>#beranda .ks-art-chart-card svg{height:34px!important;margin-top:2px!important}
+  body>main>#beranda .ks-art-days{font-size:7px!important}
+  body>main>#beranda .ks-art-product-row{margin-top:4px!important;padding:4px!important}
+  body>main>#beranda .ks-art-product-icon{width:22px!important;height:22px!important;font-size:13px!important}
+  body>main>#beranda .ks-art-product-row b{font-size:8px!important}
+  body>main>#beranda .ks-art-product-row small{font-size:7px!important}
+  body>main>#beranda .ks-art-floating{display:none!important}
+  body>main>#beranda .ks-art-spark{font-size:18px!important}
+  body>main>#beranda .usage-guide{margin-top:8px!important}
+}
+
 </style>
 <button id="ksBackToTop" type="button" aria-label="Kembali ke bagian atas halaman" title="Kembali ke atas">
  <span class="ks-back-top-arrow" aria-hidden="true">↑</span><span>Kembali ke atas</span>
