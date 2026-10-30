@@ -3902,6 +3902,24 @@ table tbody tr:hover,.report-table tbody tr:hover,.employee-management-table tbo
  table th,table td,.report-table th,.report-table td,.employee-management-table th,.employee-management-table td{padding:9px 10px!important}
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important}}
+/* BERANDA: rapatkan area konten dengan navigasi agar tidak terasa kosong */
+body>main{padding-top:6px!important}
+body>main>#beranda.tab.active{
+  margin:5px auto 12px!important;
+  padding:clamp(10px,1.6vw,18px)!important;
+}
+body>main>#beranda .ks-home-showcase{
+  margin:0 0 14px!important;
+}
+body>main>#beranda .usage-guide,
+body>main>#beranda .beginner-start{
+  margin-top:12px!important;
+}
+@media(max-width:760px){
+  body>main{padding-top:4px!important}
+  body>main>#beranda.tab.active{margin:3px auto 9px!important;padding:8px!important}
+  body>main>#beranda .ks-home-showcase{margin:0 0 10px!important}
+}
 </style>
 </body>
 </html>
