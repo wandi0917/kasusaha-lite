@@ -3773,7 +3773,7 @@ sb.auth.onAuthStateChange((event,session)=>{financeBusiness=null;financeMemberRo
     const opening = Boolean(installGuide && installGuide.hidden);
     if (installGuide) installGuide.hidden = !opening;
     installButton.setAttribute('aria-expanded', String(opening));
-    installButton.textContent = opening ? 'Tutup petunjuk pemasangan' : 'Klik di sini untuk cara pasang Aplikasi';
+    installButton.setAttribute('aria-label', opening ? 'Tutup petunjuk pemasangan KasUsaha Lite' : 'Klik untuk melihat cara memasang KasUsaha Lite');
     if (opening && installGuide) installGuide.scrollIntoView({behavior:'smooth',block:'nearest'});
   });
   const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
@@ -4572,6 +4572,55 @@ body>header.ks-brand-header .kasusaha-banner-image-button img{
 body>header.ks-brand-header .kasusaha-pwa-install .kasusaha-install-caption{display:none!important}
 @media(max-width:760px){
  body>header.ks-brand-header .kasusaha-banner-image-button img{width:100%!important;height:auto!important}
+}
+
+/* Kontras tinggi untuk petunjuk pemasangan PWA yang dibuka dari banner */
+body>header.ks-brand-header .kasusaha-pwa-install .kasusaha-install-guide{
+ display:block!important;width:calc(100% - 24px)!important;max-width:1100px!important;
+ margin:12px auto 16px!important;padding:20px!important;
+ background:#f8fbff!important;color:#173b5c!important;
+ border:2px solid #9bbfe3!important;border-radius:16px!important;
+ box-shadow:0 8px 24px rgba(15,55,90,.16)!important;
+ text-align:left!important;line-height:1.6!important;
+}
+body>header.ks-brand-header .kasusaha-install-guide[hidden]{display:none!important}
+body>header.ks-brand-header .kasusaha-install-guide-title{
+ display:block!important;margin:0 0 14px!important;color:#123e68!important;
+ font-size:20px!important;font-weight:850!important;line-height:1.3!important;
+}
+body>header.ks-brand-header .kasusaha-install-guide-grid{
+ display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px!important;
+}
+body>header.ks-brand-header .kasusaha-install-guide-grid>div{
+ min-width:0!important;padding:15px!important;background:#fff!important;
+ border:1px solid #b8cde1!important;border-radius:12px!important;
+ color:#173b5c!important;box-shadow:0 2px 8px rgba(20,60,95,.07)!important;
+}
+body>header.ks-brand-header .kasusaha-install-guide-grid b{
+ display:block!important;margin:0 0 7px!important;color:#0759a5!important;
+ font-size:15px!important;font-weight:850!important;
+}
+body>header.ks-brand-header .kasusaha-install-guide-grid p{
+ margin:0!important;color:#263f56!important;font-size:14px!important;
+ line-height:1.7!important;font-weight:500!important;
+}
+body>header.ks-brand-header .kasusaha-install-guide-grid p strong{
+ color:#0b477c!important;font-weight:800!important;
+}
+body>header.ks-brand-header .kasusaha-install-guide-note{
+ margin:14px 0 0!important;padding:11px 13px!important;
+ border-left:4px solid #168653!important;border-radius:6px!important;
+ background:#e7f5ed!important;color:#174b34!important;
+ font-size:13px!important;line-height:1.6!important;
+}
+@media(max-width:760px){
+ body>header.ks-brand-header .kasusaha-pwa-install .kasusaha-install-guide{
+  width:calc(100% - 16px)!important;padding:14px!important;margin:9px auto 12px!important;
+ }
+ body>header.ks-brand-header .kasusaha-install-guide-title{font-size:17px!important}
+ body>header.ks-brand-header .kasusaha-install-guide-grid{grid-template-columns:1fr!important;gap:9px!important}
+ body>header.ks-brand-header .kasusaha-install-guide-grid>div{padding:12px!important}
+ body>header.ks-brand-header .kasusaha-install-guide-grid p{font-size:13px!important}
 }
 </style>
 <button id="ksBackToTop" type="button" aria-label="Kembali ke bagian atas halaman" title="Kembali ke atas">
