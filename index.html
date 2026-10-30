@@ -3052,7 +3052,7 @@ async function absenMasuk(){
  try{
   const {data,error}=await sb.from('business_attendance').insert({business_id:financeBusiness.id,user_id:financeMemberUserId,work_date:attendanceToday(),check_in_at:new Date().toISOString(),hourly_wage:Number(localStorage.getItem(attendanceWageKey())||0)}).select('id').single();
   if(error){if(error.code==='23505')throw new Error('Anda sudah absen masuk hari ini.');throw error;}
-  await loadAttendance();setFinanceStatus('Absen masuk berhasil dicatat. Usaha dan daftar barang tetap tersimpan untuk digunakan.');
+  await loadAttendance();await arahkanSetelahLoginFinance();
  }catch(e){$('attendanceStatus').className='status error';$('attendanceStatus').textContent='Absen masuk gagal: '+String(e.message||e).slice(0,200);btn.disabled=false;}
 }
 async function absenPulang(){
