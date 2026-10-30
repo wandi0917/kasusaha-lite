@@ -777,10 +777,34 @@ footer{line-height:1.7}
 </header>
 <nav aria-label="Navigasi utama">
 <button class="active" type="button" onclick="buka('beranda',this)">Beranda</button><button id="navCompleteGuide" type="button" onclick="buka('panduanLengkap',this)">📘 Panduan Lengkap</button><button type="button" onclick="buka('transaksi',this)">Transaksi</button><button type="button" onclick="buka('produk',this)">Produk Saya</button><button type="button" onclick="buka('pasar',this)">Pasar Online</button><button type="button" onclick="buka('paketKasUsaha',this)">Paket &amp; Harga</button><button type="button" onclick="buka('keranjang',this)">Keranjang <span id="jumlahKeranjang">0</span></button><button type="button" onclick="buka('cadangan',this)">Cadangan</button><button type="button" onclick="buka('akun',this)">Login Owner / Penjual</button><button type="button" onclick="buka('loginKaryawan',this)">Login Karyawan</button><button type="button" onclick="buka('akunPembeli',this)">Akun Pembeli</button><button type="button" onclick="buka('pesananSaya',this)">Pesanan Saya</button><button type="button" onclick="buka('pesananMasuk',this)">Pesanan Masuk</button><button type="button" id="navKasUsahaSaran" onclick="bukaKotakSaran(this)">💬 Kotak Saran</button>
-<button type="button" id="navKasUsahaSaranMasuk" onclick="bukaKotakSaranMasuk(this)" hidden>🔔 Saran Masuk <span id="ksSuggestionInboxBadge" style="display:inline-block;margin-left:4px;padding:2px 7px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px">0</span></button>
+<button type="button" id="navKasUsahaSaranMasuk" onclick="bukaKotakSaranMasuk(this)" hidden>🔔 Saran Masuk <span id="ksSuggestionInboxBadge" style="display:inline-block;margin-left:4px;padding:2px 7px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px">0</span></button><button type="button" id="navPlatformMarketplaceFinance" onclick="buka('platformMarketplaceFinance',this)" hidden>📊 Keuangan Marketplace</button>
 </nav>
 <section id="kasusahaPaymentReturnNotice" class="kasusaha-payment-return" hidden role="status" aria-live="polite"><strong id="kasusahaPaymentReturnTitle">Memeriksa pembayaran…</strong><p id="kasusahaPaymentReturnText">Status pembayaran sedang diverifikasi oleh server.</p><div class="kasusaha-payment-return-actions"><button type="button" class="primary" id="kasusahaPaymentOpenAccount">Buka Akun Pembeli &amp; Lisensi</button><button type="button" class="secondary" id="kasusahaPaymentOpenInstall">Panduan instal PWA</button></div><div class="kasusaha-install-after-payment"><h3>Pasang KasUsaha Lite setelah pembayaran</h3><p><strong>HP Android (Chrome):</strong> tekan menu ⋮ di Chrome, lalu pilih Instal aplikasi atau Tambahkan ke layar utama. Ikuti konfirmasi.</p><p><strong>iPhone/iPad:</strong> buka situs melalui Safari, tekan Bagikan, pilih Add to Home Screen / Tambahkan ke Layar Utama, lalu Tambah.</p><p><strong>Komputer (Chrome/Edge):</strong> gunakan ikon Instal di bilah alamat atau menu browser, lalu pilih Install KasUsaha Lite bila tersedia.</p><p>Sesudah terpasang, buka ikon aplikasi dan login dengan akun pembeli yang sama.</p><p class="small">Pemasangan perlu persetujuan pengguna dan tidak berlangsung otomatis. Jika opsi belum muncul, gunakan situs melalui browser yang didukung. Jangan membayar ulang saat status sedang diperiksa.</p></div></section>
 <main>
+<section id="platformMarketplaceFinance" class="tab" aria-labelledby="platformFinanceTitle">
+ <div class="card" style="max-width:1180px;margin:12px auto">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+   <div><h2 id="platformFinanceTitle">Keuangan Marketplace — Owner Platform</h2><p class="small">Ringkasan komisi marketplace, pencairan, dan rincian transaksi. Data diambil langsung dari server setelah hak akses diverifikasi.</p></div>
+   <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="secondary" onclick="muatKeuanganMarketplace()">↻ Muat ulang</button><button type="button" class="secondary" onclick="cetakKeuanganMarketplace()">Cetak laporan</button></div>
+  </div>
+  <p id="platformFinanceStatus" class="status" role="status" aria-live="polite">Memeriksa hak akses Owner Platform…</p>
+  <div id="platformFinanceContent" hidden>
+   <div id="platformFinanceMetrics" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin:14px 0"></div>
+   <div class="card" style="margin:12px 0;padding:14px"><h3>Filter periode laporan</h3>
+    <div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap">
+     <label>Jenis periode<br><select id="platformFinancePeriod"><option value="all">Semua periode</option><option value="day">Harian</option><option value="month">Bulanan</option><option value="year">Tahunan</option></select></label>
+     <label>Tanggal acuan<br><input id="platformFinanceDate" type="date"></label>
+     <button type="button" class="primary" onclick="renderKeuanganMarketplace()">Terapkan filter</button>
+    </div><p id="platformFinancePeriodTotal" class="status"></p>
+   </div>
+   <h3>Rincian komisi berdasarkan pesanan dan produk</h3>
+   <div class="table-wrap"><table class="report-table"><thead><tr><th>Tanggal</th><th>Jenis</th><th>Produk</th><th>Pesanan</th><th>Dasar perhitungan</th><th>Nilai komisi</th><th>Catatan</th></tr></thead><tbody id="platformFinanceRows"></tbody></table></div>
+   <h3>Riwayat pencairan Owner Platform</h3>
+   <div class="table-wrap"><table class="report-table"><thead><tr><th>Tanggal permintaan</th><th>Jumlah</th><th>Status</th><th>Penyedia</th><th>Referensi pencairan</th><th>Catatan</th></tr></thead><tbody id="platformFinancePayoutRows"></tbody></table></div>
+   <p class="small">Pencairan tidak dilakukan otomatis. Riwayat hanya menampilkan pencairan yang sudah dicatat. Saldo tersedia belum berarti dana telah ditransfer ke rekening.</p>
+  </div>
+ </div>
+</section>
 <section id="ksSuggestionInboxPanel" class="card" hidden aria-labelledby="ksSuggestionInboxTitle" style="max-width:1000px;margin:12px auto;border:1px solid #c7d2fe;background:#f8faff">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
     <div><h2 id="ksSuggestionInboxTitle" style="margin:0;color:#3730a3">🔔 Saran Masuk — Pengelola</h2><p class="small" style="margin:6px 0">Hanya akun Owner resmi yang dapat membaca masukan pengguna.</p></div>
@@ -1610,6 +1634,48 @@ function activateOfflineTransactionMode(){
 function saveOfflineWorkspace(business,member,user){
  try{localStorage.setItem(OFFLINE_WORKSPACE_KEY,JSON.stringify({businessId:business.id,businessName:business.business_name,role:member.role,userId:user.id,userName:financeUserDisplayName(user),savedAt:new Date().toISOString()}));}catch(e){console.warn('Konteks offline tidak dapat disimpan:',e);}
 }
+let platformFinanceData=null,platformFinanceBusy=false;
+function setPlatformFinanceStatus(message,isError=false){const el=$('platformFinanceStatus');if(el){el.textContent=message;el.style.color=isError?'#b42318':'';}}
+function platformFinancePeriodMatch(row,period,reference){
+ if(period==='all')return true;const raw=row.created_at||row.requested_at;if(!raw||!reference)return false;
+ const d=new Date(raw);if(Number.isNaN(d.getTime()))return false;
+ if(period==='day')return d.toISOString().slice(0,10)===reference;
+ if(period==='month')return d.getFullYear()===Number(reference.slice(0,4))&&d.getMonth()+1===Number(reference.slice(5,7));
+ if(period==='year')return d.getFullYear()===Number(reference.slice(0,4));return true;
+}
+function platformFinanceCell(tr,value){const td=document.createElement('td');td.textContent=value==null||value===''?'—':String(value);tr.appendChild(td);}
+function renderKeuanganMarketplace(){
+ if(!platformFinanceData)return;const period=$('platformFinancePeriod').value,reference=$('platformFinanceDate').value;
+ const rows=(platformFinanceData.commissions||[]).filter(x=>platformFinancePeriodMatch(x,period,reference));
+ const sum=a=>a.reduce((n,x)=>n+Number(x.amount||0),0);
+ const gross=sum(rows.filter(x=>x.entry_type==='commission')),refund=sum(rows.filter(x=>x.entry_type==='refund_reversal')),adjust=sum(rows.filter(x=>x.entry_type==='adjustment'));
+ $('platformFinancePeriodTotal').textContent=(period==='all'?'Semua periode':period==='day'?'Tanggal '+reference:period==='month'?'Bulan '+reference:'Tahun '+reference)+' • Komisi kotor '+format(gross)+' • Refund '+format(refund)+' • Penyesuaian '+format(adjust)+' • Komisi bersih '+format(sum(rows));
+ const body=$('platformFinanceRows');body.replaceChildren();
+ rows.forEach(x=>{const tr=document.createElement('tr'),item=x.item||{};platformFinanceCell(tr,x.created_at?new Date(x.created_at).toLocaleString('id-ID'):'—');platformFinanceCell(tr,x.entry_type==='commission'?'Komisi':x.entry_type==='refund_reversal'?'Pembalikan refund':'Penyesuaian');platformFinanceCell(tr,item.product_name_snapshot||'Rincian produk tidak tersedia');platformFinanceCell(tr,item.order_id||x.order_item_id);platformFinanceCell(tr,format(x.calculation_base));platformFinanceCell(tr,format(x.amount));platformFinanceCell(tr,x.notes);body.appendChild(tr);});
+ if(!rows.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=7;td.textContent='Tidak ada pencatatan pada periode ini.';tr.appendChild(td);body.appendChild(tr);}
+ const payouts=(platformFinanceData.payouts||[]).filter(x=>platformFinancePeriodMatch(x,period,reference)),pb=$('platformFinancePayoutRows');pb.replaceChildren();
+ payouts.forEach(x=>{const tr=document.createElement('tr');platformFinanceCell(tr,x.requested_at?new Date(x.requested_at).toLocaleString('id-ID'):'—');platformFinanceCell(tr,format(x.amount));platformFinanceCell(tr,x.status);platformFinanceCell(tr,x.provider);platformFinanceCell(tr,x.provider_payout_id);platformFinanceCell(tr,x.notes);pb.appendChild(tr);});
+ if(!payouts.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=6;td.textContent='Belum ada riwayat pencairan Owner Platform.';tr.appendChild(td);pb.appendChild(tr);}
+}
+async function muatKeuanganMarketplace(){
+ if(!sb||platformFinanceBusy)return;platformFinanceBusy=true;setPlatformFinanceStatus('Mengambil laporan dari server…');
+ try{
+  const {data,error}=await sb.functions.invoke('platform-marketplace-finance',{method:'GET'});if(error)throw error;if(!data||data.authorized!==true)throw new Error(data?.error||'Akses ditolak.');
+  platformFinanceData=data;const s=data.summary||{},metrics=[['Komisi kotor',s.gross_commission],['Pembalikan refund',s.refund_reversals],['Penyesuaian',s.adjustments],['Komisi bersih',s.total_commission_net],['Sudah dicairkan',s.total_paid_out],['Belum dicairkan',s.available_not_paid_out]];
+  const wrap=$('platformFinanceMetrics');wrap.replaceChildren();metrics.forEach(([label,value])=>{const card=document.createElement('div');card.className='finance-metric';const title=document.createElement('div');title.className='small';title.textContent=label;const amount=document.createElement('strong');amount.style.fontSize='20px';amount.textContent=format(value);card.append(title,amount);wrap.appendChild(card);});
+  $('platformFinanceContent').hidden=false;if(!$('platformFinanceDate').value)$('platformFinanceDate').value=new Date().toISOString().slice(0,10);renderKeuanganMarketplace();
+  setPlatformFinanceStatus('Laporan berhasil dimuat. Hak akses diverifikasi server. Diperbarui: '+new Date(data.generated_at||Date.now()).toLocaleString('id-ID'));
+ }catch(e){platformFinanceData=null;$('platformFinanceContent').hidden=true;setPlatformFinanceStatus('Laporan gagal dimuat: '+String(e.message||e).slice(0,200),true);console.warn(e);}finally{platformFinanceBusy=false;}
+}
+function cetakKeuanganMarketplace(){if(!platformFinanceData)return alert('Muat laporan terlebih dahulu.');window.print();}
+function refreshPlatformFinanceVisibility(){
+ const button=$('navPlatformMarketplaceFinance');if(!button||!sb)return;
+ sb.auth.getSession().then(async({data,error})=>{if(error||!data.session){button.hidden=true;return;}
+  try{const {data:result,error:invokeError}=await sb.functions.invoke('platform-marketplace-finance',{method:'GET'});const allowed=!invokeError&&result&&result.authorized===true;button.hidden=!allowed;if(allowed)platformFinanceData=result;else platformFinanceData=null;}catch(_){button.hidden=true;platformFinanceData=null;}
+ });
+}
+window.muatKeuanganMarketplace=muatKeuanganMarketplace;window.renderKeuanganMarketplace=renderKeuanganMarketplace;window.cetakKeuanganMarketplace=cetakKeuanganMarketplace;
+if(sb&&sb.auth){sb.auth.onAuthStateChange(()=>setTimeout(refreshPlatformFinanceVisibility,700));setTimeout(refreshPlatformFinanceVisibility,1300);}
 async function buka(id,tombol){
   if(document.body.classList.contains('employee-device-pending')&&id==='transaksi'){id='loginKaryawan';tombol=document.querySelector('nav button[onclick*="loginKaryawan"]');employeeAuthMessage('Perangkat ini belum aktif. Selesaikan pembayaran aktivasi Rp10.000 dan periksa statusnya terlebih dahulu.',true);}
   const fiturBerbayar=['transaksi','produk','cadangan'];
@@ -3888,6 +3954,7 @@ sb.auth.onAuthStateChange((event,session)=>{financeBusiness=null;financeMemberRo
   }
 })();
 </script>
+<style id="platform-marketplace-finance-print">@media print{body>*{visibility:hidden!important}body>main,#platformMarketplaceFinance,#platformMarketplaceFinance *{visibility:visible!important}#platformMarketplaceFinance{display:block!important;position:absolute!important;left:0;top:0;width:100%!important}#platformMarketplaceFinance button,#platformMarketplaceFinance label{display:none!important}#platformMarketplaceFinance .card{box-shadow:none!important;border:0!important}#platformMarketplaceFinance .table-wrap{overflow:visible!important}#platformMarketplaceFinance table{font-size:9px!important}}</style>
 <style id="kasusaha-professional-design">
 /* Professional visual system: presentational overrides only */
 :root{--ks-ink:#172b3a;--ks-muted:#64748b;--ks-line:#dce5e1;--ks-paper:#fff;--ks-soft:#f5f8f6;--ks-primary:#166534;--ks-primary-dark:#14532d;--ks-radius:14px;--ks-shadow:0 8px 24px rgba(15,35,25,.055)}
