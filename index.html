@@ -4074,6 +4074,87 @@ nav[aria-label="Navigasi utama"] button{min-height:36px!important;padding:8px 10
  nav[aria-label="Navigasi utama"]{flex-wrap:nowrap!important;overflow-x:auto!important}
  nav[aria-label="Navigasi utama"] button{font-size:11px!important;padding:8px 9px!important}
 }
+
+/* Perbaikan susunan banner PWA dan jarak navigasi utama */
+body>header.ks-brand-header .kasusaha-pwa-install{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:min(100%,760px)!important;
+  max-width:760px!important;
+  gap:9px!important;
+  margin:9px auto 0!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]{
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+}
+body>header.ks-brand-header .kasusaha-pwa-install .kasusaha-install-button{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:auto!important;
+  max-width:100%!important;
+  margin:0!important;
+}
+body>header.ks-brand-header .kasusaha-install-guide{
+  width:100%!important;
+  box-sizing:border-box!important;
+}
+body>header.ks-brand-header .kasusaha-install-caption{
+  display:block!important;
+  width:100%!important;
+  text-align:center!important;
+  margin:0!important;
+}
+nav[aria-label="Navigasi utama"]{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex-direction:row!important;
+  gap:8px!important;
+  box-sizing:border-box!important;
+}
+nav[aria-label="Navigasi utama"]>button{
+  display:inline-flex!important;
+  flex:0 0 auto!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:5px!important;
+  white-space:nowrap!important;
+  margin:0!important;
+}
+@media(max-width:650px){
+  body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]{
+    flex-direction:column!important;
+    align-items:stretch!important;
+    text-align:center!important;
+  }
+  body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:last-child{
+    align-self:center!important;
+    flex-basis:auto!important;
+    width:112px!important;
+  }
+  body>header.ks-brand-header .kasusaha-pwa-install .kasusaha-install-button{
+    width:min(100%,360px)!important;
+  }
+  nav[aria-label="Navigasi utama"]{
+    flex-wrap:nowrap!important;
+    justify-content:flex-start!important;
+    overflow-x:auto!important;
+    overscroll-behavior-x:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+}
+
 </style>
 <button id="ksBackToTop" type="button" aria-label="Kembali ke bagian atas halaman" title="Kembali ke atas">
  <span class="ks-back-top-arrow" aria-hidden="true">↑</span><span>Kembali ke atas</span>
