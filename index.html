@@ -4041,6 +4041,28 @@ body>main>#beranda .beginner-start{
 #ksBackToTop .ks-back-top-arrow{font-size:19px;line-height:1}
 @media(max-width:600px){#ksBackToTop{right:14px;bottom:14px;padding:10px 13px;font-size:13px}}
 @media(prefers-reduced-motion:reduce){#ksBackToTop{transition:none}}
+
+/* Kompakkan banner pembuka agar navigasi utama lebih cepat terlihat */
+body>header.ks-brand-header{padding:12px clamp(12px,2vw,24px)!important}
+body>header.ks-brand-header .kasusaha-pwa-install{margin:9px auto 0!important;gap:7px!important}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]{padding:12px!important;gap:10px!important;border-radius:14px!important}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child{gap:5px!important}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child strong{font-size:clamp(18px,2.2vw,24px)!important;line-height:1.12!important}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child span:last-child{font-size:12px!important}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:last-child{flex-basis:112px!important;padding:9px!important}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:last-child>div:first-child{font-size:20px!important}
+body>header.ks-brand-header .kasusaha-install-button{min-height:38px!important;padding:8px 12px!important;font-size:12px!important}
+body>header.ks-brand-header .kasusaha-install-caption{font-size:11px!important}
+nav[aria-label="Navigasi utama"]{gap:5px!important;padding:7px 10px!important}
+nav[aria-label="Navigasi utama"] button{min-height:36px!important;padding:8px 10px!important;font-size:12px!important}
+@media(min-width:1000px){nav[aria-label="Navigasi utama"]{flex-wrap:wrap!important;justify-content:center!important}}
+@media(max-width:650px){
+ body>header.ks-brand-header{padding:10px 12px!important}
+ body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]{padding:10px!important}
+ body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:last-child{flex-basis:90px!important}
+ nav[aria-label="Navigasi utama"]{flex-wrap:nowrap!important;overflow-x:auto!important}
+ nav[aria-label="Navigasi utama"] button{font-size:11px!important;padding:8px 9px!important}
+}
 </style>
 <button id="ksBackToTop" type="button" aria-label="Kembali ke bagian atas halaman" title="Kembali ke atas">
  <span class="ks-back-top-arrow" aria-hidden="true">↑</span><span>Kembali ke atas</span>
