@@ -3025,12 +3025,13 @@ async function arahkanSetelahLoginFinance(){
    return true;
   }
   if(attendance.check_in_at&&!attendance.check_out_at){
-   await buka('beranda',document.querySelector('nav button[onclick*="beranda"]'));
-   const start=document.querySelector('#beranda .beginner-start');
+   await buka('transaksi',transactionButton);
+   const start=$('transactionGuide');
    if(start){
     let notice=$('financeLoginWorkNotice');
-    if(!notice){notice=document.createElement('p');notice.id='financeLoginWorkNotice';notice.className='status';start.querySelector('.beginner-start-head')?.after(notice);}
-    if(notice)notice.textContent='Absensi masuk sudah tercatat pukul '+attendanceTime(attendance.check_in_at)+'. Silakan pilih pekerjaan untuk mulai bekerja.';
+    if(!notice){notice=document.createElement('p');notice.id='financeLoginWorkNotice';notice.className='status';}
+    notice.textContent='Absensi masuk berhasil tercatat pukul '+attendanceTime(attendance.check_in_at)+'. Silakan mulai bekerja melalui menu Transaksi.';
+    start.after(notice);
     start.scrollIntoView({behavior:'smooth',block:'start'});
    }
    return true;
