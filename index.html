@@ -1720,6 +1720,7 @@ async function buka(id,tombol){
   document.querySelectorAll('main .tab').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
   const panel=$(id);if(!panel)return;panel.classList.add('active');if(tombol)tombol.classList.add('active');
+  if(id==='platformMarketplaceFinance')await muatKeuanganMarketplace();
   if(id==='transaksi'){
     const reportSelect=$('reportCategorySelect');
     if(reportSelect && !offlineTransactionMode){
