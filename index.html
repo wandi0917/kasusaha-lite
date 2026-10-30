@@ -3378,19 +3378,24 @@ async function imporTransaksiLokalKeBersama(options={}){
   if(!valid.length)throw new Error('Ditemukan catatan offline, tetapi tidak ada yang valid untuk disinkronkan. Periksa tanggal, keterangan, jenis, dan nominalnya.');
   if(!automatic&&!confirm('Sinkronkan '+valid.length+' dari '+eligible.length+' catatan lokal ke usaha '+financeBusiness.business_name+' sebagai '+(role==='owner'?'Owner':'Karyawan')+'? Catatan lokal tidak dihapus.'))return;
   setFinanceStatus((automatic?'Sinkronisasi otomatis: ':'')+'Mengirim '+valid.length+' catatan offline ke laporan bersama...');
-  let inserted=0;
+  let inserted=0,verified=0;
   for(let i=0;i<valid.length;i+=50){
    const batch=valid.slice(i,i+50).map(x=>x.row);
    const {data,error}=await sb.from('financial_transactions').upsert(batch,{onConflict:'business_id,legacy_ref',ignoreDuplicates:true}).select('id');
    if(error)throw error;
    inserted+=(data||[]).length;
+   const refs=batch.map(x=>x.legacy_ref);
+   const {data:confirmed,error:verifyError}=await sb.from('financial_transactions').select('id,legacy_ref').eq('business_id',businessId).in('legacy_ref',refs);
+   if(verifyError)throw new Error('Transaksi terkirim tetapi belum dapat diverifikasi dari laporan bersama: '+verifyError.message);
+   verified+=(confirmed||[]).length;
+   if((confirmed||[]).length!==batch.length)throw new Error('Jumlah catatan yang terbaca setelah sinkronisasi tidak cocok. Catatan lokal tetap dipertahankan; periksa laporan sebelum mencoba lagi.');
   }
   await loadFinanceWorkspace();
   if(!financeBusiness||financeMemberUserId!==sessionUserId)throw new Error('Akun atau usaha berubah setelah pengiriman. Catatan lokal tetap dipertahankan; periksa laporan sebelum mengulangi.');
   const syncedAt=new Date().toISOString(),syncedIds=new Set(valid.map(x=>x.localId));
   transaksi=transaksi.map(t=>syncedIds.has(String(t.id))?{...t,offline_pending:false,offline_synced_at:syncedAt}:t);
   simpan();
-  setFinanceStatus((automatic?'Sinkronisasi otomatis selesai. ':'Sinkronisasi selesai. ')+inserted+' catatan baru ditambahkan; '+(valid.length-inserted)+' sudah pernah tercatat. '+skipped.length+' catatan tidak valid dilewati. Data lokal tetap disimpan.');
+  setFinanceStatus((automatic?'Sinkronisasi otomatis selesai. ':'Sinkronisasi selesai. ')+inserted+' catatan baru ditambahkan; '+(valid.length-inserted)+' sudah pernah tercatat. '+verified+' catatan terverifikasi di server; '+skipped.length+' catatan tidak valid dilewati. Data lokal tetap disimpan.');
   renderFinanceReport();
  }catch(e){
   setFinanceStatus('Sinkronisasi transaksi offline gagal: '+String(e.message||e).slice(0,260)+'. Catatan lokal tetap tersimpan; periksa laporan sebelum mencoba lagi.',true);
