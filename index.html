@@ -1756,6 +1756,17 @@ async function buka(id,tombol){
           }else if(chosen==='stock'){
             await loadStoreProducts();
           }
+          // Setelah data selesai dimuat, arahkan layar ke laporan yang dipilih.
+          const reportTargetId = chosen==='stock' ? 'stockReportTableCard' :
+            (chosen==='sales'||chosen==='finance'||chosen==='income') ? 'financeReportCard' :
+            chosen==='daily' ? 'localDailyReportCard' :
+            chosen==='history' ? 'localTransactionHistoryCard' : '';
+          if(reportTargetId){
+            const reportTarget=$(reportTargetId);
+            if(reportTarget){
+              requestAnimationFrame(()=>reportTarget.scrollIntoView({behavior:'smooth',block:'start'}));
+            }
+          }
         }catch(e){
           const message='Laporan gagal dimuat: '+String(e.message||e).slice(0,180);
           if(typeof setFinanceStatus==='function')setFinanceStatus(message,true);
