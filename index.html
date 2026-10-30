@@ -2509,6 +2509,7 @@ $('employeeLogin').addEventListener('click',async()=>{
   joined=true;
   await loadFinanceWorkspace();
   setEmployeeLoginFormVisible(false);employeeAuthMessage('Berhasil masuk sebagai Karyawan di '+String(data.business_name||'usaha Anda')+'. Anda tidak perlu email untuk login.');
+  if(financeBusiness&&financeMemberRole==='employee'&&!document.body.classList.contains('employee-device-pending'))await arahkanSetelahLoginFinance();
  }catch(e){
   const raw=String(e.message||e);
   if(createdAnonymous&&!joined){try{await sb.auth.signOut();}catch(_cleanupError){}}
@@ -2529,7 +2530,7 @@ function pesanAkun(teks,error=false){$('pesanPenjual').className=error?'status e
 async function periksaSesi(){if(!sb){pesanAkun('Pustaka login gagal dimuat. Periksa koneksi internet.',true);return null;}try{const {data,error}=await sb.auth.getSession();if(error)throw error;if(data.session)pesanAkun('Login aktif: '+data.session.user.email);else pesanAkun('Belum login. Daftar akun atau login terlebih dahulu.');return data.session;}catch(e){pesanAkun('Tidak dapat memeriksa sesi: '+String(e.message||e).slice(0,160),true);return null;}}
 $('daftarPenjual').addEventListener('click',async()=>{if(!sb)return pesanAkun('Pustaka login belum tersedia.',true);const email=$('emailPenjual').value.trim(),password=$('sandiPenjual').value;if(!email||password.length<6)return pesanAkun('Masukkan email valid dan kata sandi minimal 6 karakter.',true);$('daftarPenjual').disabled=true;pesanAkun('Sedang mendaftarkan akun...');try{const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:'https://kasusaha-lite.pages.dev/'}});if(error)throw error;if(data.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0){pesanAkun('Akun dengan email ini sudah terdaftar. Silakan gunakan tombol Login, bukan Daftar Akun.');}else if(data.session)pesanAkun('Akun berhasil dibuat dan login aktif. Langkah berikutnya: klik menu Transaksi, isi nama dan jenis usaha, lalu tekan Simpan Usaha untuk mulai menggunakan fitur utama.');else pesanAkun('Permintaan pendaftaran diterima, tetapi email belum tentu terkirim. Periksa Inbox/Spam. Jika tidak ada, atur custom SMTP di Supabase Authentication > SMTP Settings.');}catch(e){pesanAkun('Pendaftaran gagal: '+String(e.message||'Periksa pengaturan Supabase.').slice(0,220),true);}finally{$('daftarPenjual').disabled=false;}});
 $('resendOwnerConfirmation').addEventListener('click',()=>kirimUlangKonfirmasi($('emailPenjual').value,pesanAkun));
- $('loginPenjual').addEventListener('click',async()=>{if(!sb)return pesanAkun('Pustaka login belum tersedia.',true);const email=$('emailPenjual').value.trim(),password=$('sandiPenjual').value;if(!email||!password)return pesanAkun('Masukkan email dan kata sandi.',true);$('loginPenjual').disabled=true;pesanAkun('Sedang login...');try{const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;pesanAkun('Login berhasil: '+data.user.email+'. Untuk mulai menggunakan fitur utama, klik menu Transaksi. Jika ini akun Owner baru, isi nama dan jenis usaha lalu tekan Simpan Usaha.');tampilProdukLokalUntukOnline();await muatProdukAsalPengiriman();await loadFinanceWorkspace();if(!financeBusiness)pesanAkun('Akun aktif. Langkah berikutnya: klik menu Transaksi, lengkapi formulir Buat Usaha, lalu tekan Simpan Usaha sebelum mulai mencatat transaksi.');}catch(e){pesanAkun('Login gagal: '+String(e.message||'Pastikan email sudah dikonfirmasi dan kata sandi benar.').slice(0,180),true);}finally{$('loginPenjual').disabled=false;}});
+ $('loginPenjual').addEventListener('click',async()=>{if(!sb)return pesanAkun('Pustaka login belum tersedia.',true);const email=$('emailPenjual').value.trim(),password=$('sandiPenjual').value;if(!email||!password)return pesanAkun('Masukkan email dan kata sandi.',true);$('loginPenjual').disabled=true;pesanAkun('Sedang login...');try{const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;pesanAkun('Login berhasil: '+data.user.email+'. Memeriksa status absensi dan menyiapkan halaman kerja...');tampilProdukLokalUntukOnline();await muatProdukAsalPengiriman();await loadFinanceWorkspace();if(financeBusiness&&['owner','employee'].includes(financeMemberRole)){await arahkanSetelahLoginFinance();}else if(!financeBusiness){pesanAkun('Akun aktif, tetapi belum terhubung ke usaha. Buka menu Transaksi untuk membuat usaha atau hubungi Owner.');}}catch(e){pesanAkun('Login gagal: '+String(e.message||'Pastikan email sudah dikonfirmasi dan kata sandi benar.').slice(0,180),true);}finally{$('loginPenjual').disabled=false;}});
 $('keluarPenjual').addEventListener('click',async()=>{if(!sb)return pesanAkun('Pustaka login belum tersedia.',true);try{const {error}=await sb.auth.signOut();if(error)throw error;pesanAkun('Anda sudah logout.');}catch(e){pesanAkun('Logout gagal: '+String(e.message||e).slice(0,160),true);}});
 function isiFormOnline(id){const p=produk.find(x=>String(x.id)===String(id));if(!p)return;localSelectedId=p.id;$('namaProdukOnline').value=p.nama||'';$('kategoriProdukOnline').value=p.kategori||'Lainnya';$('hargaProdukOnline').value=p.harga??'';$('stokProdukOnline').value=p.stok??1;$('deskripsiProdukOnline').value=p.deskripsi||'';$('fotoProdukOnline').value=(p.foto&&!p.foto.startsWith('data:image/'))?p.foto:'';buka('akun',document.querySelectorAll('nav button')[6]);}
 function tampilProdukLokalUntukOnline(){const box=$('produkLokalUntukOnline');if(!box)return;const data=produk.filter(p=>!p.onlineId);box.innerHTML=data.length?data.map(p=>`<div class="item"><strong>${aman(p.nama)}</strong> — ${format(p.harga)}<button class="secondary" style="margin-left:8px" type="button" onclick="isiFormOnline('${String(p.id)}')">Pilih produk ini</button></div>`).join(''):'<p>Tidak ada produk lokal yang belum dikaitkan dengan produk online.</p>';}
@@ -3007,6 +3008,43 @@ async function loadAttendance(){
   const totalDays=list.reduce((n,x)=>n+x[1].days.length,0);$('attendancePayrollStatus').textContent=(financeMemberRole==='owner'?'Ringkasan semua akun usaha':'Ringkasan akun Anda')+': '+totalDays.toLocaleString('id-ID')+' hari kerja; '+totalHours.toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2})+' jam tercatat lengkap; total gaji terhitung '+attendanceRupiah(totalPay)+'. Absensi yang belum absen pulang belum dihitung.';
   $('attendanceSaveWage').disabled=false;
  }catch(e){status.className='status error';status.textContent='Absensi belum dapat dimuat: '+String(e.message||e).slice(0,200);$('attendanceCheckIn').disabled=true;$('attendanceCheckOut').disabled=true;}
+}
+async function arahkanSetelahLoginFinance(){
+ if(!sb||!financeBusiness||!financeMemberUserId||!['owner','employee'].includes(financeMemberRole)||document.body.classList.contains('employee-device-pending'))return false;
+ try{
+  const today=attendanceToday();
+  const {data:attendance,error}=await sb.from('business_attendance').select('check_in_at,check_out_at').eq('business_id',financeBusiness.id).eq('user_id',financeMemberUserId).eq('work_date',today).maybeSingle();
+  if(error)throw error;
+  const transactionButton=document.querySelector('nav button[onclick*="transaksi"]');
+  if(!attendance||!attendance.check_in_at){
+   await buka('transaksi',transactionButton);
+   await bukaPanelTransaksi('absensi');
+   const status=$('attendanceStatus');
+   if(status){status.className='status warn';status.textContent='Silakan absen untuk mulai bekerja.';}
+   $('attendanceCheckIn')?.scrollIntoView({behavior:'smooth',block:'center'});
+   return true;
+  }
+  if(attendance.check_in_at&&!attendance.check_out_at){
+   await buka('beranda',document.querySelector('nav button[onclick*="beranda"]'));
+   const start=document.querySelector('#beranda .beginner-start');
+   if(start){
+    let notice=$('financeLoginWorkNotice');
+    if(!notice){notice=document.createElement('p');notice.id='financeLoginWorkNotice';notice.className='status';start.querySelector('.beginner-start-head')?.after(notice);}
+    if(notice)notice.textContent='Absensi masuk sudah tercatat pukul '+attendanceTime(attendance.check_in_at)+'. Silakan pilih pekerjaan untuk mulai bekerja.';
+    start.scrollIntoView({behavior:'smooth',block:'start'});
+   }
+   return true;
+  }
+  await buka('transaksi',transactionButton);
+  await bukaPanelTransaksi('absensi');
+  const status=$('attendanceStatus');
+  if(status){status.className='status';status.textContent='Absen masuk dan absen pulang hari ini sudah tercatat. Anda telah menyelesaikan absensi hari ini.';}
+  return true;
+ }catch(e){
+  console.error('Pengalihan halaman setelah login gagal:',e);
+  setFinanceStatus('Login berhasil, tetapi status absensi belum dapat diperiksa: '+String(e.message||e).slice(0,180),true);
+  return false;
+ }
 }
 async function absenMasuk(){
  if(!sb||!financeBusiness||!financeMemberUserId){setFinanceStatus('Login dan hubungkan akun ke usaha terlebih dahulu.',true);return;}
