@@ -4297,35 +4297,7 @@ body>header.ks-brand-header .kasusaha-install-caption{
 
 
 
-/* Ilustrasi banner PWA baru: dashboard kasir, printer, perangkat dan stok */
-body>header.ks-brand-header .kasusaha-pwa-install{width:min(100%,900px)!important}
-body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]{
-  display:flex!important;align-items:center!important;justify-content:space-between!important;
-  gap:8px!important;padding:10px 14px!important;
-}
-body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child{
-  flex:1 1 0!important;min-width:0!important;gap:5px!important;
-}
-body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child>strong{
-  font-size:clamp(19px,2.3vw,25px)!important;line-height:1.08!important;
-}
-body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child>span:last-child{
-  font-size:12px!important;line-height:1.35!important;
-}
-body>header.ks-brand-header .kasusaha-pwa-hero-visual{
-  display:block!important;flex:0 0 265px!important;width:265px!important;max-width:38%!important;
-  padding:0!important;margin:0!important;border:0!important;border-radius:12px!important;
-  background:transparent!important;box-shadow:none!important;overflow:visible!important;
-}
-body>header.ks-brand-header .kasusaha-pwa-hero-visual svg{
-  display:block!important;width:100%!important;height:auto!important;max-height:190px!important;
-}
-@media(max-width:760px){
-  body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]{gap:0!important;padding:9px 12px!important}
-  body>header.ks-brand-header .kasusaha-pwa-hero-visual{display:none!important}
-  body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child>strong{font-size:17px!important}
-  body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child>span:last-child{font-size:10px!important}
-}
+
 
 /* Tata letak ringkas: navigasi cepat terlihat, banner tidak mendominasi */
 body>header.ks-brand-header{
@@ -4457,6 +4429,37 @@ body>main>#beranda .ks-art-floating small{font-size:8px!important}
   body>main>#beranda .usage-guide{margin-top:8px!important}
 }
 
+
+/* Prioritas akhir untuk banner PWA: rapatkan teks dan ilustrasi POS baru */
+body>header.ks-brand-header .kasusaha-pwa-install{width:min(100%,900px)!important}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]{
+ display:flex!important;align-items:center!important;justify-content:space-between!important;
+ gap:6px!important;padding:9px 12px!important;
+}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child{
+ flex:1 1 0!important;min-width:0!important;gap:4px!important;
+}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child>strong{
+ font-size:clamp(19px,2.3vw,25px)!important;line-height:1.08!important;
+}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child>span:last-child{
+ font-size:12px!important;line-height:1.35!important;
+}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div.kasusaha-pwa-hero-visual{
+ display:block!important;flex:0 0 265px!important;width:265px!important;max-width:38%!important;
+ min-height:0!important;padding:0!important;margin:0!important;border:0!important;
+ border-radius:12px!important;background:transparent!important;color:inherit!important;
+ box-shadow:none!important;transform:none!important;overflow:visible!important;
+}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div.kasusaha-pwa-hero-visual svg{
+ display:block!important;width:100%!important;height:auto!important;max-height:190px!important;
+}
+@media(max-width:760px){
+ body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]{gap:0!important;padding:8px 10px!important}
+ body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div.kasusaha-pwa-hero-visual{display:none!important}
+ body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child>strong{font-size:16px!important}
+ body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child>span:last-child{font-size:10px!important}
+}
 </style>
 <button id="ksBackToTop" type="button" aria-label="Kembali ke bagian atas halaman" title="Kembali ke atas">
  <span class="ks-back-top-arrow" aria-hidden="true">↑</span><span>Kembali ke atas</span>
