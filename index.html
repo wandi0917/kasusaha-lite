@@ -4158,6 +4158,85 @@ nav[aria-label="Navigasi utama"]>button{
   }
 }
 
+
+/* Penyempurnaan visual banner promosi PWA */
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]{
+  background:linear-gradient(125deg,#123b50 0%,#126b68 58%,#0f766e 100%)!important;
+  padding:20px 22px!important;
+  gap:22px!important;
+  border:1px solid rgba(204,251,241,.24)!important;
+  border-radius:20px!important;
+  box-shadow:0 12px 28px rgba(3,35,45,.24)!important;
+}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child{
+  display:flex!important;
+  flex:1 1 0!important;
+  min-width:0!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  gap:9px!important;
+  text-align:left!important;
+}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child>span:first-child{
+  display:block!important;
+  color:#a7f3d0!important;
+  font-size:11px!important;
+  line-height:1.4!important;
+  letter-spacing:1.5px!important;
+}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child>strong{
+  display:block!important;
+  color:#fff!important;
+  font-size:clamp(22px,3vw,30px)!important;
+  line-height:1.2!important;
+  letter-spacing:-.5px!important;
+}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child>span:last-child{
+  display:block!important;
+  color:#d9f5ef!important;
+  font-size:13px!important;
+  line-height:1.55!important;
+}
+body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:last-child{
+  transform:none!important;
+  flex:0 0 132px!important;
+  padding:13px!important;
+  border:2px solid #d1fae5!important;
+  border-radius:16px!important;
+  box-shadow:0 8px 18px rgba(3,35,45,.18)!important;
+}
+body>header.ks-brand-header .kasusaha-pwa-install .kasusaha-install-button{
+  min-height:42px!important;
+  padding:10px 18px!important;
+  border:1px solid #a7f3d0!important;
+  border-radius:12px!important;
+  background:#ecfdf5!important;
+  color:#115e59!important;
+  font-size:13px!important;
+  font-weight:800!important;
+  box-shadow:0 4px 12px rgba(3,35,45,.12)!important;
+}
+body>header.ks-brand-header .kasusaha-install-caption{
+  color:#d9f5ef!important;
+  font-size:12px!important;
+  line-height:1.5!important;
+}
+@media(max-width:650px){
+  body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]{
+    gap:14px!important;
+    padding:17px!important;
+  }
+  body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:first-child{
+    align-items:center!important;
+    text-align:center!important;
+    width:100%!important;
+  }
+  body>header.ks-brand-header .kasusaha-pwa-install>[role="img"]>div:last-child{
+    flex:0 0 auto!important;
+    width:118px!important;
+  }
+}
+
 </style>
 <button id="ksBackToTop" type="button" aria-label="Kembali ke bagian atas halaman" title="Kembali ke atas">
  <span class="ks-back-top-arrow" aria-hidden="true">↑</span><span>Kembali ke atas</span>
