@@ -4056,5 +4056,30 @@ body>main>#beranda .beginner-start{
 #financeReportRows tfoot th,#financeReportRows tfoot td{font-weight:800;background:#eaf2fb;border-top:2px solid #64748b;padding:12px 10px}
 #financeReportRows tfoot td.amount{text-align:right}
 </style>
+
+<style id="ks-back-to-top-style">
+#ksBackToTop{position:fixed;right:22px;bottom:22px;z-index:10050;display:flex;align-items:center;gap:8px;padding:11px 16px;border:1px solid #bbd8c5;border-radius:999px;background:#166534;color:#fff;font:700 14px/1.2 inherit;box-shadow:0 6px 20px rgba(15,45,28,.24);cursor:pointer;transition:transform .18s ease,background .18s ease}
+#ksBackToTop:hover{background:#14532d;transform:translateY(-2px)}
+#ksBackToTop:focus-visible{outline:3px solid #86efac;outline-offset:3px}
+#ksBackToTop .ks-back-top-arrow{font-size:19px;line-height:1}
+@media(max-width:600px){#ksBackToTop{right:14px;bottom:14px;padding:10px 13px;font-size:13px}}
+@media(prefers-reduced-motion:reduce){#ksBackToTop{transition:none}}
+</style>
+<button id="ksBackToTop" type="button" aria-label="Kembali ke bagian atas halaman" title="Kembali ke atas">
+ <span class="ks-back-top-arrow" aria-hidden="true">↑</span><span>Kembali ke atas</span>
+</button>
+<script id="ks-back-to-top-script">
+(function(){
+ const button=document.getElementById('ksBackToTop');
+ if(!button||button.dataset.ready==='1')return;
+ button.dataset.ready='1';
+ button.addEventListener('click',function(){
+  window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+  const mainNav=document.querySelector('nav[aria-label="Navigasi utama"]');
+  if(mainNav&&window.scrollY<2)mainNav.scrollIntoView({behavior:'auto',block:'start'});
+ });
+})();
+</script>
+
 </body>
 </html>
