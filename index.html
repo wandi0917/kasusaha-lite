@@ -4075,8 +4075,6 @@ body>main>#beranda .beginner-start{
  button.dataset.ready='1';
  button.addEventListener('click',function(){
   window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
-  const mainNav=document.querySelector('nav[aria-label="Navigasi utama"]');
-  if(mainNav&&window.scrollY<2)mainNav.scrollIntoView({behavior:'auto',block:'start'});
  });
 })();
 </script>
