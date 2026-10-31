@@ -1117,6 +1117,27 @@ body>main>.tab.active{display:block!important;}
 body>main>#beranda.tab.active{display:flex!important;}
 </style>
 <!-- KS PANEL VISIBILITY FIX 2026-10-31 -->
+<style id="ks-home-visual-promo-style">
+#beranda .ks-home-visual-promo{position:relative;isolation:isolate;overflow:hidden;margin:24px 0;padding:clamp(20px,3.2vw,34px);border:1px solid #dce9df;border-radius:24px;background:radial-gradient(circle at 8% 4%,rgba(192,225,201,.48),transparent 32%),linear-gradient(135deg,#f5faf6 0%,#fff 52%,#f7faf7 100%);box-shadow:0 14px 38px rgba(24,65,39,.07)}
+#beranda .ks-home-visual-head{text-align:center;max-width:760px;margin:0 auto 22px}
+#beranda .ks-home-visual-kicker{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border-radius:999px;background:#e4f2e7;color:#24633b;font-size:11px;font-weight:850;letter-spacing:.08em}
+#beranda .ks-home-visual-head h2{margin:13px 0 7px;color:#183b27;font-size:clamp(23px,3.3vw,34px);line-height:1.18;letter-spacing:-.035em}
+#beranda .ks-home-visual-head h2 em{color:#2c8750;font-style:normal}
+#beranda .ks-home-visual-head p{margin:0;color:#647568;font-size:14px;line-height:1.7}
+#beranda .ks-home-visual-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+#beranda .ks-home-visual-card{min-width:0;padding:15px 16px 18px;border:1px solid #e2ebe4;border-radius:18px;background:rgba(255,255,255,.94);box-shadow:0 7px 22px rgba(23,58,35,.055);transition:transform .2s ease,box-shadow .2s ease}
+#beranda .ks-home-visual-card:hover{transform:translateY(-4px);box-shadow:0 13px 28px rgba(23,58,35,.1)}
+#beranda .ks-visual-art{position:relative;display:flex;align-items:center;justify-content:center;min-height:135px;margin-bottom:9px;border-radius:13px;background:linear-gradient(145deg,#eff8f0,#f8fbf8)}
+#beranda .ks-visual-art svg{display:block;width:min(100%,190px);height:128px}
+#beranda .ks-visual-spark{position:absolute;top:13px;right:18px;color:#d59c3f;font-size:22px}
+#beranda .ks-visual-tag{display:inline-flex;padding:5px 9px;border-radius:999px;background:#edf6ef;color:#337448;font-size:10px;font-weight:850;letter-spacing:.07em}
+#beranda .ks-home-visual-card h3{margin:10px 0 5px;color:#214a30;font-size:17px;line-height:1.3}
+#beranda .ks-home-visual-card p{margin:0;color:#68766b;font-size:13px;line-height:1.65}
+#beranda .ks-home-visual-footer{display:flex;justify-content:center;flex-wrap:wrap;gap:9px;margin-top:17px}
+#beranda .ks-home-visual-footer span{padding:8px 11px;border:1px solid #e0eae2;border-radius:999px;background:#fff;color:#47624e;font-size:11px;font-weight:700}
+@media(max-width:720px){#beranda .ks-home-visual-promo{margin:16px 0;padding:18px 13px;border-radius:17px}#beranda .ks-home-visual-grid{grid-template-columns:1fr;gap:11px}#beranda .ks-home-visual-card{display:grid;grid-template-columns:112px minmax(0,1fr);grid-template-rows:auto auto 1fr;column-gap:12px;padding:11px}#beranda .ks-visual-art{grid-column:1;grid-row:1/4;min-height:116px;margin:0}#beranda .ks-visual-art svg{height:105px}#beranda .ks-visual-tag{grid-column:2;grid-row:1;align-self:end;width:max-content}#beranda .ks-home-visual-card h3{grid-column:2;grid-row:2;margin:6px 0 3px;font-size:15px}#beranda .ks-home-visual-card p{grid-column:2;grid-row:3;font-size:12px}#beranda .ks-home-visual-footer{justify-content:flex-start}#beranda .ks-home-visual-footer span{font-size:10px}}
+@media(prefers-reduced-motion:reduce){#beranda .ks-home-visual-card{transition:none}#beranda .ks-home-visual-card:hover{transform:none}}
+</style>
 </head>
 <body>
 <header class="ks-brand-header">
@@ -1451,6 +1472,44 @@ async function bagikanKasUsahaLite(){
 </section>
 
 
+
+<section id="ks-home-visual-promo" aria-label="Keunggulan KasUsaha Lite" class="ks-home-visual-promo">
+  <div class="ks-home-visual-head">
+    <span class="ks-home-visual-kicker">✦ USAHA LEBIH TERTATA, LANGKAH LEBIH PERCAYA DIRI</span>
+    <h2>Semua kebutuhan usaha, <em>dalam satu tempat.</em></h2>
+    <p>Dari transaksi harian hingga ringkasan usaha, tampilkan semuanya dengan lebih praktis dan mudah dipahami.</p>
+  </div>
+  <div class="ks-home-visual-grid">
+    <article class="ks-home-visual-card ks-visual-cash">
+      <div class="ks-visual-art" aria-hidden="true">
+        <span class="ks-visual-spark">✦</span>
+        <svg viewBox="0 0 180 128" role="img" aria-label="Ilustrasi kasir dan nota"><rect x="28" y="24" width="124" height="82" rx="15" fill="#fff" stroke="#c9d9ce" stroke-width="2"/><rect x="43" y="37" width="94" height="30" rx="7" fill="#e8f5ec"/><path d="M53 48h45M53 57h29" stroke="#23834b" stroke-width="4" stroke-linecap="round"/><rect x="45" y="77" width="90" height="17" rx="6" fill="#f4f7f4"/><circle cx="58" cy="85.5" r="3" fill="#e5a54b"/><circle cx="73" cy="85.5" r="3" fill="#e5a54b"/><circle cx="88" cy="85.5" r="3" fill="#e5a54b"/><path d="M119 14l8 8-8 8-8-8z" fill="#f4c46b"/><path d="M22 91l8 8-8 8-8-8z" fill="#b8d9c3"/></svg>
+      </div>
+      <span class="ks-visual-tag">🧾 TRANSAKSI</span>
+      <h3>Catat penjualan lebih praktis</h3>
+      <p>Rekam pemasukan dan pengeluaran agar riwayat transaksi mudah ditinjau.</p>
+    </article>
+    <article class="ks-home-visual-card ks-visual-stock">
+      <div class="ks-visual-art" aria-hidden="true">
+        <span class="ks-visual-spark">✧</span>
+        <svg viewBox="0 0 180 128" role="img" aria-label="Ilustrasi kotak produk dan persediaan"><path d="M90 15L147 43 90 72 33 43z" fill="#d9eee0" stroke="#6b9c79" stroke-width="2"/><path d="M33 43v47l57 27V72z" fill="#b8d9c3" stroke="#6b9c79" stroke-width="2"/><path d="M147 43v47l-57 27V72z" fill="#91c2a0" stroke="#6b9c79" stroke-width="2"/><path d="M90 72v45M61 29l57 29" stroke="#fff" stroke-width="3" opacity=".9"/><rect x="18" y="18" width="25" height="20" rx="6" fill="#f6d99c"/><path d="M25 28h11M30.5 23v10" stroke="#9a6b21" stroke-width="2" stroke-linecap="round"/><circle cx="151" cy="97" r="13" fill="#fff" stroke="#79a987" stroke-width="2"/><path d="M145 97l4 4 8-9" fill="none" stroke="#23834b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <span class="ks-visual-tag">📦 PRODUK & STOK</span>
+      <h3>Produk tersusun, stok terpantau</h3>
+      <p>Kelola daftar barang dan persediaan dalam tampilan yang lebih teratur.</p>
+    </article>
+    <article class="ks-home-visual-card ks-visual-report">
+      <div class="ks-visual-art" aria-hidden="true">
+        <span class="ks-visual-spark">✦</span>
+        <svg viewBox="0 0 180 128" role="img" aria-label="Ilustrasi grafik laporan usaha"><rect x="24" y="15" width="132" height="100" rx="14" fill="#fff" stroke="#c9d9ce" stroke-width="2"/><path d="M43 91h96M43 69h96M43 47h96" stroke="#e6eee8" stroke-width="2" stroke-dasharray="4 5"/><rect x="49" y="69" width="15" height="22" rx="4" fill="#9ccdad"/><rect x="76" y="52" width="15" height="39" rx="4" fill="#70ad83"/><rect x="103" y="36" width="15" height="55" rx="4" fill="#368b55"/><path d="M46 59l27-13 24 7 34-27" fill="none" stroke="#e4a94d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="131" cy="26" r="5" fill="#e4a94d"/></svg>
+      </div>
+      <span class="ks-visual-tag">📊 LAPORAN USAHA</span>
+      <h3>Lihat ringkasan dengan jelas</h3>
+      <p>Tinjau catatan berdasarkan kategori dan periode yang Anda pilih.</p>
+    </article>
+  </div>
+  <div class="ks-home-visual-footer"><span>✨ Praktis untuk usaha kecil dan rumahan</span><span>🔐 Akses sesuai peran akun</span><span>📱 Bisa dibuka melalui HP dan komputer</span></div>
+</section>
 
 <h3 class="promo-section-title">🛍️ Lihat Beragam Inspirasi Produk</h3>
 <p class="promo-gallery-intro">Contoh tampilan produk usaha makanan, minuman, retail, dan kebutuhan harian. Galeri ini ditampilkan langsung di Beranda.</p>
