@@ -401,6 +401,24 @@ Deno.serve(async (req: Request): Promise<Response> => {
       if (JSON.stringify(shippingProductSnapshot) !== JSON.stringify(savedPackageFingerprint)) {
         return reply({ success: false, error: "Berat atau dimensi produk berubah setelah ongkir dihitung. Silakan cek ongkir kembali." }, 409);
       }
+      // Klaim tarif secara atomik SEBELUM membuat pesanan. Ini mencegah satu quote
+      // dipakai dua checkout bersamaan oleh pembeli yang sama.
+      const quoteClaimTime = new Date().toISOString();
+      const { data: claimedQuote, error: quoteClaimError } = await shippingAdmin
+        .from("biteship_shipping_quotes")
+        .update({ used_at: quoteClaimTime })
+        .eq("id", shippingQuoteId)
+        .eq("buyer_id", authData.user.id)
+        .is("used_at", null)
+        .gt("expires_at", quoteClaimTime)
+        .select("id")
+        .maybeSingle();
+      if (quoteClaimError || !claimedQuote) {
+        return reply({
+          success: false,
+          error: "Tarif pengiriman sedang dipakai atau sudah kedaluwarsa. Silakan hitung ongkir kembali.",
+        }, 409);
+      }
       shippingQuote = quote as Record<string, unknown>;
     } else if (shippingQuoteId) {
       return reply({ success: false, error: "Produk aktivasi digital tidak memerlukan ongkos kirim." }, 400);
@@ -575,22 +593,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         return reply({ success: false, order_created_unknown: true, order_id: orderId, error: "Pesanan dibuat tetapi ongkir belum berhasil diterapkan. Pembayaran harus ditunda; jangan buat ulang pesanan." }, 502);
       }
       finalTotalAmount = Number(updatedOrder.total_amount);
-      const { data: usedQuote, error: quoteUseError } = await shippingAdmin
-        .from("biteship_shipping_quotes")
-        .update({ used_at: new Date().toISOString() })
-        .eq("id", String(shippingQuote.id))
-        .eq("buyer_id", authData.user.id)
-        .is("used_at", null)
-        .select("id")
-        .maybeSingle();
-      if (quoteUseError || !usedQuote) {
-        console.error("Tarif Biteship tidak berhasil ditandai terpakai.", quoteUseError?.message);
-        await shippingAdmin.from("marketplace_orders").update({
-          payment_review_required: true,
-          payment_review_note: "Tarif Biteship tidak berhasil dikunci; perlu pemeriksaan sebelum pembayaran.",
-        }).eq("id", orderId).eq("buyer_id", authData.user.id);
-        return reply({ success: false, order_created_unknown: true, order_id: orderId, error: "Pesanan dibuat tetapi validasi tarif perlu pemeriksaan. Jangan buat ulang atau bayar sebelum diperiksa." }, 502);
-      }
+      // Quote sudah dikunci atomik sebelum RPC pembuatan pesanan dijalankan.
     }
 
     // Format kompatibel: UUID tersedia di tingkat teratas dan di dalam data.
