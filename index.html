@@ -2331,7 +2331,7 @@ $('formKas').addEventListener('submit',async function(e){
      // Simpan dahulu ke antrean lokal dengan ID stabil, lalu sinkronkan memakai
      // upsert business_id + legacy_ref yang unik. Jika respons jaringan putus
      // setelah server commit, pengiriman ulang tidak menggandakan transaksi.
-     const queued=catat(type==='income'?'masuk':'keluar',description,amount,category,true);
+     const queued=catat(description,type==='income'?'masuk':'keluar',amount,category,true);
      if(!queued)throw new Error('Transaksi tidak dapat disimpan ke antrean lokal.');
      this.reset();
      await imporTransaksiLokalKeBersama({auto:true});
