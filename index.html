@@ -2164,10 +2164,20 @@ async function buka(id,tombol){
             if(memberError)throw memberError;
             financeMemberRole=member&&member.active?member.role:null;
           }
-          if(tujuanId==='transaksi'&&(financeMemberRole==='owner'||financeMemberRole==='employee')){
-            document.body.classList.toggle('owner-verified',financeMemberRole==='owner');
-            document.body.classList.toggle('employee-verified',financeMemberRole==='employee');
+          if(tujuanId==='transaksi'&&financeMemberRole==='employee'){
+            document.body.classList.remove('owner-verified');
+            document.body.classList.add('employee-verified');
             id=tujuanId;tombol=tujuanTombol;
+          }else if(tujuanId==='transaksi'&&financeMemberRole==='owner'){
+            if(licenseAccessState!=='active')await periksaAktivasiLisensi();
+            if(licenseAccessState==='active'){
+              document.body.classList.remove('employee-verified');
+              document.body.classList.add('owner-verified');
+              id=tujuanId;tombol=tujuanTombol;
+            }else{
+              id='akunPembeli';tombol=document.querySelector('nav button[onclick*="akunPembeli"]');
+              setStatusAktivasi('Lisensi Owner belum memiliki pembayaran terverifikasi. Fitur usaha tetap terkunci sampai pemeriksaan pembayaran selesai.',false);
+            }
           }else{
             if(licenseAccessState!=='active')await periksaAktivasiLisensi();
             if(licenseAccessState==='active'){id=tujuanId;tombol=tujuanTombol;}
@@ -3027,6 +3037,7 @@ async function employeeCheckRole(){
   if(member.role!=='employee'){await sb.auth.signOut();financeBusiness=null;financeMemberRole=null;financeMemberUserId=null;financeRows=[];document.body.classList.remove('employee-verified');setEmployeeLoginFormVisible(true);applyHomeFinanceRole();employeeAuthMessage('Login ditolak: sesi ini bukan akun Karyawan. Silakan masuk menggunakan kode undangan.',true);return;}
   setEmployeeLoginFormVisible(false);employeeAuthMessage('Login karyawan aktif. Hak akses dibatasi sesuai peran Karyawan.');
   await loadFinanceWorkspace();
+  if(!document.body.classList.contains('employee-device-pending'))await autoSyncLocalTransactionsIfReady();
  }catch(e){employeeAuthMessage('Gagal memeriksa peran karyawan: '+String(e.message||e).slice(0,180),true);}
 }
 $('employeeLogin').addEventListener('click',async()=>{
@@ -3055,6 +3066,7 @@ $('employeeLogin').addEventListener('click',async()=>{
   }
   joined=true;
   await loadFinanceWorkspace();
+  if(!document.body.classList.contains('employee-device-pending'))await autoSyncLocalTransactionsIfReady();
   setEmployeeLoginFormVisible(false);employeeAuthMessage('Berhasil masuk sebagai Karyawan di '+String(data.business_name||'usaha Anda')+'. Anda tidak perlu email untuk login.');
   if(financeBusiness&&financeMemberRole==='employee'&&!document.body.classList.contains('employee-device-pending'))await arahkanSetelahLoginFinance();
  }catch(e){
@@ -3868,7 +3880,7 @@ async function imporTransaksiLokalKeBersama(options={}){
   if(!sb)throw new Error('Koneksi Supabase belum tersedia. Muat ulang situs dan login kembali.');
   const {data:sessionData,error:sessionError}=await sb.auth.getSession();
   if(sessionError)throw sessionError;
-  if(!sessionData?.session||sessionData.session.user?.is_anonymous)throw new Error('Silakan login dengan akun Owner atau Karyawan terlebih dahulu.');
+  if(!sessionData?.session)throw new Error('Silakan login dengan akun Owner atau Karyawan terlebih dahulu.');
   if(!financeBusiness||!financeMemberRole||!financeMemberUserId)await loadFinanceWorkspace();
   const sessionUserId=sessionData.session.user.id;
   if(!financeBusiness||!['owner','employee'].includes(financeMemberRole)||financeMemberUserId!==sessionUserId)throw new Error('Akun yang login belum terhubung ke usaha dengan peran yang dapat menyinkronkan catatan.');
@@ -3935,7 +3947,7 @@ async function autoSyncLocalTransactionsIfReady(){
  window.__kasusahaAutoSyncRunning=true;
  try{
   const {data:sessionData,error:sessionError}=await sb.auth.getSession();
-  if(sessionError||!sessionData?.session||sessionData.session.user?.is_anonymous)return;
+  if(sessionError||!sessionData?.session)return;
   if(!financeBusiness||!financeMemberRole||!financeMemberUserId)await loadFinanceWorkspace();
   if(financeMemberUserId!==sessionData.session.user.id)return;
   if(financeMemberRole==='owner'){
@@ -4058,7 +4070,7 @@ async function refreshSharedWorkspaceFromOtherDevice(){
  __kasusahaCrossDeviceRefreshRunning=true;
  try{
   const {data,error}=await sb.auth.getSession();
-  if(error||!data?.session||data.session.user?.is_anonymous)return;
+  if(error||!data?.session)return;
   if(data.session.user.id!==financeMemberUserId)return;
   await loadFinanceWorkspace();
  }catch(e){console.warn('Penyegaran laporan lintas perangkat belum berhasil:',e);}
