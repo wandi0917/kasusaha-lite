@@ -3911,7 +3911,10 @@ async function autoSyncLocalTransactionsIfReady(){
   if(!financeBusiness||!financeMemberRole||!financeMemberUserId)await loadFinanceWorkspace();
   if(financeMemberUserId!==sessionData.session.user.id)return;
   if(financeMemberRole==='owner'){
-   const hasPending=transaksi.some(t=>!t.offline_synced_at&&(!t.offline_user_id||t.offline_user_id===sessionData.session.user.id)&&(!t.offline_business_id||t.offline_business_id===financeBusiness?.id));
+   // Sinkronisasi otomatis hanya memindahkan transaksi yang secara eksplisit
+   // ditandai dibuat offline oleh akun dan usaha yang sedang aktif. Data lokal lama
+   // tanpa identitas offline harus menunggu impor manual + konfirmasi Owner.
+   const hasPending=transaksi.some(t=>t.offline_pending===true&&!t.offline_synced_at&&t.offline_user_id===sessionData.session.user.id&&t.offline_business_id===financeBusiness?.id&&t.offline_role==='owner');
    if(hasPending)await imporTransaksiLokalKeBersama({auto:true});
   }else if(financeMemberRole==='employee'){
    const hasOwnPending=transaksi.some(t=>t.offline_pending===true&&!t.offline_synced_at&&t.offline_user_id===sessionData.session.user.id&&t.offline_business_id===financeBusiness?.id&&t.offline_role==='employee'&&t.jenis==='masuk');
