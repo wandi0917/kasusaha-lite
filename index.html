@@ -3009,7 +3009,9 @@ async function loadOwnerDeviceActivations(businessIdOverride){
  if(!host)return;
  const businessId=businessIdOverride||financeBusiness?.id||'';
  if(financeMemberRole!=='owner'||!financeBusiness||financeBusiness.id!==businessId||financeBusiness.owner_id!==financeMemberUserId){
-  host.innerHTML='<p class="status warn">Pengelolaan ID karyawan hanya dapat dilakukan oleh akun pemilik utama yang tercatat pada usaha ini. Akun saat ini memiliki peran Owner, tetapi tidak cocok dengan data pemilik utama di server. Hubungi pemilik utama untuk menyelaraskan akses. Tidak ada data atau kepemilikan yang diubah.</p>';
+  const ownerMismatchMessage='Perhatian: akun ini berperan Owner pada daftar anggota, tetapi bukan akun pemilik utama yang tercatat di server. Pengelolaan ID karyawan ditahan sampai identitas pemilik diselaraskan. Tidak ada data atau kepemilikan yang diubah.';
+  host.innerHTML='<p class="status warn">'+aman(ownerMismatchMessage)+'</p>';
+  setFinanceStatus(ownerMismatchMessage,true);
   return;
  }
  host.innerHTML='<p class="small">Memuat daftar karyawan…</p>';
