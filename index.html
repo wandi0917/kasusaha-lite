@@ -1022,14 +1022,14 @@ body>header.ks-brand-header .kasusaha-banner-image-button>svg{display:block!impo
 <div class="promo-hero">
 <div class="promo-copy">
 <span class="promo-kicker">UNTUK USAHA KECIL YANG INGIN TERUS MAJU</span>
-<h2>Jangan biarkan catatan usaha membuat Anda <span>kehilangan kendali.</span></h2>
-<p>Mulai rapikan transaksi, pantau produk, dan pahami arus uang usaha dengan KasUsaha Lite. Lebih sedikit menebak-nebak, lebih banyak waktu untuk melayani pelanggan dan mengembangkan usaha.</p>
+<h2>Kelola usaha lebih rapi, <span>setiap hari.</span></h2>
+<p>Catat penjualan dan pengeluaran, pantau stok, lalu tinjau laporan usaha dalam satu tempat. KasUsaha Lite membantu pekerjaan harian terasa lebih teratur sehingga Anda bisa fokus melayani pelanggan.</p>
 <div class="ks-license-price"><span class="ks-price-label">AKTIVASI LISENSI</span><strong>Rp49.000</strong><span class="ks-price-once">Sekali bayar · tanpa langganan berkala</span></div>
 <div class="promo-actions">
 <button type="button" class="promo-primary" onclick="buka('akunPembeli',document.querySelectorAll('nav button')[8])">Daftar / Masuk untuk Aktivasi ↗</button>
 <button type="button" class="promo-secondary" onclick="document.getElementById('caraAktivasiKasUsaha')?.scrollIntoView({behavior:'smooth',block:'start'})">Cara Aktivasi</button>
 </div>
-<p class="promo-note">Harga lisensi Rp49.000 sekali bayar. Buat akun atau login, lalu lanjutkan ke Pasar Online untuk membeli lisensi. Pembayaran uang sungguhan hanya dapat diterima setelah mode Midtrans Production dan kunci server Production yang sesuai dikonfigurasi di Supabase.</p>
+<p class="promo-note">Lisensi Rp49.000 dibayar satu kali. Masuk atau buat akun, lalu pilih lisensi di Pasar Online. Pembayaran uang sungguhan hanya tersedia setelah pengelola mengaktifkan dan menguji Midtrans Production.</p>
 </div>
 <div class="promo-art ks-promo-dashboard-art" role="img" aria-label="Banner resmi KasUsaha Lite: Klik di sini cara pasang di HP atau Laptop Anda">
   <div class="ks-orbit ks-orbit-one"></div><div class="ks-orbit ks-orbit-two"></div>
@@ -4638,6 +4638,40 @@ body>header.ks-brand-header .kasusaha-install-guide-note{
 }
 
 
+
+/* Beranda dirapikan: urutan konten, lebar, jarak, dan tipografi konsisten */
+html body main #beranda{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:0!important;max-width:1240px!important;margin:0 auto!important;padding:clamp(10px,2.2vw,24px)!important}
+html body main #beranda>.promo-home{order:1!important;width:100%!important;max-width:1120px!important;margin:0 auto 22px!important}
+html body main #beranda>.beginner-start{order:2!important;width:100%!important;max-width:1120px!important;margin:0 auto 22px!important}
+html body main #beranda>.usage-guide{order:6!important;width:100%!important;max-width:1120px!important;margin:22px auto!important}
+html body main #beranda>#kasusahaSharePromo{order:4!important;width:100%!important;max-width:1120px!important}
+html body main #beranda>#affiliateHomeCatalog{order:5!important;width:100%!important;max-width:1120px!important}
+html body main #beranda .promo-hero{width:100%!important}
+html body main #beranda .promo-copy{box-sizing:border-box!important}
+html body main #beranda .promo-kicker{font-size:11px!important;letter-spacing:.08em!important;line-height:1.5!important}
+html body main #beranda .promo-copy h2{font-size:clamp(27px,4.1vw,42px)!important;line-height:1.12!important;letter-spacing:-.035em!important;margin:13px 0!important}
+html body main #beranda .promo-copy>p{font-size:15px!important;line-height:1.7!important;margin:10px 0!important}
+html body main #beranda .promo-actions{display:flex!important;gap:10px!important;align-items:center!important;margin-top:16px!important}
+html body main #beranda .promo-actions button{min-height:44px!important;white-space:normal!important;line-height:1.35!important}
+html body main #beranda .ks-promo-dashboard-art{min-width:0!important;box-sizing:border-box!important}
+html body main #beranda .beginner-start{box-sizing:border-box!important}
+html body main #beranda .beginner-start-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+html body main #beranda .ks-convert-section{margin:22px auto!important;max-width:1120px!important;box-sizing:border-box!important}
+html body main #beranda #kasusahaSharePromo,html body main #beranda #affiliateHomeCatalog,html body main #beranda .usage-guide{box-sizing:border-box!important}
+html body main #beranda .usage-guide{line-height:1.65!important}
+html body main #beranda .usage-guide h2,html body main #beranda .usage-guide h3{line-height:1.3!important}
+@media(max-width:700px){
+ html body main #beranda{padding:9px!important}
+ html body main #beranda>.promo-home,html body main #beranda>.beginner-start{margin-bottom:14px!important}
+ html body main #beranda .promo-copy h2{font-size:clamp(26px,7.5vw,34px)!important}
+ html body main #beranda .promo-copy>p{font-size:14px!important}
+ html body main #beranda .promo-actions{display:grid!important;grid-template-columns:1fr!important}
+ html body main #beranda .promo-actions button{width:100%!important}
+ html body main #beranda .beginner-start-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ html body main #beranda .beginner-start-grid button{min-height:108px!important;padding:12px!important}
+ html body main #beranda .ks-convert-grid{grid-template-columns:1fr!important}
+ html body main #beranda #kasusahaSharePromo,html body main #beranda #affiliateHomeCatalog{margin:14px auto!important}
+}
 /* Hero promosi: ilustrasi dashboard berada di atas teks dan harga lisensi */
 html body #beranda .promo-home .promo-hero{display:flex!important;flex-direction:column!important;align-items:stretch!important;min-height:0!important;overflow:hidden!important;background:linear-gradient(135deg,#eef4ff 0%,#f5f0ff 48%,#effcf6 100%)!important;border:1px solid #dce5f5!important;border-radius:22px!important;box-shadow:0 18px 44px rgba(39,54,110,.11)!important}
 html body #beranda .promo-home .ks-promo-dashboard-art{order:0!important;display:flex!important;align-items:center!important;justify-content:center!important;position:relative!important;width:100%!important;min-height:390px!important;height:auto!important;padding:28px 22px!important;overflow:hidden!important;isolation:isolate!important;background:radial-gradient(ellipse at 50% 45%,#fff 0%,#e5edff 48%,#dce9ff 100%)!important}
