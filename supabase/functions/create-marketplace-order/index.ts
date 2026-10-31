@@ -401,8 +401,26 @@ Deno.serve(async (req: Request): Promise<Response> => {
       if (JSON.stringify(shippingProductSnapshot) !== JSON.stringify(savedPackageFingerprint)) {
         return reply({ success: false, error: "Berat atau dimensi produk berubah setelah ongkir dihitung. Silakan cek ongkir kembali." }, 409);
       }
-      // Klaim tarif secara atomik SEBELUM membuat pesanan. Ini mencegah satu quote
-      // dipakai dua checkout bersamaan oleh pembeli yang sama.
+      shippingQuote = quote as Record<string, unknown>;
+    } else if (shippingQuoteId) {
+      return reply({ success: false, error: "Produk aktivasi digital tidak memerlukan ongkos kirim." }, 400);
+    }
+
+    const productIds = items.map((item) => item.product_id);
+
+    if (new Set(productIds).size !== productIds.length) {
+      return reply(
+        {
+          success: false,
+          error: "Gabungkan jumlah jika produk yang sama muncul berulang.",
+        },
+        400,
+      );
+    }
+
+    // Klaim tarif secara atomik setelah validasi keranjang dan SEBELUM membuat pesanan.
+    // Satu quote tidak dapat dipakai dua checkout bersamaan oleh pembeli yang sama.
+    if (shippingQuote && shippingAdmin && shippingQuoteId) {
       const quoteClaimTime = new Date().toISOString();
       const { data: claimedQuote, error: quoteClaimError } = await shippingAdmin
         .from("biteship_shipping_quotes")
@@ -419,21 +437,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
           error: "Tarif pengiriman sedang dipakai atau sudah kedaluwarsa. Silakan hitung ongkir kembali.",
         }, 409);
       }
-      shippingQuote = quote as Record<string, unknown>;
-    } else if (shippingQuoteId) {
-      return reply({ success: false, error: "Produk aktivasi digital tidak memerlukan ongkos kirim." }, 400);
-    }
-
-    const productIds = items.map((item) => item.product_id);
-
-    if (new Set(productIds).size !== productIds.length) {
-      return reply(
-        {
-          success: false,
-          error: "Gabungkan jumlah jika produk yang sama muncul berulang.",
-        },
-        400,
-      );
     }
 
     // RPC privileged hanya dipanggil dari backend setelah sesi pembeli diverifikasi.
