@@ -1,7 +1,7 @@
 /* KasUsaha Lite PWA service worker. Only caches the app shell and its banner; never caches Supabase, checkout, or payment API responses. */
 'use strict';
 const CACHE_PREFIX = 'kasusaha-lite-shell-';
-const CACHE_NAME = CACHE_PREFIX + 'v20';
+const CACHE_NAME = CACHE_PREFIX + 'v21';
 const appRoot = new URL('./', self.registration.scope);
 const manifestUrl = new URL('manifest.webmanifest', self.registration.scope);
 const iconUrl = new URL('icons/kasusaha-icon.svg', self.registration.scope);
