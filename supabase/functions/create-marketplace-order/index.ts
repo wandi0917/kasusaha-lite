@@ -318,6 +318,17 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     const shippingQuoteId = readText(body.shipping_quote_id);
     const physicalItems = items.filter((item) => item.product_id !== 7);
+
+    // Lisensi KasUsaha Lite (produk 7) tidak dapat digabung dengan barang fisik.
+    // Fungsi pembuatan pengiriman menolak pesanan campuran; cegah checkout sejak awal
+    // agar pembeli tidak membayar barang fisik yang kemudian tidak bisa dikirim.
+    if (physicalItems.length > 0 && physicalItems.length !== items.length) {
+      return reply({
+        success: false,
+        error: "Lisensi KasUsaha Lite dan produk fisik harus dibeli dalam pesanan terpisah. Pisahkan keranjang lalu checkout kembali.",
+        error_code: "MIXED_DIGITAL_PHYSICAL_CART",
+      }, 400);
+    }
     let shippingQuote: Record<string, unknown> | null = null;
     let shippingAdmin: ReturnType<typeof createClient> | null = null;
     let shippingProductSnapshot: Array<{product_id:number;quantity:number;weight:number;length:number;width:number;height:number}> = [];
@@ -418,8 +429,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
       );
     }
 
+    // Pastikan konfigurasi RPC tersedia SEBELUM mengklaim quote agar tarif
+    // tidak terkunci ketika checkout tidak dapat diteruskan.
+    const rpcServiceKey = readText(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"));
+    if (!rpcServiceKey) {
+      return reply({ success: false, error: "Konfigurasi server pesanan belum lengkap." }, 503);
+    }
+
     // Klaim tarif secara atomik setelah validasi keranjang dan SEBELUM membuat pesanan.
     // Satu quote tidak dapat dipakai dua checkout bersamaan oleh pembeli yang sama.
+    let claimedQuoteAt: string | null = null;
     if (shippingQuote && shippingAdmin && shippingQuoteId) {
       const quoteClaimTime = new Date().toISOString();
       const { data: claimedQuote, error: quoteClaimError } = await shippingAdmin
@@ -437,14 +456,11 @@ Deno.serve(async (req: Request): Promise<Response> => {
           error: "Tarif pengiriman sedang dipakai atau sudah kedaluwarsa. Silakan hitung ongkir kembali.",
         }, 409);
       }
+      claimedQuoteAt = quoteClaimTime;
     }
 
     // RPC privileged hanya dipanggil dari backend setelah sesi pembeli diverifikasi.
     // Fungsi SQL secure hanya memberi hak EXECUTE kepada service_role.
-    const rpcServiceKey = readText(Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"));
-    if (!rpcServiceKey) {
-      return reply({ success: false, error: "Konfigurasi server pesanan belum lengkap." }, 503);
-    }
     const orderAdmin = shippingAdmin ?? createClient(supabaseUrl!, rpcServiceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
@@ -460,6 +476,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
     );
 
     if (error) {
+      // RPC yang mengembalikan error tidak membuat pesanan; lepaskan quote
+      // hanya jika masih dipegang oleh klaim checkout ini.
+      if (claimedQuoteAt && shippingAdmin && shippingQuoteId) {
+        const { error: releaseError } = await shippingAdmin
+          .from("biteship_shipping_quotes")
+          .update({ used_at: null })
+          .eq("id", shippingQuoteId)
+          .eq("buyer_id", authData.user.id)
+          .eq("used_at", claimedQuoteAt);
+        if (releaseError) {
+          console.error("Gagal melepas quote setelah RPC gagal:", releaseError.message);
+        }
+      }
       console.error("create_marketplace_order RPC gagal:", {
         code: error.code,
         message: error.message,
