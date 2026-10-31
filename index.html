@@ -5145,6 +5145,57 @@ html body>header.ks-brand-header .kasusaha-banner-image-button img{
  html body>header.ks-brand-header .kasusaha-banner-side{display:none!important}
  html body>header.ks-brand-header .kasusaha-banner-image-button{max-width:680px!important}
 }
+
+/* Animasi halus agar grafik dan ilustrasi produk terasa hidup */
+@keyframes ksChartDraw{
+ 0%{stroke-dashoffset:190;opacity:.45}
+ 65%{stroke-dashoffset:0;opacity:1}
+ 100%{stroke-dashoffset:0;opacity:1}
+}
+@keyframes ksChartPulse{
+ 0%,100%{transform:scale(1);opacity:.85}
+ 50%{transform:scale(1.35);opacity:1}
+}
+@keyframes ksProductFloat{
+ 0%,100%{transform:translateY(0)}
+ 50%{transform:translateY(-5px)}
+}
+@keyframes ksProductShine{
+ 0%,100%{opacity:.15}
+ 50%{opacity:.75}
+}
+html body>header.ks-brand-header .kasusaha-banner-side-chart svg path:nth-of-type(2){
+ stroke-dasharray:190!important;stroke-dashoffset:190;
+ animation:ksChartDraw 2.8s ease-in-out infinite alternate!important
+}
+html body>header.ks-brand-header .kasusaha-banner-side-chart svg circle{
+ transform-box:fill-box;transform-origin:center;
+ animation:ksChartPulse 2.1s ease-in-out infinite!important
+}
+html body>header.ks-brand-header .kasusaha-banner-side-chart svg circle:nth-of-type(2){
+ animation-delay:.35s!important
+}
+html body>header.ks-brand-header .kasusaha-banner-side-chart svg circle:nth-of-type(3){
+ animation-delay:.7s!important
+}
+html body>header.ks-brand-header .kasusaha-banner-side-products svg rect:nth-of-type(2),
+html body>header.ks-brand-header .kasusaha-banner-side-products svg rect:nth-of-type(3){
+ transform-box:fill-box;transform-origin:center bottom;
+ animation:ksProductFloat 2.6s ease-in-out infinite!important
+}
+html body>header.ks-brand-header .kasusaha-banner-side-products svg rect:nth-of-type(3){
+ animation-delay:.45s!important
+}
+html body>header.ks-brand-header .kasusaha-banner-side-products svg path:last-of-type{
+ animation:ksProductShine 2.2s ease-in-out infinite!important
+}
+@media(prefers-reduced-motion:reduce){
+ html body>header.ks-brand-header .kasusaha-banner-side svg *,
+ html body>header.ks-brand-header .kasusaha-banner-side svg{
+  animation:none!important;transition:none!important
+ }
+}
+
 </style>
 <button id="ksBackToTop" type="button" aria-label="Kembali ke bagian atas halaman" title="Kembali ke atas">
  <span class="ks-back-top-arrow" aria-hidden="true">↑</span><span>Kembali ke atas</span>
