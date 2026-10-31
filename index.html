@@ -3034,7 +3034,7 @@ $('employeeLogin').addEventListener('click',async()=>{
   // Pertahankan sesi anonim meskipun join gagal. Menghapus sesi di sini membuat percobaan berikutnya
   // menghasilkan UUID baru dan memperparah benturan kode undangan yang sudah terikat pada UUID lama.
   const anonymousHint=/anonymous|anonymous sign|anonymous provider|disabled|not enabled/i.test(raw)?' Aktifkan Anonymous Sign-Ins di Supabase Dashboard > Authentication > Sign In / Providers, lalu coba lagi.':'';
-  employeeAuthMessage('Login karyawan gagal: '+raw.slice(0,220)+anonymousHint,true);
+  const currentSessionId=String((await sb.auth.getSession()).data?.session?.user?.id||'');employeeAuthMessage('Login karyawan gagal: '+raw.slice(0,220)+anonymousHint+(currentSessionId?' ID sesi saat ini: '+currentSessionId+'. Cocokkan dengan ID akun pada daftar Owner; jangan menonaktifkan akun sebelum cocok.':''),true);
  }finally{btn.disabled=false;}
 });
 $('employeeLogout').addEventListener('click',async()=>{
