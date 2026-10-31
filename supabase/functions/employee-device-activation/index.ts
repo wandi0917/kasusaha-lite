@@ -21,7 +21,11 @@ function paidStatus(v: Record<string, unknown>, expectedOrderId: string) {
   if (String(v.status_code ?? "") !== "200") return false;
   if (norm(v.currency) !== "idr") return false;
   if (Number(v.gross_amount) !== 10000) return false;
-  return s === "settlement" || (s === "capture" && f === "accept");
+  // fraud_status tidak dikirim untuk sebagian metode pembayaran berisiko rendah.
+  // Jika tersedia, nilainya wajib ACCEPT; Capture selalu memerlukan ACCEPT.
+  const fraudStatusAcceptable = f === "" || f === "accept";
+  return fraudStatusAcceptable &&
+    (s === "settlement" || (s === "capture" && f === "accept"));
 }
 function midtransBases(production: boolean) {
   return {
