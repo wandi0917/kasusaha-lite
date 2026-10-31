@@ -932,6 +932,48 @@ body>header.ks-brand-header .kasusaha-banner-image-button>svg{display:block!impo
 @media(max-width:650px){body>header.ks-brand-header .kasusaha-banner-image-button>svg{width:calc(100% - 12px)!important;max-width:600px!important}}
 </style>
 
+
+<style id="ks-home-banner-final-fix">
+html body main #beranda .ks-home-showcase{
+  display:flex!important;flex-direction:column!important;align-items:stretch!important;
+  gap:12px!important;width:100%!important;max-width:100%!important;
+  min-height:0!important;height:auto!important;margin:0 0 14px!important;
+  padding:0!important;overflow:hidden!important;border:1px solid #dbe4f0!important;
+  border-radius:20px!important;background:linear-gradient(135deg,#f8fbff,#eef5ff)!important;
+  box-shadow:0 12px 30px rgba(25,55,95,.10)!important;
+}
+html body main #beranda .ks-home-banner-image{
+  display:block!important;width:100%!important;height:auto!important;max-width:100%!important;
+  aspect-ratio:600 / 211!important;object-fit:contain!important;object-position:center!important;
+  margin:0!important;border:0!important;border-radius:19px 19px 0 0!important;
+}
+html body main #beranda .ks-home-banner-action{
+  display:flex!important;align-items:center!important;justify-content:space-between!important;
+  flex-wrap:wrap!important;gap:10px!important;padding:0 18px 16px!important;
+}
+html body main #beranda .ks-home-banner-action p{
+  margin:0!important;color:#334155!important;font-size:14px!important;line-height:1.5!important;
+}
+html body main #beranda .ks-home-banner-action .ks-showcase-cta{
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  min-height:42px!important;padding:10px 17px!important;border:0!important;border-radius:999px!important;
+  background:linear-gradient(135deg,#155eaa,#0f766e)!important;color:#fff!important;
+  font-size:13px!important;font-weight:750!important;box-shadow:0 5px 14px rgba(21,94,170,.2)!important;
+}
+html body main #beranda .ks-home-banner-action .ks-showcase-cta:focus-visible{
+  outline:3px solid #60a5fa!important;outline-offset:3px!important;
+}
+@media(max-width:600px){
+  html body main #beranda .ks-home-showcase{gap:8px!important;margin-bottom:10px!important;border-radius:14px!important}
+  html body main #beranda .ks-home-banner-image{border-radius:13px 13px 0 0!important}
+  html body main #beranda .ks-home-banner-action{padding:0 11px 11px!important;gap:8px!important}
+  html body main #beranda .ks-home-banner-action p{font-size:11px!important;flex:1 1 150px!important}
+  html body main #beranda .ks-home-banner-action .ks-showcase-cta{min-height:36px!important;padding:8px 12px!important;font-size:11px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  html body main #beranda .ks-home-banner-action .ks-showcase-cta{transition:none!important}
+}
+</style>
 </head>
 <body>
 <header class="ks-brand-header">
@@ -1011,30 +1053,11 @@ body>header.ks-brand-header .kasusaha-banner-image-button>svg{display:block!impo
   <div id="ksSuggestionInboxList"></div>
 </section>
 <section id="beranda" class="tab active">
-<section class="ks-home-showcase" aria-label="Promosi fitur KasUsaha Lite">
-  <div class="ks-showcase-copy">
-    <span class="ks-showcase-eyebrow">USAHA LEBIH TERTATA</span>
-    <h2>Dari transaksi harian sampai laporan usaha, <em>semua lebih mudah dipantau.</em></h2>
-    <p>Catat penjualan, kelola barang, dan lihat laporan dalam satu tempat. Mulai dari kebutuhan sederhana, lalu kembangkan sesuai cara kerja usaha Anda.</p>
-    <div class="ks-showcase-points">
-      <span><b>✓</b> Catatan penjualan dan pengeluaran</span>
-      <span><b>✓</b> Daftar produk dan informasi stok</span>
-      <span><b>✓</b> Laporan sesuai akses akun</span>
-    </div>
-    <button type="button" class="ks-showcase-cta" onclick="buka('transaksi',document.querySelector('nav button[onclick*=\'transaksi\']'))">Lihat fitur transaksi <span aria-hidden="true">↗</span></button>
-  </div>
-  <div class="ks-showcase-art" role="img" aria-label="Ilustrasi aplikasi kasir dengan grafik, laporan, dan kartu produk">
-    <div class="ks-art-spark ks-art-spark-a">✦</div><div class="ks-art-spark ks-art-spark-b">✧</div>
-    <div class="ks-art-orb"></div>
-    <div class="ks-art-phone">
-      <div class="ks-art-phone-top"><span class="ks-art-logo">k</span><span><b>KasUsaha</b><small>Ringkasan usaha</small></span><span class="ks-art-menu">•••</span></div>
-      <div class="ks-art-welcome">Kelola usaha dengan lebih rapi <span>✦</span></div>
-      <div class="ks-art-stat-row"><div><small>Penjualan</small><b>Harian</b><i>▥</i></div><div><small>Persediaan</small><b>Produk</b><i>▦</i></div></div>
-      <div class="ks-art-chart-card"><div class="ks-art-card-title">Aktivitas usaha <span>7 hari</span></div><svg viewBox="0 0 320 112" aria-hidden="true" focusable="false"><defs><linearGradient id="ksShowcaseGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6ee7a0" stop-opacity=".48"/><stop offset="100%" stop-color="#6ee7a0" stop-opacity="0"/></linearGradient></defs><path d="M0 85 C24 78 36 57 58 66 S91 43 112 52 S145 29 166 43 S204 53 224 31 S265 44 286 20 S307 26 320 12 L320 112 L0 112Z" fill="url(#ksShowcaseGradient)"/><path d="M0 85 C24 78 36 57 58 66 S91 43 112 52 S145 29 166 43 S204 53 224 31 S265 44 286 20 S307 26 320 12" fill="none" stroke="#16834b" stroke-width="4" stroke-linecap="round"/><path d="M0 98 C30 88 44 93 64 84 S103 94 125 79 S164 90 190 75 S228 88 254 68 S296 77 320 63" fill="none" stroke="#f0a06c" stroke-width="3" stroke-linecap="round"/></svg><div class="ks-art-days"><span>Sen</span><span>Sel</span><span>Rab</span><span>Kam</span><span>Jum</span><span>Sab</span><span>Min</span></div></div>
-      <div class="ks-art-product-row"><span class="ks-art-product-icon">▤</span><span><b>Produk & transaksi</b><small>Catatan terorganisir</small></span><span class="ks-art-check">✓</span></div>
-    </div>
-    <div class="ks-art-floating ks-art-floating-one"><span>✓</span><div><b>Lebih teratur</b><small>Catat setiap hari</small></div></div>
-    <div class="ks-art-floating ks-art-floating-two"><span>▥</span><div><b>Ringkasan usaha</b><small>Informasi dalam satu tempat</small></div></div>
+<section class="ks-home-showcase" aria-label="Banner utama KasUsaha Lite">
+  <img class="ks-home-banner-image" src="./assets/kasusaha-banner-baru-3.webp?v=20261031" width="600" height="211" alt="KasUsaha Lite — Kelola usaha Anda lebih mudah. Fitur Kasir Cepat, Kelola Stok, Laporan Lengkap, Multi Pengguna, dan Data Aman. Ringan, Praktis dan Modern.">
+  <div class="ks-home-banner-action">
+    <p>Kelola penjualan, stok, dan laporan usaha dalam satu aplikasi.</p>
+    <button type="button" class="ks-showcase-cta" onclick="buka('transaksi',document.querySelector('nav button[onclick*=\\'transaksi\\']'))">Buka fitur transaksi <span aria-hidden="true">↗</span></button>
   </div>
 </section>
 
