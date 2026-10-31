@@ -1106,6 +1106,15 @@ body>header.ks-brand-header .kasusaha-banner-image-button>svg{display:block!impo
 
 
 
+
+<style id="ks-panel-visibility-fix">
+/* Pastikan hanya satu panel navigasi utama yang terlihat. */
+body>main>.tab:not(.active){display:none!important;}
+body>main>.tab.active{display:block!important;}
+/* Beranda memakai layout kolom, tetapi hanya saat Beranda benar-benar aktif. */
+body>main>#beranda.tab.active{display:flex!important;}
+</style>
+<!-- KS PANEL VISIBILITY FIX 2026-10-31 -->
 </head>
 <body>
 <header class="ks-brand-header">
