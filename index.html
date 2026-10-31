@@ -3836,12 +3836,6 @@ sb.auth.onAuthStateChange((event,session)=>{financeBusiness=null;financeMemberRo
     if (typeof buka === 'function') buka('akunPembeli', tabButton);
     else window.location.hash = 'akunPembeli';
   });
-  if (installButton) installButton.addEventListener('click', () => {
-    const button = document.getElementById('kasusahaInstallButton');
-    if (button) button.click();
-    else if (text) text.textContent = 'Di Chrome Android, buka menu ⋮ lalu pilih “Instal aplikasi” atau “Tambahkan ke layar utama”.';
-    window.scrollTo({top:0,behavior:'smooth'});
-  });
   const cleanupUrl = () => {
     try {
       const clean = new URL(window.location.href);
