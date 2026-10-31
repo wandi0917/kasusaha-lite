@@ -2328,12 +2328,19 @@ $('formKas').addEventListener('submit',async function(e){
     if(financeMemberRole==='employee')type='income';
     const btn=this.querySelector('button[type="submit"],button:not([type])');if(btn)btn.disabled=true;
     try{
-     const {error}=await sb.from('financial_transactions').insert({business_id:financeBusiness.id,created_by:financeMemberUserId,created_by_role:financeMemberRole,transaction_date:financeToday(),transaction_type:type,amount,description,category}).select('id').single();
-     if(error)throw error;
-     this.reset();await loadFinanceWorkspace();
-     setFinanceStatus('Transaksi berhasil disimpan ke laporan bersama sebagai '+financeRoleLabel(financeMemberRole)+'.');
-    }catch(err){setFinanceStatus('Transaksi gagal disimpan ke laporan bersama: '+String(err.message||err).slice(0,220),true);alert('Transaksi gagal disimpan ke laporan bersama. Periksa status usaha dan coba lagi.');}
-    finally{if(btn)btn.disabled=false;}
+     // Simpan dahulu ke antrean lokal dengan ID stabil, lalu sinkronkan memakai
+     // upsert business_id + legacy_ref yang unik. Jika respons jaringan putus
+     // setelah server commit, pengiriman ulang tidak menggandakan transaksi.
+     const queued=catat(type==='income'?'masuk':'keluar',description,amount,category,true);
+     if(!queued)throw new Error('Transaksi tidak dapat disimpan ke antrean lokal.');
+     this.reset();
+     await imporTransaksiLokalKeBersama({auto:true});
+     const remains=transaksi.some(t=>t.offline_pending===true&&!t.offline_synced_at&&t.offline_user_id===financeMemberUserId&&t.offline_business_id===financeBusiness.id&&t.offline_role===financeMemberRole);
+     if(remains)setFinanceStatus('Transaksi sudah diamankan di perangkat, tetapi belum terverifikasi di laporan bersama. Jangan catat ulang. Periksa status koneksi lalu coba sinkronkan kembali.',true);
+    }catch(err){
+     setFinanceStatus('Transaksi belum dapat dikonfirmasi. Jika sudah masuk antrean lokal, jangan catat ulang; periksa dan sinkronkan kembali dengan ID yang sama. Detail: '+String(err.message||err).slice(0,180),true);
+     alert('Status transaksi belum dapat dipastikan. Periksa catatan lokal dan laporan bersama sebelum mencoba lagi.');
+    }finally{if(btn)btn.disabled=false;}
     return;
    }
   }catch(err){
