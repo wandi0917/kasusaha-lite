@@ -933,47 +933,7 @@ body>header.ks-brand-header .kasusaha-banner-image-button>svg{display:block!impo
 </style>
 
 
-<style id="ks-home-banner-final-fix">
-html body main #beranda .ks-home-showcase{
-  display:flex!important;flex-direction:column!important;align-items:stretch!important;
-  gap:12px!important;width:100%!important;max-width:100%!important;
-  min-height:0!important;height:auto!important;margin:0 0 14px!important;
-  padding:0!important;overflow:hidden!important;border:1px solid #dbe4f0!important;
-  border-radius:20px!important;background:linear-gradient(135deg,#f8fbff,#eef5ff)!important;
-  box-shadow:0 12px 30px rgba(25,55,95,.10)!important;
-}
-html body main #beranda .ks-home-banner-image{
-  display:block!important;width:100%!important;height:auto!important;max-width:100%!important;
-  aspect-ratio:600 / 211!important;object-fit:contain!important;object-position:center!important;
-  margin:0!important;border:0!important;border-radius:19px 19px 0 0!important;
-}
-html body main #beranda .ks-home-banner-action{
-  display:flex!important;align-items:center!important;justify-content:space-between!important;
-  flex-wrap:wrap!important;gap:10px!important;padding:0 18px 16px!important;
-}
-html body main #beranda .ks-home-banner-action p{
-  margin:0!important;color:#334155!important;font-size:14px!important;line-height:1.5!important;
-}
-html body main #beranda .ks-home-banner-action .ks-showcase-cta{
-  display:inline-flex!important;align-items:center!important;justify-content:center!important;
-  min-height:42px!important;padding:10px 17px!important;border:0!important;border-radius:999px!important;
-  background:linear-gradient(135deg,#155eaa,#0f766e)!important;color:#fff!important;
-  font-size:13px!important;font-weight:750!important;box-shadow:0 5px 14px rgba(21,94,170,.2)!important;
-}
-html body main #beranda .ks-home-banner-action .ks-showcase-cta:focus-visible{
-  outline:3px solid #60a5fa!important;outline-offset:3px!important;
-}
-@media(max-width:600px){
-  html body main #beranda .ks-home-showcase{gap:8px!important;margin-bottom:10px!important;border-radius:14px!important}
-  html body main #beranda .ks-home-banner-image{border-radius:13px 13px 0 0!important}
-  html body main #beranda .ks-home-banner-action{padding:0 11px 11px!important;gap:8px!important}
-  html body main #beranda .ks-home-banner-action p{font-size:11px!important;flex:1 1 150px!important}
-  html body main #beranda .ks-home-banner-action .ks-showcase-cta{min-height:36px!important;padding:8px 12px!important;font-size:11px!important}
-}
-@media(prefers-reduced-motion:reduce){
-  html body main #beranda .ks-home-banner-action .ks-showcase-cta{transition:none!important}
-}
-</style>
+
 </head>
 <body>
 <header class="ks-brand-header">
@@ -1053,13 +1013,7 @@ html body main #beranda .ks-home-banner-action .ks-showcase-cta:focus-visible{
   <div id="ksSuggestionInboxList"></div>
 </section>
 <section id="beranda" class="tab active">
-<section class="ks-home-showcase" aria-label="Banner utama KasUsaha Lite">
-  <img class="ks-home-banner-image" src="./assets/kasusaha-banner-baru-3.webp?v=20261031" width="600" height="211" alt="KasUsaha Lite — Kelola usaha Anda lebih mudah. Fitur Kasir Cepat, Kelola Stok, Laporan Lengkap, Multi Pengguna, dan Data Aman. Ringan, Praktis dan Modern.">
-  <div class="ks-home-banner-action">
-    <p>Kelola penjualan, stok, dan laporan usaha dalam satu aplikasi.</p>
-    <button type="button" class="ks-showcase-cta" onclick="buka('transaksi',document.querySelector('nav button[onclick*=\\'transaksi\\']'))">Buka fitur transaksi <span aria-hidden="true">↗</span></button>
-  </div>
-</section>
+
 
 <section class="card usage-guide" aria-label="Panduan mulai KasUsaha Lite"><h2 style="margin-top:0">Mulai dari langkah yang sesuai</h2><p><strong>Belum membeli?</strong> Lihat fitur dan harga terlebih dahulu. Anda tidak perlu memasang aplikasi untuk melihat situs.</p><ol><li><strong>Ingin membeli lisensi:</strong> buat akun atau login di <em>Akun Pembeli</em>, buka <em>Pasar Online</em>, pilih produk lisensi KasUsaha Lite, lalu ikuti checkout. Periksa nama produk dan total sebelum melanjutkan.</li><li><strong>Sesudah membayar:</strong> tunggu sampai status pembayaran terverifikasi. Buka <em>Pesanan Saya</em> untuk memeriksa pesanan dan petunjuk lisensi. Jika status masih diproses, jangan membayar ulang.</li><li><strong>Mulai memakai aplikasi:</strong> login dengan akun yang sama, verifikasi dan aktifkan lisensi sesuai petunjuk, lalu buka <em>Transaksi</em> untuk membuat usaha dan mengisi produk.</li></ol><p><strong>Catatan penting:</strong> jika checkout menampilkan peringatan Sandbox atau metode pembayaran belum tersedia, jangan gunakan uang sungguhan. Pembayaran nyata hanya boleh dilakukan ketika mode Production sudah diaktifkan dan diuji oleh pengelola.</p><hr><h3>Panduan penggunaan harian — 3 langkah</h3><ol><li><strong>Siapkan usaha:</strong> setelah login dan akses yang diperlukan aktif, buka <em>Transaksi</em> lalu lengkapi data usaha. Buka <em>Produk Saya</em> untuk menambahkan nama barang, harga, dan stok. Untuk usaha jasa, Anda bisa langsung mencatat pemasukan.</li><li><strong>Catat kegiatan:</strong> buka <em>Transaksi</em>, pilih <em>Kasir Cepat</em> untuk penjualan atau pilih pencatatan pemasukan/pengeluaran yang tersedia.</li><li><strong>Periksa hasil:</strong> buka menu laporan dan pilih kategori serta periode yang ingin dilihat. Cetak atau ekspor jika tombol tersedia.</li></ol><p class="small">Tips: gunakan akun yang sama dan pilih usaha yang sama saat berpindah HP, komputer, atau tablet. Data lokal pada perangkat ini tidak selalu otomatis tersinkron ke perangkat lain. Pastikan data sudah tersimpan/sinkron sebelum mengganti atau menghapus data perangkat.</p><hr><h3>Pasang aplikasi (opsional)</h3><p>KasUsaha Lite dapat dibuka langsung melalui website. Pemasangan PWA hanya membuat ikon pintasan seperti aplikasi; ini tidak melakukan pembelian, tidak menggantikan login, dan tidak otomatis mengaktifkan lisensi.</p><ul><li><strong>HP Android:</strong> Chrome → menu ⋮ → Instal aplikasi atau Tambahkan ke layar utama.</li><li><strong>iPhone/iPad:</strong> Safari → Bagikan → Add to Home Screen / Tambahkan ke Layar Utama → Tambah.</li><li><strong>Komputer:</strong> Chrome/Edge → ikon instal di bilah alamat atau menu browser → Install KasUsaha Lite jika tersedia.</li></ul><p>Jika opsi instal belum tersedia, tetap gunakan situs melalui browser. Setelah terpasang, buka ikon aplikasi dan login dengan akun yang sama.</p></section>
 <section class="card beginner-start" aria-label="Mulai menggunakan KasUsaha Lite"><div class="beginner-start-head"><span class="beginner-start-icon" aria-hidden="true">✨</span><div><h2>Mulai dari sini</h2><p>Pilih pekerjaan yang ingin Anda lakukan. Anda bisa kembali ke Beranda kapan saja.</p></div></div><div class="beginner-start-grid"><button type="button" onclick="buka('transaksi',document.querySelector('nav button[onclick*=\'transaksi\']'))"><span aria-hidden="true">🧾</span><strong>Catat penjualan</strong><small>Buka menu transaksi dan kasir</small></button><button type="button" onclick="buka('produk',document.querySelector('nav button[onclick*=\'produk\']'))"><span aria-hidden="true">📦</span><strong>Tambah barang</strong><small>Kelola produk dan persediaan</small></button><button type="button" onclick="buka('pasar',document.querySelector('nav button[onclick*=\'pasar\']'))"><span aria-hidden="true">🛍️</span><strong>Buka toko online</strong><small>Lihat produk di Pasar Online</small></button><button type="button" onclick="buka('akunPenjual',document.querySelector('nav button[onclick*=\'akunPenjual\']'))"><span aria-hidden="true">👤</span><strong>Atur akun penjual</strong><small>Periksa informasi akun usaha</small></button></div></section>
