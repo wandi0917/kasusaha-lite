@@ -5017,25 +5017,25 @@ html body .report-table th:last-child,html body .report-table td:last-child,
 html body .employee-management-table th:last-child,html body .employee-management-table td:last-child{border-right:0!important}
 
 
-/* Banner benar-benar memakai hampir seluruh lebar area header */
-html body>header.ks-brand-header{width:100%!important;max-width:none!important}
+/* Banner proporsional: mengikuti bingkai header, tidak melebar berlebihan */
 html body>header.ks-brand-header .kasusaha-pwa-install{
- display:block!important;width:100%!important;max-width:none!important;
- margin:8px auto 0!important;padding:0!important
+ display:block!important;width:100%!important;max-width:900px!important;
+ margin:10px auto 0!important;padding:0 12px!important;box-sizing:border-box!important
 }
 html body>header.ks-brand-header .kasusaha-banner-image-button{
- display:block!important;width:100%!important;max-width:none!important;
- margin:0!important;padding:0!important
+ display:block!important;width:100%!important;max-width:840px!important;
+ margin:0 auto!important;padding:0!important;box-sizing:border-box!important
 }
 html body>header.ks-brand-header .kasusaha-banner-image-button img{
- display:block!important;width:100%!important;max-width:1400px!important;
+ display:block!important;width:100%!important;max-width:840px!important;
  height:auto!important;max-height:none!important;margin:0 auto!important;
- object-fit:contain!important
+ object-fit:contain!important;border-radius:12px!important
 }
 @media(max-width:760px){
- html body>header.ks-brand-header{padding-left:8px!important;padding-right:8px!important}
+ html body>header.ks-brand-header .kasusaha-pwa-install{padding:0 8px!important}
+ html body>header.ks-brand-header .kasusaha-banner-image-button,
  html body>header.ks-brand-header .kasusaha-banner-image-button img{
-  width:100%!important;max-width:none!important;height:auto!important
+  width:100%!important;max-width:100%!important;height:auto!important
  }
 }
 
