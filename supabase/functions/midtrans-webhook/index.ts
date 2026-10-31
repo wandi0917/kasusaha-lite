@@ -19,6 +19,7 @@ type WebhookOrder = {
   provider_transaction_id: string | null;
   paid_at: string | null;
   payment_review_required: boolean;
+  payment_review_note: string | null;
 };
 
 function reply(body: JsonObject, status = 200) {
@@ -618,7 +619,7 @@ Deno.serve(async (req: Request) => {
   }
 
   const orderSelect =
-    "id, status, total_amount, currency, payment_provider, provider_transaction_id, paid_at, payment_review_required";
+    "id, status, total_amount, currency, payment_provider, provider_transaction_id, paid_at, payment_review_required, payment_review_note";
 
   // 2. Cari pesanan berdasarkan ID transaksi Midtrans.
   const {
@@ -1023,6 +1024,45 @@ Deno.serve(async (req: Request) => {
         order_id: databaseOrderId,
         order_status: paidOrder.status,
       }, 500);
+    }
+
+    const auditReviewNote =
+      "Audit 31-10-2026: status pesanan paid belum didukung event Midtrans berstatus verified dan processed. Tahan pengiriman, aktivasi lisensi dari pesanan ini, dan pencairan sampai rekonsiliasi pembayaran selesai.";
+
+    // Lepaskan hanya penanda audit otomatis ini setelah webhook saat ini
+    // lolos signature, Status API, nominal, mata uang, dan identitas transaksi.
+    // Catatan pemeriksaan manual lain tidak pernah dibersihkan otomatis.
+    if (
+      paidOrder.payment_review_required &&
+      paidOrder.payment_review_note?.trim() === auditReviewNote
+    ) {
+      const { data: clearedOrder, error: clearReviewError } = await supabase
+        .from("marketplace_orders")
+        .update({
+          payment_review_required: false,
+          payment_review_note: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", databaseOrderId)
+        .eq("status", "paid")
+        .eq("payment_review_required", true)
+        .eq("payment_review_note", auditReviewNote)
+        .select(orderSelect)
+        .maybeSingle();
+
+      if (clearReviewError || !clearedOrder) {
+        console.error(
+          "Gagal menyelesaikan penanda audit setelah verifikasi Midtrans:",
+          clearReviewError?.message ?? "Pesanan berubah sebelum penanda audit dilepas.",
+        );
+        return reply({
+          success: false,
+          message: "Pembayaran terverifikasi, tetapi penanda pemeriksaan belum dapat diperbarui. Kirim ulang notifikasi.",
+          order_id: databaseOrderId,
+        }, 500);
+      }
+
+      paidOrder = clearedOrder as WebhookOrder;
     }
 
     if (paidOrder.payment_review_required) {
