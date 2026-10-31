@@ -2134,10 +2134,34 @@ async function muatKeuanganMarketplace(){
  }catch(e){platformFinanceData=null;$('platformFinanceContent').hidden=true;setPlatformFinanceStatus('Laporan gagal dimuat: '+String(e.message||e).slice(0,200),true);console.warn(e);}finally{platformFinanceBusy=false;}
 }
 function cetakKeuanganMarketplace(){if(!platformFinanceData)return alert('Muat laporan terlebih dahulu.');window.print();}
+let platformFinanceVisibilityCacheUserId='';
+let platformFinanceVisibilityCacheAllowed=false;
+let platformFinanceVisibilityChecking=false;
 function refreshPlatformFinanceVisibility(){
  const button=$('navPlatformMarketplaceFinance');if(!button||!sb)return;
- sb.auth.getSession().then(async({data,error})=>{if(error||!data.session){button.hidden=true;return;}
-  try{const {data:result,error:invokeError}=await sb.functions.invoke('platform-marketplace-finance',{method:'GET'});const allowed=!invokeError&&result&&result.authorized===true;button.hidden=!allowed;if(allowed)platformFinanceData=result;else platformFinanceData=null;}catch(_){button.hidden=true;platformFinanceData=null;}
+ sb.auth.getSession().then(async({data,error})=>{
+  if(error||!data.session){button.hidden=true;platformFinanceVisibilityCacheUserId='';platformFinanceVisibilityCacheAllowed=false;platformFinanceData=null;return;}
+  const userId=String(data.session.user?.id||'');
+  if(!userId){button.hidden=true;return;}
+  if(platformFinanceVisibilityCacheUserId===userId){button.hidden=!platformFinanceVisibilityCacheAllowed;return;}
+  const cacheKey='ks-platform-finance-visibility:'+userId;
+  try{
+   const cached=JSON.parse(sessionStorage.getItem(cacheKey)||'null');
+   if(cached&&typeof cached.allowed==='boolean'&&Number.isFinite(cached.checkedAt)&&Date.now()-cached.checkedAt<300000){
+    platformFinanceVisibilityCacheUserId=userId;platformFinanceVisibilityCacheAllowed=cached.allowed;button.hidden=!cached.allowed;platformFinanceData=null;return;
+   }
+  }catch(_){}
+  if(platformFinanceVisibilityChecking)return;
+  platformFinanceVisibilityChecking=true;
+  try{
+   const {data:result,error:invokeError}=await sb.functions.invoke('platform-marketplace-finance',{method:'GET'});
+   const allowed=!invokeError&&result&&result.authorized===true;
+   platformFinanceVisibilityCacheUserId=userId;platformFinanceVisibilityCacheAllowed=allowed;
+   button.hidden=!allowed;platformFinanceData=allowed?result:null;
+   try{sessionStorage.setItem(cacheKey,JSON.stringify({allowed,checkedAt:Date.now()}));}catch(_){}
+  }catch(_){
+   platformFinanceVisibilityCacheUserId=userId;platformFinanceVisibilityCacheAllowed=false;button.hidden=true;platformFinanceData=null;
+  }finally{platformFinanceVisibilityChecking=false;}
  });
 }
 window.muatKeuanganMarketplace=muatKeuanganMarketplace;window.renderKeuanganMarketplace=renderKeuanganMarketplace;window.cetakKeuanganMarketplace=cetakKeuanganMarketplace;
@@ -2983,9 +3007,13 @@ async function ensureEmployeeDeviceActivation(){
 async function loadOwnerDeviceActivations(businessIdOverride){
  const host=$('ownerEmployeeActivationRows');
  if(!host)return;
+ const businessId=businessIdOverride||financeBusiness?.id||'';
+ if(financeMemberRole!=='owner'||!financeBusiness||financeBusiness.id!==businessId||financeBusiness.owner_id!==financeMemberUserId){
+  host.innerHTML='<p class="status warn">Pengelolaan ID karyawan hanya dapat dilakukan oleh akun pemilik utama yang tercatat pada usaha ini. Akun saat ini memiliki peran Owner, tetapi tidak cocok dengan data pemilik utama di server. Hubungi pemilik utama untuk menyelaraskan akses. Tidak ada data atau kepemilikan yang diubah.</p>';
+  return;
+ }
  host.innerHTML='<p class="small">Memuat daftar karyawan…</p>';
  try{
-  const businessId=businessIdOverride||financeBusiness?.id||'';
   const result=await callEmployeeDeviceActivation('owner_list',{business_id:businessId});
   const employees=Array.isArray(result.employees)?result.employees:[];
   const recentlyPaid=Array.isArray(result.recently_paid)?result.recently_paid:[];
