@@ -5108,19 +5108,23 @@ html body>header.ks-brand-header .kasusaha-banner-image-button img{
 }
 
 
-/* Ilustrasi pendamping di kiri-kanan banner: grafik dan katalog produk */
+/* Ilustrasi pendamping diperbesar agar seimbang dengan tinggi banner utama */
 html body>header.ks-brand-header .kasusaha-banner-stage{
- display:grid!important;grid-template-columns:88px minmax(0,1fr) 88px!important;
- align-items:center!important;justify-items:center!important;gap:10px!important;
+ display:grid!important;
+ grid-template-columns:138px minmax(0,1fr) 138px!important;
+ align-items:center!important;justify-items:center!important;gap:12px!important;
  width:100%!important;max-width:900px!important;margin:0 auto!important
 }
 html body>header.ks-brand-header .kasusaha-banner-side{
  display:flex!important;align-items:center!important;justify-content:center!important;
- width:100%!important;max-width:88px!important;opacity:.98!important
+ width:100%!important;max-width:138px!important;opacity:1!important;
+ transform:translateY(0) scale(1)!important;
+ transition:transform .2s ease,filter .2s ease!important
 }
 html body>header.ks-brand-header .kasusaha-banner-side svg{
  display:block!important;width:100%!important;height:auto!important;
- filter:drop-shadow(0 5px 10px rgba(28,75,110,.09))!important
+ border-radius:18px!important;
+ filter:drop-shadow(0 9px 16px rgba(28,75,110,.16))!important
 }
 html body>header.ks-brand-header .kasusaha-banner-image-button{
  width:100%!important;max-width:680px!important
@@ -5128,8 +5132,16 @@ html body>header.ks-brand-header .kasusaha-banner-image-button{
 html body>header.ks-brand-header .kasusaha-banner-image-button img{
  width:100%!important;max-width:680px!important
 }
+@media(hover:hover){
+ html body>header.ks-brand-header .kasusaha-banner-side:hover{
+  transform:translateY(-4px) scale(1.025)!important;
+  filter:saturate(1.08)!important
+ }
+}
 @media(max-width:820px){
- html body>header.ks-brand-header .kasusaha-banner-stage{grid-template-columns:minmax(0,1fr)!important;gap:0!important}
+ html body>header.ks-brand-header .kasusaha-banner-stage{
+  grid-template-columns:minmax(0,1fr)!important;gap:0!important
+ }
  html body>header.ks-brand-header .kasusaha-banner-side{display:none!important}
  html body>header.ks-brand-header .kasusaha-banner-image-button{max-width:680px!important}
 }
