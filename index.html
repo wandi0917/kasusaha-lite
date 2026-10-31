@@ -2352,7 +2352,7 @@ async function buatPratinjauLaporan(){
  const kMulai=$("tanggalMulaiLaporan").value,kAkhir=$("tanggalSampaiLaporan").value,kategori=$("kategoriLaporanLokal").value;
  if(!kMulai||!kAkhir||kMulai>kAkhir){setStatusCetakLaporan("Pilih tanggal mulai dan tanggal sampai yang valid. Tanggal mulai tidak boleh melewati tanggal sampai.",true);return false;}
  // Saat akun sudah terhubung, laporan cetak memakai sumber transaksi bersama yang sama dengan laporan Owner/Karyawan.
- const pakaiDataBersama=!!(financeBusiness&&financeMemberRole&&Array.isArray(financeRows));
+ const pakaiDataBersama=!!(!offlineTransactionMode&&financeBusiness&&financeMemberRole&&Array.isArray(financeRows));
  let sumber;
  if(pakaiDataBersama){
   sumber=financeRows.filter(r=>{
