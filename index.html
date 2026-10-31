@@ -3708,10 +3708,27 @@ $('quickSaleForm')?.addEventListener('submit',async function(e){
  const confirmText='PERIKSA TAGIHAN SEBELUM DISIMPAN\n\nLokasi: '+locationLabel+'\n\n'+itemLines.join('\n')+'\n\nTOTAL YANG HARUS DIBAYAR: '+formatStoreRupiah(amount)+'\n\nSimpan semua barang sebagai transaksi?';
  if(!window.confirm(confirmText)){setFinanceStatus('Transaksi belum disimpan. Periksa atau ubah rincian tagihan terlebih dahulu.');return;}
  const btn=$('quickSaleSave');btn.disabled=true;
+ const quickSalePayload={businessId:financeBusiness.id,tableNumber:tableNumber||null,lines:lines.map(d=>({product_id:d.p.id,quantity:d.qty,unit_price:d.price}))};
+ const quickSaleFingerprint=JSON.stringify(quickSalePayload),quickSalePendingKey='kasusaha_quick_sale_pending_v1';
+ let quickSaleRequestId='';
  try{
-  const {data:result,error}=await sb.rpc('record_store_quick_sale',{p_business_id:financeBusiness.id,p_table_number:tableNumber||null,p_lines:lines.map(d=>({product_id:d.p.id,quantity:d.qty,unit_price:d.price}))});
-  if(error)throw error;
-  if(!result||result.ok!==true)throw new Error('Server belum mengonfirmasi penyimpanan penjualan.');
+  let pending=null;
+  try{pending=JSON.parse(localStorage.getItem(quickSalePendingKey)||'null');}catch(_){throw new Error('Kunci pengaman transaksi tidak dapat dibaca. Jangan kirim ulang sebelum penyimpanan perangkat diperiksa.');}
+  if(pending&&pending.businessId===financeBusiness.id&&pending.fingerprint!==quickSaleFingerprint){
+   throw new Error('Ada tagihan sebelumnya yang hasil penyimpanannya belum dipastikan. Kembalikan rincian tagihan sebelumnya dan kirim ulang dengan rincian yang sama; jangan membuat tagihan baru dahulu.');
+  }
+  if(pending&&pending.businessId===financeBusiness.id&&pending.fingerprint===quickSaleFingerprint&&typeof pending.requestId==='string'){
+   quickSaleRequestId=pending.requestId;
+  }else{
+   quickSaleRequestId=crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16);});
+   try{localStorage.setItem(quickSalePendingKey,JSON.stringify({businessId:financeBusiness.id,fingerprint:quickSaleFingerprint,requestId:quickSaleRequestId,createdAt:new Date().toISOString()}));}
+   catch(_){throw new Error('Kunci pengaman transaksi tidak dapat disimpan di perangkat. Penjualan tidak dikirim agar tidak berisiko tercatat dua kali.');}
+  }
+  const {data:result,error}=await sb.rpc('record_store_quick_sale',{p_business_id:financeBusiness.id,p_table_number:tableNumber||null,p_lines:quickSalePayload.lines,p_request_id:quickSaleRequestId});
+  if(error){try{localStorage.removeItem(quickSalePendingKey);}catch(_){}throw error;}
+  if(!result||result.ok!==true)throw new Error('Server belum mengonfirmasi penyimpanan penjualan. Kunci permintaan dipertahankan agar pengulangan tidak menggandakan transaksi.');
+  try{const saved=JSON.parse(localStorage.getItem(quickSalePendingKey)||'null');if(saved?.requestId===quickSaleRequestId)localStorage.removeItem(quickSalePendingKey);}catch(_){}
+  
   // Server sudah mengonfirmasi penyimpanan. Kegagalan muat ulang laporan tidak berarti transaksi gagal.
   this.reset();$('quickSaleTableNumber').value='';$('quickSaleItems').replaceChildren();addQuickSaleLine();
   setFinanceStatus('Transaksi '+locationLabel+' BERHASIL DISIMPAN: '+lines.length+' jenis barang, total '+formatStoreRupiah(amount)+'. Stok dan pemasukan sudah dicatat oleh server.');
