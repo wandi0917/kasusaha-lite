@@ -3714,6 +3714,9 @@ $('quickSaleForm')?.addEventListener('submit',async function(e){
  try{
   let pending=null;
   try{pending=JSON.parse(localStorage.getItem(quickSalePendingKey)||'null');}catch(_){throw new Error('Kunci pengaman transaksi tidak dapat dibaca. Jangan kirim ulang sebelum penyimpanan perangkat diperiksa.');}
+  if(pending&&pending.businessId!==financeBusiness.id){
+   throw new Error('Ada tagihan tertunda dari usaha lain yang belum dipastikan tersimpan. Kembali ke usaha tersebut dan selesaikan pemeriksaan tagihannya terlebih dahulu; kunci pengaman tidak akan ditimpa.');
+  }
   if(pending&&pending.businessId===financeBusiness.id&&pending.fingerprint!==quickSaleFingerprint){
    throw new Error('Ada tagihan sebelumnya yang hasil penyimpanannya belum dipastikan. Kembalikan rincian tagihan sebelumnya dan kirim ulang dengan rincian yang sama; jangan membuat tagihan baru dahulu.');
   }
@@ -3725,7 +3728,13 @@ $('quickSaleForm')?.addEventListener('submit',async function(e){
    catch(_){throw new Error('Kunci pengaman transaksi tidak dapat disimpan di perangkat. Penjualan tidak dikirim agar tidak berisiko tercatat dua kali.');}
   }
   const {data:result,error}=await sb.rpc('record_store_quick_sale',{p_business_id:financeBusiness.id,p_table_number:tableNumber||null,p_lines:quickSalePayload.lines,p_request_id:quickSaleRequestId});
-  if(error){try{localStorage.removeItem(quickSalePendingKey);}catch(_){}throw error;}
+  if(error){
+   // Jangan hapus request ID pada respons error yang belum dapat dipastikan.
+   // Gangguan jaringan dapat terjadi setelah database menyimpan transaksi.
+   // Pengulangan dengan ID dan rincian yang sama aman karena RPC bersifat idempoten.
+   console.error('Respons penyimpanan kasir belum terkonfirmasi; kunci permintaan dipertahankan:',error);
+   throw new Error('Hasil penyimpanan belum dapat dipastikan. Kunci transaksi tetap disimpan. Periksa laporan, lalu coba kirim ulang tagihan dengan rincian yang SAMA agar server mengembalikan hasil sebelumnya tanpa mencatat transaksi dua kali. Detail: '+String(error.message||error).slice(0,180));
+  }
   if(!result||result.ok!==true)throw new Error('Server belum mengonfirmasi penyimpanan penjualan. Kunci permintaan dipertahankan agar pengulangan tidak menggandakan transaksi.');
   try{const saved=JSON.parse(localStorage.getItem(quickSalePendingKey)||'null');if(saved?.requestId===quickSaleRequestId)localStorage.removeItem(quickSalePendingKey);}catch(_){}
   
