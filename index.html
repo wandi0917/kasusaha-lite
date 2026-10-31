@@ -2963,7 +2963,7 @@ async function ownerDeviceActivationAction(action,targetId){
   if(action==='owner_create'&&!confirm('Owner akan membayar Rp10.000 untuk mengaktifkan ID karyawan ini. Aktivasi berlaku di perangkat apa pun. Lanjutkan?'))return;
   if(action==='owner_deactivate'&&!confirm('Nonaktifkan karyawan ini? Akses ke usaha dan perangkat karyawan akan dicabut.'))return;
   if(action==='owner_reactivate'&&!confirm('Aktifkan kembali ID akun karyawan ini? Setelah aktif, akun dapat digunakan di perangkat apa pun. Lanjutkan?'))return;
-  if(action==='owner_delete_inactive'&&!confirm('Hapus keanggotaan karyawan nonaktif ini dari usaha? Data aktivasi perangkat akan dihapus. Riwayat transaksi/keuangan dan akun login global tidak dihapus. Tindakan ini tidak dapat dibatalkan.'))return;
+  if(action==='owner_delete_inactive'&&!confirm('Arsipkan akses karyawan nonaktif ini dari usaha? Riwayat aktivasi dan pembayaran tetap disimpan untuk audit. Akun login dan riwayat transaksi/keuangan tidak dihapus.'))return;
   const payload={business_id:financeBusiness?.id||''};
   if(action==='owner_create'||action==='owner_check')payload.activation_id=targetId;
   else payload.user_id=targetId;
