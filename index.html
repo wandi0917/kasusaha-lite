@@ -1147,7 +1147,7 @@ body>header.ks-brand-header .kasusaha-banner-image-button>svg{display:block!impo
 </div>
 </header>
 <nav aria-label="Navigasi utama">
-<button class="active" type="button" onclick="buka('beranda',this)">Beranda</button><button id="navCompleteGuide" type="button" onclick="buka('panduanLengkap',this)">📘 Panduan Lengkap</button><button type="button" onclick="buka('transaksi',this)">Transaksi</button><button type="button" onclick="buka('produk',this)">Produk Saya</button><button type="button" onclick="buka('pasar',this)">Pasar Online</button><button type="button" onclick="buka('paketKasUsaha',this)">Paket &amp; Harga</button><button type="button" onclick="buka('keranjang',this)">Keranjang <span id="jumlahKeranjang">0</span></button><button type="button" onclick="buka('cadangan',this)">Cadangan</button><button type="button" onclick="buka('akun',this)">Login Owner / Penjual</button><button type="button" onclick="buka('loginKaryawan',this)">Login Karyawan</button><button type="button" onclick="buka('akunPembeli',this)">Akun Pembeli</button><button type="button" onclick="buka('pesananSaya',this)">Pesanan Saya</button><button type="button" onclick="buka('pesananMasuk',this)">Pesanan Masuk</button><button type="button" id="navKasUsahaSaran" onclick="bukaKotakSaran(this)">💬 Kotak Saran</button>
+<button class="active" type="button" onclick="buka('beranda',this)">Beranda</button><button id="navCompleteGuide" type="button" onclick="buka('panduanLengkap',this)">📘 Panduan Lengkap</button><button type="button" onclick="buka('transaksi',this)">Transaksi</button><button type="button" onclick="buka('produk',this)">Produk Saya</button><button type="button" onclick="buka('pasar',this)">Pasar Online</button><button type="button" onclick="buka('paketKasUsaha',this)">Paket &amp; Harga</button><button type="button" onclick="buka('keranjang',this)">Keranjang <span id="jumlahKeranjang">0</span></button><button type="button" onclick="buka('cadangan',this)">Cadangan</button><button type="button" onclick="buka('akun',this)">Login Owner / Penjual</button><button type="button" onclick="buka('loginKaryawan',this)">Login Karyawan</button><button type="button" onclick="buka('akunPembeli',this)">Akun Pembeli</button><button type="button" onclick="buka('pesananSaya',this)">Pesanan Saya</button><button type="button" onclick="buka('pesananMasuk',this)">Pesanan Masuk</button><button type="button" id="navKasUsahaSaran" onclick="bukaKotakSaran(this)">💬 Kotak Saran</button><button type="button" id="navBantuanLegal" onclick="buka('bantuanLegal',this)">❔ Bantuan &amp; Kebijakan</button>
 <button type="button" id="navKasUsahaSaranMasuk" onclick="bukaKotakSaranMasuk(this)" hidden>🔔 Saran Masuk <span id="ksSuggestionInboxBadge" style="display:inline-block;margin-left:4px;padding:2px 7px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px">0</span></button><button type="button" id="navPlatformMarketplaceFinance" onclick="buka('platformMarketplaceFinance',this)" hidden>📊 Keuangan Marketplace</button>
 </nav>
 <section id="kasusahaPaymentReturnNotice" class="kasusaha-payment-return" hidden role="status" aria-live="polite"><strong id="kasusahaPaymentReturnTitle">Memeriksa pembayaran…</strong><p id="kasusahaPaymentReturnText">Status pembayaran sedang diverifikasi oleh server.</p><div class="kasusaha-payment-return-actions"><button type="button" class="primary" id="kasusahaPaymentOpenAccount">Buka Akun Pembeli &amp; Lisensi</button><button type="button" class="secondary" id="kasusahaPaymentOpenInstall">Panduan instal PWA</button></div><div class="kasusaha-install-after-payment"><h3>Pasang KasUsaha Lite setelah pembayaran</h3><p><strong>HP Android (Chrome):</strong> tekan menu ⋮ di Chrome, lalu pilih Instal aplikasi atau Tambahkan ke layar utama. Ikuti konfirmasi.</p><p><strong>iPhone/iPad:</strong> buka situs melalui Safari, tekan Bagikan, pilih Add to Home Screen / Tambahkan ke Layar Utama, lalu Tambah.</p><p><strong>Komputer (Chrome/Edge):</strong> gunakan ikon Instal di bilah alamat atau menu browser, lalu pilih Install KasUsaha Lite bila tersedia.</p><p>Sesudah terpasang, buka ikon aplikasi dan login dengan akun pembeli yang sama.</p><p class="small">Pemasangan perlu persetujuan pengguna dan tidak berlangsung otomatis. Jika opsi belum muncul, gunakan situs melalui browser yang didukung. Jangan membayar ulang saat status sedang diperiksa.</p></div></section>
@@ -1931,7 +1931,71 @@ async function bagikanKasUsahaLite(){
  <div class="card"><h3>Prinsip keamanan data</h3><p>Gunakan kata sandi yang kuat, jangan membagikan kode undangan atau kredensial, dan batasi akses berdasarkan peran. Periksa kembali nominal sebelum menyimpan transaksi. Simpan cadangan data penting secara berkala.</p><button class="primary wide" type="button" onclick="buka('transaksi',document.querySelector('nav button[onclick*=\'transaksi\']'))">Mulai menggunakan Transaksi</button></div>
 </section>
 
-</main><footer>KasUsaha Lite • Pencatatan usaha dan katalog produk</footer>
+
+<section id="bantuanLegal" class="tab" aria-labelledby="bantuanLegalTitle">
+ <div class="ks-legal-hero">
+  <span class="ks-legal-eyebrow">PUSAT INFORMASI KASUSAHA LITE</span>
+  <h2 id="bantuanLegalTitle">Bantuan, keamanan &amp; ketentuan</h2>
+  <p>Temukan jawaban penggunaan aplikasi, cara menghubungi pengelola, serta informasi privasi dan lisensi.</p>
+ </div>
+ <div class="card ks-legal-card">
+  <h3>❔ Pertanyaan yang sering diajukan (FAQ)</h3>
+  <details><summary><strong>Apakah KasUsaha Lite harus dipasang?</strong></summary><p>Tidak. Website dapat digunakan langsung melalui browser. Pemasangan PWA bersifat opsional dan hanya menambahkan ikon aplikasi pada perangkat.</p></details>
+  <details><summary><strong>Berapa harga lisensinya?</strong></summary><p>Harga lisensi yang ditampilkan saat ini Rp49.000 sekali bayar. Periksa kembali harga, produk, dan total pada halaman checkout sebelum melanjutkan.</p></details>
+  <details><summary><strong>Apakah pembayaran sudah dapat menggunakan uang sungguhan?</strong></summary><p>Hanya jika halaman checkout secara jelas menyatakan pembayaran Production/Live dan metode pembayaran tersedia. Jika terlihat tulisan Sandbox, simulasi, atau metode belum tersedia, jangan gunakan uang sungguhan.</p></details>
+  <details><summary><strong>Bagaimana jika pembayaran sudah dilakukan tetapi lisensi belum aktif?</strong></summary><p>Jangan membayar ulang. Buka menu Pesanan Saya, periksa status pesanan, lalu kirim nomor pesanan melalui Kotak Saran agar pengelola dapat memeriksanya.</p></details>
+  <details><summary><strong>Apakah data otomatis berpindah ke HP lain?</strong></summary><p>Tidak semua data. Sebagian catatan dapat tersimpan lokal di browser, sedangkan fitur tertentu menggunakan server. Pastikan status sinkronisasi dan unduh cadangan sebelum mengganti perangkat atau menghapus data browser.</p></details>
+  <details><summary><strong>Bisakah aplikasi digunakan tanpa internet?</strong></summary><p>Beberapa bagian dapat dibuka atau mencatat secara lokal sesuai dukungan perangkat. Login, verifikasi lisensi, sinkronisasi, katalog online, dan pembayaran memerlukan koneksi. Periksa status sinkronisasi setelah internet kembali.</p></details>
+  <details><summary><strong>Bagaimana menambah karyawan?</strong></summary><p>Owner membuka informasi usaha untuk melihat kode undangan, lalu membagikannya hanya kepada karyawan yang diberi izin. Jangan membagikan kode tersebut kepada pihak lain.</p></details>
+  <details><summary><strong>Bagaimana membuat cadangan data?</strong></summary><p>Gunakan menu Cadangan dan simpan berkas hasil ekspor di tempat aman. Uji berkas cadangan secara berkala dan jangan mengirimkannya ke orang lain karena dapat memuat data usaha.</p></details>
+ </div>
+ <div class="card ks-legal-card" id="kontakBantuan">
+  <h3>💬 Kontak bantuan</h3>
+  <p>Untuk pertanyaan penggunaan, kendala transaksi, lisensi, atau laporan kesalahan, gunakan <strong>Kotak Saran</strong> di navigasi utama. Sertakan jenis perangkat/browser, waktu kejadian, langkah yang dilakukan, dan nomor pesanan bila berkaitan dengan pembelian.</p>
+  <p><strong>Jangan kirim</strong> kata sandi, kode OTP, kunci rahasia, data kartu, atau informasi rekening lengkap. Untuk bukti kendala, tutupi data pribadi dan informasi pembayaran yang sensitif.</p>
+  <button type="button" class="primary" onclick="bukaKotakSaran(document.getElementById('navKasUsahaSaran'))">Buka Kotak Saran &amp; Bantuan</button>
+  <p class="small">Kotak Saran adalah kanal bantuan di dalam aplikasi. Waktu respons dapat bergantung pada ketersediaan pengelola.</p>
+ </div>
+ <div class="card ks-legal-card">
+  <h3>🔐 Kebijakan privasi</h3>
+  <p><strong>Data yang dapat diproses.</strong> Bergantung pada fitur yang Anda gunakan, aplikasi dapat memproses informasi akun/login, profil usaha, produk, stok, transaksi, absensi, pesanan, serta informasi teknis yang diperlukan untuk menjalankan layanan.</p>
+  <p><strong>Tempat penyimpanan.</strong> Sebagian data dapat tersimpan pada penyimpanan browser/perangkat; fitur bersama tertentu menggunakan layanan server Supabase. Data pada perangkat tidak otomatis sama dengan data server. Pengguna bertanggung jawab menjaga perangkat dan berkas cadangan.</p>
+  <p><strong>Penyedia pihak ketiga.</strong> Fitur pembayaran atau pengiriman, jika diaktifkan, dapat meneruskan data transaksi/pengiriman yang diperlukan kepada penyedia terkait seperti Midtrans atau Biteship. Pemrosesan oleh penyedia tersebut mengikuti kebijakan mereka masing-masing.</p>
+  <p><strong>Tujuan penggunaan.</strong> Data digunakan untuk menyediakan fungsi aplikasi, autentikasi, lisensi, pencatatan dan laporan usaha, pemrosesan pesanan, keamanan, dukungan, serta perbaikan layanan.</p>
+  <p><strong>Pengamanan dan kendali.</strong> Jangan membagikan kredensial atau kode undangan. Batasi akses Owner/Karyawan sesuai tugas. Hapus atau ekspor data hanya setelah memastikan konsekuensinya. Permintaan bantuan terkait data dapat disampaikan melalui Kotak Saran setelah verifikasi kepemilikan akun.</p>
+  <p class="small">Pemberitahuan ini menjelaskan praktik umum berdasarkan fitur yang tersedia. Rincian akhir dapat bergantung pada konfigurasi layanan dan penyedia yang sedang aktif. Jangan memasukkan data pribadi yang tidak diperlukan ke dalam catatan usaha.</p>
+ </div>
+ <div class="card ks-legal-card">
+  <h3>🛡️ Informasi keamanan</h3>
+  <ul>
+   <li>Gunakan kata sandi unik dan kuat; jangan berikan kata sandi atau OTP kepada siapa pun.</li>
+   <li>Gunakan perangkat yang terkunci dan selalu logout pada perangkat bersama.</li>
+   <li>Bagikan kode undangan karyawan hanya kepada orang yang berwenang dan cabut akses jika tidak lagi diperlukan melalui pengaturan yang tersedia.</li>
+   <li>Periksa nominal, produk, penerima, dan total sebelum menyimpan transaksi atau membayar pesanan.</li>
+   <li>Unduh cadangan berkala dan simpan secara terenkripsi/aman. Jangan unggah cadangan ke ruang publik.</li>
+   <li>Pastikan alamat situs benar dan gunakan koneksi HTTPS. Hindari memasang aplikasi dari tautan tidak dikenal.</li>
+   <li>Laporkan dugaan akses tidak sah melalui Kotak Saran; jangan sertakan rahasia akun atau kunci API.</li>
+  </ul>
+  <p class="small">Aplikasi tidak dapat menjamin risiko internet, perangkat, atau gangguan penyedia pihak ketiga sepenuhnya bebas. Pengelola perlu menjaga konfigurasi akses server dan kredensial rahasia; pengguna perlu menjaga keamanan akun dan perangkatnya.</p>
+ </div>
+ <div class="card ks-legal-card">
+  <h3>📄 Ketentuan lisensi &amp; penggunaan</h3>
+  <ol>
+   <li><strong>Harga.</strong> Harga yang ditampilkan saat ini Rp49.000 untuk lisensi sekali bayar. Harga dan rincian yang tampil pada checkout menjadi acuan sebelum pembelian.</li>
+   <li><strong>Aktivasi.</strong> Hak penggunaan fitur berlisensi diberikan setelah pembayaran diverifikasi oleh server dan lisensi berhasil diaktifkan pada akun yang sesuai. Bukti transfer atau tangkapan layar saja tidak menggantikan verifikasi server.</li>
+   <li><strong>Penggunaan wajar.</strong> Lisensi digunakan oleh pemilik akun untuk menjalankan usaha yang dikelolanya. Jangan menjual ulang, membagikan kode lisensi, mem-bypass aktivasi, atau mengakses data usaha orang lain tanpa izin.</li>
+   <li><strong>Akun dan data.</strong> Pengguna bertanggung jawab atas kebenaran data yang dimasukkan, kerahasiaan akun, izin karyawan, dan pencadangan data.</li>
+   <li><strong>Pembaruan dan dukungan.</strong> Perubahan fitur dapat dilakukan untuk pemeliharaan, keamanan, atau peningkatan layanan. Bantuan disampaikan melalui Kotak Saran. Layanan pihak ketiga mengikuti syarat penyedianya.</li>
+   <li><strong>Pembayaran dan pengembalian.</strong> Periksa produk dan total sebelum membayar. Jika terjadi pembayaran ganda, transaksi tidak dikenal, atau lisensi belum aktif, laporkan dengan nomor pesanan untuk pemeriksaan. Pengembalian dana ditangani sesuai hasil verifikasi dan ketentuan hukum yang berlaku; jangan menganggap permintaan otomatis disetujui.</li>
+   <li><strong>Larangan.</strong> Dilarang menggunakan aplikasi untuk penipuan, transaksi ilegal, mengganggu sistem, menguji akses tanpa izin, atau menyebarkan malware.</li>
+   <li><strong>Perubahan ketentuan.</strong> Ketentuan dapat diperbarui bila layanan berubah. Periksa halaman ini sebelum menggunakan fitur penting atau melakukan pembelian.</li>
+  </ol>
+  <p class="small">Dengan membuat akun atau menggunakan fitur, pengguna menyatakan telah membaca informasi ini. Ketentuan ini merupakan informasi penggunaan aplikasi dan tidak menggantikan hak konsumen berdasarkan peraturan yang berlaku.</p>
+ </div>
+ <p class="ks-legal-updated">Informasi bantuan dan kebijakan KasUsaha Lite · Ditinjau 31 Oktober 2026</p>
+</section>
+
+</main><footer><span>KasUsaha Lite • Pencatatan usaha dan katalog produk</span><button type="button" onclick="buka('bantuanLegal',document.getElementById('navBantuanLegal'))">FAQ &amp; Bantuan</button><button type="button" onclick="buka('bantuanLegal',document.getElementById('navBantuanLegal'));setTimeout(()=>document.getElementById('kontakBantuan')?.scrollIntoView({behavior:'smooth',block:'start'}),50)">Kontak Bantuan</button><button type="button" onclick="buka('bantuanLegal',document.getElementById('navBantuanLegal'))">Privasi &amp; Lisensi</button></footer>
 <script>
 function filterKampanyeAfiliasi(){
   const input=document.getElementById('filterAffiliateCampaign');
@@ -4879,6 +4943,34 @@ html body #beranda .promo-home .ks-license-price{display:inline-flex!important;f
 html body #beranda .promo-home .ks-license-price strong{font-size:clamp(27px,4vw,36px)!important;color:#312e81!important}
 html body #beranda .promo-home .promo-note{max-width:780px!important;margin-top:14px!important;padding:12px 14px!important;border-left:3px solid #818cf8!important;border-radius:8px!important;background:rgba(255,255,255,.72)!important;color:#475569!important}
 @media(max-width:650px){html body #beranda .promo-home .promo-hero{border-radius:16px!important}html body #beranda .promo-home .ks-promo-dashboard-art{min-height:270px!important;padding:22px 10px!important}html body #beranda .promo-home .ks-promo-dashboard-art .ks-dash-window{width:100%!important}html body #beranda .promo-home .ks-promo-dashboard-art .ks-float{display:none!important}html body #beranda .promo-home .promo-copy{padding:20px 16px!important}html body #beranda .promo-home .promo-copy h2{font-size:clamp(27px,8vw,34px)!important}html body #beranda .promo-home .ks-license-price{width:100%!important}}
+
+/* Pusat bantuan dan kebijakan */
+.ks-legal-hero{margin:8px 0 14px;padding:clamp(20px,4vw,34px);border:1px solid #dbe5f2;border-radius:20px;background:linear-gradient(125deg,#eef4ff,#f5f0ff 55%,#effaf4);box-shadow:0 12px 30px rgba(31,55,95,.07)}
+.ks-legal-eyebrow{font-size:11px;font-weight:850;letter-spacing:.1em;color:#4f46a5}
+.ks-legal-hero h2{margin:8px 0;color:#172b4d;font-size:clamp(24px,4vw,34px)}
+.ks-legal-hero p{margin:0;color:#475569;line-height:1.7}
+.ks-legal-card{padding:clamp(15px,2.5vw,24px)!important}
+.ks-legal-card h3{margin-top:0;color:#17452b}
+.ks-legal-card details{padding:10px 12px;border:1px solid #e3eae5;border-radius:10px;margin:8px 0;background:#fbfdfb}
+.ks-legal-card details summary{padding:2px 0;font-size:14px;line-height:1.55}
+.ks-legal-card details p{margin:9px 0 2px;color:#435348;line-height:1.7}
+.ks-legal-card>p,.ks-legal-card li{font-size:14px;line-height:1.75;color:#34443b}
+.ks-legal-card ul,.ks-legal-card ol{padding-left:22px}
+.ks-legal-updated{text-align:center;color:#64748b;font-size:12px;padding:8px}
+footer{display:flex;justify-content:center;flex-wrap:wrap;gap:8px 16px;align-items:center}
+footer a,footer button{color:#166534;font-weight:700;text-decoration:underline;text-underline-offset:3px;background:none;border:0;padding:6px;font:inherit;cursor:pointer}
+@media(max-width:760px){
+ body>nav{scroll-snap-type:x proximity;gap:6px!important;padding:8px!important}
+ body>nav button{scroll-snap-align:start;min-height:42px!important;padding:9px 12px!important;font-size:12px!important}
+ body>main{width:calc(100% - 14px)!important}
+ .ks-legal-hero{padding:18px 16px;border-radius:15px}
+ .ks-legal-card{padding:14px!important}
+ .ks-legal-card details{padding:10px}
+ .ks-legal-card details summary{font-size:13px}
+ .ks-legal-card>p,.ks-legal-card li{font-size:13px}
+}
+@media(min-width:761px){body>nav{flex-wrap:wrap;justify-content:center}}
+
 </style>
 <button id="ksBackToTop" type="button" aria-label="Kembali ke bagian atas halaman" title="Kembali ke atas">
  <span class="ks-back-top-arrow" aria-hidden="true">↑</span><span>Kembali ke atas</span>
