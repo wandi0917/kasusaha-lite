@@ -1,11 +1,11 @@
 /* KasUsaha Lite PWA service worker. Only caches the app shell and its banner; never caches Supabase, checkout, or payment API responses. */
 'use strict';
 const CACHE_PREFIX = 'kasusaha-lite-shell-';
-const CACHE_NAME = CACHE_PREFIX + 'v19';
+const CACHE_NAME = CACHE_PREFIX + 'v20';
 const appRoot = new URL('./', self.registration.scope);
 const manifestUrl = new URL('manifest.webmanifest', self.registration.scope);
 const iconUrl = new URL('icons/kasusaha-icon.svg', self.registration.scope);
-const bannerUrl = new URL('assets/kasusaha-banner.svg?v=6', self.registration.scope);
+const bannerUrl = new URL('assets/kasusaha-banner-baru-3.webp?v=20261031', self.registration.scope);
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
