@@ -3031,7 +3031,8 @@ $('employeeLogin').addEventListener('click',async()=>{
   if(financeBusiness&&financeMemberRole==='employee'&&!document.body.classList.contains('employee-device-pending'))await arahkanSetelahLoginFinance();
  }catch(e){
   const raw=String(e.message||e);
-  if(createdAnonymous&&!joined){try{await sb.auth.signOut();}catch(_cleanupError){}}
+  // Pertahankan sesi anonim meskipun join gagal. Menghapus sesi di sini membuat percobaan berikutnya
+  // menghasilkan UUID baru dan memperparah benturan kode undangan yang sudah terikat pada UUID lama.
   const anonymousHint=/anonymous|anonymous sign|anonymous provider|disabled|not enabled/i.test(raw)?' Aktifkan Anonymous Sign-Ins di Supabase Dashboard > Authentication > Sign In / Providers, lalu coba lagi.':'';
   employeeAuthMessage('Login karyawan gagal: '+raw.slice(0,220)+anonymousHint,true);
  }finally{btn.disabled=false;}
