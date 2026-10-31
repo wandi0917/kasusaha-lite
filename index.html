@@ -677,6 +677,62 @@ body>main>#beranda .ks-showcase-copy h2 em{color:#08a85b!important}
  body>main{padding:8px 9px 22px!important}
 }
 
+
+/* Bingkai elegan untuk teks dan kelompok informasi di Beranda */
+html body main #beranda>.beginner-start,
+html body main #beranda>.usage-guide,
+html body main #beranda>#kasusahaSharePromo,
+html body main #beranda>#affiliateHomeCatalog,
+html body main #beranda .ks-convert-section{
+  position:relative!important;padding:clamp(16px,2.6vw,26px)!important;
+  border:1px solid #d9dff3!important;border-radius:18px!important;
+  background:linear-gradient(145deg,#fff 0%,#fbfcff 100%)!important;
+  box-shadow:0 8px 24px rgba(48,55,110,.07),inset 0 1px 0 rgba(255,255,255,.95)!important;
+}
+html body main #beranda>.beginner-start:before,
+html body main #beranda>.usage-guide:before,
+html body main #beranda>#kasusahaSharePromo:before,
+html body main #beranda>#affiliateHomeCatalog:before,
+html body main #beranda .ks-convert-section:before{
+  content:""!important;position:absolute!important;left:16px!important;right:16px!important;top:0!important;
+  height:3px!important;border-radius:0 0 8px 8px!important;
+  background:linear-gradient(90deg,#3b82f6 0%,#8b5cf6 52%,#ec4899 100%)!important;
+}
+html body main #beranda .beginner-start h2,
+html body main #beranda .usage-guide h2,
+html body main #beranda #kasusahaSharePromo h2,
+html body main #beranda #affiliateHomeCatalog h2,
+html body main #beranda .ks-convert-section h2{
+  display:block!important;padding:0 0 10px!important;margin:0 0 14px!important;
+  border-bottom:1px solid #e5e9f5!important;color:#283568!important;
+  letter-spacing:-.02em!important;line-height:1.3!important;
+}
+html body main #beranda .usage-guide h3,
+html body main #beranda .beginner-start h3{color:#4338a5!important;line-height:1.35!important}
+html body main #beranda .usage-guide p,
+html body main #beranda .beginner-start p,
+html body main #beranda #kasusahaSharePromo p,
+html body main #beranda #affiliateHomeCatalog p{line-height:1.7!important;color:#475569!important}
+html body main #beranda .beginner-start-grid button,
+html body main #beranda .ks-convert-grid>div{
+  border:1px solid #dce3f5!important;border-radius:14px!important;
+  box-shadow:0 4px 13px rgba(49,46,129,.06)!important;
+}
+html body main #beranda .usage-guide li{
+  margin:7px 0!important;padding:8px 10px!important;border:1px solid #edf0f8!important;
+  border-radius:10px!important;background:#fbfcff!important;line-height:1.6!important;
+}
+html body main #beranda .promo-note{
+  border:1px solid #dcdcfb!important;border-left:4px solid #7c3aed!important;
+  border-radius:11px!important;background:linear-gradient(110deg,#f8f7ff,#fff)!important;padding:13px 15px!important;
+}
+@media(max-width:700px){
+ html body main #beranda>.beginner-start,html body main #beranda>.usage-guide,
+ html body main #beranda>#kasusahaSharePromo,html body main #beranda>#affiliateHomeCatalog,
+ html body main #beranda .ks-convert-section{padding:15px 12px!important;border-radius:14px!important}
+ html body main #beranda .usage-guide li{padding:8px!important}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
