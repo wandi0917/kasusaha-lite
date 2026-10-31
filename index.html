@@ -3790,7 +3790,7 @@ sb.auth.onAuthStateChange((event,session)=>{financeBusiness=null;financeMemberRo
     if (installStatus) installStatus.textContent = message;
   };
   if (isStandalone()) {
-    if (installButton) installButton.textContent = '✓ KasUsaha sudah terpasang';
+    if (installButton) installButton.dataset.installed = 'true';
     showHelp('KasUsaha Lite sudah dibuka dalam mode aplikasi di perangkat ini.');
   }
   window.addEventListener('beforeinstallprompt', (event) => {
@@ -3801,7 +3801,7 @@ sb.auth.onAuthStateChange((event,session)=>{financeBusiness=null;financeMemberRo
   });
   window.addEventListener('appinstalled', () => {
     deferredInstallPrompt = null;
-    if (installButton) installButton.textContent = '✓ KasUsaha sudah terpasang';
+    if (installButton) installButton.dataset.installed = 'true';
     showHelp('Berhasil dipasang. Buka KasUsaha Lite dari ikon aplikasi di perangkat Anda.');
   });
   if (nativeInstallButton) nativeInstallButton.addEventListener('click', async () => {
