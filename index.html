@@ -4427,11 +4427,19 @@ $('quickSaleForm')?.addEventListener('submit',async function(e){
   }
   const {data:result,error}=await sb.rpc('record_store_quick_sale',{p_business_id:financeBusiness.id,p_table_number:tableNumber||null,p_lines:quickSalePayload.lines,p_request_id:quickSaleRequestId});
   if(error){
-   // Jangan hapus request ID pada respons error yang belum dapat dipastikan.
-   // Gangguan jaringan dapat terjadi setelah database menyimpan transaksi.
-   // Pengulangan dengan ID dan rincian yang sama aman karena RPC bersifat idempoten.
+   // Respons SQL/PostgREST dengan kode error berarti server menolak dan me-rollback
+   // transaksi. Hapus kunci lokal agar pengguna dapat memperbaiki stok/harga/izin
+   // lalu membuat permintaan baru. Error jaringan tanpa kode tetap dianggap ambigu.
+   const definiteServerRejection=typeof error.code==='string'&&error.code.length>0;
+   if(definiteServerRejection){
+    try{const saved=JSON.parse(localStorage.getItem(quickSalePendingKey)||'null');if(saved?.requestId===quickSaleRequestId)localStorage.removeItem(quickSalePendingKey);}catch(storageError){console.warn('Kunci transaksi gagal dibersihkan setelah penolakan server:',storageError);}
+    console.error('Server menolak transaksi kasir dan transaksi di-rollback:',error);
+    throw new Error('Server menolak penjualan. Tidak ada transaksi yang disimpan. Perbaiki penyebab berikut lalu coba kembali: '+String(error.message||error).slice(0,220));
+   }
+   // Gangguan jaringan tanpa kode respons dapat terjadi setelah database menyimpan transaksi.
+   // Pertahankan ID agar pengulangan dengan rincian sama tidak menggandakan transaksi.
    console.error('Respons penyimpanan kasir belum terkonfirmasi; kunci permintaan dipertahankan:',error);
-   throw new Error('Hasil penyimpanan belum dapat dipastikan. Kunci transaksi tetap disimpan. Periksa laporan, lalu coba kirim ulang tagihan dengan rincian yang SAMA agar server mengembalikan hasil sebelumnya tanpa mencatat transaksi dua kali. Detail: '+String(error.message||error).slice(0,180));
+   throw new Error('Hasil penyimpanan belum dapat dipastikan karena koneksi terputus. Kunci transaksi tetap disimpan. Periksa laporan, lalu kirim ulang tagihan dengan rincian yang SAMA. Detail: '+String(error.message||error).slice(0,180));
   }
   if(!result||result.ok!==true)throw new Error('Server belum mengonfirmasi penyimpanan penjualan. Kunci permintaan dipertahankan agar pengulangan tidak menggandakan transaksi.');
   try{const saved=JSON.parse(localStorage.getItem(quickSalePendingKey)||'null');if(saved?.requestId===quickSaleRequestId)localStorage.removeItem(quickSalePendingKey);}catch(_){}
