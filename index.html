@@ -1246,6 +1246,18 @@ html body main #pasar.ks-marketplace{width:100%;max-width:1180px;margin:0 auto;p
 .ks-seller-stock-low{color:#b45309;font-weight:800}.ks-seller-stock-out{color:#b91c1c;font-weight:800}
 @media(max-width:600px){.ks-seller-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.ks-seller-dashboard,.ks-seller-product-manager{padding:14px}.ks-seller-product-row{grid-template-columns:68px minmax(0,1fr);gap:10px}.ks-seller-product-row img{width:68px;height:68px}.ks-seller-heading h3{font-size:19px}}
 </style>
+<style id="ks-finance-kledo-bukuwarung-20261101">
+.finance-period-presets{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 14px}
+.finance-period-presets button{min-height:40px;padding:9px 14px}
+#financeReportSummary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}
+.finance-kpi-card{min-width:0;padding:14px;border:1px solid #d6e2da;border-radius:13px;background:linear-gradient(145deg,#fff,#f5faf6);box-shadow:0 3px 12px rgba(22,101,52,.055)}
+.finance-kpi-label{display:block;color:#52645a;font-size:12px;font-weight:700;line-height:1.45}
+.finance-kpi-value{display:block;margin:7px 0 5px;color:#14532d;font-size:clamp(17px,2.2vw,23px);line-height:1.25;overflow-wrap:anywhere}
+.finance-kpi-card small{display:block;color:#68776d;font-size:11px;line-height:1.45}
+.finance-kpi-emphasis{border-color:#80b99a;background:linear-gradient(145deg,#eaf7ef,#f7fcf8)}
+.finance-cashflow-note{grid-column:1/-1;margin:0;padding:11px 13px;border-left:3px solid #79a88b;background:#f5f8f6;border-radius:7px;line-height:1.55}
+@media(max-width:650px){#financeReportSummary{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.finance-kpi-card{padding:11px}.finance-kpi-value{font-size:17px}.finance-period-presets button{flex:1 1 28%;padding:8px 9px;font-size:13px}}
+</style>
 </head>
 <body>
 <header class="ks-brand-header">
@@ -1788,6 +1800,11 @@ async function bagikanKasUsahaLite(){
 <div class="card report-category-view" id="financeReportCard" hidden>
 <h3 id="financeReportTitle">Laporan Keuangan Lengkap (Owner)</h3>
 <p id="financeReportActivePerson" class="status" aria-live="polite">Petugas: menunggu login.</p>
+<div class="finance-period-presets" role="group" aria-label="Pilih periode laporan">
+<button type="button" class="secondary" onclick="setFinanceReportPreset('today')">Hari ini</button>
+<button type="button" class="secondary" onclick="setFinanceReportPreset('week')">Minggu ini</button>
+<button type="button" class="secondary" onclick="setFinanceReportPreset('month')">Bulan ini</button>
+</div>
 <div class="grid">
 <div><label for="financeReportStart">Tanggal dimulai</label><input id="financeReportStart" type="date" required></div>
 <div><label for="financeReportEnd">Tanggal sampai</label><input id="financeReportEnd" type="date" required></div>
@@ -4060,6 +4077,15 @@ function exportFinanceReportCSV(){
  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
 }
 
+function setFinanceReportPreset(preset){
+ const start=$('financeReportStart'),end=$('financeReportEnd');if(!start||!end)return;
+ const now=new Date(),localDate=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+ let first=new Date(now.getFullYear(),now.getMonth(),now.getDate()),last=new Date(first);
+ if(preset==='week'){const day=(first.getDay()+6)%7;first.setDate(first.getDate()-day);}
+ else if(preset==='month'){first=new Date(now.getFullYear(),now.getMonth(),1);}
+ start.value=localDate(first);end.value=localDate(last);
+ renderFinanceReport();
+}
 function renderFinanceReport(){
  const tbody=$('financeReportRows');if(!tbody)return;
  const isEmployee=financeMemberRole==='employee';
@@ -4152,21 +4178,38 @@ function renderFinanceReport(){
    if(isSalesOwner&&groups.some(g=>g.usedCurrentCost)){const note=document.createElement('p');note.className='small';note.textContent='Catatan: untuk transaksi lama yang tidak menyimpan modal saat transaksi, modal dihitung memakai harga modal barang saat ini. Jika harga modal pernah berubah, laba historis tersebut merupakan perkiraan. “Tidak lengkap” berarti kode barang atau harga modal tidak tersedia.';totalsBox.appendChild(note);}
   }
  }
- const income=rows.filter(r=>r.transaction_type==='income').reduce((a,r)=>a+Number(r.amount||0),0);
- const expense=rows.filter(r=>r.transaction_type==='expense').reduce((a,r)=>a+Number(r.amount||0),0);
- let running=0;
- const salesTotalForPeriod=salesRows.reduce((sum,r)=>sum+Number(r.amount||0),0);
- const periodSalesGroups=Array.from(salesGroups.values());
- const knownModalForPeriod=periodSalesGroups.filter(g=>g.modalKnown).reduce((sum,g)=>sum+Number(g.modal||0),0);
- const knownGrossProfitForPeriod=periodSalesGroups.filter(g=>g.modalKnown).reduce((sum,g)=>sum+Number(g.total||0)-Number(g.modal||0),0);
- const knownSalesGroups=periodSalesGroups.filter(g=>g.modalKnown).length;
- const summaryRows=[
-  ['Total penjualan',format(salesTotalForPeriod)],
-  ['Total seluruh pemasukan',format(income)],
-  ...(!isEmployee?[['Total pengeluaran',format(expense)],['Selisih pemasukan - pengeluaran',format(income-expense)],['Total modal penjualan',knownSalesGroups?format(knownModalForPeriod)+(knownSalesGroups===periodSalesGroups.length?'':' (data tersedia)'):'Tidak tersedia'],['Total laba kotor penjualan',knownSalesGroups?format(knownGrossProfitForPeriod)+(knownSalesGroups===periodSalesGroups.length?'':' (data tersedia)'):'Tidak tersedia']]:[])
- ];
- $('financeReportSummary').innerHTML='<div class="table-wrap" style="grid-column:1/-1"><table class="report-table"><thead><tr><th colspan="2">Ringkasan total periode '+aman(bounds.start)+' s.d. '+aman(bounds.end)+'</th></tr></thead><tbody>'+summaryRows.map(x=>'<tr><th>'+aman(x[0])+'</th><td class="amount">'+aman(x[1])+'</td></tr>').join('')+'</tbody></table></div>'+
-  (!isEmployee&&knownSalesGroups<periodSalesGroups.length?'<p class="small" style="grid-column:1/-1">Catatan: modal dan laba kotor hanya dijumlahkan dari '+knownSalesGroups+' dari '+periodSalesGroups.length+' tagihan yang memiliki data modal lengkap. Data yang tidak tersedia tidak dianggap nol.</p>':'');
+ // Ringkasan arus kas dihitung dari seluruh transaksi usaha, bukan hanya filter tabel rincian.
+ // Dengan demikian saldo awal/akhir tidak berubah ketika Owner memfilter kategori atau pencatat.
+ const allPeriodRows=financeRows.filter(r=>r.transaction_date>=bounds.start&&r.transaction_date<=bounds.end);
+ const openingRows=financeRows.filter(r=>r.transaction_date<bounds.start);
+ const sumType=(items,type)=>items.filter(r=>r.transaction_type===type).reduce((sum,r)=>sum+Number(r.amount||0),0);
+ const openingBalance=sumType(openingRows,'income')-sumType(openingRows,'expense');
+ const periodIncome=sumType(allPeriodRows,'income');
+ const periodExpense=sumType(allPeriodRows,'expense');
+ const netCash=periodIncome-periodExpense;
+ const closingBalance=openingBalance+netCash;
+ const summary=$('financeReportSummary');
+ if(summary){
+  summary.replaceChildren();
+  const cards=[
+   ['Saldo awal periode',format(openingBalance),'Saldo kumulatif sebelum tanggal mulai'],
+   ['Total pemasukan',format(periodIncome),'Semua pemasukan usaha pada periode'],
+   ['Total pengeluaran',format(periodExpense),'Semua pengeluaran usaha pada periode'],
+   ['Perubahan kas bersih',format(netCash),'Pemasukan dikurangi pengeluaran'],
+   ['Saldo akhir periode',format(closingBalance),'Saldo awal ditambah perubahan kas'],
+   ['Jumlah transaksi',String(allPeriodRows.length),'Transaksi Owner dan Karyawan']
+  ];
+  cards.forEach((item,index)=>{
+   const card=document.createElement('div');card.className='finance-kpi-card'+(index===4?' finance-kpi-emphasis':'');
+   const label=document.createElement('span');label.className='finance-kpi-label';label.textContent=item[0];
+   const value=document.createElement('strong');value.className='finance-kpi-value';value.textContent=item[1];
+   const note=document.createElement('small');note.textContent=item[2];
+   card.append(label,value,note);summary.appendChild(card);
+  });
+  const note=document.createElement('p');note.className='small finance-cashflow-note';
+  note.textContent='Ringkasan ini adalah arus kas berdasarkan transaksi yang sudah dicatat di KasUsaha Lite, bukan otomatis laba bersih akuntansi. Pastikan seluruh saldo awal, pemasukan, pengeluaran, pembelian, dan transaksi tunai/non-tunai sudah dicatat. Ringkasan mencakup seluruh akun usaha dan tidak mengikuti filter tabel rincian.';
+  summary.appendChild(note);
+ }
  $('financeReportTitle').textContent=isEmployee?'Laporan Pemasukan Karyawan':'Laporan Keuangan Lengkap (Owner)';
  $('financeReportCard').dataset.reportTitle=(isEmployee?'Laporan Pemasukan Karyawan — ':'Laporan Keuangan Lengkap — ')+'Periode '+bounds.start+' s.d. '+bounds.end;
  const rowHtml=rows.map(r=>{const d=new Date(r.created_at);const time=Number.isFinite(d.getTime())?d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'—';if(isEmployee)return '<tr><td>'+aman(formatHariTanggal(r.transaction_date))+'<br>'+aman(time)+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+format(r.amount)+'</td></tr>';running+=r.transaction_type==='income'?Number(r.amount):-Number(r.amount);return '<tr><td>'+aman(formatHariTanggal(r.transaction_date))+'<br>'+aman(time)+'</td><td>'+aman(r.created_by===financeMemberUserId?financeCurrentUserName+' ('+financeRoleLabel(r.created_by_role)+')':financeRoleLabel(r.created_by_role)+' / akun '+String(r.created_by||'').slice(0,8))+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+(r.transaction_type==='income'?format(r.amount):'—')+'</td><td class="amount expense">'+(r.transaction_type==='expense'?format(r.amount):'—')+'</td><td class="amount">'+format(running)+'</td><td><div class="row-actions"><button type="button" class="secondary" onclick="mulaiEditFinanceTransaction(\''+String(r.id)+'\')">Edit</button><button type="button" class="danger" onclick="hapusFinanceTransaction(\''+String(r.id)+'\')">Hapus</button></div></td></tr>';}).join('');
