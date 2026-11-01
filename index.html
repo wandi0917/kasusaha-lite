@@ -2330,33 +2330,32 @@ async function buka(id,tombol){
           id='akunPembeli';tombol=document.querySelector('nav button[onclick*="akunPembeli"]');
           setStatusAktivasi('Silakan login terlebih dahulu. Fitur kasir, produk, dan cadangan memerlukan akun serta lisensi aktif.',false);
         }else{
-          let financeMemberRole=null;
+          let selectedMemberRole=null;
+          let activeMembers=[];
           if(tujuanId==='transaksi'){
-            const {data:member,error:memberError}=await sb.from('business_members').select('role,active').eq('user_id',data.session.user.id).eq('active',true).maybeSingle();
+            const {data:memberRows,error:memberError}=await sb.from('business_members')
+              .select('business_id,role,active')
+              .eq('user_id',data.session.user.id)
+              .eq('active',true);
             if(memberError)throw memberError;
-            financeMemberRole=member&&member.active?member.role:null;
+            activeMembers=memberRows||[];
+            let candidates=financeSelectedBusinessId?activeMembers.filter(m=>m.business_id===financeSelectedBusinessId):activeMembers;
+            if(financeSelectedBusinessId&&candidates.length===0){financeSelectedBusinessId=null;candidates=activeMembers;}
+            if(candidates.length===1)selectedMemberRole=candidates[0].role;
           }
-          if(tujuanId==='transaksi'&&financeMemberRole==='employee'){
-            document.body.classList.remove('owner-verified');
-            document.body.classList.add('employee-verified');
-            id=tujuanId;tombol=tujuanTombol;
-          }else if(tujuanId==='transaksi'&&financeMemberRole==='owner'){
+          if(tujuanId==='transaksi'&&selectedMemberRole==='employee'){
+            document.body.classList.remove('owner-verified');document.body.classList.add('employee-verified');id=tujuanId;tombol=tujuanTombol;
+          }else if(tujuanId==='transaksi'&&selectedMemberRole==='owner'){
             if(licenseAccessState!=='active')await periksaAktivasiLisensi();
-            if(licenseAccessState==='active'){
-              document.body.classList.remove('employee-verified');
-              document.body.classList.add('owner-verified');
-              id=tujuanId;tombol=tujuanTombol;
-            }else{
-              id='akunPembeli';tombol=document.querySelector('nav button[onclick*="akunPembeli"]');
-              setStatusAktivasi('Lisensi Owner belum memiliki pembayaran terverifikasi. Fitur usaha tetap terkunci sampai pemeriksaan pembayaran selesai.',false);
-            }
+            if(licenseAccessState==='active'){document.body.classList.remove('employee-verified');document.body.classList.add('owner-verified');id=tujuanId;tombol=tujuanTombol;}
+            else{id='akunPembeli';tombol=document.querySelector('nav button[onclick*="akunPembeli"]');setStatusAktivasi('Lisensi Owner belum memiliki pembayaran terverifikasi. Fitur usaha tetap terkunci sampai pemeriksaan pembayaran selesai.',false);}
+          }else if(tujuanId==='transaksi'&&activeMembers.length>1){
+            // Buka pemilih usaha saja; fitur tetap terkunci sampai salah satu usaha dipilih.
+            document.body.classList.remove('owner-verified','employee-verified');id=tujuanId;tombol=tujuanTombol;
           }else{
             if(licenseAccessState!=='active')await periksaAktivasiLisensi();
             if(licenseAccessState==='active'){id=tujuanId;tombol=tujuanTombol;}
-            else{
-              id='akunPembeli';tombol=document.querySelector('nav button[onclick*="akunPembeli"]');
-              setStatusAktivasi('Akun sudah login, tetapi lisensi aktif belum terverifikasi oleh server. Verifikasi lisensi untuk membuka fitur.',false);
-            }
+            else{id='akunPembeli';tombol=document.querySelector('nav button[onclick*="akunPembeli"]');setStatusAktivasi('Akun sudah login, tetapi lisensi aktif belum terverifikasi oleh server. Verifikasi lisensi untuk membuka fitur.',false);}
           }
         }
       }catch(e){
@@ -2382,6 +2381,9 @@ async function buka(id,tombol){
   });
   if(id==='platformMarketplaceFinance')await muatKeuanganMarketplace();
   if(id==='transaksi'){
+    if(!offlineTransactionMode&&(!financeBusiness||!financeMemberRole)){
+      try{await loadFinanceWorkspace();}catch(workspaceError){console.error('Workspace belum siap saat tab Transaksi dibuka:',workspaceError);setFinanceStatus('Data usaha belum siap dimuat: '+String(workspaceError.message||workspaceError).slice(0,180),true);}
+    }
     const reportSelect=$('reportCategorySelect');
     if(reportSelect && !offlineTransactionMode){
       const runSelectedReport=async()=>{
@@ -3510,9 +3512,14 @@ async function financeChooseSavedBusiness(businessId){
  if(!sb||!businessId)return;
  try{
   const {data:sd,error:se}=await sb.auth.getSession();if(se)throw se;if(!sd.session)throw new Error('Login terlebih dahulu.');
-  const {data:m,error:me}=await sb.from('business_members').select('business_id,user_id,role,active').eq('user_id',sd.session.user.id).eq('business_id',businessId).eq('active',true).maybeSingle();
-  if(me)throw me;if(!m)throw new Error('Akun ini tidak memiliki akses ke usaha tersebut.');
+  const {data:members,error:me}=await sb.from('business_members').select('business_id,user_id,role,active').eq('user_id',sd.session.user.id).eq('business_id',businessId).eq('active',true).limit(2);
+  if(me)throw me;if(!members||members.length!==1)throw new Error('Keanggotaan usaha tidak ditemukan atau tidak unik. Minta Owner memeriksa daftar anggota usaha.');
+  if(members[0].role==='owner'){
+   if(licenseAccessState!=='active')await periksaAktivasiLisensi();
+   if(licenseAccessState!=='active'){setFinanceStatus('Lisensi Owner belum terverifikasi. Menu usaha tetap terkunci sampai pembayaran dikonfirmasi server.',true);await buka('akunPembeli',document.querySelector('nav button[onclick*="akunPembeli"]'));return;}
+  }
   financeSelectedBusinessId=businessId;await loadFinanceWorkspace();setFinanceStatus('Usaha dipilih. Data dimuat sesuai akses akun.');
+  if(financeBusiness&&financeMemberRole)await bukaPanelTransaksi('kasir');
  }catch(e){setFinanceStatus('Tidak dapat memilih usaha: '+String(e.message||e).slice(0,180),true);}
 }
 async function loadFinanceWorkspace(){
@@ -3637,12 +3644,16 @@ function updateQuickSalePreview(useCatalogPrice=false){
  const info=$('quickSaleProductInfo');if(info){info.className='status';info.textContent=rows.length+' baris barang. Total sementara '+formatStoreRupiah(Number.isSafeInteger(grandTotal)?grandTotal:0)+'.';}
 }
 async function bukaPanelTransaksi(tujuan){
+  if(!$('transaksi')?.classList.contains('active'))await buka('transaksi',document.querySelector('nav button[onclick*="transaksi"]'));
   // Pastikan peran dan usaha sudah termuat sebelum tombol modul menjalankan aksi.
   if(!offlineTransactionMode&&(!financeBusiness||!financeMemberRole||!financeMemberUserId)){
     try{await loadFinanceWorkspace();}catch(e){setFinanceStatus('Gagal memuat akses usaha: '+String(e.message||e).slice(0,180),true);return;}
   }
   const isOwner=financeMemberRole==='owner',isEmployee=financeMemberRole==='employee';
   if(['kasir','absensi','catat','laporan'].includes(tujuan)&&(!financeBusiness||!financeMemberRole||!financeMemberUserId)){
+    const picker=$('financeSavedBusinesses'),setup=$('financeSetupForms');
+    if(picker&&!picker.hidden){setFinanceStatus('Akun terhubung ke beberapa usaha. Pilih nama usaha pada daftar di atas agar Kasir, Absensi, dan laporan dibuka dengan data yang benar.',true);picker.scrollIntoView({behavior:'smooth',block:'center'});return;}
+    if(setup&&!setup.hidden){setFinanceStatus('Selesaikan login dan hubungkan akun ke usaha terlebih dahulu. Setelah usaha dimuat, menu Kasir dan Absensi akan aktif.',true);setup.scrollIntoView({behavior:'smooth',block:'start'});return;}
     setFinanceStatus('Menu belum dapat digunakan karena sesi ini belum terhubung ke usaha. Muat ulang sesi atau minta Owner memeriksa keanggotaan akun.',true);
     const status=$('financeStatus');if(status)status.scrollIntoView({behavior:'smooth',block:'center'});return;
   }
@@ -4002,7 +4013,8 @@ async function printSelectedReport(){
  setTimeout(()=>{if(target.style.display!=='none')restore();},1200);
 }
 async function loadStoreProducts(){
-  if(!sb||!financeBusiness)return;
+  if(!sb)throw new Error('Koneksi Supabase belum tersedia.');
+  if(!financeBusiness||!financeMemberRole)throw new Error('Pilih usaha dan pastikan akun Owner/Karyawan sudah terhubung sebelum memuat barang.');
   const {data,error}=await sb.from('store_products').select('id,business_id,product_code,product_name,price,stock_quantity,stock_unit,item_type,active,created_at,updated_at').eq('business_id',financeBusiness.id).order('product_code',{ascending:true});
   if(error)throw error;
   storeProductRows=data||[];
