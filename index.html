@@ -1224,6 +1224,28 @@ html body main #pasar.ks-marketplace{width:100%;max-width:1180px;margin:0 auto;p
 #pasar .ks-market-empty{grid-column:1/-1;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;min-height:150px;padding:24px;border:1px dashed #cbd5e1;border-radius:16px;background:#f8fafc;color:#475569;text-align:center}#pasar .ks-market-empty strong{color:#1e293b;font-size:16px}#pasar .ks-market-empty span{font-size:13px}
 @media(prefers-reduced-motion:reduce){#pasar #hasilOnline>.item,#pasar #hasilPasar>.item{transition:none}#pasar #hasilOnline>.item:hover,#pasar #hasilPasar>.item:hover{transform:none}}
 </style>
+
+<style id="ks-seller-center-20261101">
+.ks-seller-dashboard,.ks-seller-product-manager{border:1px solid #d8e2f0;background:linear-gradient(145deg,#fff 0%,#f7faff 100%);border-radius:18px;box-shadow:0 10px 28px rgba(30,64,110,.06);padding:18px}
+.ks-seller-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.ks-seller-heading h3{margin:5px 0;color:#172554;font-size:21px}
+.ks-seller-kicker{font-size:10px;letter-spacing:.12em;font-weight:850;color:#4f46e5}
+.ks-seller-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:16px 0}
+.ks-seller-metrics>div{padding:13px;border:1px solid #dce5f5;border-radius:13px;background:#fff;min-width:0}
+.ks-seller-metrics span{display:block;font-size:12px;color:#64748b;line-height:1.4}
+.ks-seller-metrics strong{display:block;margin-top:7px;color:#1e3a8a;font-size:clamp(18px,2.5vw,24px);overflow-wrap:anywhere}
+.ks-seller-shortcuts{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.ks-seller-product-row{display:grid;grid-template-columns:84px minmax(0,1fr);gap:13px;padding:13px 0;border-top:1px solid #e2e8f0}
+.ks-seller-product-row:first-child{border-top:0}
+.ks-seller-product-row img{width:84px;height:84px;object-fit:cover;border-radius:12px;background:#eef2f7;border:1px solid #e2e8f0}
+.ks-seller-product-info{min-width:0}
+.ks-seller-product-info h4{margin:0 0 5px;color:#172554;font-size:15px;overflow-wrap:anywhere}
+.ks-seller-product-meta{font-size:12px;color:#64748b;line-height:1.5}
+.ks-seller-product-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.ks-seller-product-actions button{font-size:12px;padding:8px 10px}
+.ks-seller-stock-low{color:#b45309;font-weight:800}.ks-seller-stock-out{color:#b91c1c;font-weight:800}
+@media(max-width:600px){.ks-seller-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.ks-seller-dashboard,.ks-seller-product-manager{padding:14px}.ks-seller-product-row{grid-template-columns:68px minmax(0,1fr);gap:10px}.ks-seller-product-row img{width:68px;height:68px}.ks-seller-heading h3{font-size:19px}}
+</style>
 </head>
 <body>
 <header class="ks-brand-header">
@@ -2005,6 +2027,17 @@ async function bagikanKasUsahaLite(){
 <section id="akun" class="tab">
 <details class="card usage-guide"><summary><strong>📘 Panduan penggunaan Login Owner / Penjual</strong></summary><ol><li>Masukkan email dan kata sandi akun Anda untuk login, atau pilih pendaftaran bila belum punya akun.</li><li>Jika konfirmasi email diwajibkan, buka pesan konfirmasi dan selesaikan sebelum login.</li><li>Pastikan email tersebut sudah terdaftar sebagai Owner pada usaha yang benar untuk memperoleh akses laporan Owner.</li><li>Jangan bagikan kata sandi. Gunakan akun terpisah untuk karyawan.</li></ol></details>
 <h2>Login Owner / Akun Penjual</h2><div class="card"><p class="small">Gunakan login ini untuk akun pemilik usaha. Hak Owner pada laporan keuangan diberikan hanya jika akun telah terdaftar sebagai Owner di usaha pada Supabase.</p><p>Daftar atau login dengan email. Jika konfirmasi email aktif, buka email dan konfirmasi sebelum login.</p><div id="pesanPenjual" class="status" role="status">Memeriksa koneksi akun...</div><label for="emailPenjual">Email</label><input id="emailPenjual" type="email" autocomplete="email" placeholder="Email aktif Anda"><label for="sandiPenjual">Kata sandi (minimal 6 karakter)</label><input id="sandiPenjual" type="password" autocomplete="current-password" placeholder="Kata sandi"><div class="row-actions"><button id="daftarPenjual" class="primary" type="button">Daftar Akun</button><button id="resendOwnerConfirmation" class="secondary" type="button">Kirim Ulang Konfirmasi</button><button id="loginPenjual" class="primary" type="button">Login</button><button id="keluarPenjual" class="secondary" type="button">Logout</button></div></div>
+<div class="card ks-seller-dashboard" id="sellerCenterDashboard">
+ <div class="ks-seller-heading"><div><span class="ks-seller-kicker">PUSAT KONTROL TOKO</span><h3>Dashboard Penjual</h3><p class="small">Kelola produk, pantau pesanan, dan siapkan pengiriman dari satu tempat.</p></div><button type="button" class="secondary" id="refreshSellerCenter" onclick="muatSellerCenter()">↻ Perbarui</button></div>
+ <div class="ks-seller-metrics" id="sellerCenterMetrics"><div><span>Produk aktif</span><strong>—</strong></div><div><span>Stok menipis</span><strong>—</strong></div><div><span>Pesanan masuk</span><strong>—</strong></div><div><span>Nilai item terjual*</span><strong>—</strong></div></div>
+ <p class="small">*Ringkasan nilai berdasarkan item pesanan berstatus dibayar/diproses/dikirim/selesai. Bukan saldo pencairan penjual.</p>
+ <div class="ks-seller-shortcuts"><button type="button" class="primary" onclick="document.getElementById('sellerProductManager').scrollIntoView({behavior:'smooth',block:'start'})">Kelola produk</button><button type="button" class="secondary" onclick="document.getElementById('sellerShippingSettings').scrollIntoView({behavior:'smooth',block:'start'})">Atur pengiriman</button><button type="button" class="secondary" onclick="buka('pesananMasuk',document.querySelector('nav button[onclick*=\'pesananMasuk\']'));muatPesananMasuk()">Lihat pesanan</button></div>
+ <div id="sellerCenterStatus" class="status" role="status">Login sebagai penjual, lalu tekan Perbarui untuk memuat ringkasan toko.</div>
+</div>
+<div class="card ks-seller-product-manager" id="sellerProductManager">
+ <div class="ks-seller-heading"><div><span class="ks-seller-kicker">KATALOG TOKO</span><h3>Produk Saya — Online</h3><p class="small">Ubah harga dan stok, sembunyikan produk sementara, atau aktifkan kembali produk.</p></div></div>
+ <div id="sellerOnlineProducts"><p class="small">Login sebagai penjual untuk memuat produk Anda.</p></div>
+</div>
 <div class="card" id="sellerShippingSettings">
 <h3>Pengaturan Asal Pengiriman Produk Saya</h3>
 <p class="small">Isi data alamat pengambilan barang yang sebenarnya. Tombol ini memperbarui data pengiriman untuk semua produk fisik milik akun yang sedang login (produk digital KasUsaha Lite dikecualikan). Jangan gunakan alamat perkiraan.</p>
@@ -3298,6 +3331,62 @@ $('kirimProdukOnline').addEventListener('click',async()=>{if(!sb)return pesanAku
  pesanAkun('Produk berhasil dipasang! ID produk: '+data.id+'. Memuat Pasar Online...');$('namaProdukOnline').value='';$('hargaProdukOnline').value='';$('stokProdukOnline').value='1';$('deskripsiProdukOnline').value='';$('fotoProdukOnline').value='';tampilProdukLokalUntukOnline();buka('pasar',document.querySelectorAll('nav button')[3]);await muatPasarOnline();
  }catch(e){console.error('Gagal menerbitkan produk:',e);pesanAkun('Produk belum berhasil dipasang: '+String(e.message||'Periksa aturan INSERT/RLS Supabase.').slice(0,220),true);}finally{$('kirimProdukOnline').disabled=false;}});
 
+
+
+async function muatSellerCenter(){
+ const host=$('sellerOnlineProducts'),metrics=$('sellerCenterMetrics'),status=$('sellerCenterStatus'),button=$('refreshSellerCenter');
+ if(!sb){if(status)status.textContent='Koneksi Supabase belum tersedia.';return;}
+ if(button){button.disabled=true;button.textContent='Memuat...';}
+ if(status){status.className='status';status.textContent='Memuat ringkasan toko dan katalog produk...';}
+ try{
+  const {data:sd,error:se}=await sb.auth.getSession();if(se)throw se;
+  if(!sd.session){if(status){status.className='status error';status.textContent='Silakan login terlebih dahulu melalui akun penjual.';}if(host)host.innerHTML='<p class="small">Produk toko akan tampil setelah login.</p>';return;}
+  const uid=sd.session.user.id;
+  const {data:products,error:pe}=await sb.from('produk').select('id,nama_produk,deskripsi,kategori,harga,stok,foto_url,aktif,nama_penjual,kota').eq('owner_id',uid).order('created_at',{ascending:false}).limit(200);
+  if(pe)throw pe;
+  const rows=Array.isArray(products)?products:[];
+  const active=rows.filter(p=>p.aktif===true),low=active.filter(p=>Number(p.stok)>0&&Number(p.stok)<=5),out=active.filter(p=>Number(p.stok)<=0);
+  let orderCount=0,salesValue=0;
+  const {data:items,error:ie}=await sb.from('marketplace_order_items').select('order_id,item_subtotal').eq('seller_id',uid).limit(500);
+  if(ie)throw ie;
+  const itemRows=Array.isArray(items)?items:[];
+  if(itemRows.length){
+   const ids=[...new Set(itemRows.map(x=>x.order_id).filter(Boolean))];
+   const {data:orders,error:oe}=await sb.from('marketplace_orders').select('id,status,payment_review_required').in('id',ids);
+   if(oe)throw oe;
+   const paid=new Set((orders||[]).filter(o=>!o.payment_review_required&&['paid','processing','shipped','completed'].includes(String(o.status||'').toLowerCase())).map(o=>o.id));
+   const paidItems=itemRows.filter(x=>paid.has(x.order_id));orderCount=new Set(paidItems.map(x=>x.order_id)).size;salesValue=paidItems.reduce((sum,x)=>sum+Number(x.item_subtotal||0),0);
+  }
+  if(metrics){metrics.replaceChildren();[['Produk aktif',active.length],['Stok menipis',low.length+out.length],['Pesanan dibayar',orderCount],['Nilai item terjual',format(salesValue)]].forEach(([label,value])=>{const box=document.createElement('div'),span=document.createElement('span'),strong=document.createElement('strong');span.textContent=label;strong.textContent=String(value);box.append(span,strong);metrics.appendChild(box);});}
+  if(host){
+   host.replaceChildren();
+   if(!rows.length){const p=document.createElement('p');p.className='small';p.textContent='Belum ada produk online dari akun ini. Gunakan formulir Pasang produk online di bawah untuk mulai berjualan.';host.appendChild(p);}
+   rows.forEach(p=>{
+    const card=document.createElement('article');card.className='ks-seller-product-row';
+    const img=document.createElement('img');img.alt='Foto '+(p.nama_produk||'produk');img.loading='lazy';img.src=(p.foto_url&&/^https:\/\//i.test(p.foto_url))?p.foto_url:fotoCadanganProduk(p);img.onerror=()=>{img.src=fotoCadanganProduk(p);};
+    const info=document.createElement('div');info.className='ks-seller-product-info';
+    const title=document.createElement('h4');title.textContent=p.nama_produk||'Produk tanpa nama';
+    const meta=document.createElement('div');meta.className='ks-seller-product-meta';meta.textContent=format(p.harga)+' • Stok '+(Number(p.stok)||0)+' • '+(p.kategori||'Umum')+' • ID '+p.id;
+    const state=document.createElement('p');state.className='small';state.textContent=p.aktif?'Tampil di Pasar Online':'Disembunyikan dari Pasar Online';state.style.color=p.aktif?'#166534':'#b45309';
+    const stock=document.createElement('p');stock.className='small';stock.textContent=Number(p.stok)<=0?'Stok habis':Number(p.stok)<=5?'Stok menipis — pertimbangkan isi ulang':'Stok tersedia';stock.classList.toggle('ks-seller-stock-out',Number(p.stok)<=0);stock.classList.toggle('ks-seller-stock-low',Number(p.stok)>0&&Number(p.stok)<=5);
+    const actions=document.createElement('div');actions.className='ks-seller-product-actions';
+    const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Ubah harga/stok';edit.addEventListener('click',async()=>{
+     const price=prompt('Harga jual baru (rupiah):',String(p.harga));if(price===null)return;
+     const stockValue=prompt('Stok terbaru:',String(p.stok));if(stockValue===null)return;
+     const h=Number(price),q=Number(stockValue);if(!Number.isSafeInteger(h)||h<=0||!Number.isSafeInteger(q)||q<0){alert('Harga harus bilangan bulat lebih dari 0 dan stok bilangan bulat minimal 0.');return;}
+     edit.disabled=true;try{const {data,error}=await sb.from('produk').update({harga:h,stok:q}).eq('id',p.id).eq('owner_id',uid).select('id').maybeSingle();if(error)throw error;if(!data)throw new Error('Tidak ada perubahan. Periksa izin UPDATE/RLS pemilik produk.');alert('Harga dan stok berhasil diperbarui.');onlineProductCache=null;await muatSellerCenter();await muatPasarOnline(true);}catch(e){alert('Gagal memperbarui produk: '+String(e.message||e).slice(0,180));}finally{edit.disabled=false;}
+    });
+    const toggle=document.createElement('button');toggle.type='button';toggle.className=p.aktif?'danger':'primary';toggle.textContent=p.aktif?'Sembunyikan':'Tampilkan lagi';toggle.addEventListener('click',async()=>{
+     const next=!p.aktif;if(!confirm((next?'Tampilkan kembali':'Sembunyikan sementara')+' produk "'+p.nama_produk+'" di Pasar Online?'))return;
+     toggle.disabled=true;try{const {data,error}=await sb.from('produk').update({aktif:next}).eq('id',p.id).eq('owner_id',uid).select('id').maybeSingle();if(error)throw error;if(!data)throw new Error('Produk tidak berubah. Periksa izin UPDATE/RLS.');onlineProductCache=null;await muatSellerCenter();await muatPasarOnline(true);}catch(e){alert('Gagal mengubah status produk: '+String(e.message||e).slice(0,180));}finally{toggle.disabled=false;}
+    });
+    actions.append(edit,toggle);info.append(title,meta,state,stock,actions);card.append(img,info);host.appendChild(card);
+   });
+  }
+  if(status){status.className='status';status.textContent='Toko berhasil dimuat: '+rows.length+' produk. '+low.length+' produk stok menipis dan '+out.length+' produk stok habis. Ringkasan pesanan hanya menghitung pembayaran terverifikasi.';}
+ }catch(e){console.error('Dashboard penjual gagal dimuat:',e);if(status){status.className='status error';status.textContent='Dashboard penjual gagal dimuat: '+String(e.message||e).slice(0,220)+'. Pastikan akses SELECT/UPDATE sesuai kebijakan RLS Supabase.';}}
+ finally{if(button){button.disabled=false;button.textContent='↻ Perbarui';}}
+}
 
 async function muatProdukAsalPengiriman(){
  const box=$('produkAsalPengirimanPenjual');if(!box)return;box.replaceChildren();
