@@ -3490,7 +3490,6 @@ function setTransactionBusinessSetupMode(active,showSetup=true){
  if(setup&&active&&showSetup){setup.hidden=false;if(transaction&&guide)transaction.insertBefore(setup,guide);}
  if(guide)guide.hidden=!!active;
  if(shortcuts)shortcuts.hidden=!!active;
- if(chooser)chooser.hidden=true; // Pemilih laporan hanya dibuka melalui menu Laporan.
 }
 function financeToday(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function financeRoleLabel(role){return role==='owner'?'Owner':'Karyawan';}
