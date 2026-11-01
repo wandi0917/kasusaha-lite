@@ -3388,6 +3388,8 @@ async function muatSellerCenter(){
  finally{if(button){button.disabled=false;button.textContent='↻ Perbarui';}}
 }
 
+if(sb&&sb.auth&&typeof sb.auth.onAuthStateChange==='function'){sb.auth.onAuthStateChange((event,session)=>{if(session&&session.user)setTimeout(()=>muatSellerCenter(),0);});}
+
 async function muatProdukAsalPengiriman(){
  const box=$('produkAsalPengirimanPenjual');if(!box)return;box.replaceChildren();
  if(!sb){box.textContent='Koneksi Supabase tidak tersedia.';return;}
