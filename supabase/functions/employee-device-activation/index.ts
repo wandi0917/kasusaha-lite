@@ -263,13 +263,24 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "owner_list") {
-      const { data: members, error: membersError } = await admin.from("business_members")
+      const { data: rawMembers, error: membersError } = await admin.from("business_members")
         .select("user_id,role,active,joined_at").eq("business_id", businessId).eq("role", "employee")
         .order("joined_at", { ascending: false });
       if (membersError) {
         console.error("Owner member list:", membersError.message);
         return reply({ success: false, message: "Daftar karyawan belum dapat dimuat." }, 500);
       }
+      // Satu kode ID karyawan hanya boleh menampilkan akun utama yang tercatat pada employee_invite_codes.user_id.
+      // Sesi autentikasi lama tetap disimpan sebagai alias audit, tetapi tidak ditampilkan sebagai karyawan kedua.
+      const { data: historicalAliases, error: aliasError } = await admin.rpc("kasusaha_employee_history_aliases", {
+        p_business_id: businessId,
+      });
+      if (aliasError) {
+        console.error("Employee identity alias lookup:", aliasError.message);
+        return reply({ success: false, message: "Pemetaan identitas karyawan belum dapat diverifikasi." }, 500);
+      }
+      const historicalUserIds = new Set((historicalAliases || []).map((alias: { historical_user_id: string }) => alias.historical_user_id));
+      const members = (rawMembers || []).filter((member) => !historicalUserIds.has(member.user_id));
       const memberProfiles = await Promise.all((members || []).map(async (member) => {
         const { data: authData } = await admin.auth.admin.getUserById(member.user_id);
         const meta = authData?.user?.user_metadata || {};
