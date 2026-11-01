@@ -4180,18 +4180,22 @@ function renderFinanceReport(){
  }
  // Ringkasan arus kas dihitung dari seluruh transaksi usaha, bukan hanya filter tabel rincian.
  // Dengan demikian saldo awal/akhir tidak berubah ketika Owner memfilter kategori atau pencatat.
- const allPeriodRows=financeRows.filter(r=>r.transaction_date>=bounds.start&&r.transaction_date<=bounds.end);
- const openingRows=financeRows.filter(r=>r.transaction_date<bounds.start);
+ const visibleRows=isEmployee?financeRows.filter(r=>r.created_by===financeMemberUserId&&r.created_by_role==='employee'&&r.transaction_type==='income'):financeRows;
+ const allPeriodRows=visibleRows.filter(r=>r.transaction_date>=bounds.start&&r.transaction_date<=bounds.end);
+ const openingRows=isEmployee?[]:visibleRows.filter(r=>r.transaction_date<bounds.start);
  const sumType=(items,type)=>items.filter(r=>r.transaction_type===type).reduce((sum,r)=>sum+Number(r.amount||0),0);
- const openingBalance=sumType(openingRows,'income')-sumType(openingRows,'expense');
+ const openingBalance=isEmployee?0:sumType(openingRows,'income')-sumType(openingRows,'expense');
  const periodIncome=sumType(allPeriodRows,'income');
- const periodExpense=sumType(allPeriodRows,'expense');
+ const periodExpense=isEmployee?0:sumType(allPeriodRows,'expense');
  const netCash=periodIncome-periodExpense;
  const closingBalance=openingBalance+netCash;
  const summary=$('financeReportSummary');
  if(summary){
   summary.replaceChildren();
-  const cards=[
+  const cards=isEmployee?[
+   ['Pemasukan saya',format(periodIncome),'Pemasukan yang dicatat akun Anda pada periode'],
+   ['Jumlah transaksi saya',String(allPeriodRows.length),'Transaksi pemasukan akun Anda']
+  ]:[
    ['Saldo awal periode',format(openingBalance),'Saldo kumulatif sebelum tanggal mulai'],
    ['Total pemasukan',format(periodIncome),'Semua pemasukan usaha pada periode'],
    ['Total pengeluaran',format(periodExpense),'Semua pengeluaran usaha pada periode'],
@@ -4207,7 +4211,7 @@ function renderFinanceReport(){
    card.append(label,value,note);summary.appendChild(card);
   });
   const note=document.createElement('p');note.className='small finance-cashflow-note';
-  note.textContent='Ringkasan ini adalah arus kas berdasarkan transaksi yang sudah dicatat di KasUsaha Lite, bukan otomatis laba bersih akuntansi. Pastikan seluruh saldo awal, pemasukan, pengeluaran, pembelian, dan transaksi tunai/non-tunai sudah dicatat. Ringkasan mencakup seluruh akun usaha dan tidak mengikuti filter tabel rincian.';
+  note.textContent=isEmployee?'Ringkasan ini hanya menampilkan pemasukan dan jumlah transaksi yang dicatat oleh akun Karyawan Anda.':'Ringkasan ini adalah arus kas berdasarkan transaksi yang sudah dicatat di KasUsaha Lite, bukan otomatis laba bersih akuntansi. Pastikan seluruh saldo awal, pemasukan, pengeluaran, pembelian, dan transaksi tunai/non-tunai sudah dicatat. Ringkasan mencakup seluruh akun usaha dan tidak mengikuti filter tabel rincian.';
   summary.appendChild(note);
  }
  $('financeReportTitle').textContent=isEmployee?'Laporan Pemasukan Karyawan':'Laporan Keuangan Lengkap (Owner)';
