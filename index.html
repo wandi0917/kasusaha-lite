@@ -4027,19 +4027,32 @@ async function loadStoreProducts(){
   const {data,error}=await sb.from('store_products').select('id,business_id,product_code,product_name,price,stock_quantity,stock_unit,item_type,active,created_at,updated_at').eq('business_id',financeBusiness.id).order('product_code',{ascending:true});
   if(error)throw error;
   storeProductRows=data||[];
+  let costLookupWarning='';
   if(financeMemberRole==='owner'){
-    const {data:costRows,error:costError}=await sb.rpc('get_store_product_costs',{p_business_id:financeBusiness.id});
-    if(costError)throw costError;
-    const costMap=new Map((costRows||[]).map(x=>[String(x.product_id),Number(x.cost_price||0)]));
-    storeProductRows.forEach(p=>{p.cost_price=costMap.has(String(p.id))?costMap.get(String(p.id)):0;});
+    try{
+      const {data:costRows,error:costError}=await sb.rpc('get_store_product_costs',{p_business_id:financeBusiness.id});
+      if(costError)throw costError;
+      const costMap=new Map((costRows||[]).map(x=>[String(x.product_id),Number(x.cost_price||0)]));
+      storeProductRows.forEach(p=>{p.cost_price=costMap.has(String(p.id))?costMap.get(String(p.id)):0;});
+    }catch(costError){
+      // Kegagalan membaca harga modal tidak boleh mematikan katalog dan kasir.
+      storeProductRows.forEach(p=>{p.cost_price=0;});
+      costLookupWarning='Daftar barang berhasil dimuat, tetapi harga modal belum dapat dibaca: '+String(costError.message||costError).slice(0,140)+'. Laba kotor tidak ditampilkan sampai akses harga modal pulih.';
+      console.warn(costLookupWarning);
+    }
   }else{storeProductRows.forEach(p=>{p.cost_price=0;});}
-  const list=$('quickSaleProductOptions');if(list)list.replaceChildren(...storeProductRows.filter(p=>p.active&&p.item_type!=='ingredient').map(p=>{const o=document.createElement('option');o.value=p.product_code+' — '+p.product_name;o.label=formatStoreRupiah(p.price)+' | stok '+Number(p.stock_quantity||0)+' '+(p.stock_unit||'unit');return o;}));
+  const saleProducts=storeProductRows.filter(p=>p.active&&p.item_type!=='ingredient');
+  const list=$('quickSaleProductOptions');if(list)list.replaceChildren(...saleProducts.map(p=>{const o=document.createElement('option');o.value=p.product_code+' — '+p.product_name;o.label=formatStoreRupiah(p.price)+' | stok '+Number(p.stock_quantity||0)+' '+(p.stock_unit||'unit');return o;}));
+  const quickInfo=$('quickSaleProductInfo');
+  if(quickInfo&&!saleProducts.length)quickInfo.textContent='Belum ada produk jual aktif. Owner perlu menambahkan barang dengan jenis Produk Jual pada menu Barang & Stok.';
+  else if(quickInfo&&saleProducts.length)quickInfo.textContent=saleProducts.length+' produk jual aktif siap dipilih. Ketik kode atau nama barang untuk melihat harga dan stok.';
   const tbody=$('storeProductRows');
   if(tbody){tbody.replaceChildren();if(!storeProductRows.length){const tr=document.createElement('tr');tr.innerHTML='<td colspan="8">Belum ada barang. Owner perlu mengisi daftar barang dan harga terlebih dahulu.</td>';tbody.appendChild(tr);}else storeProductRows.forEach(p=>{const tr=document.createElement('tr');const baseVals=[p.product_code,p.product_name,p.item_type==='ingredient'?'Bahan baku':'Produk jual'];baseVals.forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});const costTd=document.createElement('td');if(financeMemberRole==='owner'){const costInput=document.createElement('input');costInput.type='number';costInput.min='0';costInput.step='1';costInput.inputMode='numeric';costInput.value=String(Number(p.cost_price||0));costInput.setAttribute('aria-label','Harga modal per satuan '+p.product_name);costInput.style.minWidth='125px';costInput.style.marginBottom='6px';const saveCost=document.createElement('button');saveCost.type='button';saveCost.className='secondary';saveCost.textContent='Simpan modal';saveCost.addEventListener('click',async()=>{const cost=Number(costInput.value);if(costInput.value.trim()===''||!Number.isSafeInteger(cost)||cost<0){alert('Isi harga modal dengan bilangan bulat nol atau lebih.');costInput.focus();return;}saveCost.disabled=true;try{const {error}=await sb.rpc('set_store_product_cost',{p_product_id:p.id,p_cost_price:cost});if(error)throw error;p.cost_price=cost;const cached=storeProductRows.find(x=>String(x.id)===String(p.id));if(cached)cached.cost_price=cost;setFinanceStatus('Harga modal '+p.product_name+' berhasil disimpan.');saveCost.textContent='Tersimpan';setTimeout(()=>{saveCost.textContent='Simpan modal';},1600);}catch(e){alert('Harga modal gagal disimpan: '+String(e.message||e).slice(0,160));}finally{saveCost.disabled=false;}});costTd.appendChild(costInput);costTd.appendChild(saveCost);}else costTd.textContent='—';tr.appendChild(costTd);[formatStoreRupiah(p.price),String(Number(p.stock_quantity||0))+' '+(p.stock_unit||'unit'),p.active?'Aktif':'Nonaktif'].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});const td=document.createElement('td');if(financeMemberRole==='owner'){const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Edit barang';edit.addEventListener('click',()=>editStoreProduct(p.id));td.appendChild(edit);if(p.active){const b=document.createElement('button');b.type='button';b.className='secondary';b.style.marginTop='6px';b.textContent='Nonaktifkan';b.addEventListener('click',()=>deactivateStoreProduct(p.id));td.appendChild(b);}}else td.textContent='—';tr.appendChild(td);tbody.appendChild(tr);});}
   const stockSelect=$('stockProductSelect');if(stockSelect){const previous=stockSelect.value;stockSelect.replaceChildren(new Option('Pilih barang...',''),...storeProductRows.filter(p=>p.active).map(p=>new Option(p.product_code+' — '+p.product_name+' (stok '+Number(p.stock_quantity||0)+' '+(p.stock_unit||'unit')+')',p.id)));if(storeProductRows.some(p=>p.id===previous&&p.active))stockSelect.value=previous;}
   const reportBody=$('stockReportRows');if(reportBody){reportBody.replaceChildren();const active=storeProductRows.filter(p=>p.active&&p.item_type==='ingredient');if(!active.length){const tr=document.createElement('tr');tr.innerHTML='<td colspan="7">Belum ada bahan baku aktif untuk ditampilkan. Barang yang dijual tidak dimasukkan ke laporan stok bahan baku.</td>';reportBody.appendChild(tr);}active.forEach(p=>{const qty=Number(p.stock_quantity||0),tr=document.createElement('tr'),status=qty<=0?'Habis':qty<=5?'Menipis':'Tersedia';[p.product_code,p.product_name,p.item_type==='ingredient'?'Bahan baku':'Produk jual',qty.toLocaleString('id-ID')+' '+(p.stock_unit||'unit'),formatStoreRupiah(p.price),formatStoreRupiah(qty*Number(p.price||0)),status].forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;if(i===6&&qty<=5)td.style.fontWeight='bold';tr.appendChild(td);});reportBody.appendChild(tr);});if($('stockReportKinds'))$('stockReportKinds').textContent=String(active.length);if($('stockReportUnits'))$('stockReportUnits').textContent=active.reduce((n,p)=>n+Number(p.stock_quantity||0),0).toLocaleString('id-ID');if($('stockReportLow'))$('stockReportLow').textContent=String(active.filter(p=>Number(p.stock_quantity||0)<=5).length);}
   if($('stockEntryCard'))$('stockEntryCard').hidden=financeMemberRole!=='owner';
   updateQuickSalePreview();
+  if(costLookupWarning)setFinanceStatus(costLookupWarning,true);
 }
 function attendanceToday(){
  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
