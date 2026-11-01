@@ -3680,11 +3680,13 @@ function quickSaleLineData(row,useCatalogPrice=false){
  if(p){const changedProduct=String(input.dataset.productId||'')!==String(p.id);input.dataset.productId=p.id;if(useCatalogPrice||priceInput.value==='')priceInput.value=String(Number(p.price)||'');if(costInput&&(changedProduct||costInput.value===''))costInput.value=String(Number(p.cost_price)||'');}
  else{input.dataset.productId='';if(costInput)costInput.value='';if(useCatalogPrice||!String(input.value||'').trim())priceInput.value='';}
  const qty=Number(qtyInput?.value||0),price=Number(priceInput?.value||0),costPrice=financeMemberRole==='owner'?Number(costInput?.value||0):0;
+ const stockAvailable=p&&Number.isFinite(Number(p.stock_quantity))?Number(p.stock_quantity):0;
  const validQty=Number.isSafeInteger(qty)&&qty>0,validPrice=Number.isSafeInteger(price)&&price>0;
+ const stockOk=!!p&&Number.isFinite(stockAvailable)&&qty<=stockAvailable;
  const subtotal=validQty&&validPrice?qty*price:0;
  const costEl=row.querySelector('.quick-sale-cost');if(costEl)costEl.value=String(Number.isFinite(costPrice)?costPrice:0);const subEl=row.querySelector('.quick-sale-subtotal');if(subEl)subEl.textContent=formatStoreRupiah(Number.isSafeInteger(subtotal)?subtotal:0);const profitEl=row.querySelector('.quick-sale-profit');if(profitEl){const profit=validQty?qty*(price-costPrice):0;profitEl.textContent=costPrice>0?formatStoreRupiah(Number.isSafeInteger(profit)?profit:0):'Isi harga modal dahulu';profitEl.style.color=costPrice>0?(profit<0?'#b91c1c':'#047857'):'#92400e';}
- const info=row.querySelector('.quick-sale-line-info');if(info)info.textContent=p?p.product_code+' — '+p.product_name+' | Harga katalog '+formatStoreRupiah(p.price):'Pilih barang aktif dari saran daftar barang.';
- return {p,qty,price,costPrice,subtotal,profitTotal:qty*(price-costPrice),valid:!!p&&validQty&&validPrice&&Number.isSafeInteger(subtotal)&&subtotal>0&&Number.isSafeInteger(qty*(price-costPrice))};
+ const info=row.querySelector('.quick-sale-line-info');if(info){if(!p)info.textContent='Pilih barang aktif dari saran daftar barang.';else if(stockAvailable<1)info.textContent=p.product_code+' — '+p.product_name+' | STOK HABIS (0 '+(p.stock_unit||'unit')+'). Tambah stok di menu Barang & Stok sebelum menjual.';else if(!stockOk)info.textContent=p.product_code+' — '+p.product_name+' | Stok tersedia '+stockAvailable+' '+(p.stock_unit||'unit')+'. Jumlah yang diminta '+qty+' melebihi stok.';else info.textContent=p.product_code+' — '+p.product_name+' | Harga '+formatStoreRupiah(p.price)+' | Stok tersedia '+stockAvailable+' '+(p.stock_unit||'unit')+'.';}
+ return {p,qty,price,costPrice,stockAvailable,stockOk,subtotal,profitTotal:qty*(price-costPrice),valid:!!p&&validQty&&validPrice&&stockOk&&Number.isSafeInteger(subtotal)&&subtotal>0&&Number.isSafeInteger(qty*(price-costPrice))};
 }
 function addQuickSaleLine(){
  const host=$('quickSaleItems');if(!host)return;
@@ -4399,6 +4401,8 @@ if($('quickSaleItems')&&!$('quickSaleItems').children.length)addQuickSaleLine();
 $('quickSaleForm')?.addEventListener('submit',async function(e){
  e.preventDefault();if(!sb||!financeBusiness||!financeMemberRole||!financeMemberUserId){setFinanceStatus('Login dan hubungkan akun ke usaha terlebih dahulu.',true);return;}
  const lines=quickSaleItemRows().map(row=>quickSaleLineData(row,false));
+ const stockIssues=lines.filter(d=>d.p&&(!d.stockOk||!Number.isSafeInteger(d.qty)||d.qty<1));
+ if(stockIssues.length){const detail=stockIssues.map(d=>d.p.product_name+': stok tersedia '+d.stockAvailable+' '+(d.p.stock_unit||'unit')+', diminta '+d.qty+'.').join(' ');setFinanceStatus('PENJUALAN BELUM DIKIRIM: stok tidak mencukupi. '+detail+' Tambahkan/koreksi stok melalui Barang & Stok, lalu coba kembali.',true);updateQuickSalePreview(false);return;}
  if(!lines.length||lines.some(d=>!d.valid)){setFinanceStatus('Lengkapi barang, jumlah, dan harga satuan pada setiap baris. Pastikan setiap barang dipilih dari saran daftar aktif.',true);updateQuickSalePreview(false);return;}
  const amount=lines.reduce((sum,d)=>sum+d.subtotal,0);if(!Number.isSafeInteger(amount)||amount<=0){setFinanceStatus('Total penjualan tidak valid.',true);return;}
  const tableNumber=String($('quickSaleTableNumber')?.value||'').trim().replace(/[<>]/g,'').slice(0,20),locationLabel=tableNumber?'Meja '+tableNumber:'Kasir';
