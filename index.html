@@ -1711,7 +1711,7 @@ async function bagikanKasUsahaLite(){
 <button id="shortcutEmployeeSettings" class="transaction-menu transaction-menu-button" type="button" onclick="const info=document.getElementById('financeWorkspaceInfo');const p=document.getElementById('ownerEmployeeActivationPanel');if(info&&p){info.hidden=false;p.open=true;info.scrollIntoView({behavior:'smooth',block:'start'});p.querySelector('summary')?.focus({preventScroll:true});}else{setFinanceStatus('Pengaturan Akun Karyawan hanya tersedia setelah Owner login dan usaha berhasil dimuat.',true);}" aria-label="Buka Pengaturan Akun Karyawan"><span class="shortcut-icon">⚙️</span><span><strong>Pengaturan Akun Karyawan</strong><small>Kelola ID dan aktivasi karyawan</small></span><span class="menu-button-arrow">›</span></button>
 <details class="transaction-menu"><summary><span class="shortcut-icon">✍️</span><span><strong>Catat Transaksi</strong><small>Pemasukan dan pengeluaran</small></span></summary><div class="transaction-submenu"><button type="button" onclick="bukaPanelTransaksi('catat').then(()=>{const e=document.getElementById('financeType');if(e)e.value='income';document.getElementById('financeDescription')?.focus({preventScroll:true})})">＋ Catat pemasukan</button><button type="button" onclick="bukaPanelTransaksi('catat').then(()=>{const e=document.getElementById('financeType');if(e)e.value='expense';document.getElementById('financeDescription')?.focus({preventScroll:true})})">－ Catat pengeluaran</button></div></details>
 <details class="transaction-menu"><summary><span class="shortcut-icon">📦</span><span><strong>Barang &amp; Stok</strong><small>Produk, bahan baku, dan persediaan</small></span></summary><div class="transaction-submenu"><button type="button" onclick="bukaPanelTransaksi('stok').then(()=>document.getElementById('storeProductForm')?.scrollIntoView({behavior:'smooth',block:'start'}))">＋ Tambah atau edit barang</button><button type="button" onclick="bukaPanelTransaksi('stok').then(()=>document.getElementById('stockEntryCard')?.scrollIntoView({behavior:'smooth',block:'start'}))">↕ Catat stok masuk / keluar</button><button type="button" onclick="bukaPanelTransaksi('stok').then(()=>document.getElementById('storeProductRows')?.scrollIntoView({behavior:'smooth',block:'center'}))">▤ Lihat daftar barang</button></div></details>
-<details class="transaction-menu"><summary><span class="shortcut-icon">📊</span><span><strong>Laporan</strong><small>Pilih laporan sesuai kebutuhan</small></span></summary><div class="transaction-submenu"><button type="button" onclick="bukaPanelTransaksi('laporan').then(()=>{const s=document.getElementById('reportCategorySelect');if(s){s.value='sales';applyReportCategory('sales');document.getElementById('financeTableSalesSummary')?.scrollIntoView({behavior:'smooth',block:'start'})}})">Laporan penjualan</button><button type="button" onclick="bukaPanelTransaksi('laporan').then(()=>{const s=document.getElementById('reportCategorySelect');if(s){s.value='stock';applyReportCategory('stock');document.getElementById('stockReportTableCard')?.scrollIntoView({behavior:'smooth',block:'start'})}})">Laporan stok barang</button><button type="button" onclick="bukaPanelTransaksi('laporan').then(()=>{const s=document.getElementById('reportCategorySelect');if(s){s.value='finance';applyReportCategory('finance');document.getElementById('financeReportCard')?.scrollIntoView({behavior:'smooth',block:'start'})}})">Laporan keuangan lengkap (Owner)</button><button type="button" onclick="bukaPanelTransaksi('laporan').then(()=>{const s=document.getElementById('reportCategorySelect');if(s){s.value='accounting';applyReportCategory('accounting');document.getElementById('financeAccountingCard')?.scrollIntoView({behavior:'smooth',block:'start'})}})">📚 Akuntansi lengkap &amp; laporan</button><button type="button" onclick="bukaPanelTransaksi('laporan').then(()=>{const s=document.getElementById('reportCategorySelect');if(s){s.value='income';applyReportCategory('income');document.getElementById('financeReportCard')?.scrollIntoView({behavior:'smooth',block:'start'})}})">Laporan pemasukan (Karyawan)</button><button type="button" onclick="bukaPanelTransaksi('laporan').then(()=>{const s=document.getElementById('reportCategorySelect');if(s){s.value='daily';applyReportCategory('daily');document.getElementById('localDailyReportCard')?.scrollIntoView({behavior:'smooth',block:'start'})}})">Laporan keuangan harian (lokal)</button><button type="button" onclick="bukaPanelTransaksi('laporan').then(()=>{const s=document.getElementById('reportCategorySelect');if(s){s.value='history';applyReportCategory('history');document.getElementById('localTransactionHistoryCard')?.scrollIntoView({behavior:'smooth',block:'start'})}})">Riwayat transaksi (lokal)</button></div></details>
+<details class="transaction-menu"><summary><span class="shortcut-icon">📊</span><span><strong>Laporan</strong><small>Pilih laporan sesuai kebutuhan</small></span></summary><div class="transaction-submenu"><button type="button" onclick="pilihLaporanTransaksi('sales')">Laporan penjualan</button><button type="button" onclick="pilihLaporanTransaksi('stock')">Laporan stok barang</button><button type="button" onclick="pilihLaporanTransaksi('finance')">Laporan keuangan lengkap (Owner)</button><button type="button" onclick="pilihLaporanTransaksi('accounting')">📚 Akuntansi lengkap &amp; laporan</button><button type="button" onclick="pilihLaporanTransaksi('income')">Laporan pemasukan (Karyawan)</button><button type="button" onclick="pilihLaporanTransaksi('daily')">Laporan keuangan harian (lokal)</button><button type="button" onclick="pilihLaporanTransaksi('history')">Riwayat transaksi (lokal)</button></div></details>
 </div>
 
 <div class="card" id="financeEntryCard" hidden>
@@ -3685,11 +3685,11 @@ async function bukaPanelTransaksi(tujuan){
   }
   if(tujuan==='kasir'&&offlineTransactionMode){const localForm=$('formKas'),details=localForm?.closest('details');if(details){details.hidden=false;details.open=true;}localForm?.scrollIntoView({behavior:'smooth',block:'center'});setFinanceStatus('Kasir dengan daftar barang dan pembaruan stok memerlukan koneksi. Untuk mencatat total penjualan saat offline, gunakan Catat Transaksi Lokal; stok tidak akan berkurang otomatis.',true);return;}
   if(tujuan==='absensi'&&offlineTransactionMode){setFinanceStatus('Absensi online memerlukan koneksi internet. Jangan anggap absen tersimpan saat perangkat offline.',true);return;}
-  const targets={kasir:'financeEntryCard',absensi:'attendanceCard',stok:'ownerStoreCatalog'};
+  const targets={kasir:'financeEntryCard',absensi:'attendanceCard',stok:'financeEntryCard'};
   const el=$(targets[tujuan]);
   if(el){el.hidden=false;el.removeAttribute('hidden');el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'start'});el.setAttribute('tabindex','-1');el.focus({preventScroll:true});
     if(tujuan==='absensi')await loadAttendance();
-    if(tujuan==='kasir'){try{await loadStoreProducts();if(!quickSaleItemRows().length)addQuickSaleLine();updateQuickSalePreview();}catch(e){setFinanceStatus('Kasir belum dapat memuat daftar barang: '+String(e.message||e).slice(0,180),true);}}
+    if(tujuan==='kasir'||tujuan==='stok'){try{await loadStoreProducts();if(tujuan==='kasir'){const catalog=$('ownerStoreCatalog');if(catalog){catalog.hidden=false;catalog.removeAttribute('hidden');catalog.style.display='block';}if(!quickSaleItemRows().length)addQuickSaleLine();updateQuickSalePreview();}else{const catalog=$('ownerStoreCatalog');if(catalog){catalog.hidden=false;catalog.removeAttribute('hidden');catalog.style.display='block';catalog.scrollIntoView({behavior:'smooth',block:'start'});}}}catch(e){setFinanceStatus((tujuan==='kasir'?'Kasir':'Menu barang dan stok')+' belum dapat memuat daftar barang: '+String(e.message||e).slice(0,180),true);}}
   }
   else if(tujuan==='stok'){const sel=$('reportCategorySelect');if(sel&&isOwner){sel.value='stock';applyReportCategory('stock');$('stockReportTableCard')?.scrollIntoView({behavior:'smooth',block:'start'});}}
 }
@@ -3906,6 +3906,62 @@ function applyReportCategory(category){
    category==='daily'?'localDailyReportCard':category==='history'?'localTransactionHistoryCard':'';
  if(reportPanel){const panel=$(reportPanel);if(panel){let printBtn=panel.querySelector(':scope > .report-print-action');if(!printBtn){printBtn=document.createElement('button');printBtn.type='button';printBtn.className='secondary wide report-print-action';printBtn.textContent='Cetak laporan / Simpan PDF';printBtn.addEventListener('click',printSelectedReport);panel.appendChild(printBtn);}let guide=panel.querySelector(':scope > .print-device-guide');if(!guide){guide=document.createElement('details');guide.className='print-device-guide';guide.innerHTML='<summary><strong>🖨️ Bantuan printer dan Simpan PDF</strong></summary><p>Gunakan dialog cetak bawaan browser. Printer yang tersedia ditentukan perangkat dan sistem operasi; situs tidak dapat menjamin deteksi otomatis semua printer.</p><ul><li><strong>Windows:</strong> sambungkan printer dan pasang driver terlebih dahulu, lalu pilih printer di dialog cetak.</li><li><strong>Android:</strong> aktifkan layanan cetak atau aplikasi resmi printer di Pengaturan. Beberapa printer Bluetooth struk memerlukan aplikasi pendamping.</li><li><strong>PDF:</strong> pilih “Simpan sebagai PDF” jika opsi tersedia.</li></ul><p class="small">Browser biasa tidak selalu dapat memindai printer USB/Bluetooth/Wi-Fi secara langsung. Pastikan koneksi dengan mencetak halaman uji.</p>';panel.appendChild(guide);}}}
 }
+
+async function pilihLaporanTransaksi(category){
+ const selector=$('reportCategorySelect');
+ if(!selector){setFinanceStatus('Pemilih laporan tidak ditemukan. Muat ulang halaman.',true);return;}
+ try{
+  // Pastikan panel Transaksi dan data keanggotaan siap sebelum laporan dipilih.
+  if(!$('transaksi')?.classList.contains('active'))await buka('transaksi',document.querySelector('nav button[onclick*="transaksi"]'));
+  await bukaPanelTransaksi('laporan');
+  if(!financeMemberRole||!financeBusiness)await loadFinanceWorkspace();
+  const isOwner=financeMemberRole==='owner',isEmployee=financeMemberRole==='employee';
+  const ownerOnly=['sales','stock','finance','accounting','daily','history'];
+  if(!isOwner&&!isEmployee){selector.value='';applyReportCategory('');setFinanceStatus('Login dengan akun Owner atau Karyawan yang sudah terhubung ke usaha untuk membuka laporan.',true);return;}
+  if(ownerOnly.includes(category)&&!isOwner){selector.value='income';applyReportCategory('income');setFinanceStatus('Laporan ini hanya tersedia untuk Owner. Karyawan hanya dapat melihat laporan pemasukan miliknya.',true);await muatDanTampilkanLaporan();return;}
+  if(category==='income'&&!isEmployee){selector.value='';applyReportCategory('');setFinanceStatus('Laporan pemasukan pribadi hanya tersedia pada akun Karyawan. Owner dapat melihat seluruh pemasukan melalui Laporan Keuangan Lengkap.',true);return;}
+  selector.value=category;
+  applyReportCategory(category);
+  switch(category){
+   case 'sales':
+   case 'finance':
+   case 'income':
+    await muatDanTampilkanLaporan();
+    break;
+   case 'stock':
+    await loadStoreProducts();
+    break;
+   case 'accounting':
+    await loadFinanceAccounting();
+    break;
+   case 'daily':
+    tampilLaporanHarian();
+    break;
+   case 'history':{
+    const localDetails=document.querySelector('#transaksi details.local-transaction-card');
+    if(localDetails)localDetails.open=true;
+    tampilTransaksi();
+    break;
+   }
+   default:
+    throw new Error('Kategori laporan tidak dikenal.');
+  }
+  const targetId=category==='sales'?'financeTableSalesSummary':
+   category==='stock'?'stockReportTableCard':
+   (category==='finance'||category==='income')?'financeReportCard':
+   category==='accounting'?'financeAccountingCard':
+   category==='daily'?'localDailyReportCard':'localTransactionHistoryCard';
+  $(targetId)?.scrollIntoView({behavior:'smooth',block:'start'});
+ }catch(e){
+  const message='Laporan gagal dimuat: '+String(e.message||e).slice(0,180);
+  setFinanceStatus(message,true);
+  if(category==='stock'&&$('stockReportRows'))$('stockReportRows').innerHTML='<tr><td colspan="7">'+aman(message)+'</td></tr>';
+  if(['sales','finance','income'].includes(category)&&$('financeReportRows'))$('financeReportRows').innerHTML='<tr><td colspan="7">'+aman(message)+'</td></tr>';
+  if(category==='accounting'&&$('financeAccountingReport'))$('financeAccountingReport').textContent=message;
+  console.error(message,e);
+ }
+}
+
 async function printSelectedReport(){
  const category=$('reportCategorySelect')?.value||'';
  const panelId=category==='stock'?'stockReportTableCard':
