@@ -4471,7 +4471,7 @@ $('stockEntryForm')?.addEventListener('submit',async function(e){
   const {data:updated,error}=await sb.from('store_products').update({stock_quantity:next,updated_at:updateStamp}).eq('id',p.id).eq('business_id',financeBusiness.id).eq('stock_quantity',current).select('id,stock_quantity,updated_at').maybeSingle();
   if(error){
    const {data:latest,error:verifyError}=await sb.from('store_products').select('stock_quantity,updated_at').eq('id',p.id).eq('business_id',financeBusiness.id).maybeSingle();
-   if(verifyError||!latest||latest.updated_at!==updateStamp||Number(latest.stock_quantity)!==next)throw new Error('Perubahan stok belum dapat dipastikan. Stok mungkin berubah karena transaksi lain. Muat ulang daftar stok dan periksa sebelum mencoba lagi. '+String(error.message||error).slice(0,120));
+   if(verifyError||!latest||new Date(latest.updated_at).getTime()!==new Date(updateStamp).getTime()||Number(latest.stock_quantity)!==next)throw new Error('Perubahan stok belum dapat dipastikan. Stok mungkin berubah karena transaksi lain. Muat ulang daftar stok dan periksa sebelum mencoba lagi. '+String(error.message||error).slice(0,120));
   }else if(!updated){
    const {data:latest,error:latestError}=await sb.from('store_products').select('stock_quantity').eq('id',p.id).eq('business_id',financeBusiness.id).maybeSingle();
    if(latestError)throw latestError;
