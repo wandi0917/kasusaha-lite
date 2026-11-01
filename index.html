@@ -3547,18 +3547,20 @@ async function loadFinanceWorkspace(){
   if(me)throw me;
   let memberList=memberRows||[];
   if(financeSelectedBusinessId){memberList=memberList.filter(m=>m.business_id===financeSelectedBusinessId);}
-  // Pemulihan aman: jika akun adalah owner_id usaha yang sudah ada tetapi baris keanggotaannya hilang,
-  // gunakan RPC resmi yang memulihkan keanggotaan Owner hanya untuk usaha milik akun login ini.
+  // Pemulihan Owner dilakukan melalui RPC server-side karena RLS business_workspaces
+  // hanya mengizinkan anggota aktif membaca workspace. RPC hanya memulihkan workspace
+  // dengan owner_id = auth.uid(); browser tidak dapat mengirim user_id target.
   if(memberList.length===0){
-   const {data:ownedBusiness,error:ownedError}=await sb.from('business_workspaces').select('id,invite_code').eq('owner_id',financeMemberUserId).maybeSingle();
-   if(ownedError)throw ownedError;
-   if(ownedBusiness&&(!financeSelectedBusinessId||financeSelectedBusinessId===ownedBusiness.id)){
-    const {error:restoreError}=await sb.rpc('join_business_workspace',{p_invite_code:ownedBusiness.invite_code});
-    if(restoreError)throw restoreError;
+   const {data:restoreResult,error:restoreError}=await sb.rpc('restore_owner_business_membership');
+   if(restoreError)throw restoreError;
+   if(restoreResult&&restoreResult.restored===true){
     const {data:restoredRows,error:restoredError}=await sb.from('business_members').select('business_id,user_id,role,active').eq('user_id',financeMemberUserId).eq('active',true);
     if(restoredError)throw restoredError;
     memberList=restoredRows||[];
     if(financeSelectedBusinessId){memberList=memberList.filter(m=>m.business_id===financeSelectedBusinessId);}
+    if(memberList.length===0)throw new Error('Server memulihkan keanggotaan Owner, tetapi data keanggotaan belum terbaca. Muat ulang sekali lagi.');
+   }else if(restoreResult&&restoreResult.reason==='active_membership_other_business'){
+    throw new Error('Akun ini sudah aktif pada usaha lain. Pilih usaha yang sudah terhubung atau minta pemeriksaan Owner.');
    }
   }
   if(memberList.length>1){
