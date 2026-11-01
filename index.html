@@ -4223,8 +4223,9 @@ async function absenPulang(){
  if(!sb||!financeBusiness||!financeMemberUserId||!financeMemberRole)return;
  const btn=$('attendanceCheckOut');if(!btn)return;btn.disabled=true;
  try{
+  if(offlineTransactionMode)throw new Error('Absensi online memerlukan koneksi internet.');
   if(document.body.classList.contains('employee-device-pending'))throw new Error('Akun Karyawan belum diaktifkan oleh Owner.');
-  if(!offlineTransactionMode&&!await periksaLisensiWorkspace(financeBusiness.id))throw new Error('Lisensi usaha belum terverifikasi. Minta Owner utama memeriksa aktivasi lisensi.');
+  if(!await periksaLisensiWorkspace(financeBusiness.id))throw new Error('Lisensi usaha belum terverifikasi. Minta Owner utama memeriksa aktivasi lisensi.');
   const {data,error}=await sb.from('business_attendance').update({check_out_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('business_id',financeBusiness.id).eq('user_id',financeMemberUserId).eq('work_date',attendanceToday()).is('check_out_at',null).select('id').maybeSingle();
   if(error)throw error;if(!data)throw new Error('Absen masuk belum dilakukan atau absen pulang sudah tercatat.');
   await loadAttendance();setFinanceStatus('Absen pulang berhasil dicatat.');
