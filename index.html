@@ -3490,7 +3490,7 @@ function setTransactionBusinessSetupMode(active,showSetup=true){
  if(setup&&active&&showSetup){setup.hidden=false;if(transaction&&guide)transaction.insertBefore(setup,guide);}
  if(guide)guide.hidden=!!active;
  if(shortcuts)shortcuts.hidden=!!active;
- if(chooser)chooser.hidden=!!active;
+ if(chooser)chooser.hidden=true; // Pemilih laporan hanya dibuka melalui menu Laporan.
 }
 function financeToday(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function financeRoleLabel(role){return role==='owner'?'Owner':'Karyawan';}
@@ -3513,7 +3513,7 @@ async function financeCreateBusiness(){
    const catalog=$('ownerStoreCatalog');
    const heading=catalog?.querySelector('h3');
    if(heading)heading.textContent='Langkah berikutnya: isikan barang di toko Anda';
-   if(catalog){catalog.hidden=false;catalog.scrollIntoView({behavior:'smooth',block:'start'});}
+   if(catalog){const entry=$('financeEntryCard'),sale=$('quickSaleForm');if(entry)entry.hidden=false;if(sale)sale.hidden=true;if($('financeEntryTitle'))$('financeEntryTitle').textContent='Barang & Stok — Kelola Persediaan';catalog.hidden=false;catalog.scrollIntoView({behavior:'smooth',block:'start'});}
    const codeField=$('storeProductCode');if(codeField){setTimeout(()=>codeField.focus({preventScroll:true}),350);}
    setFinanceStatus((data.business_name||name)+' berhasil disimpan. Berikutnya, isikan barang di toko Anda: kode, nama, harga modal, harga jual, stok awal, dan satuan. Setelah barang disimpan, Anda bisa mulai memakai Kasir Cepat.');
   }else{
