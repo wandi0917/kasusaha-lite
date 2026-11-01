@@ -4539,6 +4539,10 @@ function renderFinanceReport(){
  const openingBalance=isEmployee?0:sumType(openingRows,'income')-sumType(openingRows,'expense');
  const periodIncome=sumType(allPeriodRows,'income');
  const periodExpense=isEmployee?0:sumType(allPeriodRows,'expense');
+ // Values used by the report footer and running-balance detail rows.
+ const income=periodIncome;
+ const expense=periodExpense;
+ let running=openingBalance;
  const netCash=periodIncome-periodExpense;
  const closingBalance=openingBalance+netCash;
  const summary=$('financeReportSummary');
