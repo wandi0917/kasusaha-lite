@@ -3577,6 +3577,13 @@ async function loadFinanceWorkspace(){
    const deviceActive=await ensureEmployeeDeviceActivation();
    if(!deviceActive){financeBusiness=business;financeRows=[];setup.hidden=true;info.hidden=true;entry.hidden=true;report.hidden=true;setTransactionBusinessSetupMode(true,false);if($('attendanceCard'))$('attendanceCard').hidden=true;if($('attendancePayrollCard'))$('attendancePayrollCard').hidden=true;const loginButton=document.querySelector('nav button[onclick*="loginKaryawan"]');await buka('loginKaryawan',loginButton);return;}
   }else{document.body.classList.remove('employee-device-pending');const devicePanel=$('employeeDevicePaywall');if(devicePanel)devicePanel.hidden=true;}
+  financeEmployeeIdentityUserIds=[financeMemberUserId];
+  if(member.role==='employee'){
+   const {data:identityIds,error:identityError}=await sb.rpc('kasusaha_employee_identity_user_ids',{p_business_id:business.id});
+   if(identityError)throw identityError;
+   financeEmployeeIdentityUserIds=Array.isArray(identityIds)?identityIds.filter(id=>typeof id==='string'):[];
+   if(!financeEmployeeIdentityUserIds.includes(financeMemberUserId))throw new Error('Identitas riwayat karyawan belum dapat diverifikasi. Hubungi Owner.');
+  }
   financeBusiness=business;financeMemberRole=member.role;saveOfflineWorkspace(business,member,sd.session.user);offlineTransactionMode=false;updateFinanceActivePerson();document.body.classList.toggle('employee-verified',member.role==='employee');document.body.classList.toggle('owner-verified',member.role==='owner');if($('attendanceCard'))$('attendanceCard').hidden=true;if($('attendancePayrollCard'))$('attendancePayrollCard').hidden=false;if($('attendanceHourlyWage'))$('attendanceHourlyWage').disabled=false;if($('attendanceSaveWage'))$('attendanceSaveWage').disabled=false;$('ownerStoreCatalog').hidden=true;$('financeForm').hidden=false;setup.hidden=true;info.hidden=false;entry.hidden=true;report.hidden=true;setTransactionBusinessSetupMode(false);
   info.innerHTML='<div class="workspace-info-card"><p><strong>Usaha:</strong> '+aman(business.business_name)+'<br><strong>Peran akun:</strong> '+financeRoleLabel(member.role)+(member.role==='owner'?'<br><strong>Akses karyawan:</strong> buat ID unik untuk setiap karyawan melalui Pengaturan Akun Karyawan. Kode undangan bersama lama tidak digunakan untuk aktivasi ID baru.':'')+'</p><p class="small workspace-cross-device"><strong>Akses lintas perangkat</strong><br>Buka situs KasUsaha Lite dari HP, komputer, atau tablet lain lalu login dengan akun yang sama dan pilih usaha ini. Laporan bersama dimuat dari server. Catatan lama yang hanya tersimpan di perangkat perlu diimpor satu kali oleh Owner; jangan hapus data lokal sebelum memeriksa hasilnya.</p></div>';
   if(member.role==='owner'){
@@ -3592,13 +3599,6 @@ async function loadFinanceWorkspace(){
   if(member.role==='employee'){roleFilter.innerHTML='<option value="mine">Pemasukan saya</option>';roleFilter.value='mine';$('financeType').value='income';$('financeType').disabled=true;$('financeTypeWrap').hidden=true;$('financeReportTitle').textContent='Laporan Pemasukan Karyawan';$('financeRoleFilterWrap').hidden=true;}else{roleFilter.innerHTML='<option value="all">Semua transaksi</option><option value="owner">Transaksi Owner</option><option value="employee">Transaksi Karyawan</option><option value="mine">Transaksi saya</option>';$('financeType').disabled=false;$('financeTypeWrap').hidden=false;$('financeReportTitle').textContent='Laporan Keuangan Lengkap (Owner)';$('financeRoleFilterWrap').hidden=false;}
   // Pertahankan kategori laporan aktif saat workspace dimuat ulang; sebelumnya panel laporan langsung disembunyikan kembali.
   applyReportCategory($('reportCategorySelect')?.value||'');if(!$('financeDate').value)$('financeDate').value=financeToday();if(!$('financeReportStart').value)$('financeReportStart').value=financeToday().slice(0,8)+'01';if(!$('financeReportEnd').value)$('financeReportEnd').value=financeToday();if(!$('tanggalMulaiLaporan').value)$('tanggalMulaiLaporan').value=financeToday().slice(0,8)+'01';if(!$('tanggalSampaiLaporan').value)$('tanggalSampaiLaporan').value=financeToday();
-  financeEmployeeIdentityUserIds=[financeMemberUserId];
-  if(member.role==='employee'){
-   const {data:identityIds,error:identityError}=await sb.rpc('kasusaha_employee_identity_user_ids',{p_business_id:business.id});
-   if(identityError)throw identityError;
-   financeEmployeeIdentityUserIds=Array.isArray(identityIds)?identityIds.filter(id=>typeof id==='string'):[];
-   if(!financeEmployeeIdentityUserIds.includes(financeMemberUserId))throw new Error('Identitas riwayat karyawan belum dapat diverifikasi. Hubungi Owner.');
-  }
   let financeTransactionsQuery=sb.from('financial_transactions').select('id,business_id,created_by,created_by_role,transaction_date,transaction_type,amount,description,category,created_at').eq('business_id',business.id).order('transaction_date',{ascending:true}).order('created_at',{ascending:true});
   if(member.role==='employee')financeTransactionsQuery=financeTransactionsQuery.in('created_by',financeEmployeeIdentityUserIds);
   const {data:rows,error:re}=await financeTransactionsQuery;
