@@ -3657,11 +3657,17 @@ function updateQuickSalePreview(useCatalogPrice=false){
 }
 async function bukaPanelTransaksi(tujuan){
   if(!$('transaksi')?.classList.contains('active'))await buka('transaksi',document.querySelector('nav button[onclick*="transaksi"]'));
+  if(!$('transaksi')?.classList.contains('active'))return;
+  if(document.body.classList.contains('employee-device-pending')){setFinanceStatus('Akun Karyawan ini belum diaktifkan oleh Owner. Kasir, absensi, dan laporan bersama tetap terkunci sampai aktivasi dikonfirmasi server.',true);return;}
   // Pastikan peran dan usaha sudah termuat sebelum tombol modul menjalankan aksi.
   if(!offlineTransactionMode&&(!financeBusiness||!financeMemberRole||!financeMemberUserId)){
     try{await loadFinanceWorkspace();}catch(e){setFinanceStatus('Gagal memuat akses usaha: '+String(e.message||e).slice(0,180),true);return;}
   }
   const isOwner=financeMemberRole==='owner',isEmployee=financeMemberRole==='employee';
+  if(!offlineTransactionMode&&financeBusiness&&financeMemberRole){
+    try{const licenseOk=await periksaLisensiWorkspace(financeBusiness.id);if(!licenseOk){setFinanceStatus('Lisensi usaha belum terverifikasi. Minta Owner utama menyelesaikan pemeriksaan lisensi sebelum memakai Kasir, Absensi, atau laporan bersama.',true);return;}}
+    catch(licenseError){setFinanceStatus('Status lisensi usaha belum dapat diperiksa: '+String(licenseError.message||licenseError).slice(0,160)+'. Fitur tetap dikunci sampai verifikasi berhasil.',true);return;}
+  }
   if(['kasir','absensi','catat','laporan'].includes(tujuan)&&(!financeBusiness||!financeMemberRole||!financeMemberUserId)){
     const picker=$('financeSavedBusinesses'),setup=$('financeSetupForms');
     if(picker&&!picker.hidden){setFinanceStatus('Akun terhubung ke beberapa usaha. Pilih nama usaha pada daftar di atas agar Kasir, Absensi, dan laporan dibuka dengan data yang benar.',true);picker.scrollIntoView({behavior:'smooth',block:'center'});return;}
@@ -3930,6 +3936,7 @@ function applyReportCategory(category){
 
 async function pilihJenisCatatTransaksi(type){
  await bukaPanelTransaksi('catat');
+ if(!$('transaksi')?.classList.contains('active'))return;
  const field=$('financeType');
  if(!field)return;
  if(financeMemberRole==='employee'&&type==='expense'){
@@ -3947,7 +3954,9 @@ async function pilihLaporanTransaksi(category){
  try{
   // Pastikan panel Transaksi dan data keanggotaan siap sebelum laporan dipilih.
   if(!$('transaksi')?.classList.contains('active'))await buka('transaksi',document.querySelector('nav button[onclick*="transaksi"]'));
+  if(!$('transaksi')?.classList.contains('active'))return;
   await bukaPanelTransaksi('laporan');
+  if(!$('transaksi')?.classList.contains('active'))return;
   if(!financeMemberRole||!financeBusiness)await loadFinanceWorkspace();
   const isOwner=financeMemberRole==='owner',isEmployee=financeMemberRole==='employee';
   const ownerOnly=['sales','stock','finance','accounting','daily','history'];
