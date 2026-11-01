@@ -4651,7 +4651,7 @@ function renderFinanceReport(){
  if(detailTable){
   detailTable.querySelector('tfoot')?.remove();
   const foot=document.createElement('tfoot'),tr=document.createElement('tr');
-  const cells=isEmployee?['TOTAL PERIODE','','',format(income)]:['TOTAL PERIODE','','','',format(income),format(expense),format(income-expense),''];
+  const cells=isEmployee?['TOTAL PERIODE','','',format(periodIncome)]:['TOTAL PERIODE','','','',format(periodIncome),format(periodExpense),format(netCash),''];
   cells.forEach((value,i)=>{const cell=document.createElement(i===0?'th':'td');cell.textContent=value;if(i>=4)cell.className='amount';tr.appendChild(cell);});
   foot.appendChild(tr);detailTable.appendChild(foot);
  }
