@@ -3478,13 +3478,13 @@ async function muatProdukAsalPengiriman(){
 
 let financeBusiness=null, financeMemberRole=null, financeMemberUserId=null, financeEmployeeIdentityUserIds=[], financeRows=[], financeSelectedBusinessId=null, financeCurrentUserName='';
 function financeExpandDefaultReportRange(rows,startId,endId,dateField){
- const start=$ (startId),end=$ (endId);
+ const start=$(startId),end=$(endId);
  if(!start||!end||!Array.isArray(rows)||!rows.length)return false;
  const today=financeToday(),monthStart=today.slice(0,8)+'01';
  if(start.value!==monthStart||end.value!==today)return false;
  const inDefaultRange=rows.some(row=>{const d=String(row[dateField]||'').slice(0,10);return d>=monthStart&&d<=today;});
  if(inDefaultRange)return false;
- const dates=rows.map(row=>String(row[dateField]||'').slice(0,10)).filter(d=>/^\\d{4}-\\d{2}-\\d{2}$/.test(d)).sort();
+ const dates=rows.map(row=>String(row[dateField]||'').slice(0,10)).filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
  if(!dates.length)return false;
  start.value=dates[0];
  return true;
