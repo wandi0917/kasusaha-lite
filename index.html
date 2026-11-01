@@ -1221,6 +1221,7 @@ html body main #pasar.ks-marketplace{width:100%;max-width:1180px;margin:0 auto;p
  #pasar .ks-market-results-heading h3{font-size:18px}
 }
 @media(max-width:360px){#pasar #hasilOnline,#pasar #hasilPasar{grid-template-columns:1fr}}
+#pasar .ks-market-empty{grid-column:1/-1;display:flex;flex-direction:column;gap:6px;align-items:center;justify-content:center;min-height:150px;padding:24px;border:1px dashed #cbd5e1;border-radius:16px;background:#f8fafc;color:#475569;text-align:center}#pasar .ks-market-empty strong{color:#1e293b;font-size:16px}#pasar .ks-market-empty span{font-size:13px}
 @media(prefers-reduced-motion:reduce){#pasar #hasilOnline>.item,#pasar #hasilPasar>.item{transition:none}#pasar #hasilOnline>.item:hover,#pasar #hasilPasar>.item:hover{transform:none}}
 </style>
 </head>
@@ -2149,7 +2150,7 @@ const SUPABASE_URL='https://flvdudmdltjjdjkdngbv.supabase.co';
 // Kunci publishable/anon boleh berada di browser. Jangan pernah menaruh service_role key atau kata sandi di file ini.
 const SUPABASE_KEY='sb_publishable_vh4DgP6YyquvZ5fK1ABp1g_g_lRKhsR';
 const sb=(window.supabase&&window.supabase.createClient)?window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}):null;
-let transaksi=[],produk=[],localSelectedId=null,onlineRequestNo=0,keranjang=[],pesanan=[];
+let transaksi=[],produk=[],localSelectedId=null,onlineRequestNo=0,onlineProductCache=null,pasarSearchTimer=null,keranjang=[],pesanan=[];
 let licenseAccessState="checking";
 try{keranjang=JSON.parse(localStorage.getItem('kasusaha_keranjang')||'[]');pesanan=JSON.parse(localStorage.getItem('kasusaha_pesanan')||'[]');if(!Array.isArray(keranjang))keranjang=[];if(!Array.isArray(pesanan))pesanan=[];}catch(e){keranjang=[];pesanan=[];}
 function simpan(){
@@ -2539,22 +2540,69 @@ function hapusProduk(id){if(confirm('Hapus produk lokal ini? Produk online yang 
 function setStatusOnline(teks,error=false){const s=$('statusOnline');s.className=error?'status error':'status';s.textContent=teks;}
 function normalisasi(teks){return String(teks||'').normalize('NFKC').toLocaleLowerCase('id-ID').trim();}
 function fotoCadanganProduk(p){const t=normalisasi([p.nama_produk,p.kategori,p.deskripsi].join(' '));if(t.includes('kopi'))return 'https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=900&q=85';if(t.includes('teh')||t.includes('minuman')||t.includes('botol'))return 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=900&q=85';if(t.includes('software')||t.includes('digital')||t.includes('kasusaha')||t.includes('aplikasi'))return 'https://images.unsplash.com/photo-1460925895917-afdapc5e6a5?auto=format&fit=crop&w=900&q=85';if(t.includes('makanan')||t.includes('sembako'))return 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=85';return 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=900&q=85';}
-async function muatPasarOnline(){const hasil=$('hasilOnline');const nomorPermintaan=++onlineRequestNo;setStatusOnline('Menghubungkan ke database online...');hasil.textContent='Memuat produk...';if(!sb){hasil.textContent='';setStatusOnline('Pustaka Supabase gagal dimuat. Periksa koneksi internet dan muat ulang halaman.',true);return;}try{
- // Ambil hanya produk aktif. Filter pencarian dan kategori dilakukan di browser agar karakter khusus tidak merusak query URL.
- const {data,error}=await sb.from('produk').select('id,nama_produk,deskripsi,kategori,harga,stok,nama_penjual,kota,foto_url,created_at,aktif').eq('aktif',true).order('created_at',{ascending:false}).limit(100);
- if(error)throw error;if(nomorPermintaan!==onlineRequestNo)return;if(!Array.isArray(data))throw new Error('Format data dari database tidak valid.');
- const q=normalisasi($('cariPasar').value),kat=$('filterKategori').value;
- const cocok=data.filter(p=>{
-  if(p.aktif===false)return false;
-  if(normalisasi(p.nama_penjual)==='toko contoh kasusaha')return false;
-  if(kat&&String(p.kategori||'')!==kat)return false;
-  if(q&&!normalisasi([p.nama_produk,p.deskripsi,p.nama_penjual,p.kota].join(' ')).includes(q))return false;
-  return true;
- });
- hasil.replaceChildren();if(!cocok.length){hasil.textContent='Belum ada produk aktif yang cocok. Coba hapus kata pencarian atau pilih Semua kategori.';}
- cocok.forEach(p=>{const d=document.createElement('article');d.className='item';const k=document.createElement('p');k.className='small';k.textContent=p.kategori||'Umum';const n=document.createElement('h3');n.textContent=p.nama_produk||'Produk';const h=document.createElement('div');h.className='price';h.textContent=format(p.harga);const lisensiTanpaBatas=Number(p.id)===7;const stokTersedia=Number(p.stok)||0;const s=document.createElement('p');s.textContent=lisensiTanpaBatas?'Lisensi digital tersedia tanpa batas':(stokTersedia>0?'Stok tersedia: '+stokTersedia:'Stok habis');s.style.fontWeight='700';s.style.color=(lisensiTanpaBatas||stokTersedia>0)?'#166534':'#b91c1c';const j=document.createElement('p');j.textContent='Penjual: '+(p.nama_penjual||'Penjual')+(p.kota?' • '+p.kota:'');const de=document.createElement('p');de.textContent=p.deskripsi||'';const urlFotoProduk=(p.foto_url&&(()=>{try{const u=new URL(p.foto_url);return u.protocol==='https:'?u.href:'';}catch(e){return '';}})())||fotoCadanganProduk(p);if(urlFotoProduk){const im=document.createElement('img');im.src=urlFotoProduk;im.alt='Foto '+(p.nama_produk||'produk');im.loading='lazy';im.className='product-photo';im.style.width='100%';im.style.height='clamp(110px, 18vw, 155px)';im.style.maxHeight='155px';im.style.objectFit='contain';im.style.padding='8px';im.style.background='linear-gradient(145deg,#f8faf9,#eef5f0)';im.style.borderRadius='10px';im.style.cursor='pointer';im.title='Klik foto untuk menambahkan produk ke keranjang';im.tabIndex=0;im.setAttribute('role','button');im.addEventListener('click',()=>tambahKeranjangOnline(p,true));im.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();tambahKeranjangOnline(p,true);}});im.onerror=()=>{im.onerror=null;im.src='https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80';};d.appendChild(im);}d.append(k,n,h,s,j,de);if(!lisensiTanpaBatas&&stokTersedia<=0){const rec=document.createElement('div');rec.className='ks-affiliate-stock-recs';d.appendChild(rec);tampilkanRekomendasiAfiliasiStokHabis(p,rec);}const btn=document.createElement('button');btn.type='button';btn.className='primary wide';btn.textContent=(lisensiTanpaBatas||stokTersedia>0)?'Tambah ke keranjang':'Stok habis';btn.disabled=!lisensiTanpaBatas&&stokTersedia<=0;btn.addEventListener('click',()=>tambahKeranjangOnline(p));d.appendChild(btn);hasil.appendChild(d);});
- setStatusOnline('Terhubung. Produk aktif yang cocok: '+cocok.length+'. Data aktif di database: '+data.length+'.');
- }catch(e){console.error('Gagal memuat Pasar Online:',e);if(nomorPermintaan!==onlineRequestNo)return;hasil.textContent='Produk online belum dapat dimuat. Data lokal Anda tetap aman.';setStatusOnline('Koneksi/database gagal: '+String(e.message||e).slice(0,220)+'. Periksa kebijakan SELECT/RLS dan koneksi Supabase.',true);}}
+async function muatPasarOnline(forceRefresh=true){
+ const hasil=$('hasilOnline');if(!hasil)return;
+ const nomorPermintaan=++onlineRequestNo;
+ setStatusOnline(forceRefresh||!Array.isArray(onlineProductCache)?'Memuat katalog dari database...':'Memfilter produk...');
+ if(!sb){hasil.textContent='';setStatusOnline('Pustaka Supabase gagal dimuat. Periksa koneksi internet dan muat ulang halaman.',true);return;}
+ try{
+  if(forceRefresh||!Array.isArray(onlineProductCache)){
+   hasil.textContent='Memuat produk...';
+   const {data,error}=await sb.from('produk').select('id,nama_produk,deskripsi,kategori,harga,stok,nama_penjual,kota,foto_url,created_at,aktif').eq('aktif',true).order('created_at',{ascending:false}).limit(100);
+   if(error)throw error;
+   if(nomorPermintaan!==onlineRequestNo)return;
+   if(!Array.isArray(data))throw new Error('Format data dari database tidak valid.');
+   onlineProductCache=data;
+  }
+  if(nomorPermintaan!==onlineRequestNo)return;
+  const data=onlineProductCache;
+  const q=normalisasi($('cariPasar').value),kat=$('filterKategori').value;
+  const cocok=data.filter(p=>{
+   if(p.aktif===false)return false;
+   if(normalisasi(p.nama_penjual)==='toko contoh kasusaha')return false;
+   if(kat&&String(p.kategori||'')!==kat)return false;
+   if(q&&!normalisasi([p.nama_produk,p.deskripsi,p.nama_penjual,p.kota].join(' ')).includes(q))return false;
+   return true;
+  });
+  hasil.replaceChildren();
+  if(!cocok.length){
+   const empty=document.createElement('div');empty.className='ks-market-empty';empty.innerHTML='<strong>Belum ada produk yang cocok</strong><span>Coba kata pencarian lain atau pilih Semua kategori.</span>';hasil.appendChild(empty);
+  }
+  cocok.forEach(p=>{
+   const d=document.createElement('article');d.className='item';
+   const k=document.createElement('p');k.className='small';k.textContent=p.kategori||'Umum';
+   const n=document.createElement('h3');n.textContent=p.nama_produk||'Produk';
+   const h=document.createElement('div');h.className='price';h.textContent=format(p.harga);
+   const lisensiTanpaBatas=Number(p.id)===7,stokTersedia=Number(p.stok)||0;
+   const s=document.createElement('p');s.textContent=lisensiTanpaBatas?'Lisensi digital tersedia tanpa batas':(stokTersedia>0?'Stok tersedia: '+stokTersedia:'Stok habis');s.style.fontWeight='700';s.style.color=(lisensiTanpaBatas||stokTersedia>0)?'#166534':'#b91c1c';
+   const j=document.createElement('p');j.textContent='Penjual: '+(p.nama_penjual||'Penjual')+(p.kota?' • '+p.kota:'');
+   const de=document.createElement('p');de.textContent=p.deskripsi||'Informasi produk belum ditambahkan.';
+   const urlFotoProduk=(p.foto_url&&(()=>{try{const u=new URL(p.foto_url);return u.protocol==='https:'?u.href:'';}catch(e){return '';}})())||fotoCadanganProduk(p);
+   if(urlFotoProduk){
+    const im=document.createElement('img');im.src=urlFotoProduk;im.alt='Foto '+(p.nama_produk||'produk');im.loading='lazy';im.decoding='async';im.className='product-photo';im.style.width='100%';im.style.height='clamp(110px, 18vw, 155px)';im.style.maxHeight='155px';im.style.objectFit='contain';im.style.padding='8px';im.style.background='linear-gradient(145deg,#f8faf9,#eef5f0)';im.style.borderRadius='10px';im.style.cursor='pointer';im.title='Tekan foto untuk menambahkan produk ke keranjang';im.tabIndex=0;im.setAttribute('role','button');im.setAttribute('aria-label','Tambahkan '+(p.nama_produk||'produk')+' ke keranjang');
+    im.addEventListener('click',()=>tambahKeranjangOnline(p,true));
+    im.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();tambahKeranjangOnline(p,true);}});
+    im.onerror=()=>{im.onerror=null;im.src='https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80';};
+    d.appendChild(im);
+   }
+   d.append(k,n,h,s,j,de);
+   if(!lisensiTanpaBatas&&stokTersedia<=0){const rec=document.createElement('div');rec.className='ks-affiliate-stock-recs';d.appendChild(rec);tampilkanRekomendasiAfiliasiStokHabis(p,rec);}
+   const btn=document.createElement('button');btn.type='button';btn.className='primary wide';btn.textContent=(lisensiTanpaBatas||stokTersedia>0)?'Tambah ke keranjang':'Stok habis';btn.disabled=!lisensiTanpaBatas&&stokTersedia<=0;btn.addEventListener('click',()=>tambahKeranjangOnline(p,true));d.appendChild(btn);
+   hasil.appendChild(d);
+  });
+  setStatusOnline('Katalog terhubung • '+cocok.length+' produk ditampilkan dari '+data.length+' produk aktif. Pencarian diperbarui langsung.');
+ }catch(e){
+  console.error('Gagal memuat Pasar Online:',e);
+  if(nomorPermintaan!==onlineRequestNo)return;
+  hasil.textContent='Produk online belum dapat dimuat. Data lokal Anda tetap aman.';
+  setStatusOnline('Koneksi/database gagal: '+String(e.message||e).slice(0,220)+'. Periksa kebijakan SELECT/RLS dan koneksi Supabase.',true);
+ }
+}
+if($('cariPasar'))$('cariPasar').addEventListener('input',()=>{
+ clearTimeout(pasarSearchTimer);
+ pasarSearchTimer=setTimeout(()=>muatPasarOnline(false),220);
+});
+if($('filterKategori'))$('filterKategori').addEventListener('change',()=>muatPasarOnline(false));
 
 function setAffStatus(msg,err=false){const e=$('affFormStatus');if(e){e.className=err?'status error':'status';e.textContent=msg;}}
 function safeHttps(value){try{const u=new URL(String(value||'').trim());return u.protocol==='https:'?u.href:'';}catch(e){return '';}}
