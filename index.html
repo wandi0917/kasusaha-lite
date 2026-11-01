@@ -3916,6 +3916,13 @@ function applyReportCategory(category){
    if((isEmployee&&category!=='income')||(isOwner&&category==='income')){category='';selector.value='';}
    if(!isOwner&&!isEmployee){category='';}
  }
+ // Pulihkan status anak panel sebelum kategori baru dipilih. Ini penting karena panel Akuntansi
+ // berada di dalam financeReportCard; menyembunyikan satu kategori tidak boleh membuat kategori
+ // berikutnya tetap tersembunyi akibat status dari pilihan sebelumnya.
+ const financeReportContainer=$('financeReportCard');
+ if(financeReportContainer){
+   Array.from(financeReportContainer.children).forEach(child=>{child.hidden=false;child.style.display='';});
+ }
  const ids=['financeTableSalesSummary','stockReportCard','stockReportTableCard','financeReportCard','financeAccountingCard','financeTransactionsTableCard','localDailyReportCard','localTransactionHistoryCard'];
  ids.forEach(id=>{const el=$(id);if(el){el.hidden=true;el.style.display='none';}});
  document.querySelectorAll('#transaksi .report-category-view').forEach(el=>{el.hidden=true;el.style.display='none';});
@@ -3934,6 +3941,15 @@ function applyReportCategory(category){
    const title=$('financeReportTitle');if(title)title.textContent='Laporan Keuangan Lengkap (Owner)';
    const sales=$('financeTableSalesSummary');if(sales){sales.hidden=false;sales.style.display='block';}
  }else if(category==='accounting'&&isOwner){
+   // financeAccountingCard adalah anak langsung financeReportCard. Buka parent-nya,
+   // tetapi sembunyikan kontrol laporan penjualan/keuangan agar hanya modul akuntansi tampil.
+   const parent=$('financeReportCard');
+   if(parent){
+     parent.hidden=false;parent.style.display='block';
+     Array.from(parent.children).forEach(child=>{
+       if(child.id!=='financeAccountingCard'){child.hidden=true;child.style.display='none';}
+     });
+   }
    const card=$('financeAccountingCard');if(card){card.hidden=false;card.style.display='block';}
  }else if(category==='income'&&isEmployee){
    const card=$('financeReportCard');if(card){card.hidden=false;card.style.display='block';}
