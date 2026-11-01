@@ -2412,9 +2412,11 @@ async function buka(id,tombol){
             tampilTransaksi();
           }else if(chosen==='stock'){
             await loadStoreProducts();
+          }else if(chosen==='accounting'){
+            await loadFinanceAccounting();
           }
-          // Setelah data selesai dimuat, arahkan layar ke laporan yang dipilih.
           const reportTargetId = chosen==='stock' ? 'stockReportTableCard' :
+            chosen==='accounting' ? 'financeAccountingCard' :
             (chosen==='sales'||chosen==='finance'||chosen==='income') ? 'financeReportCard' :
             chosen==='daily' ? 'localDailyReportCard' :
             chosen==='history' ? 'localTransactionHistoryCard' : '';
@@ -3519,7 +3521,7 @@ async function financeChooseSavedBusiness(businessId){
    if(licenseAccessState!=='active'){setFinanceStatus('Lisensi Owner belum terverifikasi. Menu usaha tetap terkunci sampai pembayaran dikonfirmasi server.',true);await buka('akunPembeli',document.querySelector('nav button[onclick*="akunPembeli"]'));return;}
   }
   financeSelectedBusinessId=businessId;await loadFinanceWorkspace();setFinanceStatus('Usaha dipilih. Data dimuat sesuai akses akun.');
-  if(financeBusiness&&financeMemberRole)await bukaPanelTransaksi('kasir');
+
  }catch(e){setFinanceStatus('Tidak dapat memilih usaha: '+String(e.message||e).slice(0,180),true);}
 }
 async function loadFinanceWorkspace(){
@@ -3700,7 +3702,7 @@ async function bukaPanelTransaksi(tujuan){
   const el=$(targets[tujuan]);
   if(el){el.hidden=false;el.removeAttribute('hidden');el.style.display='block';el.scrollIntoView({behavior:'smooth',block:'start'});el.setAttribute('tabindex','-1');el.focus({preventScroll:true});
     if(tujuan==='absensi')await loadAttendance();
-    if(tujuan==='kasir'||tujuan==='stok'){try{await loadStoreProducts();if(tujuan==='kasir'){const catalog=$('ownerStoreCatalog');if(catalog){catalog.hidden=false;catalog.removeAttribute('hidden');catalog.style.display='block';}if(!quickSaleItemRows().length)addQuickSaleLine();updateQuickSalePreview();}else{const catalog=$('ownerStoreCatalog');if(catalog){catalog.hidden=false;catalog.removeAttribute('hidden');catalog.style.display='block';catalog.scrollIntoView({behavior:'smooth',block:'start'});}}}catch(e){setFinanceStatus((tujuan==='kasir'?'Kasir':'Menu barang dan stok')+' belum dapat memuat daftar barang: '+String(e.message||e).slice(0,180),true);}}
+    if(tujuan==='kasir'||tujuan==='stok'){try{await loadStoreProducts();if(tujuan==='kasir'){const catalog=$('ownerStoreCatalog');if(catalog&&isOwner){catalog.hidden=false;catalog.removeAttribute('hidden');catalog.style.display='block';}else if(catalog){catalog.hidden=true;catalog.style.display='none';}if(!quickSaleItemRows().length)addQuickSaleLine();updateQuickSalePreview();}else{const catalog=$('ownerStoreCatalog');if(catalog&&isOwner){catalog.hidden=false;catalog.removeAttribute('hidden');catalog.style.display='block';catalog.scrollIntoView({behavior:'smooth',block:'start'});}}}catch(e){setFinanceStatus((tujuan==='kasir'?'Kasir':'Menu barang dan stok')+' belum dapat memuat daftar barang: '+String(e.message||e).slice(0,180),true);}}
   }
   else if(tujuan==='stok'){const sel=$('reportCategorySelect');if(sel&&isOwner){sel.value='stock';applyReportCategory('stock');$('stockReportTableCard')?.scrollIntoView({behavior:'smooth',block:'start'});}}
 }
@@ -3888,9 +3890,7 @@ function applyReportCategory(category){
    const reportCard=$('financeReportCard');if(reportCard){reportCard.hidden=false;reportCard.style.display='block';}
    const el=$('financeTableSalesSummary');if(el){el.hidden=false;el.style.display='block';}
  }else if(category==='stock'&&isOwner){
-   // Kategori stok hanya menampilkan tabel stok; ringkasan kartu stok tidak ditampilkan.
    const table=$('stockReportTableCard');if(table){table.hidden=false;table.style.display='block';}
-   loadStoreProducts().catch(e=>{const b=$('stockReportRows');if(b)b.innerHTML='<tr><td colspan="7">Gagal memuat stok: '+String(e.message||e).replace(/[<>&]/g,'')+'</td></tr>';});
  }else if(category==='finance'&&isOwner){
    const card=$('financeReportCard');if(card){card.hidden=false;card.style.display='block';}
    const detail=$('financeTransactionsTableCard');if(detail){detail.hidden=false;detail.style.display='block';}
@@ -3898,7 +3898,6 @@ function applyReportCategory(category){
    const sales=$('financeTableSalesSummary');if(sales){sales.hidden=false;sales.style.display='block';}
  }else if(category==='accounting'&&isOwner){
    const card=$('financeAccountingCard');if(card){card.hidden=false;card.style.display='block';}
-   loadFinanceAccounting();
  }else if(category==='income'&&isEmployee){
    const card=$('financeReportCard');if(card){card.hidden=false;card.style.display='block';}
    const detail=$('financeTransactionsTableCard');if(detail){detail.hidden=false;detail.style.display='block';}
@@ -4049,16 +4048,22 @@ function attendanceHours(row){
  return Number.isFinite(ms)&&ms>0?ms/3600000:0;
 }
 async function saveAttendanceWage(){
- const status=$('attendancePayrollStatus'),btn=$('attendanceSaveWage');
- const wage=Number($('attendanceHourlyWage').value);
- if(!Number.isFinite(wage)||wage<0){status.className='status error';status.textContent='Masukkan gaji per jam yang valid (minimal Rp0).';return;}
- try{
-  localStorage.setItem(attendanceWageKey(),String(wage));
-  const {error}=await sb.from('business_attendance').update({hourly_wage:wage}).eq('business_id',financeBusiness.id).eq('user_id',financeMemberUserId);
-  if(error)throw error;
-  status.className='status';status.textContent='Gaji per jam disimpan. Catatan absensi akun ini telah diperbarui.';
-  await loadAttendance();
- }catch(e){status.className='status error';status.textContent='Gaji per jam tersimpan di perangkat ini, tetapi pembaruan catatan absensi gagal: '+String(e.message||e).slice(0,160);}
+  const status=$('attendancePayrollStatus'),btn=$('attendanceSaveWage');
+  if(!sb||!financeBusiness||!financeMemberUserId){status.className='status error';status.textContent='Login dan pilih usaha terlebih dahulu sebelum menyimpan gaji per jam.';return;}
+  const wage=Number($('attendanceHourlyWage').value);
+  if(!Number.isSafeInteger(wage)||wage<0){status.className='status error';status.textContent='Masukkan gaji per jam berupa bilangan bulat nol atau lebih.';return;}
+  if(btn)btn.disabled=true;
+  try{
+   localStorage.setItem(attendanceWageKey(),String(wage));
+   const {data:updatedRows,error}=await sb.from('business_attendance').update({hourly_wage:wage,updated_at:new Date().toISOString()}).eq('business_id',financeBusiness.id).eq('user_id',financeMemberUserId).select('id');
+   if(error)throw error;
+   status.className='status';
+   status.textContent=(updatedRows||[]).length
+    ?'Gaji per jam tersimpan pada perangkat ini dan diterapkan pada '+updatedRows.length+' catatan absensi akun ini. Tarif juga akan digunakan pada absensi berikutnya di perangkat ini.'
+    :'Gaji per jam tersimpan pada perangkat ini dan akan digunakan pada absensi berikutnya. Belum ada catatan absensi akun ini yang perlu diperbarui di server.';
+   await loadAttendance();
+  }catch(e){status.className='status error';status.textContent='Tarif tersimpan pada perangkat ini, tetapi pembaruan catatan server gagal: '+String(e.message||e).slice(0,160);}
+  finally{if(btn)btn.disabled=false;}
 }
 async function editAttendanceRecord(row){
  if(financeMemberRole!=='owner'||!financeBusiness){alert('Hanya Owner yang dapat mengedit absensi.');return;}
