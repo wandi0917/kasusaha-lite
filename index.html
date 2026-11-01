@@ -4463,17 +4463,20 @@ function renderFinanceReport(){
   if(filter==='mine')rows=rows.filter(r=>r.created_by===financeMemberUserId);
  }
  // Ringkasan tagihan per meja/kasir berdasarkan waktu simpan. Setiap baris barang dalam satu operasi penyimpanan memiliki created_at yang sama dari PostgreSQL.
- const salesRows=rows.filter(r=>r.transaction_type==='income'&&financeNormalizeCategory(r.category)==='penjualan'&&/^(Meja .+|Kasir) — Penjualan /.test(String(r.description||'')));
+ // Sertakan semua pemasukan berkategori Penjualan, termasuk catatan lama yang bukan format Kasir Cepat.
+ const salesRows=rows.filter(r=>r.transaction_type==='income'&&financeNormalizeCategory(r.category)==='penjualan');
  const salesGroups=new Map();
  const isSalesOwner=financeMemberRole==='owner';
  const salesProductByCode=new Map((Array.isArray(storeProductRows)?storeProductRows:[]).map(p=>[String(p.product_code||'').toUpperCase(),p]));
  const parseRupiahText=value=>{const n=String(value||'').replace(/[^0-9-]/g,'');return n?Number(n):null;};
  salesRows.forEach(r=>{
   const description=String(r.description||''),match=description.match(/^(Meja .+?|Kasir) — Penjualan /),location=match?match[1]:'Kasir';
-  const timestamp=String(r.created_at||r.transaction_date||''),key=[r.created_by||'',r.created_by_role||'',location,timestamp].join('|');
+  const timestamp=String(r.created_at||r.transaction_date||'');
+  // Baris Kasir Cepat dari satu tagihan digabung berdasarkan timestamp; transaksi lama dipisah per ID agar tidak tercampur.
+  const key=match?[r.created_by||'',r.created_by_role||'',location,timestamp].join('|'):[r.created_by||'',r.created_by_role||'','legacy',String(r.id||timestamp)].join('|');
   if(!salesGroups.has(key))salesGroups.set(key,{location,created_at:r.created_at,transaction_date:r.transaction_date,items:[],total:0,modal:0,modalKnown:true,usedCurrentCost:false});
   const g=salesGroups.get(key),amount=Number(r.amount||0);
-  g.items.push(description.replace(/^(Meja .+?|Kasir) — /,''));
+  g.items.push(match?description.replace(/^(Meja .+?|Kasir) — /,''):description);
   g.total+=amount;
   if(isSalesOwner){
    const savedModal=description.match(/Modal total\s*Rp\s*([0-9.,]+)/i);
@@ -4493,7 +4496,7 @@ function renderFinanceReport(){
   if(salesHead)salesHead.innerHTML=isSalesOwner?'<tr><th>Hari, tanggal &amp; waktu</th><th>Meja / kasir</th><th>Rincian barang</th><th>Total modal</th><th>Laba kotor</th><th>Total tagihan</th></tr>':'<tr><th>Hari, tanggal &amp; waktu</th><th>Meja / kasir</th><th>Rincian barang</th><th>Total tagihan</th></tr>';
   const groups=Array.from(salesGroups.values()).sort((a,b)=>String(b.created_at||b.transaction_date).localeCompare(String(a.created_at||a.transaction_date)));
   salesTbody.replaceChildren();
-  if(!groups.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=isSalesOwner?6:4;td.textContent='Belum ada transaksi penjualan meja/kasir pada periode dan filter yang dipilih.';tr.appendChild(td);salesTbody.appendChild(tr);}
+  if(!groups.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=isSalesOwner?6:4;td.textContent='Belum ada transaksi penjualan pada periode dan filter yang dipilih.';tr.appendChild(td);salesTbody.appendChild(tr);}
   groups.forEach(g=>{
    const d=new Date(g.created_at||g.transaction_date),dateText=Number.isFinite(d.getTime())?d.toLocaleString('id-ID',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):String(g.transaction_date||'—');
    const tr=document.createElement('tr');
