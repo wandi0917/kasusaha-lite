@@ -4133,7 +4133,10 @@ async function saveAttendanceWage(){
   if(btn)btn.disabled=true;
   try{
    localStorage.setItem(attendanceWageKey(),String(wage));
-   const {data:updatedRows,error}=await sb.from('business_attendance').update({hourly_wage:wage,updated_at:new Date().toISOString()}).eq('business_id',financeBusiness.id).eq('user_id',financeMemberUserId).select('id');
+   let wageUpdate=sb.from('business_attendance').update({hourly_wage:wage,updated_at:new Date().toISOString()}).eq('business_id',financeBusiness.id);
+   if(financeMemberRole==='employee')wageUpdate=wageUpdate.in('user_id',financeEmployeeIdentityUserIds);
+   else wageUpdate=wageUpdate.eq('user_id',financeMemberUserId);
+   const {data:updatedRows,error}=await wageUpdate.select('id');
    if(error)throw error;
    status.className='status';
    status.textContent=(updatedRows||[]).length
@@ -4163,7 +4166,10 @@ async function loadAttendance(){
  if(!sb||!financeBusiness||!financeMemberUserId){status.textContent='Login dan hubungkan akun ke usaha untuk menggunakan absensi.';$('attendanceCheckIn').disabled=true;$('attendanceCheckOut').disabled=true;return;}
  const today=attendanceToday();
  try{
-  const {data:mine,error:me}=await sb.from('business_attendance').select('id,business_id,user_id,work_date,check_in_at,check_out_at,hourly_wage').eq('business_id',financeBusiness.id).eq('user_id',financeMemberUserId).eq('work_date',today).maybeSingle();
+  let mineQuery=sb.from('business_attendance').select('id,business_id,user_id,work_date,check_in_at,check_out_at,hourly_wage,created_at').eq('business_id',financeBusiness.id).eq('work_date',today);
+  if(financeMemberRole==='employee')mineQuery=mineQuery.in('user_id',financeEmployeeIdentityUserIds);
+  else mineQuery=mineQuery.eq('user_id',financeMemberUserId);
+  const {data:mine,error:me}=await mineQuery.order('created_at',{ascending:false}).limit(1).maybeSingle();
   if(me)throw me;
   const inBtn=$('attendanceCheckIn'),outBtn=$('attendanceCheckOut');
   if(mine){
@@ -4188,7 +4194,8 @@ async function loadAttendance(){
    else todayRows.forEach(row=>{const tr=document.createElement('tr');[row.user_id===financeMemberUserId?financeCurrentUserName+' ('+financeRoleLabel(financeMemberRole)+', akun Anda)':'Karyawan/akun '+String(row.user_id).slice(0,8),attendanceTime(row.check_in_at),attendanceTime(row.check_out_at)].forEach(value=>{const td=document.createElement('td');td.textContent=value;tr.appendChild(td);});const action=document.createElement('td');const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Edit';edit.addEventListener('click',()=>editAttendanceRecord(row));action.appendChild(edit);tr.appendChild(action);tbody.appendChild(tr);});
   }else ownerBox.hidden=true;
   let payrollQuery=sb.from('business_attendance').select('user_id,work_date,check_in_at,check_out_at,hourly_wage').eq('business_id',financeBusiness.id);
-  if(financeMemberRole!=='owner')payrollQuery=payrollQuery.eq('user_id',financeMemberUserId);
+  if(financeMemberRole==='employee')payrollQuery=payrollQuery.in('user_id',financeEmployeeIdentityUserIds);
+  else if(financeMemberRole!=='owner')payrollQuery=payrollQuery.eq('user_id',financeMemberUserId);
   const {data:payrollRows,error:pe}=await payrollQuery.order('work_date',{ascending:false});
   if(pe)throw pe;
   const latestRecordedWage=(payrollRows||[]).find(row=>row.hourly_wage!==null&&row.hourly_wage!==undefined)?.hourly_wage;
@@ -4219,7 +4226,10 @@ async function arahkanSetelahLoginFinance(){
  if(!sb||!financeBusiness||!financeMemberUserId||!['owner','employee'].includes(financeMemberRole)||document.body.classList.contains('employee-device-pending'))return false;
  try{
   const today=attendanceToday();
-  const {data:attendance,error}=await sb.from('business_attendance').select('check_in_at,check_out_at').eq('business_id',financeBusiness.id).eq('user_id',financeMemberUserId).eq('work_date',today).maybeSingle();
+  let attendanceQuery=sb.from('business_attendance').select('check_in_at,check_out_at,created_at').eq('business_id',financeBusiness.id).eq('work_date',today);
+  if(financeMemberRole==='employee')attendanceQuery=attendanceQuery.in('user_id',financeEmployeeIdentityUserIds);
+  else attendanceQuery=attendanceQuery.eq('user_id',financeMemberUserId);
+  const {data:attendance,error}=await attendanceQuery.order('created_at',{ascending:false}).limit(1).maybeSingle();
   if(error)throw error;
   const transactionButton=document.querySelector('nav button[onclick*="transaksi"]');
   if(!attendance||!attendance.check_in_at){
@@ -4260,7 +4270,15 @@ async function absenMasuk(){
   if(offlineTransactionMode)throw new Error('Absensi online memerlukan koneksi internet.');
   if(document.body.classList.contains('employee-device-pending'))throw new Error('Akun Karyawan belum diaktifkan oleh Owner.');
   if(!await periksaLisensiWorkspace(financeBusiness.id))throw new Error('Lisensi usaha belum terverifikasi. Minta Owner utama memeriksa aktivasi lisensi.');
-  const wageInput=$('attendanceHourlyWage'),wage=Number(wageInput?.value??localStorage.getItem(attendanceWageKey())??0);if(!Number.isSafeInteger(wage)||wage<0)throw new Error('Gaji per jam harus berupa bilangan bulat nol atau lebih.');localStorage.setItem(attendanceWageKey(),String(wage));const {data,error}=await sb.from('business_attendance').insert({business_id:financeBusiness.id,user_id:financeMemberUserId,work_date:attendanceToday(),check_in_at:new Date().toISOString(),hourly_wage:wage}).select('id').single();
+  const wageInput=$('attendanceHourlyWage'),wage=Number(wageInput?.value??localStorage.getItem(attendanceWageKey())??0);if(!Number.isSafeInteger(wage)||wage<0)throw new Error('Gaji per jam harus berupa bilangan bulat nol atau lebih.');localStorage.setItem(attendanceWageKey(),String(wage));
+  const today=attendanceToday();
+  let duplicateQuery=sb.from('business_attendance').select('id').eq('business_id',financeBusiness.id).eq('work_date',today);
+  if(financeMemberRole==='employee')duplicateQuery=duplicateQuery.in('user_id',financeEmployeeIdentityUserIds);
+  else duplicateQuery=duplicateQuery.eq('user_id',financeMemberUserId);
+  const {data:existingAttendance,error:duplicateError}=await duplicateQuery.limit(1).maybeSingle();
+  if(duplicateError)throw duplicateError;
+  if(existingAttendance)throw new Error('Anda sudah memiliki catatan absensi hari ini pada akun karyawan yang sama.');
+  const {data,error}=await sb.from('business_attendance').insert({business_id:financeBusiness.id,user_id:financeMemberUserId,work_date:today,check_in_at:new Date().toISOString(),hourly_wage:wage}).select('id').single();
   if(error){if(error.code==='23505')throw new Error('Anda sudah absen masuk hari ini.');throw error;}
   await loadAttendance();await arahkanSetelahLoginFinance();
  }catch(e){$('attendanceStatus').className='status error';$('attendanceStatus').textContent='Absen masuk gagal: '+String(e.message||e).slice(0,200);btn.disabled=false;}
@@ -4272,8 +4290,11 @@ async function absenPulang(){
   if(offlineTransactionMode)throw new Error('Absensi online memerlukan koneksi internet.');
   if(document.body.classList.contains('employee-device-pending'))throw new Error('Akun Karyawan belum diaktifkan oleh Owner.');
   if(!await periksaLisensiWorkspace(financeBusiness.id))throw new Error('Lisensi usaha belum terverifikasi. Minta Owner utama memeriksa aktivasi lisensi.');
-  const {data,error}=await sb.from('business_attendance').update({check_out_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('business_id',financeBusiness.id).eq('user_id',financeMemberUserId).eq('work_date',attendanceToday()).is('check_out_at',null).select('id').maybeSingle();
-  if(error)throw error;if(!data)throw new Error('Absen masuk belum dilakukan atau absen pulang sudah tercatat.');
+  let checkoutUpdate=sb.from('business_attendance').update({check_out_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('business_id',financeBusiness.id).eq('work_date',attendanceToday()).is('check_out_at',null);
+  if(financeMemberRole==='employee')checkoutUpdate=checkoutUpdate.in('user_id',financeEmployeeIdentityUserIds);
+  else checkoutUpdate=checkoutUpdate.eq('user_id',financeMemberUserId);
+  const {data,error}=await checkoutUpdate.select('id');
+  if(error)throw error;if(!data||!data.length)throw new Error('Absen masuk belum dilakukan atau absen pulang sudah tercatat.');
   await loadAttendance();setFinanceStatus('Absen pulang berhasil dicatat.');
  }catch(e){$('attendanceStatus').className='status error';$('attendanceStatus').textContent='Absen pulang gagal: '+String(e.message||e).slice(0,200);btn.disabled=false;}
 }
