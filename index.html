@@ -2686,7 +2686,10 @@ $('formCheckout').addEventListener('submit',async e=>{
    pesanan.push(order);
    try{localStorage.setItem('kasusaha_pesanan',JSON.stringify(pesanan));}catch(_){/* Pesanan tetap tersimpan di server. */}
    keranjang=[];simpanKeranjang();tampilKeranjang();tampilRiwayatPesanan();
-   const chosen=$('pilihanOngkir').selectedOptions[0];const chosenLabel=physicalItems.length&&chosen&&chosen.value?chosen.textContent:'Tidak perlu kurir (produk digital)';status.textContent='Pesanan berhasil dibuat! Nomor pesanan: '+data.order_id+'. Kurir/layanan: '+chosenLabel+'. Ongkos kirim: '+format(data.shipping_amount||0)+'. Total: '+format(data.total_amount||0)+'. Status: '+(data.status||'pending_payment')+'. '+(checkoutSession&&checkoutSession.user.is_anonymous===true?'Simpan nomor pesanan dan gunakan browser/perangkat ini untuk membuka Pesanan Saya. Anda tidak perlu membuat akun untuk barang fisik. ':'')+'Setelah pembayaran terverifikasi, pesanan diteruskan ke proses penjual dan pengiriman.';
+   const chosen=$('pilihanOngkir').selectedOptions[0];const chosenLabel=physicalItems.length&&chosen&&chosen.value?chosen.textContent:'Tidak perlu kurir (produk digital)';status.textContent='Pesanan berhasil dibuat! Nomor pesanan: '+data.order_id+'. Kurir/layanan: '+chosenLabel+'. Ongkos kirim: '+format(data.shipping_amount||0)+'. Total: '+format(data.total_amount||0)+'. Status: '+(data.status||'pending_payment')+'. '+(checkoutSession&&checkoutSession.user.is_anonymous===true?'Simpan nomor pesanan dan gunakan browser/perangkat ini untuk membuka Pesanan Saya. Anda tidak perlu membuat akun untuk barang fisik. ':'')+'Menyiapkan pembayaran Midtrans...';
+   const payNow=document.createElement('button');payNow.type='button';payNow.className='primary wide';payNow.textContent='Lanjutkan pembayaran via Midtrans';payNow.style.marginTop='10px';
+   status.insertAdjacentElement('afterend',payNow);
+   await mulaiPembayaranMidtrans(data.order_id,payNow);
  }catch(err){console.error('Checkout online gagal:',err);status.textContent='Checkout gagal: '+String(err.message||err).slice(0,240)+'. Keranjang Anda tetap disimpan. Jika pesan menunjukkan hasil tidak pasti, periksa marketplace_orders sebelum mencoba lagi.';}
  finally{button.disabled=false;}
 });
@@ -2802,8 +2805,8 @@ async function muatPesananSaya(){
         d.appendChild(panel);
       }
       if(String(o.status||'').trim().toLowerCase()==='pending_payment'){
-        const pay=document.createElement('button');pay.type='button';pay.className='primary wide';pay.textContent='Bayar via Midtrans (Sandbox)';pay.onclick=()=>mulaiPembayaranMidtrans(o.id,pay);d.appendChild(pay);
-        const note=document.createElement('p');note.className='small';note.textContent='Mode pengujian Sandbox. Jangan gunakan pembayaran nyata.';d.appendChild(note);
+        const pay=document.createElement('button');pay.type='button';pay.className='primary wide';pay.textContent='Bayar via Midtrans';pay.onclick=()=>mulaiPembayaranMidtrans(o.id,pay);d.appendChild(pay);
+        const note=document.createElement('p');note.className='small';note.textContent='Pembayaran dibuat melalui server. Periksa mode Sandbox/Produksi pada halaman pembayaran sebelum melanjutkan.';d.appendChild(note);
       }else if(o.status){
         const payStatus=document.createElement('p');payStatus.className='small';payStatus.textContent='Tombol pembayaran hanya tersedia untuk status Menunggu pembayaran. Status saat ini: '+statusIndonesia(o.status)+'.';d.appendChild(payStatus);
       }
@@ -2904,7 +2907,11 @@ async function mulaiPembayaranMidtrans(orderId, button) {
       const lanjutSandbox = confirm(
         'PERINGATAN: checkout saat ini memakai MIDTRANS SANDBOX. Ini hanya simulasi dan bukan pembayaran uang sungguhan.\n\nLanjutkan simulasi untuk pengujian?'
       );
-      if (!lanjutSandbox) return;
+      if (!lanjutSandbox) {
+        button.disabled = false;
+        button.textContent = oldText;
+        return;
+      }
     }
 
     window.location.assign(tujuan.href);
