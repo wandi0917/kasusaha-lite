@@ -3906,6 +3906,7 @@ function applyReportCategory(category){
    const reportCard=$('financeReportCard');if(reportCard){reportCard.hidden=false;reportCard.style.display='block';}
    const el=$('financeTableSalesSummary');if(el){el.hidden=false;el.style.display='block';}
  }else if(category==='stock'&&isOwner){
+   const summary=$('stockReportCard');if(summary){summary.hidden=false;summary.style.display='block';}
    const table=$('stockReportTableCard');if(table){table.hidden=false;table.style.display='block';}
  }else if(category==='finance'&&isOwner){
    const card=$('financeReportCard');if(card){card.hidden=false;card.style.display='block';}
