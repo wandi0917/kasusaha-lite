@@ -3570,11 +3570,12 @@ async function loadFinanceWorkspace(){
   // Nama usaha dan panel utama harus tampil walaupun modul katalog/absensi mengalami gangguan.
   const ancillaryErrors=[];try{await loadStoreProducts();}catch(auxError){console.error('Katalog usaha gagal dimuat:',auxError);ancillaryErrors.push('katalog barang: '+String(auxError.message||auxError).slice(0,100));}
   try{await loadAttendance();}catch(auxError){console.error('Absensi gagal dimuat:',auxError);ancillaryErrors.push('absensi: '+String(auxError.message||auxError).slice(0,100));}
-  const roleFilter=$('financeRoleFilter');if(member.role==='employee'){roleFilter.innerHTML='<option value="mine">Pemasukan saya</option>';roleFilter.value='mine';$('financeType').value='income';$('financeType').disabled=true;$('financeTypeWrap').hidden=true;$('financeReportTitle').textContent='Laporan Pemasukan Karyawan';$('financeRoleFilterWrap').hidden=true;}else{roleFilter.innerHTML='<option value="all">Semua transaksi</option><option value="owner">Transaksi Owner</option><option value="employee">Transaksi Karyawan</option><option value="mine">Transaksi saya</option>';$('financeType').disabled=false;$('financeTypeWrap').hidden=false;$('financeReportTitle').textContent='Laporan Keuangan Lengkap (Owner)';$('financeRoleFilterWrap').hidden=false;}
+  const roleFilter=$('financeRoleFilter');const accountingOption=$('reportCategorySelect')?.querySelector('option[value="accounting"]');if(accountingOption)accountingOption.disabled=member.role!=='owner';
+  if(member.role==='employee'){roleFilter.innerHTML='<option value="mine">Pemasukan saya</option>';roleFilter.value='mine';$('financeType').value='income';$('financeType').disabled=true;$('financeTypeWrap').hidden=true;$('financeReportTitle').textContent='Laporan Pemasukan Karyawan';$('financeRoleFilterWrap').hidden=true;}else{roleFilter.innerHTML='<option value="all">Semua transaksi</option><option value="owner">Transaksi Owner</option><option value="employee">Transaksi Karyawan</option><option value="mine">Transaksi saya</option>';$('financeType').disabled=false;$('financeTypeWrap').hidden=false;$('financeReportTitle').textContent='Laporan Keuangan Lengkap (Owner)';$('financeRoleFilterWrap').hidden=false;}
   // Pertahankan kategori laporan aktif saat workspace dimuat ulang; sebelumnya panel laporan langsung disembunyikan kembali.
   applyReportCategory($('reportCategorySelect')?.value||'');if(!$('financeDate').value)$('financeDate').value=financeToday();if(!$('financeReportStart').value)$('financeReportStart').value=financeToday().slice(0,8)+'01';if(!$('financeReportEnd').value)$('financeReportEnd').value=financeToday();if(!$('tanggalMulaiLaporan').value)$('tanggalMulaiLaporan').value=financeToday().slice(0,8)+'01';if(!$('tanggalSampaiLaporan').value)$('tanggalSampaiLaporan').value=financeToday();
   const {data:rows,error:re}=await sb.from('financial_transactions').select('id,business_id,created_by,created_by_role,transaction_date,transaction_type,amount,description,category,created_at').eq('business_id',business.id).order('transaction_date',{ascending:true}).order('created_at',{ascending:true});
-  if(re)throw re;financeRows=rows||[];renderFinanceReport();applyHomeFinanceRole();setFinanceStatus('Usaha “'+business.business_name+'” tersambung sebagai '+financeRoleLabel(member.role)+'. '+financeRows.length+' transaksi bersama berhasil dimuat. Catatan lokal di browser ini: '+(Array.isArray(transaksi)?transaksi.length:0)+'.'+(ancillaryErrors.length?' Modul tambahan perlu diperiksa — '+ancillaryErrors.join('; ')+'.':'')+(financeRows.length===0?' Jika transaksi lokal lama ingin dipindahkan, gunakan tombol impor; data lokal tidak dihapus.':''));
+  if(re)throw re;financeRows=rows||[];renderFinanceReport();if(member.role==='owner'){['financeAccountingStart','financeAccountingEnd','financeJournalDate','financeOpenDate','financeSettlementDate'].forEach(function(id){const el=financeAccountingEl(id);if(el&&!el.value)el.value=id==='financeAccountingStart'?financeToday().slice(0,8)+'01':financeToday();});try{await loadFinanceAccounting();}catch(accountingError){console.error('Modul akuntansi belum termuat:',accountingError);}}applyHomeFinanceRole();setFinanceStatus('Usaha “'+business.business_name+'” tersambung sebagai '+financeRoleLabel(member.role)+'. '+financeRows.length+' transaksi bersama berhasil dimuat. Catatan lokal di browser ini: '+(Array.isArray(transaksi)?transaksi.length:0)+'.'+(ancillaryErrors.length?' Modul tambahan perlu diperiksa — '+ancillaryErrors.join('; ')+'.':'')+(financeRows.length===0?' Jika transaksi lokal lama ingin dipindahkan, gunakan tombol impor; data lokal tidak dihapus.':''));
  }catch(e){console.error('Gagal memuat usaha/laporan bersama:',e);financeBusiness=null;financeMemberRole=null;financeRows=[];document.body.classList.remove('employee-verified','owner-verified');if($('homeSummaryGrid'))$('homeSummaryGrid').hidden=true;if($('ownerHomeReports'))$('ownerHomeReports').hidden=true;if($('employeeHomeReport'))$('employeeHomeReport').hidden=true;setup.hidden=false;info.hidden=true;entry.hidden=true;report.hidden=true;setFinanceStatus('Gagal memeriksa akun/usaha: '+String(e.message||e).slice(0,220)+'. Pastikan login memakai akun yang memiliki akses ke usaha, lalu klik Muat Ulang atau muat ulang halaman. Data lokal tidak dihapus.',true);}
 }
 $('financeForm')?.addEventListener('submit',async function(e){
@@ -3692,6 +3693,158 @@ async function bukaPanelTransaksi(tujuan){
   }
   else if(tujuan==='stok'){const sel=$('reportCategorySelect');if(sel&&isOwner){sel.value='stock';applyReportCategory('stock');$('stockReportTableCard')?.scrollIntoView({behavior:'smooth',block:'start'});}}
 }
+
+const FINANCE_DEFAULT_ACCOUNTS=[['1001','Kas','asset','debit'],['1002','Bank','asset','debit'],['1101','Piutang Usaha','asset','debit'],['1201','Persediaan Barang','asset','debit'],['1501','Peralatan','asset','debit'],['2001','Utang Usaha','liability','credit'],['2101','Utang Gaji','liability','credit'],['3001','Modal Pemilik','equity','credit'],['3101','Prive Pemilik','equity','debit'],['4001','Penjualan','revenue','credit'],['4101','Pendapatan Lain','revenue','credit'],['5001','Harga Pokok Penjualan','expense','debit'],['6001','Beban Gaji','expense','debit'],['6002','Beban Sewa','expense','debit'],['6003','Beban Listrik, Air & Internet','expense','debit'],['6004','Beban Transportasi','expense','debit'],['6099','Beban Operasional Lain','expense','debit']];
+function financeAccountingMoney(v){return 'Rp'+Number(v||0).toLocaleString('id-ID',{maximumFractionDigits:0});}
+function financeAccountingEl(id){return document.getElementById(id);}
+function financeAccountingEscape(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+async function financeAccountingEnsureAccounts(){
+ if(!financeBusiness||financeMemberRole!=='owner')return;
+ const r=await sb.from('finance_accounts').select('id,account_code,account_name,account_type,normal_balance,is_system,is_active').eq('business_id',financeBusiness.id).order('account_code');
+ if(r.error)throw r.error;
+ if(!(r.data||[]).length){
+  const payload=FINANCE_DEFAULT_ACCOUNTS.map(function(a){return {business_id:financeBusiness.id,account_code:a[0],account_name:a[1],account_type:a[2],normal_balance:a[3],is_system:true};});
+  const ins=await sb.from('finance_accounts').insert(payload);if(ins.error)throw ins.error;return financeAccountingEnsureAccounts();
+ }
+ financeAccounting.accounts=r.data||[];
+}
+async function loadFinanceAccounting(){
+ const host=financeAccountingEl('financeAccountingReport');if(host)host.textContent='Memuat data akuntansi...';
+ if(!sb||!financeBusiness||financeMemberRole!=='owner'){if(host)host.textContent='Modul akuntansi lengkap hanya tersedia untuk Owner.';return;}
+ try{
+  await financeAccountingEnsureAccounts();
+  const result=await Promise.all([
+   sb.from('finance_journal_entries').select('id,business_id,entry_number,entry_date,description,source_type,status,created_by,posted_at').eq('business_id',financeBusiness.id).order('entry_date'),
+   sb.from('finance_journal_lines').select('id,business_id,entry_id,account_id,party_id,description,debit,credit').eq('business_id',financeBusiness.id),
+   sb.from('finance_parties').select('id,business_id,party_type,party_name,phone,email,address,is_active').eq('business_id',financeBusiness.id).eq('is_active',true).order('party_name'),
+   sb.from('finance_open_items').select('id,business_id,direction,document_number,party_id,document_date,due_date,description,total_amount,settled_amount,status').eq('business_id',financeBusiness.id).order('document_date',{ascending:false})
+  ]);
+  result.forEach(function(x){if(x.error)throw x.error;});
+  financeAccounting.entries=result[0].data||[];financeAccounting.lines=result[1].data||[];financeAccounting.parties=result[2].data||[];financeAccounting.items=result[3].data||[];
+  financeAccountingPopulateControls();renderFinanceAccountingReport();
+ }catch(err){console.error('Akuntansi KasUsaha gagal dimuat',err);if(host)host.textContent='Data akuntansi belum dapat dimuat: '+String(err.message||err).slice(0,220);}
+}
+function financeAccountingPopulateControls(){
+ const accounts=financeAccounting.accounts.filter(function(a){return a.is_active;});
+ ['financeJournalDebit','financeJournalCredit'].forEach(function(id){const el=financeAccountingEl(id);if(!el)return;const old=el.value;el.innerHTML='<option value="">Pilih akun...</option>'+accounts.map(function(a){return '<option value="'+a.id+'">'+financeAccountingEscape(a.account_code+' — '+a.account_name)+'</option>';}).join('');if(old)el.value=old;});
+ const party=financeAccountingEl('financeOpenParty');if(party){const old=party.value;party.innerHTML='<option value="">Pilih pihak...</option>'+financeAccounting.parties.map(function(p){return '<option value="'+p.id+'">'+financeAccountingEscape(p.party_name+' ('+p.party_type+')')+'</option>';}).join('');if(old)party.value=old;}
+ const list=financeAccountingEl('financePartyList');if(list){list.innerHTML=financeAccounting.parties.length?'<table><thead><tr><th>Nama</th><th>Jenis</th><th>Kontak</th></tr></thead><tbody>'+financeAccounting.parties.map(function(p){return '<tr><td>'+financeAccountingEscape(p.party_name)+'</td><td>'+financeAccountingEscape(p.party_type)+'</td><td>'+financeAccountingEscape(p.phone||p.email||'—')+'</td></tr>';}).join('')+'</tbody></table>':'<p class="small">Belum ada pelanggan atau pemasok.</p>';}
+ const item=financeAccountingEl('financeSettlementItem');if(item){const old=item.value;item.innerHTML='<option value="">Pilih tagihan belum lunas...</option>'+financeAccounting.items.filter(function(x){return x.status!=='settled'&&x.status!=='void';}).map(function(x){const p=financeAccounting.parties.find(function(y){return y.id===x.party_id;});return '<option value="'+x.id+'">'+financeAccountingEscape((x.direction==='receivable'?'Piutang':'Utang')+' · '+x.document_number+' · '+(p?p.party_name:'Pihak')+' · Sisa '+financeAccountingMoney(Number(x.total_amount)-Number(x.settled_amount)))+'</option>';}).join('');if(old)item.value=old;}
+}
+function financeAccountingAccountByCode(code){return financeAccounting.accounts.find(function(a){return a.account_code===code;});}
+async function financeAccountingCreateJournal(data){
+ const value=Number(data.amount);if(!Number.isSafeInteger(value)||value<=0)throw new Error('Nominal jurnal harus bilangan bulat positif.');
+ if(!data.debitAccount||!data.creditAccount||data.debitAccount===data.creditAccount)throw new Error('Pilih dua akun yang berbeda.');
+ const number='JU-'+Date.now()+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
+ const head=await sb.from('finance_journal_entries').insert({business_id:financeBusiness.id,entry_number:number,entry_date:data.date,description:data.description,source_type:data.sourceType||'manual',source_id:data.sourceId||null,created_by:financeMemberUserId,status:'draft'}).select('id').single();
+ if(head.error)throw head.error;
+ try{
+  const lines=await sb.from('finance_journal_lines').insert([
+   {business_id:financeBusiness.id,entry_id:head.data.id,account_id:data.debitAccount,party_id:data.partyId||null,debit:value,credit:0,description:data.description},
+   {business_id:financeBusiness.id,entry_id:head.data.id,account_id:data.creditAccount,party_id:data.partyId||null,debit:0,credit:value,description:data.description}
+  ]);
+  if(lines.error)throw lines.error;
+  const posted=await sb.rpc('post_finance_journal_entry',{p_entry_id:head.data.id});if(posted.error)throw posted.error;
+  return head.data.id;
+ }catch(err){await sb.from('finance_journal_entries').delete().eq('id',head.data.id).eq('business_id',financeBusiness.id).eq('status','draft');throw err;}
+}
+function financeAccountingSetStatus(id,message,isError){const el=financeAccountingEl(id);if(el){el.textContent=message;el.style.color=isError?'#b42318':'';}}
+function financeAccountingRange(){
+ const today=financeToday(),start=financeAccountingEl('financeAccountingStart').value||today.slice(0,8)+'01',end=financeAccountingEl('financeAccountingEnd').value||today;
+ return start<=end?{start:start,end:end}:null;
+}
+function financeAccountingTable(headers,rows){return '<div class="table-wrap"><table><thead><tr>'+headers.map(function(h){return '<th>'+h+'</th>';}).join('')+'</tr></thead><tbody>'+rows.join('')+'</tbody></table></div>';}
+function renderFinanceAccountingReport(){
+ const host=financeAccountingEl('financeAccountingReport'),kpi=financeAccountingEl('financeAccountingKpis');if(!host||!kpi)return;
+ if(financeMemberRole!=='owner'){host.textContent='Laporan akuntansi lengkap hanya tersedia untuk Owner.';kpi.textContent='';return;}
+ const range=financeAccountingRange();if(!range){host.textContent='Periksa tanggal periode laporan.';return;}
+ const posted=financeAccounting.entries.filter(function(e){return e.status==='posted';}),entryMap=new Map(posted.map(function(e){return [e.id,e];}));
+ const lines=financeAccounting.lines.filter(function(l){return entryMap.has(l.entry_id);}),accountMap=new Map(financeAccounting.accounts.map(function(a){return [a.id,a];}));
+ const periodEntries=posted.filter(function(e){return e.entry_date>=range.start&&e.entry_date<=range.end;}),periodIds=new Set(periodEntries.map(function(e){return e.id;})),periodLines=lines.filter(function(l){return periodIds.has(l.entry_id);});
+ const sum=function(arr,key){return arr.reduce(function(n,x){return n+Number(x[key]||0);},0);};
+ const allBalances=financeAccounting.accounts.map(function(a){const ls=lines.filter(function(l){return l.account_id===a.id;}),d=sum(ls,'debit'),c=sum(ls,'credit');return Object.assign({},a,{debit:d,credit:c,balance:a.normal_balance==='debit'?d-c:c-d});});
+ const periodBalances=financeAccounting.accounts.map(function(a){const ls=periodLines.filter(function(l){return l.account_id===a.id;}),d=sum(ls,'debit'),c=sum(ls,'credit');return Object.assign({},a,{debit:d,credit:c,balance:a.normal_balance==='debit'?d-c:c-d});});
+ const revenue=periodBalances.filter(function(a){return a.account_type==='revenue';}).reduce(function(n,a){return n+a.balance;},0);
+ const expenses=periodBalances.filter(function(a){return a.account_type==='expense';}).reduce(function(n,a){return n+a.balance;},0),net=revenue-expenses;
+ const cash=allBalances.filter(function(a){return a.account_code==='1001'||a.account_code==='1002';}).reduce(function(n,a){return n+a.balance;},0);
+ const receivable=financeAccounting.items.filter(function(x){return x.direction==='receivable'&&x.status!=='void';}).reduce(function(n,x){return n+Number(x.total_amount)-Number(x.settled_amount);},0);
+ const payable=financeAccounting.items.filter(function(x){return x.direction==='payable'&&x.status!=='void';}).reduce(function(n,x){return n+Number(x.total_amount)-Number(x.settled_amount);},0);
+ kpi.innerHTML=[['Kas & bank',cash],['Piutang berjalan',receivable],['Utang berjalan',payable],['Laba/rugi periode',net]].map(function(c){return '<div class="finance-metric">'+c[0]+'<strong>'+financeAccountingMoney(c[1])+'</strong></div>';}).join('');
+ const type=financeAccountingEl('financeAccountingReportType').value||'dashboard';
+ if(type==='dashboard'){
+  const rows=['<tr><td>Pendapatan</td><td class="num">'+financeAccountingMoney(revenue)+'</td></tr>','<tr><td>Beban usaha</td><td class="num">'+financeAccountingMoney(expenses)+'</td></tr>','<tr class="report-total"><td>Laba / (rugi) periode</td><td class="num">'+financeAccountingMoney(net)+'</td></tr>','<tr><td>Saldo kas dan bank</td><td class="num">'+financeAccountingMoney(cash)+'</td></tr>','<tr><td>Piutang belum lunas</td><td class="num">'+financeAccountingMoney(receivable)+'</td></tr>','<tr><td>Utang belum lunas</td><td class="num">'+financeAccountingMoney(payable)+'</td></tr>'];
+  host.innerHTML='<h4>Ringkasan usaha · '+range.start+' s.d. '+range.end+'</h4>'+financeAccountingTable(['Indikator','Nilai'],rows);
+ }else if(type==='profit_loss'){
+  const rows=periodBalances.filter(function(a){return (a.account_type==='revenue'||a.account_type==='expense')&&a.balance!==0;}).map(function(a){return '<tr><td>'+financeAccountingEscape(a.account_code)+'</td><td>'+financeAccountingEscape(a.account_name)+'</td><td>'+(a.account_type==='revenue'?'Pendapatan':'Beban')+'</td><td class="num">'+financeAccountingMoney(a.balance)+'</td></tr>';});
+  rows.push('<tr class="report-total"><td colspan="3">TOTAL PENDAPATAN</td><td class="num">'+financeAccountingMoney(revenue)+'</td></tr>','<tr class="report-total"><td colspan="3">TOTAL BEBAN</td><td class="num">'+financeAccountingMoney(expenses)+'</td></tr>','<tr class="report-total"><td colspan="3">LABA / (RUGI) BERSIH</td><td class="num">'+financeAccountingMoney(net)+'</td></tr>');
+  host.innerHTML='<h4>Laporan laba rugi · '+range.start+' s.d. '+range.end+'</h4>'+financeAccountingTable(['Kode','Akun','Kelompok','Jumlah'],rows);
+ }else if(type==='balance_sheet'){
+  const rows=allBalances.filter(function(a){return ['asset','liability','equity'].includes(a.account_type)&&a.balance!==0;}).map(function(a){return '<tr><td>'+financeAccountingEscape(a.account_code)+'</td><td>'+financeAccountingEscape(a.account_name)+'</td><td>'+financeAccountingEscape(a.account_type)+'</td><td class="num">'+financeAccountingMoney(a.balance)+'</td></tr>';});
+  const assets=allBalances.filter(function(a){return a.account_type==='asset';}).reduce(function(n,a){return n+a.balance;},0),liabilities=allBalances.filter(function(a){return a.account_type==='liability';}).reduce(function(n,a){return n+a.balance;},0),equity=allBalances.filter(function(a){return a.account_type==='equity';}).reduce(function(n,a){return n+a.balance;},0);
+  rows.push('<tr class="report-total"><td colspan="3">TOTAL ASET</td><td class="num">'+financeAccountingMoney(assets)+'</td></tr>','<tr class="report-total"><td colspan="3">TOTAL KEWAJIBAN</td><td class="num">'+financeAccountingMoney(liabilities)+'</td></tr>','<tr class="report-total"><td colspan="3">EKUITAS + LABA BERJALAN</td><td class="num">'+financeAccountingMoney(equity+net)+'</td></tr>','<tr class="report-total"><td colspan="3">SELISIH UJI KESEIMBANGAN</td><td class="num">'+financeAccountingMoney(assets-liabilities-equity-net)+'</td></tr>');
+  host.innerHTML='<h4>Neraca per '+range.end+'</h4>'+financeAccountingTable(['Kode','Akun','Kelompok','Saldo'],rows);
+ }else if(type==='cash_flow'){
+  const cashLines=periodLines.filter(function(l){const a=accountMap.get(l.account_id);return a&&(a.account_code==='1001'||a.account_code==='1002');});
+  const rows=cashLines.map(function(l){const e=entryMap.get(l.entry_id),a=accountMap.get(l.account_id);return '<tr><td>'+financeAccountingEscape(e.entry_date)+'</td><td>'+financeAccountingEscape(e.entry_number)+'</td><td>'+financeAccountingEscape(e.description)+'</td><td>'+financeAccountingEscape(a.account_name)+'</td><td class="num">'+financeAccountingMoney(l.debit)+'</td><td class="num">'+financeAccountingMoney(l.credit)+'</td></tr>';});
+  rows.push('<tr class="report-total"><td colspan="4">TOTAL ARUS KAS</td><td class="num">'+financeAccountingMoney(sum(cashLines,'debit'))+'</td><td class="num">'+financeAccountingMoney(sum(cashLines,'credit'))+'</td></tr>');
+  host.innerHTML='<h4>Laporan arus kas · '+range.start+' s.d. '+range.end+'</h4><p class="small">Menampilkan seluruh pergerakan akun Kas dan Bank yang sudah diposting.</p>'+financeAccountingTable(['Tanggal','No. jurnal','Keterangan','Akun kas','Masuk','Keluar'],rows);
+ }else if(type==='trial_balance'){
+  const rows=allBalances.filter(function(a){return a.debit||a.credit;}).map(function(a){return '<tr><td>'+financeAccountingEscape(a.account_code)+'</td><td>'+financeAccountingEscape(a.account_name)+'</td><td class="num">'+financeAccountingMoney(a.debit)+'</td><td class="num">'+financeAccountingMoney(a.credit)+'</td><td class="num">'+financeAccountingMoney(a.balance)+'</td></tr>';});
+  rows.push('<tr class="report-total"><td colspan="2">TOTAL</td><td class="num">'+financeAccountingMoney(sum(allBalances,'debit'))+'</td><td class="num">'+financeAccountingMoney(sum(allBalances,'credit'))+'</td><td class="num">—</td></tr>');
+  host.innerHTML='<h4>Neraca saldo sampai '+range.end+'</h4>'+financeAccountingTable(['Kode','Akun','Total debit','Total kredit','Saldo normal'],rows);
+ }else if(type==='general_ledger'){
+  const rows=lines.filter(function(l){const e=entryMap.get(l.entry_id);return e.entry_date>=range.start&&e.entry_date<=range.end;}).sort(function(a,b){return entryMap.get(a.entry_id).entry_date.localeCompare(entryMap.get(b.entry_id).entry_date);}).map(function(l){const e=entryMap.get(l.entry_id),a=accountMap.get(l.account_id);return '<tr><td>'+financeAccountingEscape(e.entry_date)+'</td><td>'+financeAccountingEscape(e.entry_number)+'</td><td>'+financeAccountingEscape(e.description)+'</td><td>'+financeAccountingEscape(a?a.account_name:'')+'</td><td class="num">'+financeAccountingMoney(l.debit)+'</td><td class="num">'+financeAccountingMoney(l.credit)+'</td></tr>';});
+  host.innerHTML='<h4>Buku besar · '+range.start+' s.d. '+range.end+'</h4>'+financeAccountingTable(['Tanggal','No. jurnal','Keterangan','Akun','Debit','Kredit'],rows);
+ }else if(type==='receivable'||type==='payable'){
+  const dir=type==='receivable'?'receivable':'payable',items=financeAccounting.items.filter(function(x){return x.direction===dir&&x.status!=='void';});
+  const rows=items.map(function(x){const p=financeAccounting.parties.find(function(y){return y.id===x.party_id;});return '<tr><td>'+financeAccountingEscape(x.document_number)+'</td><td>'+financeAccountingEscape(p?p.party_name:'')+'</td><td>'+financeAccountingEscape(x.document_date)+'</td><td>'+financeAccountingEscape(x.due_date||'—')+'</td><td class="num">'+financeAccountingMoney(x.total_amount)+'</td><td class="num">'+financeAccountingMoney(x.settled_amount)+'</td><td class="num">'+financeAccountingMoney(Number(x.total_amount)-Number(x.settled_amount))+'</td><td>'+financeAccountingEscape(x.status)+'</td></tr>';});
+  host.innerHTML='<h4>Daftar '+(dir==='receivable'?'piutang pelanggan':'utang pemasok')+'</h4>'+financeAccountingTable(['No. tagihan','Pihak','Tanggal','Jatuh tempo','Nilai','Dibayar','Sisa','Status'],rows);
+ }else if(type==='accounts'){
+  const rows=financeAccounting.accounts.map(function(a){return '<tr><td>'+financeAccountingEscape(a.account_code)+'</td><td>'+financeAccountingEscape(a.account_name)+'</td><td>'+financeAccountingEscape(a.account_type)+'</td><td>'+financeAccountingEscape(a.normal_balance)+'</td><td>'+(a.is_system?'Akun sistem':'Akun tambahan')+'</td></tr>';});
+  host.innerHTML='<h4>Daftar akun perkiraan usaha</h4>'+financeAccountingTable(['Kode','Nama akun','Kelompok','Saldo normal','Jenis'],rows);
+ }
+}
+function printFinanceAccounting(){
+ const host=financeAccountingEl('financeAccountingReport');if(!host||!host.innerHTML.trim()){alert('Tampilkan laporan terlebih dahulu.');return;}
+ const title=financeAccountingEl('financeAccountingReportType').selectedOptions[0].textContent,w=window.open('','_blank');if(!w){alert('Izinkan pop-up untuk mencetak laporan.');return;}
+ w.document.write('<!doctype html><html><head><title>'+financeAccountingEscape(title)+'</title><style>body{font:14px Arial;padding:24px;color:#222}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:7px;text-align:left}.num{text-align:right}.report-total{font-weight:bold;background:#eee}</style></head><body><h2>KasUsaha Lite — '+financeAccountingEscape(title)+'</h2><p>'+financeAccountingEscape(financeBusiness.business_name)+'</p>'+host.innerHTML+'</body></html>');
+ w.document.close();w.focus();setTimeout(function(){w.print();},300);
+}
+financeAccountingEl('financeJournalForm')?.addEventListener('submit',async function(ev){
+ ev.preventDefault();if(financeMemberRole!=='owner')return financeAccountingSetStatus('financeJournalStatus','Akses hanya untuk Owner.',true);
+ const debit=financeAccountingEl('financeJournalDebit').value,credit=financeAccountingEl('financeJournalCredit').value,amount=Number(financeAccountingEl('financeJournalAmount').value),date=financeAccountingEl('financeJournalDate').value,description=financeAccountingEl('financeJournalDescription').value.trim();
+ try{await financeAccountingCreateJournal({date:date,description:description,debitAccount:debit,creditAccount:credit,amount:amount});this.reset();financeAccountingEl('financeJournalDate').value=financeToday();await loadFinanceAccounting();financeAccountingSetStatus('financeJournalStatus','Jurnal berhasil disimpan dan seimbang.');}
+ catch(err){financeAccountingSetStatus('financeJournalStatus','Gagal menyimpan jurnal: '+String(err.message||err).slice(0,200),true);}
+});
+financeAccountingEl('financePartyForm')?.addEventListener('submit',async function(ev){
+ ev.preventDefault();if(financeMemberRole!=='owner')return;
+ try{const r=await sb.from('finance_parties').insert({business_id:financeBusiness.id,party_type:financeAccountingEl('financePartyType').value,party_name:financeAccountingEl('financePartyName').value.trim(),phone:financeAccountingEl('financePartyPhone').value.trim()||null,email:financeAccountingEl('financePartyEmail').value.trim()||null,address:financeAccountingEl('financePartyAddress').value.trim()||null,created_by:financeMemberUserId});if(r.error)throw r.error;this.reset();await loadFinanceAccounting();financeAccountingSetStatus('financePartyStatus','Data pelanggan/pemasok tersimpan.');}
+ catch(err){financeAccountingSetStatus('financePartyStatus','Gagal menyimpan data pihak: '+String(err.message||err).slice(0,200),true);}
+});
+financeAccountingEl('financeOpenItemForm')?.addEventListener('submit',async function(ev){
+ ev.preventDefault();if(financeMemberRole!=='owner')return;
+ const direction=financeAccountingEl('financeOpenDirection').value,partyId=financeAccountingEl('financeOpenParty').value,amount=Number(financeAccountingEl('financeOpenAmount').value),date=financeAccountingEl('financeOpenDate').value,due=financeAccountingEl('financeOpenDue').value||null,number=financeAccountingEl('financeOpenNumber').value.trim(),description=financeAccountingEl('financeOpenDescription').value.trim(),isRec=direction==='receivable',debit=financeAccountingAccountByCode(isRec?'1101':'1201'),credit=financeAccountingAccountByCode(isRec?'4001':'2001');
+ try{
+  const r=await sb.from('finance_open_items').insert({business_id:financeBusiness.id,direction:direction,document_number:number,party_id:partyId,document_date:date,due_date:due,description:description,total_amount:amount,created_by:financeMemberUserId}).select('id').single();if(r.error)throw r.error;
+  try{await financeAccountingCreateJournal({date:date,description:(isRec?'Faktur piutang ':'Faktur utang ')+number+' — '+description,sourceType:isRec?'sale':'purchase',sourceId:r.data.id,debitAccount:debit.id,creditAccount:credit.id,amount:amount,partyId:partyId});}
+  catch(jerr){await sb.from('finance_open_items').delete().eq('id',r.data.id).eq('business_id',financeBusiness.id);throw jerr;}
+  this.reset();await loadFinanceAccounting();financeAccountingSetStatus('financeOpenStatus','Tagihan tersimpan dan jurnal otomatis berhasil diposting.');
+ }catch(err){financeAccountingSetStatus('financeOpenStatus','Gagal menyimpan tagihan: '+String(err.message||err).slice(0,200),true);}
+});
+financeAccountingEl('financeSettlementForm')?.addEventListener('submit',async function(ev){
+ ev.preventDefault();if(financeMemberRole!=='owner')return;
+ const item=financeAccounting.items.find(function(x){return x.id===financeAccountingEl('financeSettlementItem').value;}),amount=Number(financeAccountingEl('financeSettlementAmount').value),date=financeAccountingEl('financeSettlementDate').value;
+ if(!item)return financeAccountingSetStatus('financeSettlementStatus','Pilih tagihan yang benar.',true);
+ const remaining=Number(item.total_amount)-Number(item.settled_amount);if(!Number.isSafeInteger(amount)||amount<=0||amount>remaining)return financeAccountingSetStatus('financeSettlementStatus','Jumlah pembayaran harus lebih dari nol dan tidak boleh melebihi sisa tagihan.',true);
+ const isRec=item.direction==='receivable',debit=financeAccountingAccountByCode(isRec?'1001':'2001'),credit=financeAccountingAccountByCode(isRec?'1101':'1001');
+ try{
+  await financeAccountingCreateJournal({date:date,description:(isRec?'Penerimaan piutang ':'Pembayaran utang ')+item.document_number,sourceType:isRec?'receipt':'payment',sourceId:item.id+'-'+Date.now(),debitAccount:debit.id,creditAccount:credit.id,amount:amount,partyId:item.party_id});
+  const settled=Number(item.settled_amount)+amount,status=settled>=Number(item.total_amount)?'settled':'partial';
+  const r=await sb.from('finance_open_items').update({settled_amount:settled,status:status,updated_at:new Date().toISOString()}).eq('id',item.id).eq('business_id',financeBusiness.id);if(r.error)throw r.error;
+  this.reset();await loadFinanceAccounting();financeAccountingSetStatus('financeSettlementStatus','Pembayaran berhasil dicatat. Sisa tagihan: '+financeAccountingMoney(remaining-amount)+'.');
+ }catch(err){financeAccountingSetStatus('financeSettlementStatus','Gagal mencatat pembayaran: '+String(err.message||err).slice(0,200),true);}
+});
+
 function applyReportCategory(category){
  const selector=$('reportCategorySelect'),isOwner=financeMemberRole==='owner',isEmployee=financeMemberRole==='employee';
  if(selector){
@@ -3702,7 +3855,7 @@ function applyReportCategory(category){
    if((isEmployee&&category!=='income')||(isOwner&&category==='income')){category='';selector.value='';}
    if(!isOwner&&!isEmployee){category='';}
  }
- const ids=['financeTableSalesSummary','stockReportCard','stockReportTableCard','financeReportCard','financeTransactionsTableCard','localDailyReportCard','localTransactionHistoryCard'];
+ const ids=['financeTableSalesSummary','stockReportCard','stockReportTableCard','financeReportCard','financeAccountingCard','financeTransactionsTableCard','localDailyReportCard','localTransactionHistoryCard'];
  ids.forEach(id=>{const el=$(id);if(el){el.hidden=true;el.style.display='none';}});
  document.querySelectorAll('#transaksi .report-category-view').forEach(el=>{el.hidden=true;el.style.display='none';});
  const localDetails=document.querySelector('#transaksi details.local-transaction-card');if(localDetails)localDetails.open=(category==='history');
@@ -3720,6 +3873,9 @@ function applyReportCategory(category){
    const detail=$('financeTransactionsTableCard');if(detail){detail.hidden=false;detail.style.display='block';}
    const title=$('financeReportTitle');if(title)title.textContent='Laporan Keuangan Lengkap (Owner)';
    const sales=$('financeTableSalesSummary');if(sales){sales.hidden=false;sales.style.display='block';}
+ }else if(category==='accounting'&&isOwner){
+   const card=$('financeAccountingCard');if(card){card.hidden=false;card.style.display='block';}
+   loadFinanceAccounting();
  }else if(category==='income'&&isEmployee){
    const card=$('financeReportCard');if(card){card.hidden=false;card.style.display='block';}
    const detail=$('financeTransactionsTableCard');if(detail){detail.hidden=false;detail.style.display='block';}
