@@ -3789,9 +3789,19 @@ function renderFinanceAccountingReport(){
   host.innerHTML='<h4>Neraca per '+range.end+'</h4>'+financeAccountingTable(['Kode','Akun','Kelompok','Saldo'],rows);
  }else if(type==='cash_flow'){
   const cashLines=periodLines.filter(function(l){const a=accountMap.get(l.account_id);return a&&(a.account_code==='1001'||a.account_code==='1002');});
-  const rows=cashLines.map(function(l){const e=entryMap.get(l.entry_id),a=accountMap.get(l.account_id);return '<tr><td>'+financeAccountingEscape(e.entry_date)+'</td><td>'+financeAccountingEscape(e.entry_number)+'</td><td>'+financeAccountingEscape(e.description)+'</td><td>'+financeAccountingEscape(a.account_name)+'</td><td class="num">'+financeAccountingMoney(l.debit)+'</td><td class="num">'+financeAccountingMoney(l.credit)+'</td></tr>';});
-  rows.push('<tr class="report-total"><td colspan="4">TOTAL ARUS KAS</td><td class="num">'+financeAccountingMoney(sum(cashLines,'debit'))+'</td><td class="num">'+financeAccountingMoney(sum(cashLines,'credit'))+'</td></tr>');
-  host.innerHTML='<h4>Laporan arus kas · '+range.start+' s.d. '+range.end+'</h4><p class="small">Menampilkan seluruh pergerakan akun Kas dan Bank yang sudah diposting.</p>'+financeAccountingTable(['Tanggal','No. jurnal','Keterangan','Akun kas','Masuk','Keluar'],rows);
+  const flow={operating:{in:0,out:0},investing:{in:0,out:0},financing:{in:0,out:0}};
+  cashLines.forEach(function(l){
+   const counterpart=periodLines.filter(function(x){return x.entry_id===l.entry_id&&x.id!==l.id;});
+   const codes=counterpart.map(function(x){return accountMap.get(x.account_id);}).filter(Boolean);
+   const group=codes.some(function(a){return a.account_code.startsWith('15');})?'investing':(codes.some(function(a){return a.account_type==='equity'||(a.account_type==='liability'&&a.account_code!=='2001'&&a.account_code!=='2101');})?'financing':'operating');
+   if(Number(l.debit)>0)flow[group].in+=Number(l.debit);else flow[group].out+=Number(l.credit);
+  });
+  const flowRows=[['Aktivitas operasi',flow.operating.in,flow.operating.out],['Aktivitas investasi',flow.investing.in,flow.investing.out],['Aktivitas pendanaan',flow.financing.in,flow.financing.out]];
+  const flowTable=flowRows.map(function(r){return '<tr><td>'+r[0]+'</td><td class="num">'+financeAccountingMoney(r[1])+'</td><td class="num">'+financeAccountingMoney(r[2])+'</td><td class="num">'+financeAccountingMoney(r[1]-r[2])+'</td></tr>';});
+  const totalIn=flow.operating.in+flow.investing.in+flow.financing.in,totalOut=flow.operating.out+flow.investing.out+flow.financing.out;
+  flowTable.push('<tr class="report-total"><td>KENAIKAN / (PENURUNAN) KAS BERSIH</td><td class="num">'+financeAccountingMoney(totalIn)+'</td><td class="num">'+financeAccountingMoney(totalOut)+'</td><td class="num">'+financeAccountingMoney(totalIn-totalOut)+'</td></tr>');
+  const detailRows=cashLines.map(function(l){const e=entryMap.get(l.entry_id),a=accountMap.get(l.account_id);return '<tr><td>'+financeAccountingEscape(e.entry_date)+'</td><td>'+financeAccountingEscape(e.entry_number)+'</td><td>'+financeAccountingEscape(e.description)+'</td><td>'+financeAccountingEscape(a.account_name)+'</td><td class="num">'+financeAccountingMoney(l.debit)+'</td><td class="num">'+financeAccountingMoney(l.credit)+'</td></tr>';});
+  host.innerHTML='<h4>Laporan arus kas · '+range.start+' s.d. '+range.end+'</h4><p class="small">Arus kas dikelompokkan berdasarkan akun lawan: operasi, investasi, dan pendanaan. Periksa klasifikasi akun pada jurnal manual agar laporan sesuai sifat transaksi.</p>'+financeAccountingTable(['Aktivitas','Kas masuk','Kas keluar','Arus bersih'],flowTable)+'<h4>Rincian kas dan bank</h4>'+financeAccountingTable(['Tanggal','No. jurnal','Keterangan','Akun kas','Masuk','Keluar'],detailRows);
  }else if(type==='trial_balance'){
   const rows=allBalances.filter(function(a){return a.debit||a.credit;}).map(function(a){return '<tr><td>'+financeAccountingEscape(a.account_code)+'</td><td>'+financeAccountingEscape(a.account_name)+'</td><td class="num">'+financeAccountingMoney(a.debit)+'</td><td class="num">'+financeAccountingMoney(a.credit)+'</td><td class="num">'+financeAccountingMoney(a.balance)+'</td></tr>';});
   rows.push('<tr class="report-total"><td colspan="2">TOTAL</td><td class="num">'+financeAccountingMoney(sum(allBalances,'debit'))+'</td><td class="num">'+financeAccountingMoney(sum(allBalances,'credit'))+'</td><td class="num">—</td></tr>');
