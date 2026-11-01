@@ -3762,8 +3762,10 @@ function renderFinanceAccountingReport(){
  const lines=financeAccounting.lines.filter(function(l){return entryMap.has(l.entry_id);}),accountMap=new Map(financeAccounting.accounts.map(function(a){return [a.id,a];}));
  const periodEntries=posted.filter(function(e){return e.entry_date>=range.start&&e.entry_date<=range.end;}),periodIds=new Set(periodEntries.map(function(e){return e.id;})),periodLines=lines.filter(function(l){return periodIds.has(l.entry_id);});
  const sum=function(arr,key){return arr.reduce(function(n,x){return n+Number(x[key]||0);},0);};
- const allBalances=financeAccounting.accounts.map(function(a){const ls=lines.filter(function(l){return l.account_id===a.id;}),d=sum(ls,'debit'),c=sum(ls,'credit');return Object.assign({},a,{debit:d,credit:c,balance:a.normal_balance==='debit'?d-c:c-d});});
+ const balanceEntries=posted.filter(function(e){return e.entry_date<=range.end;}),balanceIds=new Set(balanceEntries.map(function(e){return e.id;})),balanceLines=lines.filter(function(l){return balanceIds.has(l.entry_id);});
+ const allBalances=financeAccounting.accounts.map(function(a){const ls=balanceLines.filter(function(l){return l.account_id===a.id;}),d=sum(ls,'debit'),c=sum(ls,'credit');return Object.assign({},a,{debit:d,credit:c,balance:a.normal_balance==='debit'?d-c:c-d});});
  const periodBalances=financeAccounting.accounts.map(function(a){const ls=periodLines.filter(function(l){return l.account_id===a.id;}),d=sum(ls,'debit'),c=sum(ls,'credit');return Object.assign({},a,{debit:d,credit:c,balance:a.normal_balance==='debit'?d-c:c-d});});
+ const netToDate=allBalances.filter(function(a){return a.account_type==='revenue';}).reduce(function(n,a){return n+a.balance;},0)-allBalances.filter(function(a){return a.account_type==='expense';}).reduce(function(n,a){return n+a.balance;},0);
  const revenue=periodBalances.filter(function(a){return a.account_type==='revenue';}).reduce(function(n,a){return n+a.balance;},0);
  const expenses=periodBalances.filter(function(a){return a.account_type==='expense';}).reduce(function(n,a){return n+a.balance;},0),net=revenue-expenses;
  const cash=allBalances.filter(function(a){return a.account_code==='1001'||a.account_code==='1002';}).reduce(function(n,a){return n+a.balance;},0);
@@ -3781,7 +3783,7 @@ function renderFinanceAccountingReport(){
  }else if(type==='balance_sheet'){
   const rows=allBalances.filter(function(a){return ['asset','liability','equity'].includes(a.account_type)&&a.balance!==0;}).map(function(a){return '<tr><td>'+financeAccountingEscape(a.account_code)+'</td><td>'+financeAccountingEscape(a.account_name)+'</td><td>'+financeAccountingEscape(a.account_type)+'</td><td class="num">'+financeAccountingMoney(a.balance)+'</td></tr>';});
   const assets=allBalances.filter(function(a){return a.account_type==='asset';}).reduce(function(n,a){return n+a.balance;},0),liabilities=allBalances.filter(function(a){return a.account_type==='liability';}).reduce(function(n,a){return n+a.balance;},0),equity=allBalances.filter(function(a){return a.account_type==='equity';}).reduce(function(n,a){return n+a.balance;},0);
-  rows.push('<tr class="report-total"><td colspan="3">TOTAL ASET</td><td class="num">'+financeAccountingMoney(assets)+'</td></tr>','<tr class="report-total"><td colspan="3">TOTAL KEWAJIBAN</td><td class="num">'+financeAccountingMoney(liabilities)+'</td></tr>','<tr class="report-total"><td colspan="3">EKUITAS + LABA BERJALAN</td><td class="num">'+financeAccountingMoney(equity+net)+'</td></tr>','<tr class="report-total"><td colspan="3">SELISIH UJI KESEIMBANGAN</td><td class="num">'+financeAccountingMoney(assets-liabilities-equity-net)+'</td></tr>');
+  rows.push('<tr class="report-total"><td colspan="3">TOTAL ASET</td><td class="num">'+financeAccountingMoney(assets)+'</td></tr>','<tr class="report-total"><td colspan="3">TOTAL KEWAJIBAN</td><td class="num">'+financeAccountingMoney(liabilities)+'</td></tr>','<tr class="report-total"><td colspan="3">EKUITAS + LABA BERJALAN</td><td class="num">'+financeAccountingMoney(equity+netToDate)+'</td></tr>','<tr class="report-total"><td colspan="3">SELISIH UJI KESEIMBANGAN</td><td class="num">'+financeAccountingMoney(assets-liabilities-equity-netToDate)+'</td></tr>');
   host.innerHTML='<h4>Neraca per '+range.end+'</h4>'+financeAccountingTable(['Kode','Akun','Kelompok','Saldo'],rows);
  }else if(type==='cash_flow'){
   const cashLines=periodLines.filter(function(l){const a=accountMap.get(l.account_id);return a&&(a.account_code==='1001'||a.account_code==='1002');});
@@ -3833,18 +3835,13 @@ financeAccountingEl('financeOpenItemForm')?.addEventListener('submit',async func
 });
 financeAccountingEl('financeSettlementForm')?.addEventListener('submit',async function(ev){
  ev.preventDefault();if(financeMemberRole!=='owner')return;
- const item=financeAccounting.items.find(function(x){return x.id===financeAccountingEl('financeSettlementItem').value;}),amount=Number(financeAccountingEl('financeSettlementAmount').value),date=financeAccountingEl('financeSettlementDate').value;
- if(!item)return financeAccountingSetStatus('financeSettlementStatus','Pilih tagihan yang benar.',true);
- const remaining=Number(item.total_amount)-Number(item.settled_amount);if(!Number.isSafeInteger(amount)||amount<=0||amount>remaining)return financeAccountingSetStatus('financeSettlementStatus','Jumlah pembayaran harus lebih dari nol dan tidak boleh melebihi sisa tagihan.',true);
- const isRec=item.direction==='receivable',debit=financeAccountingAccountByCode(isRec?'1001':'2001'),credit=financeAccountingAccountByCode(isRec?'1101':'1001');
+ const itemId=financeAccountingEl('financeSettlementItem').value,amount=Number(financeAccountingEl('financeSettlementAmount').value),date=financeAccountingEl('financeSettlementDate').value;
+ if(!itemId||!Number.isSafeInteger(amount)||amount<=0||!date)return financeAccountingSetStatus('financeSettlementStatus','Pilih tagihan, tanggal, dan nominal pembayaran yang benar.',true);
  try{
-  await financeAccountingCreateJournal({date:date,description:(isRec?'Penerimaan piutang ':'Pembayaran utang ')+item.document_number,sourceType:isRec?'receipt':'payment',sourceId:item.id+'-'+Date.now(),debitAccount:debit.id,creditAccount:credit.id,amount:amount,partyId:item.party_id});
-  const settled=Number(item.settled_amount)+amount,status=settled>=Number(item.total_amount)?'settled':'partial';
-  const r=await sb.from('finance_open_items').update({settled_amount:settled,status:status,updated_at:new Date().toISOString()}).eq('id',item.id).eq('business_id',financeBusiness.id);if(r.error)throw r.error;
-  this.reset();await loadFinanceAccounting();financeAccountingSetStatus('financeSettlementStatus','Pembayaran berhasil dicatat. Sisa tagihan: '+financeAccountingMoney(remaining-amount)+'.');
+  const result=await sb.rpc('settle_finance_open_item',{p_item_id:itemId,p_amount:amount,p_date:date});if(result.error)throw result.error;
+  this.reset();await loadFinanceAccounting();financeAccountingSetStatus('financeSettlementStatus','Pembayaran berhasil dicatat. Saldo tagihan telah diperbarui secara atomik.');
  }catch(err){financeAccountingSetStatus('financeSettlementStatus','Gagal mencatat pembayaran: '+String(err.message||err).slice(0,200),true);}
 });
-
 function applyReportCategory(category){
  const selector=$('reportCategorySelect'),isOwner=financeMemberRole==='owner',isEmployee=financeMemberRole==='employee';
  if(selector){
