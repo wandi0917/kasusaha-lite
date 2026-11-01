@@ -2314,6 +2314,12 @@ function refreshPlatformFinanceVisibility(){
 }
 window.muatKeuanganMarketplace=muatKeuanganMarketplace;window.renderKeuanganMarketplace=renderKeuanganMarketplace;window.cetakKeuanganMarketplace=cetakKeuanganMarketplace;
 if(sb&&sb.auth){sb.auth.onAuthStateChange(()=>setTimeout(refreshPlatformFinanceVisibility,700));setTimeout(refreshPlatformFinanceVisibility,1300);}
+async function periksaLisensiWorkspace(businessId){
+ if(!sb||!businessId)throw new Error('Usaha belum dipilih untuk pemeriksaan lisensi.');
+ const {data,error}=await sb.rpc('kasusaha_is_business_license_verified',{p_business_id:businessId});
+ if(error)throw error;
+ return data===true;
+}
 async function buka(id,tombol){
   if(document.body.classList.contains('employee-device-pending')&&id==='transaksi'){id='loginKaryawan';tombol=document.querySelector('nav button[onclick*="loginKaryawan"]');employeeAuthMessage('Perangkat ini belum aktif. Selesaikan pembayaran aktivasi Rp10.000 dan periksa statusnya terlebih dahulu.',true);}
   const fiturBerbayar=['transaksi','produk','cadangan'];
@@ -2343,12 +2349,18 @@ async function buka(id,tombol){
             if(financeSelectedBusinessId&&candidates.length===0){financeSelectedBusinessId=null;candidates=activeMembers;}
             if(candidates.length===1)selectedMemberRole=candidates[0].role;
           }
-          if(tujuanId==='transaksi'&&selectedMemberRole==='employee'){
-            document.body.classList.remove('owner-verified');document.body.classList.add('employee-verified');id=tujuanId;tombol=tujuanTombol;
-          }else if(tujuanId==='transaksi'&&selectedMemberRole==='owner'){
-            if(licenseAccessState!=='active')await periksaAktivasiLisensi();
-            if(licenseAccessState==='active'){document.body.classList.remove('employee-verified');document.body.classList.add('owner-verified');id=tujuanId;tombol=tujuanTombol;}
-            else{id='akunPembeli';tombol=document.querySelector('nav button[onclick*="akunPembeli"]');setStatusAktivasi('Lisensi Owner belum memiliki pembayaran terverifikasi. Fitur usaha tetap terkunci sampai pemeriksaan pembayaran selesai.',false);}
+          if(tujuanId==='transaksi'&&selectedMemberRole&&activeMembers.length){
+            const selectedBusinessId=financeSelectedBusinessId||activeMembers[0].business_id;
+            const workspaceLicenseOk=await periksaLisensiWorkspace(selectedBusinessId);
+            if(!workspaceLicenseOk){
+              document.body.classList.remove('owner-verified','employee-verified');
+              id='akunPembeli';tombol=document.querySelector('nav button[onclick*="akunPembeli"]');
+              setStatusAktivasi('Lisensi untuk usaha ini belum terverifikasi oleh server. Minta Owner utama memastikan pembayaran dan aktivasi lisensi KasUsaha Lite; karyawan tidak perlu membeli lisensi sendiri.',true);
+            }else if(selectedMemberRole==='employee'){
+              document.body.classList.remove('owner-verified');document.body.classList.add('employee-verified');id=tujuanId;tombol=tujuanTombol;
+            }else{
+              document.body.classList.remove('employee-verified');document.body.classList.add('owner-verified');id=tujuanId;tombol=tujuanTombol;
+            }
           }else if(tujuanId==='transaksi'&&activeMembers.length>1){
             // Buka pemilih usaha saja; fitur tetap terkunci sampai salah satu usaha dipilih.
             document.body.classList.remove('owner-verified','employee-verified');id=tujuanId;tombol=tujuanTombol;
@@ -3516,10 +3528,8 @@ async function financeChooseSavedBusiness(businessId){
   const {data:sd,error:se}=await sb.auth.getSession();if(se)throw se;if(!sd.session)throw new Error('Login terlebih dahulu.');
   const {data:members,error:me}=await sb.from('business_members').select('business_id,user_id,role,active').eq('user_id',sd.session.user.id).eq('business_id',businessId).eq('active',true).limit(2);
   if(me)throw me;if(!members||members.length!==1)throw new Error('Keanggotaan usaha tidak ditemukan atau tidak unik. Minta Owner memeriksa daftar anggota usaha.');
-  if(members[0].role==='owner'){
-   if(licenseAccessState!=='active')await periksaAktivasiLisensi();
-   if(licenseAccessState!=='active'){setFinanceStatus('Lisensi Owner belum terverifikasi. Menu usaha tetap terkunci sampai pembayaran dikonfirmasi server.',true);await buka('akunPembeli',document.querySelector('nav button[onclick*="akunPembeli"]'));return;}
-  }
+  const workspaceLicenseOk=await periksaLisensiWorkspace(businessId);
+  if(!workspaceLicenseOk){setFinanceStatus('Lisensi usaha belum terverifikasi. Minta Owner utama memeriksa status pembayaran dan aktivasi lisensi KasUsaha Lite. Data usaha tidak diubah.',true);return;}
   financeSelectedBusinessId=businessId;await loadFinanceWorkspace();setFinanceStatus('Usaha dipilih. Data dimuat sesuai akses akun.');
 
  }catch(e){setFinanceStatus('Tidak dapat memilih usaha: '+String(e.message||e).slice(0,180),true);}
