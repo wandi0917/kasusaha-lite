@@ -3563,6 +3563,18 @@ async function financeChooseSavedBusiness(businessId){
 
  }catch(e){setFinanceStatus('Tidak dapat memilih usaha: '+String(e.message||e).slice(0,180),true);}
 }
+async function financeFetchAllRows(queryFactory,pageSize=500,maxRows=100000){
+ if(typeof queryFactory!=='function')throw new Error('Pembentuk kueri data tidak valid.');
+ const rows=[];
+ for(let offset=0;offset<maxRows;offset+=pageSize){
+  const {data,error}=await queryFactory().range(offset,offset+pageSize-1);
+  if(error)throw error;
+  const page=Array.isArray(data)?data:[];
+  rows.push(...page);
+  if(page.length<pageSize)return rows;
+ }
+ throw new Error('Jumlah data melebihi batas pengamanan pemuatan laporan. Persempit periode laporan; data tidak diubah.');
+}
 async function loadFinanceWorkspaceInternal(){
  const setup=$('financeSetupForms'),info=$('financeWorkspaceInfo'),entry=$('financeEntryCard'),report=$('financeReportCard');
  if(!sb){setFinanceStatus('Koneksi Supabase belum tersedia.',true);return;}
@@ -3638,10 +3650,12 @@ async function loadFinanceWorkspaceInternal(){
   if(member.role==='employee'){roleFilter.innerHTML='<option value="mine">Pemasukan saya</option>';roleFilter.value='mine';$('financeType').value='income';$('financeType').disabled=true;$('financeTypeWrap').hidden=true;$('financeReportTitle').textContent='Laporan Pemasukan Karyawan';$('financeRoleFilterWrap').hidden=true;}else{roleFilter.innerHTML='<option value="all">Semua transaksi</option><option value="owner">Transaksi Owner</option><option value="employee">Transaksi Karyawan</option><option value="mine">Transaksi saya</option>';$('financeType').disabled=false;$('financeTypeWrap').hidden=false;$('financeReportTitle').textContent='Laporan Keuangan Lengkap (Owner)';$('financeRoleFilterWrap').hidden=false;}
   // Pertahankan kategori laporan aktif saat workspace dimuat ulang; sebelumnya panel laporan langsung disembunyikan kembali.
   applyReportCategory($('reportCategorySelect')?.value||'');if(!$('financeDate').value)$('financeDate').value=financeToday();if(!$('financeReportStart').value)$('financeReportStart').value=financeToday().slice(0,8)+'01';if(!$('financeReportEnd').value)$('financeReportEnd').value=financeToday();if(!$('tanggalMulaiLaporan').value)$('tanggalMulaiLaporan').value=financeToday().slice(0,8)+'01';if(!$('tanggalSampaiLaporan').value)$('tanggalSampaiLaporan').value=financeToday();
-  let financeTransactionsQuery=sb.from('financial_transactions').select('id,business_id,created_by,created_by_role,transaction_date,transaction_type,amount,description,category,created_at').eq('business_id',business.id).order('transaction_date',{ascending:true}).order('created_at',{ascending:true});
-  if(member.role==='employee')financeTransactionsQuery=financeTransactionsQuery.in('created_by',financeEmployeeIdentityUserIds);
-  const {data:rows,error:re}=await financeTransactionsQuery;
-  if(re)throw re;financeRows=rows||[];financeExpandDefaultReportRange(financeRows,'financeReportStart','financeReportEnd','transaction_date');try{renderFinanceReport();}catch(reportRenderError){console.error('Laporan awal gagal dirender; sesi dan workspace tetap dipertahankan:',reportRenderError);setFinanceStatus('Login dan workspace berhasil dimuat, tetapi tampilan laporan perlu dimuat ulang: '+String(reportRenderError.message||reportRenderError).slice(0,180),true);}if(member.role==='owner'){['financeAccountingStart','financeAccountingEnd','financeJournalDate','financeOpenDate','financeSettlementDate'].forEach(function(id){const el=financeAccountingEl(id);if(el&&!el.value)el.value=id==='financeAccountingStart'?financeToday().slice(0,8)+'01':financeToday();});try{await loadFinanceAccounting();}catch(accountingError){console.error('Modul akuntansi belum termuat:',accountingError);}}applyHomeFinanceRole();setFinanceStatus('Usaha “'+business.business_name+'” tersambung sebagai '+financeRoleLabel(member.role)+'. '+financeRows.length+' transaksi bersama berhasil dimuat. Catatan lokal di browser ini: '+(Array.isArray(transaksi)?transaksi.length:0)+'.'+(ancillaryErrors.length?' Modul tambahan perlu diperiksa — '+ancillaryErrors.join('; ')+'.':'')+(financeRows.length===0?' Jika transaksi lokal lama ingin dipindahkan, gunakan tombol impor; data lokal tidak dihapus.':''));
+  const rows=await financeFetchAllRows(()=>{
+   let q=sb.from('financial_transactions').select('id,business_id,created_by,created_by_role,transaction_date,transaction_type,amount,description,category,created_at').eq('business_id',business.id).order('transaction_date',{ascending:true}).order('created_at',{ascending:true}).order('id',{ascending:true});
+   if(member.role==='employee')q=q.in('created_by',financeEmployeeIdentityUserIds);
+   return q;
+  });
+  financeRows=rows;financeExpandDefaultReportRange(financeRows,'financeReportStart','financeReportEnd','transaction_date');try{renderFinanceReport();}catch(reportRenderError){console.error('Laporan awal gagal dirender; sesi dan workspace tetap dipertahankan:',reportRenderError);setFinanceStatus('Login dan workspace berhasil dimuat, tetapi tampilan laporan perlu dimuat ulang: '+String(reportRenderError.message||reportRenderError).slice(0,180),true);}if(member.role==='owner'){['financeAccountingStart','financeAccountingEnd','financeJournalDate','financeOpenDate','financeSettlementDate'].forEach(function(id){const el=financeAccountingEl(id);if(el&&!el.value)el.value=id==='financeAccountingStart'?financeToday().slice(0,8)+'01':financeToday();});try{await loadFinanceAccounting();}catch(accountingError){console.error('Modul akuntansi belum termuat:',accountingError);}}applyHomeFinanceRole();setFinanceStatus('Usaha “'+business.business_name+'” tersambung sebagai '+financeRoleLabel(member.role)+'. '+financeRows.length+' transaksi bersama berhasil dimuat. Catatan lokal di browser ini: '+(Array.isArray(transaksi)?transaksi.length:0)+'.'+(ancillaryErrors.length?' Modul tambahan perlu diperiksa — '+ancillaryErrors.join('; ')+'.':'')+(financeRows.length===0?' Jika transaksi lokal lama ingin dipindahkan, gunakan tombol impor; data lokal tidak dihapus.':''));
  }catch(e){console.error('Gagal memuat usaha/laporan bersama:',e);financeBusiness=null;financeMemberRole=null;financeEmployeeDirectory=new Map();financeRows=[];document.body.classList.remove('employee-verified','owner-verified');if($('homeSummaryGrid'))$('homeSummaryGrid').hidden=true;if($('ownerHomeReports'))$('ownerHomeReports').hidden=true;if($('employeeHomeReport'))$('employeeHomeReport').hidden=true;setup.hidden=false;info.hidden=true;entry.hidden=true;report.hidden=true;if($('attendanceCard'))$('attendanceCard').hidden=true;if($('reportCategoryChooser'))$('reportCategoryChooser').hidden=true;applyReportCategory('');setFinanceStatus('Gagal memeriksa akun/usaha: '+String(e.message||e).slice(0,220)+'. Pastikan login memakai akun yang memiliki akses ke usaha, lalu klik Muat Ulang atau muat ulang halaman. Data lokal tidak dihapus.',true);}
 }
 // Prevent overlapping workspace loads from SIGNED_IN and the login button.
@@ -3654,10 +3668,53 @@ async function loadFinanceWorkspace(){
 $('financeForm')?.addEventListener('submit',async function(e){
  e.preventDefault();if(!sb||!financeBusiness||!financeMemberRole||!financeMemberUserId){setFinanceStatus('Hubungkan akun ke usaha terlebih dahulu.',true);return;}
  const description=$('financeDescription').value.trim(),amount=Number($('financeAmount').value),date=$('financeDate').value,category=$('financeCategory').value,type=financeMemberRole==='employee'?'income':$('financeType').value;
- if(!description||!Number.isSafeInteger(amount)||amount<=0||!date){setFinanceStatus('Periksa keterangan, tanggal, dan nominal transaksi. Nominal harus bilangan bulat positif.',true);return;}
+ if(!description||description.length>300||!Number.isSafeInteger(amount)||amount<=0||!date||!category){setFinanceStatus('Periksa keterangan (maksimal 300 karakter), tanggal, kategori, dan nominal. Nominal harus bilangan bulat positif.',true);return;}
  const btn=$('financeSave');btn.disabled=true;
- try{const editId=$('financeEditId').value;if(editId){if(financeMemberRole!=='owner')throw new Error('Hanya Owner yang boleh mengedit transaksi.');const {error}=await sb.from('financial_transactions').update({transaction_date:date,transaction_type:type,amount,description,category}).eq('id',editId).eq('business_id',financeBusiness.id);if(error)throw error;batalEditFinanceTransaction();await loadFinanceWorkspace();setFinanceStatus('Transaksi berhasil diperbarui.');}else{const {data,error}=await sb.from('financial_transactions').insert({business_id:financeBusiness.id,created_by:financeMemberUserId,created_by_role:financeMemberRole,transaction_date:date,transaction_type:type,amount,description,category}).select('id').single();if(error)throw error;this.reset();$('financeDate').value=financeToday();await loadFinanceWorkspace();setFinanceStatus('Transaksi berhasil disimpan sebagai '+financeRoleLabel(financeMemberRole)+'.');}}
- catch(err){setFinanceStatus('Transaksi gagal disimpan: '+String(err.message||err).slice(0,240),true);}finally{btn.disabled=false;}
+ try{
+  const editId=$('financeEditId').value;
+  if(editId){
+   if(financeMemberRole!=='owner')throw new Error('Hanya Owner yang boleh mengedit transaksi.');
+   const payload={transaction_date:date,transaction_type:type,amount,description,category};
+   const {data:updated,error}=await sb.from('financial_transactions').update(payload).eq('id',editId).eq('business_id',financeBusiness.id).select('id').maybeSingle();
+   if(error){
+    const {data:confirmed,error:verifyError}=await sb.from('financial_transactions').select('id,transaction_date,transaction_type,amount,description,category').eq('id',editId).eq('business_id',financeBusiness.id).maybeSingle();
+    if(verifyError||!confirmed||confirmed.transaction_date!==date||confirmed.transaction_type!==type||Number(confirmed.amount)!==amount||confirmed.description!==description||confirmed.category!==category)throw new Error('Hasil perubahan belum dapat dipastikan. Jangan ulangi edit sebelum memeriksa laporan. '+String(error.message||error).slice(0,160));
+   }else if(!updated)throw new Error('Transaksi tidak ditemukan atau tidak dapat diperbarui oleh akun ini.');
+   batalEditFinanceTransaction();setFinanceStatus('Perubahan transaksi sudah terkonfirmasi di server. Memuat ulang laporan...');
+   await loadFinanceWorkspace();
+   if(!financeRows.some(r=>r.id===editId))setFinanceStatus('Perubahan sudah tersimpan, tetapi laporan belum berhasil dimuat ulang. Tekan Muat Ulang laporan.',true);
+   else setFinanceStatus('Transaksi berhasil diperbarui dan diverifikasi pada laporan.');
+  }else{
+   const requestKey='kasusaha_manual_finance_pending_v1';
+   const payload={business_id:financeBusiness.id,created_by:financeMemberUserId,created_by_role:financeMemberRole,transaction_date:date,transaction_type:type,amount,description,category};
+   const fingerprint=JSON.stringify(payload);let pending=null;
+   try{pending=JSON.parse(localStorage.getItem(requestKey)||'null');}catch(_){throw new Error('Kunci pengaman pencatatan tidak dapat dibaca. Periksa laporan sebelum mencoba lagi.');}
+   if(pending&&(pending.businessId!==financeBusiness.id||pending.fingerprint!==fingerprint))throw new Error('Ada pencatatan sebelumnya yang hasilnya belum dipastikan. Jangan membuat transaksi baru. Periksa laporan dan gunakan rincian yang sama untuk memastikan transaksi terdahulu.');
+   let legacyRef=pending?.legacyRef;
+   if(!legacyRef){legacyRef='kasusaha-manual:'+((crypto.randomUUID&&crypto.randomUUID())||('xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,ch=>{const n=Math.random()*16|0;return(ch==='x'?n:(n&3|8)).toString(16);})));try{localStorage.setItem(requestKey,JSON.stringify({businessId:financeBusiness.id,fingerprint,legacyRef,createdAt:new Date().toISOString()}));}catch(_){throw new Error('Kunci pengaman transaksi tidak dapat disimpan pada perangkat. Penjualan tidak dikirim agar tidak berisiko tercatat ganda.');}}
+   const insertPayload={...payload,legacy_ref:legacyRef};
+   let saved=null;const inserted=await sb.from('financial_transactions').insert(insertPayload).select('id,legacy_ref').single();
+   if(!inserted.error)saved=inserted.data;
+   else{
+    const {data:existing,error:lookupError}=await sb.from('financial_transactions').select('id,legacy_ref,created_by,created_by_role,transaction_date,transaction_type,amount,description,category').eq('business_id',financeBusiness.id).eq('legacy_ref',legacyRef).maybeSingle();
+    if(lookupError)throw new Error('Server belum memberi kepastian apakah transaksi tersimpan. Kunci pengaman dipertahankan; periksa laporan sebelum mengirim ulang. '+String(lookupError.message||lookupError).slice(0,140));
+    if(existing&&existing.created_by===financeMemberUserId&&existing.created_by_role===financeMemberRole&&existing.transaction_date===date&&existing.transaction_type===type&&Number(existing.amount)===amount&&existing.description===description&&existing.category===category)saved=existing;
+    else{
+     if(typeof inserted.error.code==='string'&&inserted.error.code){try{localStorage.removeItem(requestKey);}catch(_){}throw new Error('Server menolak pencatatan dan tidak menemukan transaksi dengan kunci permintaan yang sama. '+String(inserted.error.message||inserted.error).slice(0,180));}
+     throw new Error('Hasil simpan belum dapat dipastikan karena koneksi terputus. Kunci pengaman tetap disimpan agar transaksi tidak tercatat dua kali. Periksa laporan sebelum mencoba lagi.');
+    }
+   }
+   if(!saved?.id)throw new Error('Server belum mengembalikan bukti transaksi tersimpan. Kunci pengaman tetap dipertahankan.');
+   const {data:verified,error:verifyError}=await sb.from('financial_transactions').select('id,legacy_ref').eq('id',saved.id).eq('business_id',financeBusiness.id).maybeSingle();
+   if(verifyError||!verified||verified.legacy_ref!==legacyRef)throw new Error('Transaksi mungkin sudah tersimpan, tetapi verifikasi server belum berhasil. Kunci pengaman dipertahankan; periksa laporan sebelum mencoba lagi.');
+   try{const stored=JSON.parse(localStorage.getItem(requestKey)||'null');if(stored?.legacyRef===legacyRef)localStorage.removeItem(requestKey);}catch(_){}
+   this.reset();$('financeDate').value=financeToday();setFinanceStatus('Transaksi sudah tersimpan dan diverifikasi server. Memuat ulang laporan...');
+   await loadFinanceWorkspace();
+   if(!financeRows.some(r=>r.id===saved.id))setFinanceStatus('Transaksi sudah tersimpan dan diverifikasi di server, tetapi laporan belum berhasil dimuat ulang. Tekan Muat Ulang laporan.',true);
+   else setFinanceStatus('Transaksi berhasil disimpan, diverifikasi, dan muncul pada laporan bersama.');
+  }
+ }catch(err){setFinanceStatus('PENCATATAN BELUM DAPAT DINYATAKAN BERHASIL: '+String(err.message||err).slice(0,280),true);}
+ finally{btn.disabled=false;}
 });
 let storeProductRows=[];
 function formatStoreRupiah(value){return 'Rp'+Number(value||0).toLocaleString('id-ID',{maximumFractionDigits:0});}
@@ -3817,19 +3874,23 @@ async function financeAccountingEnsureAccounts(){
 async function loadFinanceAccounting(){
  const host=financeAccountingEl('financeAccountingReport');if(host)host.textContent='Memuat data akuntansi...';
  if(!sb||!financeBusiness||financeMemberRole!=='owner'){if(host)host.textContent='Modul akuntansi lengkap hanya tersedia untuk Owner.';return;}
+ financeAccounting.entries=[];financeAccounting.lines=[];financeAccounting.parties=[];financeAccounting.items=[];
  try{
   await financeAccountingEnsureAccounts();
-  const result=await Promise.all([
-   sb.from('finance_journal_entries').select('id,business_id,entry_number,entry_date,description,source_type,status,created_by,posted_at').eq('business_id',financeBusiness.id).order('entry_date'),
-   sb.from('finance_journal_lines').select('id,business_id,entry_id,account_id,party_id,description,debit,credit').eq('business_id',financeBusiness.id),
-   sb.from('finance_parties').select('id,business_id,party_type,party_name,phone,email,address,is_active').eq('business_id',financeBusiness.id).eq('is_active',true).order('party_name'),
-   sb.from('finance_open_items').select('id,business_id,direction,document_number,party_id,document_date,due_date,description,total_amount,settled_amount,status').eq('business_id',financeBusiness.id).order('document_date',{ascending:false})
+  const [entries,lines,parties,items]=await Promise.all([
+   financeFetchAllRows(()=>sb.from('finance_journal_entries').select('id,business_id,entry_number,entry_date,description,source_type,status,created_by,posted_at').eq('business_id',financeBusiness.id).order('entry_date').order('id')),
+   financeFetchAllRows(()=>sb.from('finance_journal_lines').select('id,business_id,entry_id,account_id,party_id,description,debit,credit').eq('business_id',financeBusiness.id).order('id')),
+   financeFetchAllRows(()=>sb.from('finance_parties').select('id,business_id,party_type,party_name,phone,email,address,is_active').eq('business_id',financeBusiness.id).eq('is_active',true).order('party_name').order('id')),
+   financeFetchAllRows(()=>sb.from('finance_open_items').select('id,business_id,direction,document_number,party_id,document_date,due_date,description,total_amount,settled_amount,status').eq('business_id',financeBusiness.id).order('document_date',{ascending:false}).order('id'))
   ]);
-  result.forEach(function(x){if(x.error)throw x.error;});
-  financeAccounting.entries=result[0].data||[];financeAccounting.lines=result[1].data||[];financeAccounting.parties=result[2].data||[];financeAccounting.items=result[3].data||[];
+  financeAccounting.entries=entries;financeAccounting.lines=lines;financeAccounting.parties=parties;financeAccounting.items=items;
+  const posted=entries.filter(e=>e.status==='posted'),totals=new Map();
+  lines.forEach(line=>{const t=totals.get(line.entry_id)||{count:0,debit:0,credit:0};t.count++;t.debit+=Number(line.debit||0);t.credit+=Number(line.credit||0);totals.set(line.entry_id,t);});
+  const invalid=posted.filter(entry=>{const t=totals.get(entry.id);return !t||t.count<2||t.debit<=0||t.credit<=0||Math.abs(t.debit-t.credit)>0.01;});
+  if(invalid.length)throw new Error('Laporan akuntansi DIKUNCI: ditemukan '+invalid.length+' jurnal posted yang tidak seimbang atau baris jurnalnya tidak lengkap. Periksa jurnal sumber sebelum memakai angka laporan.');
   financeExpandDefaultReportRange(financeAccounting.entries,'financeAccountingStart','financeAccountingEnd','entry_date');
   financeAccountingPopulateControls();renderFinanceAccountingReport();
- }catch(err){console.error('Akuntansi KasUsaha gagal dimuat',err);if(host)host.textContent='Data akuntansi belum dapat dimuat: '+String(err.message||err).slice(0,220);}
+ }catch(err){console.error('Akuntansi KasUsaha gagal dimuat',err);if(host)host.textContent='Data akuntansi belum dapat dimuat atau validasi integritas gagal: '+String(err.message||err).slice(0,260);}
 }
 function financeAccountingPopulateControls(){
  const accounts=financeAccounting.accounts.filter(function(a){return a.is_active;});
@@ -4128,9 +4189,7 @@ async function printSelectedReport(){
 async function loadStoreProducts(){
   if(!sb)throw new Error('Koneksi Supabase belum tersedia.');
   if(!financeBusiness||!financeMemberRole)throw new Error('Pilih usaha dan pastikan akun Owner/Karyawan sudah terhubung sebelum memuat barang.');
-  const {data,error}=await sb.from('store_products').select('id,business_id,product_code,product_name,price,stock_quantity,stock_unit,item_type,active,created_at,updated_at').eq('business_id',financeBusiness.id).order('product_code',{ascending:true});
-  if(error)throw error;
-  storeProductRows=data||[];
+  storeProductRows=await financeFetchAllRows(()=>sb.from('store_products').select('id,business_id,product_code,product_name,price,stock_quantity,stock_unit,item_type,active,created_at,updated_at').eq('business_id',financeBusiness.id).order('product_code',{ascending:true}).order('id'));
   let costLookupWarning='';
   if(financeMemberRole==='owner'){
     try{
@@ -4242,11 +4301,12 @@ async function loadAttendance(){
    if(!todayRows||!todayRows.length){const tr=document.createElement('tr');tr.innerHTML='<td colspan="4">Belum ada absensi hari ini.</td>';tbody.appendChild(tr);}
    else todayRows.forEach(row=>{const tr=document.createElement('tr');[row.user_id===financeMemberUserId?financeCurrentUserName+' ('+financeRoleLabel(financeMemberRole)+', akun Anda)':(financeEmployeeDirectory.get(String(row.user_id))?.employee_name||'Karyawan/akun '+String(row.user_id).slice(0,8)),attendanceTime(row.check_in_at),attendanceTime(row.check_out_at)].forEach(value=>{const td=document.createElement('td');td.textContent=value;tr.appendChild(td);});const action=document.createElement('td');const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Edit';edit.addEventListener('click',()=>editAttendanceRecord(row));action.appendChild(edit);tr.appendChild(action);tbody.appendChild(tr);});
   }else ownerBox.hidden=true;
-  let payrollQuery=sb.from('business_attendance').select('user_id,work_date,check_in_at,check_out_at,hourly_wage').eq('business_id',financeBusiness.id);
-  if(financeMemberRole==='employee')payrollQuery=payrollQuery.in('user_id',financeEmployeeIdentityUserIds);
-  else if(financeMemberRole!=='owner')payrollQuery=payrollQuery.eq('user_id',financeMemberUserId);
-  const {data:payrollRows,error:pe}=await payrollQuery.order('work_date',{ascending:false});
-  if(pe)throw pe;
+  const payrollRows=await financeFetchAllRows(()=>{
+   let q=sb.from('business_attendance').select('id,user_id,work_date,check_in_at,check_out_at,hourly_wage').eq('business_id',financeBusiness.id).order('work_date',{ascending:false}).order('id',{ascending:false});
+   if(financeMemberRole==='employee')q=q.in('user_id',financeEmployeeIdentityUserIds);
+   else if(financeMemberRole!=='owner')q=q.eq('user_id',financeMemberUserId);
+   return q;
+  });
   const latestRecordedWage=(payrollRows||[]).find(row=>row.hourly_wage!==null&&row.hourly_wage!==undefined)?.hourly_wage;
   if($('attendanceHourlyWage')&&!$('attendanceHourlyWage').dataset.userEdited){
    const preferredWage=mine?.hourly_wage??latestRecordedWage??savedWage??0;
