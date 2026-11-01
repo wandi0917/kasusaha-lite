@@ -175,14 +175,32 @@ Deno.serve(async (req: Request) => {
         return reply({ success: false, message: "Status keanggotaan tidak dapat diperiksa." }, 500);
       }
 
-      // Kode yang sudah dipakai hanya boleh dipakai kembali oleh ID login
-      // anonim yang sama dan selama Owner belum menonaktifkan keanggotaannya.
+      // Kode yang sudah dipakai dapat dipulihkan oleh sesi anonim lama yang
+      // telah dipetakan secara eksplisit ke identitas karyawan yang sama oleh server.
       if (invite.status === "used") {
+        let verifiedHistoricalAlias = false;
         if (invite.user_id !== authUserId) {
-          return reply({ success: false, message: "ID ini sudah terhubung ke akun Karyawan lain. Minta Owner membuat ID baru." }, 403);
+          const { data: aliasMatch, error: aliasError } = await admin.rpc("kasusaha_employee_alias_matches", {
+            p_business_id: invite.business_id,
+            p_canonical_user_id: invite.user_id,
+            p_alias_user_id: authUserId,
+          });
+          if (aliasError || aliasMatch !== true) {
+            return reply({ success: false, message: "ID ini sudah terhubung ke akun Karyawan lain. Sesi ini belum terverifikasi sebagai riwayat akun yang sama. Hubungi Owner." }, 403);
+          }
+          verifiedHistoricalAlias = true;
         }
-        if (!existing?.active || existing.business_id !== invite.business_id || existing.role !== "employee") {
+        if (!verifiedHistoricalAlias && (!existing?.active || existing.business_id !== invite.business_id || existing.role !== "employee")) {
           return reply({ success: false, message: "Akses akun ini sedang dinonaktifkan atau telah dihapus Owner. Hubungi Owner." }, 403);
+        }
+        if (verifiedHistoricalAlias) {
+          const { error: memberRestoreError } = await admin.from("business_members").upsert({
+            business_id: invite.business_id, user_id: authUserId, role: "employee", active: true
+          }, { onConflict: "business_id,user_id" });
+          if (memberRestoreError) {
+            console.error("Restore verified employee alias membership:", memberRestoreError.message);
+            return reply({ success: false, message: "Sesi lama terverifikasi, tetapi keanggotaan belum dapat dipulihkan. Hubungi Owner." }, 500);
+          }
         }
 
         const accountDeviceId = "ksacct_" + authUserId.replace(/-/g, "");
