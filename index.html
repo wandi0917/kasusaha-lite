@@ -3724,8 +3724,8 @@ async function bukaPanelTransaksi(tujuan){
   const el=$(targets[tujuan]);
   if(el){
     el.hidden=false;el.removeAttribute('hidden');el.style.display='block';
+    const saleForm=$('quickSaleForm'),catalog=$('ownerStoreCatalog');
     if(tujuan==='kasir'||tujuan==='stok'){
-      const saleForm=$('quickSaleForm'),catalog=$('ownerStoreCatalog');
       if(saleForm){saleForm.hidden=tujuan!=='kasir';saleForm.style.display=tujuan==='kasir'?'block':'none';}
       if(catalog){catalog.hidden=!(tujuan==='stok'&&isOwner);catalog.style.display=tujuan==='stok'&&isOwner?'block':'none';}
       if($('financeEntryTitle'))$('financeEntryTitle').textContent=tujuan==='stok'?'Barang & Stok — Kelola Persediaan':'Kasir Cepat — Penjualan Barang';
