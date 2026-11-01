@@ -4885,7 +4885,71 @@ if(!window.__kasusahaCrossDeviceRefreshBound){
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refreshSharedWorkspaceFromOtherDevice();});
 }
 
-sb.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_IN'&&session?.user?.id){const cached=readOfflineWorkspace();if(cached&&cached.userId!==session.user.id){offlineTransactionMode=false;try{localStorage.removeItem(OFFLINE_WORKSPACE_KEY);}catch(e){console.warn('Konteks offline akun sebelumnya tidak dapat dibersihkan:',e);}document.body.classList.remove('owner-verified','employee-verified');}}if(event==='SIGNED_OUT'){offlineTransactionMode=false;try{localStorage.removeItem(OFFLINE_WORKSPACE_KEY);}catch(e){console.warn('Konteks offline tidak dapat dibersihkan setelah logout:',e);}document.body.classList.remove('owner-verified','employee-verified','employee-device-pending');}financeBusiness=null;financeMemberRole=null;financeMemberUserId=null;financeRows=[];financeSelectedBusinessId=null;document.body.classList.remove('owner-verified','employee-verified','employee-device-pending');setEmployeeLoginFormVisible(!session?.user||session.user.is_anonymous);financeCurrentUserName='';updateFinanceActivePerson();if($('homeSummaryGrid'))$('homeSummaryGrid').hidden=true;if($('ownerHomeReports'))$('ownerHomeReports').hidden=true;if($('employeeHomeReport'))$('employeeHomeReport').hidden=true;if($('financeWorkspaceInfo'))$('financeWorkspaceInfo').hidden=true;if($('financeEntryCard'))$('financeEntryCard').hidden=true;if($('financeReportCard'))$('financeReportCard').hidden=true;financeCurrentUserName=financeUserDisplayName(session?.user);updateFinanceActivePerson();if(session){const loginLabel=financeCurrentUserName||session.user.email|| (session.user.is_anonymous?'Karyawan tanpa email':'akun aktif');pesanAkun('Login aktif: '+loginLabel);pesanPembeli('Login aktif: '+loginLabel+'. Anda dapat membuat pesanan dan melihat Pesanan Saya.');if($('pesananSaya')&&$('pesananSaya').classList.contains('active'))muatPesananSaya();if($('pesananMasuk')&&$('pesananMasuk').classList.contains('active'))muatPesananMasuk();}else{financeCurrentUserName='';updateFinanceActivePerson();if($('pesanPenjual'))pesanAkun('Belum login. Daftar akun atau login terlebih dahulu.');pesanPembeli('Belum login. Daftar akun pembeli atau login terlebih dahulu.');}setTimeout(()=>{periksaAktivasiLisensi();if(session?.user?.is_anonymous){if(event==='INITIAL_SESSION'||event==='TOKEN_REFRESHED')employeeCheckRole();}else{loadFinanceWorkspace().then(()=>{if(event==='INITIAL_SESSION'||event==='SIGNED_IN')autoSyncLocalTransactionsIfReady();}).catch(e=>console.warn('Workspace belum termuat untuk sinkronisasi lokal:',e));}},0);});}else{setAksesLisensi(false);pesanAkun('Pustaka Supabase tidak tersedia. Periksa koneksi internet.',true);pesanPembeli('Pustaka Supabase tidak tersedia. Periksa koneksi internet.',true);setStatusOnline('Pustaka Supabase tidak tersedia. Periksa koneksi internet.',true);setStatusAktivasi('Supabase tidak tersedia; aktivasi belum dapat diperiksa.',true);}
+let kasusahaLastAuthUserId=null;
+sb.auth.onAuthStateChange((event,session)=>{
+ const nextUserId=session?.user?.id||null;
+ const identityChanged=nextUserId!==kasusahaLastAuthUserId;
+ kasusahaLastAuthUserId=nextUserId;
+ if(event==='TOKEN_REFRESHED'&&!identityChanged){
+  financeCurrentUserName=financeUserDisplayName(session?.user);
+  updateFinanceActivePerson();
+  return;
+ }
+ if(event==='USER_UPDATED'&&!identityChanged){
+  financeCurrentUserName=financeUserDisplayName(session?.user);
+  updateFinanceActivePerson();
+  return;
+ }
+ if(event==='SIGNED_IN'&&session?.user?.id){
+  const cached=readOfflineWorkspace();
+  if(cached&&cached.userId!==session.user.id){
+   offlineTransactionMode=false;
+   try{localStorage.removeItem(OFFLINE_WORKSPACE_KEY);}catch(e){console.warn('Konteks offline akun sebelumnya tidak dapat dibersihkan:',e);}
+   document.body.classList.remove('owner-verified','employee-verified');
+  }
+ }
+ if(event==='SIGNED_OUT'){
+  offlineTransactionMode=false;
+  try{localStorage.removeItem(OFFLINE_WORKSPACE_KEY);}catch(e){console.warn('Konteks offline tidak dapat dibersihkan setelah logout:',e);}
+  document.body.classList.remove('owner-verified','employee-verified','employee-device-pending');
+ }
+ if(identityChanged||event==='SIGNED_OUT'){
+  financeBusiness=null;financeMemberRole=null;financeMemberUserId=null;financeRows=[];financeSelectedBusinessId=null;
+  document.body.classList.remove('owner-verified','employee-verified','employee-device-pending');
+  if($('homeSummaryGrid'))$('homeSummaryGrid').hidden=true;
+  if($('ownerHomeReports'))$('ownerHomeReports').hidden=true;
+  if($('employeeHomeReport'))$('employeeHomeReport').hidden=true;
+  if($('financeWorkspaceInfo'))$('financeWorkspaceInfo').hidden=true;
+  if($('financeEntryCard'))$('financeEntryCard').hidden=true;
+  if($('financeReportCard'))$('financeReportCard').hidden=true;
+ }
+ setEmployeeLoginFormVisible(!session?.user||session.user.is_anonymous);
+ financeCurrentUserName=financeUserDisplayName(session?.user);
+ updateFinanceActivePerson();
+ if(session){
+  const loginLabel=financeCurrentUserName||session.user.email||(session.user.is_anonymous?'Karyawan tanpa email':'akun aktif');
+  pesanAkun('Login aktif: '+loginLabel);
+  pesanPembeli('Login aktif: '+loginLabel+'. Anda dapat membuat pesanan dan melihat Pesanan Saya.');
+  if($('pesananSaya')&&$('pesananSaya').classList.contains('active'))muatPesananSaya();
+  if($('pesananMasuk')&&$('pesananMasuk').classList.contains('active'))muatPesananMasuk();
+ }else{
+  financeCurrentUserName='';updateFinanceActivePerson();
+  if($('pesanPenjual'))pesanAkun('Belum login. Daftar akun atau login terlebih dahulu.');
+  pesanPembeli('Belum login. Daftar akun pembeli atau login terlebih dahulu.');
+ }
+ if(event==='INITIAL_SESSION'||event==='SIGNED_IN'||event==='SIGNED_OUT'||identityChanged){
+  setTimeout(()=>{
+   periksaAktivasiLisensi();
+   if(session?.user?.is_anonymous){
+    if(event==='INITIAL_SESSION'||event==='SIGNED_IN')employeeCheckRole();
+   }else if(session){
+    loadFinanceWorkspace().then(()=>{
+     if(event==='INITIAL_SESSION'||event==='SIGNED_IN')autoSyncLocalTransactionsIfReady();
+    }).catch(e=>console.warn('Workspace belum termuat untuk sinkronisasi lokal:',e));
+   }
+  },0);
+ }
+});}else{setAksesLisensi(false);pesanAkun('Pustaka Supabase tidak tersedia. Periksa koneksi internet.',true);pesanPembeli('Pustaka Supabase tidak tersedia. Periksa koneksi internet.',true);setStatusOnline('Pustaka Supabase tidak tersedia. Periksa koneksi internet.',true);setStatusAktivasi('Supabase tidak tersedia; aktivasi belum dapat diperiksa.',true);}
 </script>
 <script>
 /* PWA: install prompt + service worker. Data, login, checkout, and payments remain server-backed. */
