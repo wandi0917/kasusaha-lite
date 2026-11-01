@@ -37,6 +37,9 @@ body:not(.license-verified) main #produk,
 body:not(.license-verified) main #cadangan{display:none!important}
 body.employee-verified:not(.license-verified) main #transaksi.active{display:block!important}
 body.owner-verified:not(.license-verified) main #transaksi.active{display:block!important}
+/* Pemilih usaha harus tetap terlihat sebelum peran usaha tunggal terverifikasi.
+   Dalam keadaan ini hanya formulir/pemilih usaha yang ditampilkan; panel transaksi tetap disembunyikan oleh loadFinanceWorkspace. */
+body.workspace-selection-pending:not(.license-verified) main #transaksi.active{display:block!important}
 
 /* Kerahasiaan harga modal dan laba: hanya Owner */
 body.employee-verified #storeProductRows td:nth-child(4),body.employee-verified #storeProductRows th:nth-child(4){display:none!important}
@@ -2363,7 +2366,7 @@ async function buka(id,tombol){
             }
           }else if(tujuanId==='transaksi'&&activeMembers.length>1){
             // Buka pemilih usaha saja; fitur tetap terkunci sampai salah satu usaha dipilih.
-            document.body.classList.remove('owner-verified','employee-verified');id=tujuanId;tombol=tujuanTombol;
+            document.body.classList.remove('owner-verified','employee-verified');document.body.classList.add('workspace-selection-pending');id=tujuanId;tombol=tujuanTombol;
           }else{
             if(licenseAccessState!=='active')await periksaAktivasiLisensi();
             if(licenseAccessState==='active'){id=tujuanId;tombol=tujuanTombol;}
@@ -3538,7 +3541,7 @@ async function loadFinanceWorkspace(){
  if(!sb){setFinanceStatus('Koneksi Supabase belum tersedia.',true);return;}
  try{
   const {data:sd,error:se}=await sb.auth.getSession();if(se)throw se;
-  if(!sd.session){financeBusiness=null;financeMemberRole=null;financeMemberUserId=null;financeCurrentUserName='';financeRows=[];updateFinanceActivePerson();document.body.classList.remove('employee-verified','owner-verified');setup.hidden=true;info.hidden=true;entry.hidden=true;report.hidden=true;if($('attendanceCard'))$('attendanceCard').hidden=true;if($('reportCategoryChooser'))$('reportCategoryChooser').hidden=true;applyReportCategory('');setTransactionBusinessSetupMode(true,false);$('attendanceStatus').textContent='Silakan login dengan akun Owner atau Karyawan terlebih dahulu.';$('attendanceCheckIn').disabled=true;$('attendanceCheckOut').disabled=true;applyHomeFinanceRole();setFinanceStatus('Login dahulu. Laporan hanya ditampilkan setelah akun Owner atau Karyawan yang sesuai berhasil login.',true);return;}
+  if(!sd.session){document.body.classList.remove('workspace-selection-pending');financeBusiness=null;financeMemberRole=null;financeMemberUserId=null;financeCurrentUserName='';financeRows=[];updateFinanceActivePerson();document.body.classList.remove('employee-verified','owner-verified');setup.hidden=true;info.hidden=true;entry.hidden=true;report.hidden=true;if($('attendanceCard'))$('attendanceCard').hidden=true;if($('reportCategoryChooser'))$('reportCategoryChooser').hidden=true;applyReportCategory('');setTransactionBusinessSetupMode(true,false);$('attendanceStatus').textContent='Silakan login dengan akun Owner atau Karyawan terlebih dahulu.';$('attendanceCheckIn').disabled=true;$('attendanceCheckOut').disabled=true;applyHomeFinanceRole();setFinanceStatus('Login dahulu. Laporan hanya ditampilkan setelah akun Owner atau Karyawan yang sesuai berhasil login.',true);return;}
   financeMemberUserId=sd.session.user.id;financeCurrentUserName=financeUserDisplayName(sd.session.user);
   const {data:memberRows,error:me}=await sb.from('business_members').select('business_id,user_id,role,active').eq('user_id',financeMemberUserId).eq('active',true);
   if(me)throw me;
@@ -3559,7 +3562,7 @@ async function loadFinanceWorkspace(){
    }
   }
   if(memberList.length>1){
-   document.body.classList.remove('employee-verified','owner-verified');financeBusiness=null;financeMemberRole=null;financeRows=[];
+   document.body.classList.remove('employee-verified','owner-verified');document.body.classList.add('workspace-selection-pending');financeBusiness=null;financeMemberRole=null;financeRows=[];
    setup.hidden=false;info.hidden=true;entry.hidden=true;report.hidden=true;if($('attendanceCard'))$('attendanceCard').hidden=true;if($('reportCategoryChooser'))$('reportCategoryChooser').hidden=true;applyReportCategory('');
    const saved=$('financeSavedBusinesses'),list=$('financeSavedBusinessList');saved.hidden=false;list.innerHTML='';
    for(const m of memberList){const {data:b,error:be}=await sb.from('business_workspaces').select('id,business_name,invite_code,owner_id').eq('id',m.business_id).maybeSingle();if(be)continue;if(!b)continue;
@@ -3568,6 +3571,7 @@ async function loadFinanceWorkspace(){
    setFinanceStatus('Akun ini terhubung ke beberapa usaha. Klik nama usaha yang ingin digunakan.');return;
   }
   const member=memberList[0]||null;
+  document.body.classList.remove('workspace-selection-pending');
   const savedPicker=$('financeSavedBusinesses');if(savedPicker)savedPicker.hidden=true;
   if(!member){document.body.classList.remove('employee-verified','owner-verified');financeBusiness=null;financeMemberRole=null;financeRows=[];$('attendanceStatus').textContent='Akun ini belum terhubung ke usaha. Owner harus membuat usaha satu kali atau Karyawan bergabung memakai kode undangan.';$('attendanceCheckIn').disabled=true;$('attendanceCheckOut').disabled=true;setup.hidden=false;info.hidden=true;entry.hidden=true;report.hidden=true;if($('attendanceCard'))$('attendanceCard').hidden=true;if($('reportCategoryChooser'))$('reportCategoryChooser').hidden=true;applyReportCategory('');setTransactionBusinessSetupMode(true);const tbody=$('financeReportRows');if(tbody)tbody.innerHTML='<tr><td colspan="7">Laporan bersama belum dapat dimuat: akun '+aman(sd.session.user.email||'login ini')+' belum terhubung ke usaha. Masuk dengan akun Owner yang terdaftar atau hubungkan akun ini ke usaha terlebih dahulu. Data transaksi tidak dihapus.</td></tr>';const summary=$('financeReportSummary');if(summary)summary.innerHTML='';applyHomeFinanceRole();setFinanceStatus('Akun login terdeteksi ('+sd.session.user.email+'), tetapi belum terhubung ke usaha. Laporan bersama hanya bisa ditampilkan setelah akun yang benar terhubung.');return;}
   const {data:business,error:be}=await sb.from('business_workspaces').select('id,business_name,invite_code,owner_id').eq('id',member.business_id).single();
