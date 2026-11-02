@@ -3735,16 +3735,18 @@ function generateKasUsahaBarcode(code){
 }
 function normalizeKasUsahaBarcode(value){
  let text=String(value??'').trim().toUpperCase();
- text=text.replace(new RegExp('^\\\\](?:A0|C0|C1|d2|E0|Q3)'),'').replace(/[\\x00-\\x1F\\x7F]/g,'');
- return text.replace(/[\\s-]+/g,'');
+ const prefixes=[']A0',']C0',']C1',']D2',']E0',']Q3'];
+ for(const prefix of prefixes){if(text.startsWith(prefix)){text=text.slice(prefix.length);break;}}
+ let clean='';
+ for(let i=0;i<text.length;i++){const code=text.charCodeAt(i),ch=text[i];if(code<32||code===127)continue;if(ch===' '||ch==='-'||ch==='\\t'||ch==='\\n'||ch==='\\r')continue;clean+=ch;}
+ return clean;
 }
 function kasUsahaBarcodeMatches(a,b){
  const x=normalizeKasUsahaBarcode(a),y=normalizeKasUsahaBarcode(b);
  if(!x||!y)return false;
  if(x===y)return true;
- if(/^\\d+$/.test(x)&&/^\\d+$/.test(y)){
-  return (x.length===12&&y.length===13&&y==='0'+x)||(y.length===12&&x.length===13&&x==='0'+y);
- }
+ const xDigits=[...x].every(ch=>ch>='0'&&ch<='9'),yDigits=[...y].every(ch=>ch>='0'&&ch<='9');
+ if(xDigits&&yDigits)return (x.length===12&&y.length===13&&y==='0'+x)||(y.length===12&&x.length===13&&x==='0'+y);
  return false;
 }
 function barcodePrintFormat(value,type){
