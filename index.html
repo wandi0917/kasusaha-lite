@@ -1451,7 +1451,7 @@ html body>header.ks-brand-header .kasusaha-banner-side-products{grid-column:3!im
     <div><span style="display:inline-block;background:#e0e7ff;color:#3730a3;font-size:12px;font-weight:800;padding:6px 10px;border-radius:999px">BANTU UMKM LEBIH TERTATA</span>
       <h2 style="margin:12px 0 8px;color:#172554;font-size:clamp(22px,3vw,30px)">Punya teman yang punya usaha?</h2>
       <p style="margin:0;color:#475569;line-height:1.65">Kenal pemilik warung, kedai, toko kecil, atau usaha rumahan? Bagikan aplikasi untuk membantu mereka mencatat pemasukan dan pengeluaran, mengelola stok, serta meninjau laporan. Ajak mereka melihat fitur terlebih dahulu—tanpa janji keuntungan dan tanpa tekanan untuk membeli.</p>
-      <p style="margin:10px 0 0;font-size:13px;color:#64748b">Lisensi Rp49.000 sekali bayar. Sebelum membayar, periksa ketersediaan metode pembayaran di checkout. Pembayaran uang sungguhan hanya dapat diproses jika konfigurasi Midtrans Production telah aktif dan teruji.</p>
+      <p style="margin:10px 0 0;font-size:13px;color:#64748b">Paket lisensi mulai Rp49.000: Starter Rp49.000, Lite Rp99.000, Business Rp149.000, dan Professional Rp249.000. Setiap paket mencakup 12 bulan layanan cloud pertama. Detail perpanjangan dan status ketersediaannya tercantum di menu Paket &amp; Harga. Sebelum membayar, periksa mode pembayaran di checkout.</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
       <button type="button" class="primary" onclick="bagikanKasUsahaLiteWA()" style="background:#15803d">Bagikan lewat WhatsApp ↗</button>
@@ -1463,7 +1463,7 @@ html body>header.ks-brand-header .kasusaha-banner-side-products{grid-column:3!im
 </section>
 <script>
 function teksPromosiKasUsahaLite(){
- return "Punya warung, kedai, toko kecil, atau usaha rumahan?\n\nKasUsaha Lite membantu Anda: \n✅ Mencatat pemasukan dan pengeluaran\n✅ Mengelola produk dan stok\n✅ Meninjau laporan usaha\n\n💰 Lisensi Rp49.000 sekali bayar.\n\nLihat fitur dan cara aktivasi terlebih dahulu di situs resmi:\nhttps://kasusaha-lite.pages.dev/\n\nSilakan cek apakah cocok untuk usaha Anda. Pastikan metode pembayaran di checkout sudah aktif sebelum membayar." ;
+ return "Punya warung, kedai, toko kecil, atau usaha rumahan?\n\nKasUsaha Lite membantu Anda: \n✅ Mencatat pemasukan dan pengeluaran\n✅ Mengelola produk dan stok\n✅ Meninjau laporan usaha\n\n💰 Pilihan paket lisensi mulai Rp49.000. Setiap paket mencakup 12 bulan layanan cloud pertama. Lihat rincian paket, biaya perpanjangan, dan ketersediaannya di situs resmi:\nhttps://kasusaha-lite.pages.dev/\n\nSilakan cek apakah cocok untuk usaha Anda. Pastikan metode pembayaran di checkout sudah aktif sebelum membayar." ;
 }
 function bagikanKasUsahaLiteWA(){
  const url="https://wa.me/?text="+encodeURIComponent(teksPromosiKasUsahaLite());
@@ -3097,6 +3097,7 @@ async function muatPesananSaya(){
   }
 }
 const KS_PACKAGE_PRICES = {starter:49000,lite:99000,business:149000,professional:249000};
+const KS_PACKAGE_RENEWAL_PRICES = {starter:29000,lite:49000,business:99000,professional:199000};
 const KS_PACKAGE_NAMES = {starter:'Starter',lite:'Lite',business:'Business',professional:'Professional'};
 function pilihPaketKasUsaha(code) {
   if (!Object.prototype.hasOwnProperty.call(KS_PACKAGE_PRICES,code)) return;
@@ -3108,7 +3109,7 @@ function pilihPaketKasUsaha(code) {
   if(!card||!codeInput||!title||!info||!status)return;
   codeInput.value=code;
   title.textContent='Checkout paket '+KS_PACKAGE_NAMES[code];
-  info.textContent='Harga lisensi '+format(KS_PACKAGE_PRICES[code])+'. Termasuk 12 bulan layanan cloud pertama. Perpanjangan tahunan belum tersedia.';
+  info.textContent='Harga lisensi '+format(KS_PACKAGE_PRICES[code])+'. Termasuk 12 bulan layanan cloud pertama. Biaya perpanjangan cloud tahun berikutnya: '+format(KS_PACKAGE_RENEWAL_PRICES[code])+'. Checkout perpanjangan belum tersedia dan tidak ada penagihan otomatis.';
   status.className='status';
   status.textContent='Isi nama dan nomor WhatsApp. Pembayaran akan diproses melalui Midtrans.';
   card.hidden=false;
