@@ -3000,7 +3000,7 @@ async function muatPesananSaya(){
     let licenseReadWarning='';
     try{
       const {data:licenses,error:le}=await sb.from('kasusaha_licenses')
-        .select('order_id,buyer_id,license_key,product_name,status,activated_at,created_at,activation_user_id,activation_confirmed_at')
+        .select('order_id,buyer_id,license_key,product_name,status,activated_at,created_at,activation_user_id,activation_confirmed_at,package_code,package_name,cloud_expires_at')
         .eq('buyer_id',uid).in('order_id',ids);
       if(le)throw le;
       (licenses||[]).forEach(l=>{if(l.order_id)licensesByOrder[l.order_id]=l;});
@@ -3029,7 +3029,7 @@ async function muatPesananSaya(){
       if(o.payment_review_required&&isKasUsahaLite){const panel=document.createElement('div');panel.className='status error';panel.textContent='Lisensi ditahan sementara karena pembayaran belum memiliki verifikasi server yang lengkap. Jangan membayar ulang; tunggu pemeriksaan pembayaran selesai.';d.appendChild(panel);}
       else if(String(o.status||'').trim().toLowerCase()==='paid'&&isKasUsahaLite){
         const panel=document.createElement('div');panel.className='status';
-        const title=document.createElement('strong');title.textContent='Lisensi KasUsaha Lite';panel.appendChild(title);
+        const title=document.createElement('strong');title.textContent='Lisensi KasUsaha Lite'+(lic&&lic.package_name?' — Paket '+lic.package_name:'');panel.appendChild(title);
         if(lic&&lic.license_key){
           const statusText=document.createElement('p');
           const statusMap={active:'Aktif',inactive:'Belum aktif',revoked:'Dicabut',expired:'Kedaluwarsa'};
@@ -3044,6 +3044,7 @@ async function muatPesananSaya(){
           copy.onclick=async()=>{try{if(navigator.clipboard&&navigator.clipboard.writeText){await navigator.clipboard.writeText(lic.license_key);alert('Kode lisensi berhasil disalin. Simpan dengan aman dan jangan bagikan.');}else{input.type='text';input.focus();input.select();const ok=document.execCommand('copy');if(ok)alert('Kode lisensi berhasil disalin.');else prompt('Salin kode lisensi ini:',lic.license_key);}}catch(_){prompt('Salin kode lisensi ini:',lic.license_key);}};
           actions.append(reveal,copy);panel.appendChild(actions);
           if(lic.activated_at||lic.created_at){const act=document.createElement('p');act.className='small';act.textContent='Tanggal penerbitan lisensi: '+new Date(lic.activated_at||lic.created_at).toLocaleString('id-ID');panel.appendChild(act);}
+          if(lic.cloud_expires_at){const cloud=document.createElement('p');cloud.className='small';cloud.textContent='Layanan cloud termasuk sampai: '+new Date(lic.cloud_expires_at).toLocaleDateString('id-ID');panel.appendChild(cloud);}
           const alreadyActivated=Boolean(lic.activation_confirmed_at||lic.activation_user_id)||String(lic.status||'').trim().toLowerCase()==='active';
           if(!alreadyActivated&&String(lic.status||'').trim().toLowerCase()!=='revoked'&&String(lic.status||'').trim().toLowerCase()!=='expired'){
             const activate=document.createElement('button');activate.type='button';activate.className='primary wide';activate.textContent='Aktivasi Lisensi';
