@@ -3776,12 +3776,14 @@ function addScannedBarcodeToQuickSale(raw){
  const p=storeProductRows.find(x=>x.active&&x.item_type!=='ingredient'&&(String(x.barcode_value||'').trim()===value||String(x.product_code||'').trim().toLowerCase()===value.toLowerCase()));
  if(!p){setQuickSaleBarcodeStatus('Barcode '+value+' belum terdaftar pada produk jual usaha ini. Tambahkan barcode pada menu Barang & Stok.',true);return false;}
  if(Number(p.stock_quantity||0)<1){setQuickSaleBarcodeStatus(p.product_name+' ditemukan, tetapi stok habis.',true);return false;}
- let row=quickSaleItemRows().find(el=>String(el.querySelector('.quick-sale-product')?.dataset.productId||'')===String(p.id));
- if(!row){addQuickSaleLine();row=quickSaleItemRows().slice(-1)[0];const input=row?.querySelector('.quick-sale-product');if(input){input.value=p.product_code+' — '+p.product_name;input.dataset.productId=p.id;}}
+ let row=quickSaleItemRows().find(el=>{const input=el.querySelector('.quick-sale-product');return !String(input?.value||'').trim()&&!input?.dataset.productId;});
+ if(!row){addQuickSaleLine();row=quickSaleItemRows().slice(-1)[0];}
+ const input=row?.querySelector('.quick-sale-product');if(input){input.value=p.product_code+' — '+p.product_name;input.dataset.productId=p.id;}
+ const cancelButton=row?.querySelector('.quick-sale-cancel-scan');if(cancelButton)cancelButton.hidden=false;
  const qtyField=row?.querySelector('.quick-sale-qty');if(qtyField){qtyField.value='';qtyField.placeholder='Isi jumlah pesanan';qtyField.min='1';qtyField.step='1';qtyField.style.cssText='width:100%;padding:14px;border:2px solid #16a34a;border-radius:10px;background:#f0fdf4;font-size:20px;font-weight:800;text-align:center';row?.scrollIntoView({behavior:'smooth',block:'center'});qtyField.focus();}
  updateQuickSalePreview(true);
- setQuickSaleBarcodeStatus('✓ '+p.product_name+' terbaca. Kamera dihentikan. Isi jumlah pesanan pada kotak hijau; subtotal dan total seluruh barang akan dihitung otomatis.');
- const scanInput=$('quickSaleBarcodeInput');if(scanInput){scanInput.value='';}
+ setQuickSaleBarcodeStatus('✓ '+p.product_name+' terbaca. Kamera dihentikan. Periksa barang, isi jumlah, atau tekan Batalkan scan jika barang keliru.');
+ const scanInput=$('quickSaleBarcodeInput');if(scanInput)scanInput.value='';
  return true;
 }
 function handleQuickSaleCameraResult(raw){
@@ -3939,13 +3941,18 @@ function quickSaleLineData(row,useCatalogPrice=false){
 function addQuickSaleLine(){
  const host=$('quickSaleItems');if(!host)return;
  const row=document.createElement('div');row.className='card quick-sale-line';row.style.background='#fff';row.style.border='1px solid #cbd5e1';
- row.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><strong class="quick-sale-line-title">Barang 1</strong><button type="button" class="danger quick-sale-remove">Hapus</button></div><label>Kode / nama barang</label><input class="quick-sale-product" list="quickSaleProductOptions" autocomplete="off" required placeholder="Ketik kode atau nama barang"><div class="status quick-sale-line-info">Pilih barang dari saran daftar barang.</div><div class="grid"><div><label>Jumlah</label><input class="quick-sale-qty" type="number" min="1" step="1" value="1" required></div><div class="quick-sale-cost-wrap"><label>Harga modal/unit (Rp)</label><input class="quick-sale-cost" type="text" readonly aria-readonly="true" placeholder="Diisi melalui Daftar barang toko"></div><div><label>Harga jual/unit (Rp)</label><input class="quick-sale-price" type="number" min="1" step="1" inputmode="numeric" required readonly aria-readonly="true" placeholder="Mengikuti harga master barang"></div></div><p class="small quick-sale-cost-note">Owner dapat mengisi harga modal. Perubahan disimpan ke daftar barang.</p><p class="quick-sale-profit-row"><strong>Laba kotor barang: </strong><span class="quick-sale-profit">Isi harga modal dahulu</span></p><p><strong>Subtotal penjualan: </strong><span class="quick-sale-subtotal">Rp0</span></p>';
- const costInput=row.querySelector('.quick-sale-cost');
- costInput.readOnly=true;row.querySelector('.quick-sale-cost-note').textContent=financeMemberRole==='owner'?'Harga modal hanya ditampilkan di Transaksi Cepat. Untuk mengisi atau memperbaikinya, buka Daftar barang toko (Owner).':'Harga modal hanya untuk Owner. Harga jual mengikuti master barang agar total tagihan sama dengan harga yang dipakai server; Owner dapat mengubahnya melalui menu Barang & Stok.';
+ row.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><strong class="quick-sale-line-title">Barang 1</strong><div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="secondary quick-sale-cancel-scan" hidden>Batalkan scan</button><button type="button" class="danger quick-sale-remove">Hapus</button></div></div><label>Kode / nama barang</label><input class="quick-sale-product" list="quickSaleProductOptions" autocomplete="off" required placeholder="Ketik kode atau nama barang"><div class="status quick-sale-line-info">Pilih barang dari saran daftar barang.</div><div class="grid"><div><label>Jumlah</label><input class="quick-sale-qty" type="number" min="1" step="1" value="1" required></div><div class="quick-sale-cost-wrap"><label>Harga modal/unit (Rp)</label><input class="quick-sale-cost" type="text" readonly aria-readonly="true" placeholder="Diisi melalui Daftar barang toko"></div><div><label>Harga jual/unit (Rp)</label><input class="quick-sale-price" type="number" min="1" step="1" inputmode="numeric" required readonly aria-readonly="true" placeholder="Mengikuti harga master barang"></div></div><p class="small quick-sale-cost-note">Owner dapat mengisi harga modal. Perubahan disimpan ke daftar barang.</p><p class="quick-sale-profit-row"><strong>Laba kotor barang: </strong><span class="quick-sale-profit">Isi harga modal dahulu</span></p><p><strong>Subtotal penjualan: </strong><span class="quick-sale-subtotal">Rp0</span></p>';
+ const costInput=row.querySelector('.quick-sale-cost');costInput.readOnly=true;
+ row.querySelector('.quick-sale-cost-note').textContent=financeMemberRole==='owner'?'Harga modal hanya ditampilkan di Transaksi Cepat. Untuk mengisi atau memperbaikinya, buka Daftar barang toko (Owner).':'Harga modal hanya untuk Owner. Harga jual mengikuti master barang agar total tagihan sama dengan harga yang dipakai server; Owner dapat mengubahnya melalui menu Barang & Stok.';
  row.querySelector('.quick-sale-product').addEventListener('input',()=>updateQuickSalePreview(true));
  row.querySelector('.quick-sale-qty').addEventListener('input',()=>updateQuickSalePreview(false));
  row.querySelector('.quick-sale-price').addEventListener('input',()=>updateQuickSalePreview(false));
- row.querySelector('.quick-sale-remove').addEventListener('click',()=>{if(quickSaleItemRows().length<=1){row.querySelector('.quick-sale-product').value='';row.querySelector('.quick-sale-qty').value='1';row.querySelector('.quick-sale-price').value='';}else row.remove();updateQuickSalePreview(false);});
+ row.querySelector('.quick-sale-remove').addEventListener('click',()=>{if(quickSaleItemRows().length<=1){const input=row.querySelector('.quick-sale-product');input.value='';delete input.dataset.productId;row.querySelector('.quick-sale-qty').value='1';row.querySelector('.quick-sale-price').value='';row.querySelector('.quick-sale-cost').value='';row.querySelector('.quick-sale-cancel-scan').hidden=true;}else row.remove();updateQuickSalePreview(false);});
+ row.querySelector('.quick-sale-cancel-scan').addEventListener('click',()=>{
+  if(quickSaleItemRows().length<=1){const input=row.querySelector('.quick-sale-product');input.value='';delete input.dataset.productId;row.querySelector('.quick-sale-qty').value='1';row.querySelector('.quick-sale-qty').style.cssText='';row.querySelector('.quick-sale-qty').placeholder='';row.querySelector('.quick-sale-price').value='';row.querySelector('.quick-sale-cost').value='';}
+  else row.remove();
+  updateQuickSalePreview(false);setQuickSaleBarcodeStatus('Scan barang dibatalkan. Arahkan barcode barang yang benar ke kotak hijau.');openQuickSaleBarcodeCamera('cart');
+ });
  host.appendChild(row);updateQuickSalePreview(false);
 }
 function updateQuickSalePreview(useCatalogPrice=false){
@@ -4716,7 +4723,7 @@ document.querySelectorAll('.quick-sale-cash-option').forEach(button=>button.addE
  const input=$('quickSaleCashReceived'),total=Number(String($('quickSaleTotal')?.textContent||'').replace(/[^0-9]/g,''))||0;
  if(!input)return;input.value=button.dataset.cash==='exact'?String(total):button.dataset.cash;updateQuickSalePreview(false);
 }));
-$('quickSaleAddItem')?.addEventListener('click',addQuickSaleLine);
+$('quickSaleAddItem')?.addEventListener('click',()=>{addQuickSaleLine();openQuickSaleBarcodeCamera('cart');});
 if($('quickSaleItems')&&!$('quickSaleItems').children.length)addQuickSaleLine();
 bindKasUsahaBarcodeFeatures();
 $('quickSaleForm')?.addEventListener('submit',async function(e){
