@@ -4601,7 +4601,7 @@ $('storeProductForm')?.addEventListener('submit',async function(e){
  try{
   const itemType=$('storeProductSaleStatus')?.value||'product',stockUnit=String($('storeProductStockUnit')?.value||'unit').trim().toLowerCase(),barcodeType=$('storeProductBarcodeType')?.value||'custom',barcodeValue=String($('storeProductBarcodeValue')?.value||'').trim();
   if(!stockUnit||stockUnit.length>24){$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Isi satuan stok, maksimal 24 karakter.';return;}
-  const normalizedBarcode=barcodeType==='custom'?generateKasUsahaBarcode(code):barcodeValue;
+  const normalizedBarcode=barcodeType==='custom'?(currentItem&&String(currentItem.product_code||'').toUpperCase()===code&&currentItem.barcode_value?currentItem.barcode_value:generateKasUsahaBarcode(code)):barcodeValue;
   if(!normalizedBarcode){$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Masukkan nilai barcode pabrik atau pilih barcode otomatis KasUsaha.';return;}
   const currentItem=editId?storeProductRows.find(p=>String(p.id)===String(editId)):null;
   const payload={product_code:code,product_name:name,barcode_value:normalizedBarcode,barcode_type:barcodeType,price,stock_unit:stockUnit,item_type:itemType,active:editId?Boolean(currentItem?.active):true,updated_at:new Date().toISOString()};
