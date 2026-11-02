@@ -67,7 +67,7 @@ if (!/OFFLINE_WORKSPACE_KEY/.test(html) ||
   fail("offline mode disclosure or local workspace support missing");
 } else pass("offline mode explicitly discloses local-only storage");
 
-const supabaseKeyAssignment = html.match(/SUPABASE_KEY\\s*=\\s*["']([^"']+)["']/i)?.[1] || "";
+const supabaseKeyAssignment = html.match(/SUPABASE_KEY\s*=\s*["']([^"']+)["']/i)?.[1] || "";
 if (/^(?:sb_secret_|service_role)/i.test(supabaseKeyAssignment)) {
   fail("server-only Supabase secret appears in the frontend key assignment");
 } else if (/^sb_publishable_/.test(supabaseKeyAssignment)) {
