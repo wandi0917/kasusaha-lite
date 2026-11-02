@@ -1749,7 +1749,7 @@ async function bagikanKasUsahaLite(){
 <input id="storeProductEditId" type="hidden" value="">
 <div id="storeProductFormMode" class="small">Tambah barang baru. Jika kode sudah terdaftar, gunakan tombol Edit pada daftar barang di bawah.</div>
 <label for="storeProductCode">Kode barang / SKU (unik dalam usaha)</label><input id="storeProductCode" maxlength="24" required placeholder="Contoh: KOP">
-<div class="grid"><div><label for="storeProductBarcodeType">Sumber barcode</label><select id="storeProductBarcodeType"><option value="custom">Barcode buatan KasUsaha (otomatis)</option><option value="factory">Barcode bawaan pabrik</option></select></div><div><label for="storeProductBarcodeValue">Nilai barcode</label><input id="storeProductBarcodeValue" maxlength="80" autocomplete="off" placeholder="Otomatis dari kode barang / scan barcode pabrik"></div></div>
+<div class="grid"><div><label for="storeProductBarcodeType">Sumber barcode</label><select id="storeProductBarcodeType"><option value="custom">Barcode buatan KasUsaha (otomatis)</option><option value="factory">Barcode bawaan pabrik</option></select></div><div><label for="storeProductBarcodeValue">Nilai barcode</label><input id="storeProductBarcodeValue" maxlength="80" autocomplete="off" placeholder="Otomatis dari kode barang / scan barcode pabrik"><button id="storeProductScanFactory" type="button" class="secondary" style="margin-top:6px">📷 Scan barcode pabrik</button></div></div>
 <div class="card" style="background:#f8fafc"><svg id="storeProductBarcodePreview" aria-label="Pratinjau barcode" style="width:100%;max-width:360px;min-height:70px"></svg><div class="row-actions"><button id="storeProductPrintBarcode" type="button" class="secondary">Cetak label barcode</button></div><p class="small" id="storeProductBarcodeHelp">Barcode buatan KasUsaha menggunakan Code 128. Untuk barcode pabrik, pilih sumber barcode pabrik lalu masukkan nilai dari kemasan.</p></div>
 <label for="storeProductName">Nama produk atau bahan baku (isi manual)</label><input id="storeProductName" maxlength="160" required placeholder="Contoh: Kopi Susu, Susu, Kopi, Telur">
 <div class="grid"><div><label for="storeProductCostPrice">Harga modal per satuan (Rp)</label><input id="storeProductCostPrice" type="number" min="0" step="1" required placeholder="20000"></div><div><label for="storeProductPrice">Harga jual per satuan (Rp)</label><input id="storeProductPrice" type="number" min="1" step="1" required placeholder="35000"></div></div><p class="small">Laba kotor dihitung otomatis dari harga jual dikurangi harga modal.</p>
@@ -3765,7 +3765,7 @@ function printStoreProductBarcode(id){
   w.document.close();
  }catch(e){alert('Barcode belum dapat dicetak: '+String(e.message||e).slice(0,160));}
 }
-let quickSaleCameraControls=null,quickSaleCameraReader=null,quickSaleLastScanned='',quickSaleLastScannedAt=0;
+let quickSaleCameraControls=null,quickSaleCameraReader=null,quickSaleLastScanned='',quickSaleLastScannedAt=0,quickSaleCameraMode='cart';
 function setQuickSaleBarcodeStatus(message,error=false){
  const el=$('quickSaleBarcodeStatus');if(el){el.className=error?'status error':'status';el.textContent=message;}
 }
@@ -3786,7 +3786,8 @@ function addScannedBarcodeToQuickSale(raw){
  const scanInput=$('quickSaleBarcodeInput');if(scanInput){scanInput.value='';scanInput.focus();}
  return true;
 }
-async function openQuickSaleBarcodeCamera(){
+async function openQuickSaleBarcodeCamera(mode='cart'){
+ quickSaleCameraMode=mode==='product'?'product':'cart';
  const modal=$('quickSaleBarcodeModal'),video=$('quickSaleBarcodeVideo');
  if(!modal||!video)return;
  if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){setQuickSaleBarcodeStatus('Kamera memerlukan HTTPS dan izin kamera browser.',true);return;}
@@ -3800,7 +3801,13 @@ async function openQuickSaleBarcodeCamera(){
     const value=typeof result.getText==='function'?result.getText():String(result.text||'');
     const now=Date.now();
     if(value&&(value!==quickSaleLastScanned||now-quickSaleLastScannedAt>1100)){
-     quickSaleLastScanned=value;quickSaleLastScannedAt=now;addScannedBarcodeToQuickSale(value);
+     quickSaleLastScanned=value;quickSaleLastScannedAt=now;
+     if(quickSaleCameraMode==='product'){
+      $('storeProductBarcodeType').value='factory';$('storeProductBarcodeValue').readOnly=false;$('storeProductBarcodeValue').value=value;renderStoreProductBarcodePreview();
+      const help=$('storeProductBarcodeHelp');if(help)help.textContent='Barcode pabrik berhasil dipindai. Pastikan nilai sesuai label kemasan lalu simpan produk.';
+      const status=$('storeProductStatus');if(status){status.className='status';status.textContent='Barcode pabrik terbaca: '+value+'. Periksa lalu simpan produk.';}
+      closeQuickSaleBarcodeCamera();$('storeProductBarcodeValue').focus();
+     }else addScannedBarcodeToQuickSale(value);
     }
    }
   });
@@ -3842,7 +3849,9 @@ function bindKasUsahaBarcodeFeatures(){
  $('quickSaleBarcodeInput')?.addEventListener('keydown',e=>{
   if(e.key==='Enter'){e.preventDefault();addScannedBarcodeToQuickSale(e.currentTarget.value);}
  });
- $('quickSaleOpenCamera')?.addEventListener('click',openQuickSaleBarcodeCamera);
+ $('quickSaleOpenCamera')?.addEventListener('click',()=>openQuickSaleBarcodeCamera('cart'));
+ $('storeProductScanFactory')?.addEventListener('click',()=>openQuickSaleBarcodeCamera('product'));
+ $('storeProductBarcodeValue')?.addEventListener('keydown',e=>{if(e.key==='Enter'&&$('storeProductBarcodeType')?.value==='factory'){e.preventDefault();renderStoreProductBarcodePreview();}});
  $('quickSaleBarcodeClose')?.addEventListener('click',closeQuickSaleBarcodeCamera);
  $('quickSaleBarcodeModal')?.addEventListener('click',e=>{if(e.target===$('quickSaleBarcodeModal'))closeQuickSaleBarcodeCamera();});
  renderStoreProductBarcodePreview();
