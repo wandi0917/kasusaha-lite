@@ -4452,7 +4452,7 @@ async function pilihLaporanTransaksi(category){
  }
 }
 
-async async function printSelectedReport(){
+async function printSelectedReport(){
  const category=$('reportCategorySelect')?.value||'';
  const panelId=category==='stock'?'stockReportTableCard':
    (category==='sales'||category==='finance'||category==='income')?'financeReportCard':
