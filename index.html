@@ -857,6 +857,8 @@ html body main #beranda .promo-section-title{color:#244a35!important;font-family
 
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
+<script src="https://unpkg.com/@zxing/browser@0.2.1/umd/zxing-browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.12.3/dist/JsBarcode.all.min.js"></script>
 
 <style id="affiliateCatalogDesign">
 #affiliateCampaigns{background:linear-gradient(145deg,#fff7ed 0%,#fff 52%,#f0fdf4 100%)!important;border-radius:20px!important;padding:clamp(14px,2vw,24px)!important;box-shadow:0 12px 35px rgba(15,23,42,.08)}
@@ -1721,6 +1723,12 @@ async function bagikanKasUsahaLite(){
 
 <form id="quickSaleForm" class="card" hidden style="background:#f8fbff">
 <label for="quickSaleTableNumber">Nomor meja (kosongkan untuk transaksi kasir)</label><input id="quickSaleTableNumber" type="text" maxlength="20" autocomplete="off" placeholder="Contoh: 1, 5, atau VIP-2">
+<div class="card" id="quickSaleBarcodePanel" style="background:#f0fdf4;border:1px solid #86c9a0">
+<strong>Scan barang — Scanner Bluetooth / kamera HP</strong>
+<label for="quickSaleBarcodeInput">Arahkan scanner Bluetooth ke barcode atau ketik/pindai kode di sini</label>
+<div class="grid"><input id="quickSaleBarcodeInput" type="text" inputmode="none" autocomplete="off" placeholder="Scan barcode lalu tekan Enter"><button id="quickSaleOpenCamera" type="button" class="secondary">📷 Scan dengan kamera</button></div>
+<p class="small" id="quickSaleBarcodeStatus" role="status">Scanner Bluetooth bekerja seperti keyboard. Kamera membutuhkan izin akses kamera dan koneksi HTTPS.</p>
+</div>
 <datalist id="quickSaleProductOptions"></datalist>
 <div id="quickSaleProductInfo" class="status" role="status">Pilih barang untuk setiap baris. Jumlah dan subtotal tiap barang dihitung otomatis.</div>
 <div id="quickSaleItems"></div>
@@ -1740,7 +1748,9 @@ async function bagikanKasUsahaLite(){
 <form id="storeProductForm">
 <input id="storeProductEditId" type="hidden" value="">
 <div id="storeProductFormMode" class="small">Tambah barang baru. Jika kode sudah terdaftar, gunakan tombol Edit pada daftar barang di bawah.</div>
-<label for="storeProductCode">Kode barang (unik dalam usaha)</label><input id="storeProductCode" maxlength="24" required placeholder="Contoh: KOP">
+<label for="storeProductCode">Kode barang / SKU (unik dalam usaha)</label><input id="storeProductCode" maxlength="24" required placeholder="Contoh: KOP">
+<div class="grid"><div><label for="storeProductBarcodeType">Sumber barcode</label><select id="storeProductBarcodeType"><option value="custom">Barcode buatan KasUsaha (otomatis)</option><option value="factory">Barcode bawaan pabrik</option></select></div><div><label for="storeProductBarcodeValue">Nilai barcode</label><input id="storeProductBarcodeValue" maxlength="80" autocomplete="off" placeholder="Otomatis dari kode barang / scan barcode pabrik"></div></div>
+<div class="card" style="background:#f8fafc"><svg id="storeProductBarcodePreview" aria-label="Pratinjau barcode" style="width:100%;max-width:360px;min-height:70px"></svg><div class="row-actions"><button id="storeProductPrintBarcode" type="button" class="secondary">Cetak label barcode</button></div><p class="small" id="storeProductBarcodeHelp">Barcode buatan KasUsaha menggunakan Code 128. Untuk barcode pabrik, pilih sumber barcode pabrik lalu masukkan nilai dari kemasan.</p></div>
 <label for="storeProductName">Nama produk atau bahan baku (isi manual)</label><input id="storeProductName" maxlength="160" required placeholder="Contoh: Kopi Susu, Susu, Kopi, Telur">
 <div class="grid"><div><label for="storeProductCostPrice">Harga modal per satuan (Rp)</label><input id="storeProductCostPrice" type="number" min="0" step="1" required placeholder="20000"></div><div><label for="storeProductPrice">Harga jual per satuan (Rp)</label><input id="storeProductPrice" type="number" min="1" step="1" required placeholder="35000"></div></div><p class="small">Laba kotor dihitung otomatis dari harga jual dikurangi harga modal.</p>
 <div class="grid"><div><label for="storeProductInitialStock">Jumlah stok awal</label><input id="storeProductInitialStock" type="number" min="0" step="1" value="0" required placeholder="Contoh: 3"></div><div><label for="storeProductStockUnit">Satuan stok (isi manual)</label><input id="storeProductStockUnit" maxlength="24" required value="unit" placeholder="kg, kaleng, papan, botol"></div></div><p class="small">Contoh bahan baku: Susu — 1 kaleng; Kopi — 3 kg; Telur — 12 papan. Satuan dapat diisi sendiri.</p>
@@ -1750,7 +1760,7 @@ async function bagikanKasUsahaLite(){
 <div id="storeProductStatus" class="status" role="status">Daftar barang tersimpan bersama untuk owner dan karyawan.</div>
 <div class="card" id="stockEntryCard"><h4>Entri stok barang</h4><p class="small">Owner dapat menambah stok masuk, mencatat stok keluar, atau mengoreksi jumlah stok. Perubahan stok fisik ini tidak otomatis menjadi jurnal pembelian atau beban; catat nilai pembelian pada Catat Transaksi agar neraca persediaan tidak keliru.</p><form id="stockEntryForm"><label for="stockProductSelect">Pilih barang</label><select id="stockProductSelect" required><option value="">Pilih barang...</option></select><div class="grid"><div><label for="stockMovementType">Jenis entri</label><select id="stockMovementType"><option value="in">Stok masuk / tambah</option><option value="out">Stok keluar / kurangi</option><option value="set">Koreksi jumlah stok</option></select></div><div><label for="stockMovementQty">Jumlah barang</label><input id="stockMovementQty" type="number" min="1" step="1" required placeholder="Contoh: 10"></div></div><button id="stockMovementSave" type="submit" class="primary wide">Simpan entri stok</button></form><div id="stockEntryStatus" class="status" role="status">Pilih barang untuk mencatat perubahan stok.</div></div>
 </div>
-<div class="table-wrap"><table class="report-table"><thead><tr><th>Kode</th><th>Nama barang / bahan baku</th><th>Jenis</th><th>Harga modal</th><th>Harga jual</th><th>Stok</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="storeProductRows"></tbody></table></div>
+<div class="table-wrap"><table class="report-table"><thead><tr><th>Kode</th><th>Barcode</th><th>Nama barang / bahan baku</th><th>Jenis</th><th>Harga modal</th><th>Harga jual</th><th>Stok</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="storeProductRows"></tbody></table></div>
 </div>
 
 <div class="card" id="attendanceCard" hidden><h3>Absensi Harian</h3><p id="attendanceActivePerson" class="status" aria-live="polite">Petugas: menunggu login.</p><p class="small">Absen menggunakan akun masing-masing. Usaha dan daftar barang tetap tersimpan; tidak perlu dibuat ulang setiap hari.</p><div id="attendanceStatus" class="status" role="status">Memuat absensi hari ini...</div><div class="grid"><button type="button" id="attendanceCheckIn" class="primary">Absen Masuk</button><button type="button" id="attendanceCheckOut" class="secondary">Absen Pulang</button></div><div id="attendanceOwnerList" class="table-wrap" hidden><h4>Absensi hari ini</h4><p class="small">Owner dapat mengedit jam masuk dan pulang jika ada catatan yang perlu dikoreksi.</p><table class="report-table"><thead><tr><th>Akun</th><th>Masuk</th><th>Pulang</th><th>Aksi</th></tr></thead><tbody id="attendanceRows"></tbody></table></div><div class="card" id="attendancePayrollCard"><h4>Perhitungan jam kerja dan gaji</h4><p class="small">Owner menetapkan gaji per jam setiap akun. Karyawan hanya dapat melihat perhitungan gaji miliknya sendiri. Total jam dihitung dari catatan absen masuk-pulang lengkap; Owner melihat ringkasan semua akun, sedangkan Karyawan hanya melihat ringkasan akunnya sendiri.</p><div class="grid"><div><label for="attendanceHourlyWage">Gaji per jam (Rp)</label><input id="attendanceHourlyWage" type="number" min="0" step="500" value="0" placeholder="Contoh: 15000"></div><div style="align-self:end"><button id="attendanceSaveWage" type="button" class="secondary wide">Simpan gaji per jam</button></div></div><div id="attendancePayrollStatus" class="status" role="status">Memuat jam kerja dan gaji...</div><div class="table-wrap"><table class="report-table"><thead><tr><th>Akun</th><th>Hari kerja tercatat</th><th>Total jam tercatat</th><th>Gaji per jam</th><th>Total gaji</th><th>Pengaturan Owner</th></tr></thead><tbody id="attendancePayrollRows"><tr><td colspan="5">Memuat...</td></tr></tbody></table></div></div></div>
@@ -3717,12 +3727,135 @@ $('financeForm')?.addEventListener('submit',async function(e){
  finally{btn.disabled=false;}
 });
 let storeProductRows=[];
+
+function generateKasUsahaBarcode(code){
+ const clean=String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,22);
+ return clean?'KS'+clean:'';
+}
+function barcodePrintFormat(value,type){
+ const v=String(value||'').trim();
+ if(type==='factory'&&/^\\d{13}$/.test(v))return 'EAN13';
+ if(type==='factory'&&/^\\d{8}$/.test(v))return 'EAN8';
+ if(type==='factory'&&/^\\d{12}$/.test(v))return 'UPC';
+ return 'CODE128';
+}
+function renderStoreProductBarcodePreview(){
+ const svg=$('storeProductBarcodePreview'),value=String($('storeProductBarcodeValue')?.value||'').trim(),type=$('storeProductBarcodeType')?.value||'custom';
+ if(!svg)return;
+ svg.replaceChildren();
+ if(!value){svg.textContent='Barcode akan muncul setelah kode barang diisi.';return;}
+ if(typeof JsBarcode!=='function'){svg.textContent='Pustaka cetak barcode belum tersedia. Kode tetap tersimpan.';return;}
+ try{JsBarcode(svg,value,{format:barcodePrintFormat(value,type),width:2,height:56,displayValue:true,fontSize:13,margin:8});}
+ catch(e){svg.textContent='Nilai barcode tidak valid untuk format yang dipilih. Periksa kode pabrik.';}
+}
+function barcodeLabelSvg(value,type){
+ const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+ if(typeof JsBarcode!=='function')throw new Error('Pustaka cetak barcode belum termuat. Periksa koneksi lalu muat ulang.');
+ JsBarcode(svg,value,{format:barcodePrintFormat(value,type),width:2,height:62,displayValue:true,fontSize:14,margin:10});
+ return svg.outerHTML;
+}
+function printStoreProductBarcode(id){
+ const p=storeProductRows.find(x=>String(x.id)===String(id));if(!p)return;
+ const value=String(p.barcode_value||generateKasUsahaBarcode(p.product_code)).trim();
+ try{
+  const svg=barcodeLabelSvg(value,p.barcode_type||'custom'),w=window.open('','_blank','width=480,height=360');
+  if(!w){alert('Izinkan pop-up untuk mencetak label barcode.');return;}
+  const esc=v=>String(v||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  w.document.write('<!doctype html><html><head><title>Label '+esc(p.product_name)+'</title><style>body{font:14px Arial;text-align:center;padding:18px}.label{width:320px;margin:12px auto;padding:12px;border:1px solid #ddd}.label svg{width:100%;height:auto}h3{font-size:16px;margin:0 0 4px}</style></head><body><div class="label"><h3>'+esc(p.product_name)+'</h3>'+svg+'<p>'+esc(p.product_code)+'</p></div><script>window.onload=()=>window.print();<\/script></body></html>');
+  w.document.close();
+ }catch(e){alert('Barcode belum dapat dicetak: '+String(e.message||e).slice(0,160));}
+}
+let quickSaleCameraControls=null,quickSaleCameraReader=null,quickSaleLastScanned='',quickSaleLastScannedAt=0;
+function setQuickSaleBarcodeStatus(message,error=false){
+ const el=$('quickSaleBarcodeStatus');if(el){el.className=error?'status error':'status';el.textContent=message;}
+}
+function addScannedBarcodeToQuickSale(raw){
+ const value=String(raw||'').trim();if(!value)return false;
+ const p=storeProductRows.find(x=>x.active&&x.item_type!=='ingredient'&&(String(x.barcode_value||'').trim()===value||String(x.product_code||'').trim().toLowerCase()===value.toLowerCase()));
+ if(!p){setQuickSaleBarcodeStatus('Barcode '+value+' belum terdaftar pada produk jual usaha ini. Tambahkan barcode pada menu Produk Saya / Barang & Stok.',true);return false;}
+ if(Number(p.stock_quantity||0)<1){setQuickSaleBarcodeStatus(p.product_name+' ditemukan, tetapi stok habis.',true);return false;}
+ let row=quickSaleItemRows().find(el=>String(el.querySelector('.quick-sale-product')?.dataset.productId||'')===String(p.id));
+ if(row){
+  const q=row.querySelector('.quick-sale-qty');q.value=String(Number(q.value||0)+1);
+ }else{
+  addQuickSaleLine();row=quickSaleItemRows().slice(-1)[0];
+  const input=row?.querySelector('.quick-sale-product');if(input){input.value=p.product_code+' — '+p.product_name;input.dataset.productId=p.id;}
+ }
+ updateQuickSalePreview(true);
+ setQuickSaleBarcodeStatus('✓ '+p.product_name+' ditambahkan ke tagihan. Scan lagi untuk menambah jumlah.');
+ const scanInput=$('quickSaleBarcodeInput');if(scanInput){scanInput.value='';scanInput.focus();}
+ return true;
+}
+async function openQuickSaleBarcodeCamera(){
+ const modal=$('quickSaleBarcodeModal'),video=$('quickSaleBarcodeVideo');
+ if(!modal||!video)return;
+ if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){setQuickSaleBarcodeStatus('Kamera memerlukan HTTPS dan izin kamera browser.',true);return;}
+ if(!window.ZXingBrowser?.BrowserMultiFormatReader){setQuickSaleBarcodeStatus('Pustaka pemindai kamera belum termuat. Gunakan scanner Bluetooth atau periksa koneksi internet.',true);return;}
+ modal.hidden=false;modal.style.display='flex';
+ setQuickSaleBarcodeStatus('Meminta izin kamera. Pilih Izinkan pada browser jika diminta.');
+ try{
+  quickSaleCameraReader=new ZXingBrowser.BrowserMultiFormatReader();
+  quickSaleCameraControls=await quickSaleCameraReader.decodeFromConstraints({video:{facingMode:{ideal:'environment'}}},video,(result,error)=>{
+   if(result){
+    const value=typeof result.getText==='function'?result.getText():String(result.text||'');
+    const now=Date.now();
+    if(value&&(value!==quickSaleLastScanned||now-quickSaleLastScannedAt>1100)){
+     quickSaleLastScanned=value;quickSaleLastScannedAt=now;addScannedBarcodeToQuickSale(value);
+    }
+   }
+  });
+  setQuickSaleBarcodeStatus('Kamera aktif. Arahkan barcode ke dalam bingkai. Pemindaian otomatis menambah barang ke tagihan.');
+ }catch(e){
+  closeQuickSaleBarcodeCamera();
+  setQuickSaleBarcodeStatus('Kamera tidak dapat dimulai: '+String(e.message||e).slice(0,150)+'. Periksa izin kamera atau gunakan scanner Bluetooth.',true);
+ }
+}
+function closeQuickSaleBarcodeCamera(){
+ try{quickSaleCameraControls?.stop();}catch(_){}
+ quickSaleCameraControls=null;quickSaleCameraReader=null;
+ const video=$('quickSaleBarcodeVideo');if(video){try{video.pause();}catch(_){}video.srcObject=null;}
+ const modal=$('quickSaleBarcodeModal');if(modal){modal.hidden=true;modal.style.display='none';}
+}
+function bindKasUsahaBarcodeFeatures(){
+ const type=$('storeProductBarcodeType'),value=$('storeProductBarcodeValue'),code=$('storeProductCode');
+ type?.addEventListener('change',()=>{
+  const custom=type.value==='custom';value.readOnly=custom;
+  if(custom)value.value=generateKasUsahaBarcode(code?.value);
+  else value.value='';
+  renderStoreProductBarcodePreview();
+  $('storeProductBarcodeHelp').textContent=custom?'Barcode Code 128 dibuat otomatis dari kode barang.':'Masukkan barcode asli pada kemasan produk. Nilainya akan dipakai untuk pencarian saat scan.';
+ });
+ code?.addEventListener('input',()=>{if(type?.value==='custom')value.value=generateKasUsahaBarcode(code.value);renderStoreProductBarcodePreview();});
+ value?.addEventListener('input',renderStoreProductBarcodePreview);
+ $('storeProductPrintBarcode')?.addEventListener('click',()=>{
+  const editId=$('storeProductEditId')?.value,p=storeProductRows.find(x=>String(x.id)===String(editId));
+  const raw=String(value?.value||'').trim(),name=$('storeProductName')?.value||'Produk',codeValue=$('storeProductCode')?.value||'';
+  if(!raw){alert('Isi kode barang atau barcode pabrik terlebih dahulu.');return;}
+  try{
+   const svg=barcodeLabelSvg(raw,type?.value||'custom'),w=window.open('','_blank','width=480,height=360');
+   if(!w){alert('Izinkan pop-up untuk mencetak label barcode.');return;}
+   const esc=v=>String(v||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+   w.document.write('<!doctype html><html><head><title>Label '+esc(name)+'</title><style>body{font:14px Arial;text-align:center;padding:18px}.label{width:320px;margin:12px auto;padding:12px;border:1px solid #ddd}.label svg{width:100%;height:auto}h3{font-size:16px;margin:0 0 4px}</style></head><body><div class="label"><h3>'+esc(name)+'</h3>'+svg+'<p>'+esc(codeValue)+'</p></div><script>window.onload=()=>window.print();<\/script></body></html>');
+   w.document.close();
+  }catch(e){alert('Barcode belum dapat dicetak: '+String(e.message||e).slice(0,160));}
+ });
+ $('quickSaleBarcodeInput')?.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){e.preventDefault();addScannedBarcodeToQuickSale(e.currentTarget.value);}
+ });
+ $('quickSaleOpenCamera')?.addEventListener('click',openQuickSaleBarcodeCamera);
+ $('quickSaleBarcodeClose')?.addEventListener('click',closeQuickSaleBarcodeCamera);
+ $('quickSaleBarcodeModal')?.addEventListener('click',e=>{if(e.target===$('quickSaleBarcodeModal'))closeQuickSaleBarcodeCamera();});
+ renderStoreProductBarcodePreview();
+}
+
 function formatStoreRupiah(value){return 'Rp'+Number(value||0).toLocaleString('id-ID',{maximumFractionDigits:0});}
 function resolveStoreProduct(raw){
  const rawText=String(raw||'').trim();
  if(!rawText)return null;
  const q=rawText.split(' — ')[0].trim().toLocaleLowerCase('id-ID');
  const active=storeProductRows.filter(p=>p.active&&p.item_type!=='ingredient');
+ const byBarcode=active.find(p=>String(p.barcode_value||'').trim().toLocaleLowerCase('id-ID')===rawText.toLocaleLowerCase('id-ID'));
+ if(byBarcode)return byBarcode;
  const exact=active.find(p=>String(p.product_code).toLocaleLowerCase('id-ID')===q);
  if(exact)return exact;
  const byCode=active.filter(p=>String(p.product_code).toLocaleLowerCase('id-ID').startsWith(q));
@@ -4191,7 +4324,7 @@ async function printSelectedReport(){
 async function loadStoreProducts(){
   if(!sb)throw new Error('Koneksi Supabase belum tersedia.');
   if(!financeBusiness||!financeMemberRole)throw new Error('Pilih usaha dan pastikan akun Owner/Karyawan sudah terhubung sebelum memuat barang.');
-  storeProductRows=await financeFetchAllRows(()=>sb.from('store_products').select('id,business_id,product_code,product_name,price,stock_quantity,stock_unit,item_type,active,created_at,updated_at').eq('business_id',financeBusiness.id).order('product_code',{ascending:true}).order('id'));
+  storeProductRows=await financeFetchAllRows(()=>sb.from('store_products').select('id,business_id,product_code,product_name,barcode_value,barcode_type,price,stock_quantity,stock_unit,item_type,active,created_at,updated_at').eq('business_id',financeBusiness.id).order('product_code',{ascending:true}).order('id'));
   let costLookupWarning='';
   if(financeMemberRole==='owner'){
     try{
@@ -4212,7 +4345,7 @@ async function loadStoreProducts(){
   if(quickInfo&&!saleProducts.length)quickInfo.textContent='Belum ada produk jual aktif. Owner perlu menambahkan barang dengan jenis Produk Jual pada menu Barang & Stok.';
   else if(quickInfo&&saleProducts.length)quickInfo.textContent=saleProducts.length+' produk jual aktif siap dipilih. Ketik kode atau nama barang untuk melihat harga dan stok.';
   const tbody=$('storeProductRows');
-  if(tbody){tbody.replaceChildren();if(!storeProductRows.length){const tr=document.createElement('tr');tr.innerHTML='<td colspan="8">Belum ada barang. Owner perlu mengisi daftar barang dan harga terlebih dahulu.</td>';tbody.appendChild(tr);}else storeProductRows.forEach(p=>{const tr=document.createElement('tr');const baseVals=[p.product_code,p.product_name,p.item_type==='ingredient'?'Bahan baku':'Produk jual'];baseVals.forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});const costTd=document.createElement('td');if(financeMemberRole==='owner'){const costInput=document.createElement('input');costInput.type='number';costInput.min='0';costInput.step='1';costInput.inputMode='numeric';costInput.value=String(Number(p.cost_price||0));costInput.setAttribute('aria-label','Harga modal per satuan '+p.product_name);costInput.style.minWidth='125px';costInput.style.marginBottom='6px';const saveCost=document.createElement('button');saveCost.type='button';saveCost.className='secondary';saveCost.textContent='Simpan modal';saveCost.addEventListener('click',async()=>{const cost=Number(costInput.value);if(costInput.value.trim()===''||!Number.isSafeInteger(cost)||cost<0){alert('Isi harga modal dengan bilangan bulat nol atau lebih.');costInput.focus();return;}saveCost.disabled=true;try{const {error}=await sb.rpc('set_store_product_cost',{p_product_id:p.id,p_cost_price:cost});if(error)throw error;p.cost_price=cost;const cached=storeProductRows.find(x=>String(x.id)===String(p.id));if(cached)cached.cost_price=cost;setFinanceStatus('Harga modal '+p.product_name+' berhasil disimpan.');saveCost.textContent='Tersimpan';setTimeout(()=>{saveCost.textContent='Simpan modal';},1600);}catch(e){alert('Harga modal gagal disimpan: '+String(e.message||e).slice(0,160));}finally{saveCost.disabled=false;}});costTd.appendChild(costInput);costTd.appendChild(saveCost);}else costTd.textContent='—';tr.appendChild(costTd);[formatStoreRupiah(p.price),String(Number(p.stock_quantity||0))+' '+(p.stock_unit||'unit'),p.active?'Aktif':'Nonaktif'].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});const td=document.createElement('td');if(financeMemberRole==='owner'){const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Edit barang';edit.addEventListener('click',()=>editStoreProduct(p.id));td.appendChild(edit);if(p.active){const b=document.createElement('button');b.type='button';b.className='secondary';b.style.marginTop='6px';b.textContent='Nonaktifkan';b.addEventListener('click',()=>deactivateStoreProduct(p.id));td.appendChild(b);}}else td.textContent='—';tr.appendChild(td);tbody.appendChild(tr);});}
+  if(tbody){tbody.replaceChildren();if(!storeProductRows.length){const tr=document.createElement('tr');tr.innerHTML='<td colspan="9">Belum ada barang. Owner perlu mengisi daftar barang dan harga terlebih dahulu.</td>';tbody.appendChild(tr);}else storeProductRows.forEach(p=>{const tr=document.createElement('tr');const baseVals=[p.product_code,p.barcode_value||'Belum diatur',p.product_name,p.item_type==='ingredient'?'Bahan baku':'Produk jual'];baseVals.forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});const costTd=document.createElement('td');if(financeMemberRole==='owner'){const costInput=document.createElement('input');costInput.type='number';costInput.min='0';costInput.step='1';costInput.inputMode='numeric';costInput.value=String(Number(p.cost_price||0));costInput.setAttribute('aria-label','Harga modal per satuan '+p.product_name);costInput.style.minWidth='125px';costInput.style.marginBottom='6px';const saveCost=document.createElement('button');saveCost.type='button';saveCost.className='secondary';saveCost.textContent='Simpan modal';saveCost.addEventListener('click',async()=>{const cost=Number(costInput.value);if(costInput.value.trim()===''||!Number.isSafeInteger(cost)||cost<0){alert('Isi harga modal dengan bilangan bulat nol atau lebih.');costInput.focus();return;}saveCost.disabled=true;try{const {error}=await sb.rpc('set_store_product_cost',{p_product_id:p.id,p_cost_price:cost});if(error)throw error;p.cost_price=cost;const cached=storeProductRows.find(x=>String(x.id)===String(p.id));if(cached)cached.cost_price=cost;setFinanceStatus('Harga modal '+p.product_name+' berhasil disimpan.');saveCost.textContent='Tersimpan';setTimeout(()=>{saveCost.textContent='Simpan modal';},1600);}catch(e){alert('Harga modal gagal disimpan: '+String(e.message||e).slice(0,160));}finally{saveCost.disabled=false;}});costTd.appendChild(costInput);costTd.appendChild(saveCost);}else costTd.textContent='—';tr.appendChild(costTd);[formatStoreRupiah(p.price),String(Number(p.stock_quantity||0))+' '+(p.stock_unit||'unit'),p.active?'Aktif':'Nonaktif'].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});const td=document.createElement('td');if(financeMemberRole==='owner'){const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Edit barang';edit.addEventListener('click',()=>editStoreProduct(p.id));td.appendChild(edit);if(p.active){const b=document.createElement('button');b.type='button';b.className='secondary';b.style.marginTop='6px';b.textContent='Nonaktifkan';b.addEventListener('click',()=>deactivateStoreProduct(p.id));td.appendChild(b);}}else td.textContent='—';tr.appendChild(td);tbody.appendChild(tr);});}
   const stockSelect=$('stockProductSelect');if(stockSelect){const previous=stockSelect.value;stockSelect.replaceChildren(new Option('Pilih barang...',''),...storeProductRows.filter(p=>p.active).map(p=>new Option(p.product_code+' — '+p.product_name+' (stok '+Number(p.stock_quantity||0)+' '+(p.stock_unit||'unit')+')',p.id)));if(storeProductRows.some(p=>p.id===previous&&p.active))stockSelect.value=previous;}
   const reportBody=$('stockReportRows');if(reportBody){reportBody.replaceChildren();const active=storeProductRows.filter(p=>p.active);if(!active.length){const tr=document.createElement('tr');tr.innerHTML='<td colspan="7">Belum ada barang atau bahan baku aktif untuk ditampilkan.</td>';reportBody.appendChild(tr);}active.forEach(p=>{const qty=Number(p.stock_quantity||0),tr=document.createElement('tr'),status=qty<=0?'Habis':qty<=5?'Menipis':'Tersedia';[p.product_code,p.product_name,p.item_type==='ingredient'?'Bahan baku':'Produk jual',qty.toLocaleString('id-ID')+' '+(p.stock_unit||'unit'),p.cost_price_available?formatStoreRupiah(p.cost_price):'Tidak tersedia',p.cost_price_available?formatStoreRupiah(qty*Number(p.cost_price||0)):'—',status].forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;if(i===6&&qty<=5)td.style.fontWeight='bold';tr.appendChild(td);});reportBody.appendChild(tr);});if($('stockReportKinds'))$('stockReportKinds').textContent=String(active.length);if($('stockReportUnits'))$('stockReportUnits').textContent=active.reduce((n,p)=>n+Number(p.stock_quantity||0),0).toLocaleString('id-ID');if($('stockReportLow'))$('stockReportLow').textContent=String(active.filter(p=>Number(p.stock_quantity||0)<=5).length);}
   if($('stockEntryCard'))$('stockEntryCard').hidden=financeMemberRole!=='owner';
@@ -4453,12 +4586,12 @@ async function deactivateStoreProduct(id){
  catch(e){const st=$('storeProductStatus');st.className='status error';st.textContent='Gagal mengubah barang: '+String(e.message||e).slice(0,180);}
 }
 function cancelStoreProductEdit(){
- const form=$('storeProductForm');if(!form)return;form.reset();$('storeProductEditId').value='';$('storeProductInitialStock').value='0';$('storeProductInitialStock').readOnly=false;$('storeProductInitialStock').disabled=false;$('storeProductCostPrice').value='';$('storeProductStockUnit').value='unit';$('storeProductSaleStatus').value='product';$('storeProductSave').textContent='Simpan barang, harga, stok, dan status';$('storeProductCancelEdit').hidden=true;$('storeProductFormMode').textContent='Tambah barang baru. Stok awal dicatat sekali saat barang dibuat; perubahan stok berikutnya gunakan Entri stok barang.';
+ const form=$('storeProductForm');if(!form)return;form.reset();$('storeProductEditId').value='';$('storeProductInitialStock').value='0';$('storeProductInitialStock').readOnly=false;$('storeProductInitialStock').disabled=false;$('storeProductCostPrice').value='';$('storeProductStockUnit').value='unit';$('storeProductSaleStatus').value='product';$('storeProductBarcodeType').value='custom';$('storeProductBarcodeValue').value=generateKasUsahaBarcode($('storeProductCode').value);$('storeProductBarcodeValue').readOnly=true;renderStoreProductBarcodePreview();$('storeProductSave').textContent='Simpan barang, harga, stok, dan status';$('storeProductCancelEdit').hidden=true;$('storeProductFormMode').textContent='Tambah barang baru. Stok awal dicatat sekali saat barang dibuat; perubahan stok berikutnya gunakan Entri stok barang.';
 }
 function editStoreProduct(id){
  if(financeMemberRole!=='owner')return;
  const p=storeProductRows.find(x=>String(x.id)===String(id));if(!p)return;
- $('storeProductEditId').value=String(p.id);$('storeProductCode').value=p.product_code||'';$('storeProductName').value=p.product_name||'';$('storeProductCostPrice').value=String(Number(p.cost_price||0));$('storeProductPrice').value=String(Number(p.price||0));$('storeProductInitialStock').value=String(Number(p.stock_quantity||0));$('storeProductInitialStock').readOnly=true;$('storeProductInitialStock').disabled=true;$('storeProductStockUnit').value=p.stock_unit||'unit';$('storeProductSaleStatus').value=p.item_type||'product';$('storeProductSave').textContent='Simpan perubahan barang';$('storeProductCancelEdit').hidden=false;$('storeProductFormMode').textContent='Mode edit: '+p.product_code+' — '+p.product_name+'. Stok saat ini dipertahankan dan tidak diubah saat menyimpan edit. Gunakan Entri stok barang untuk menambah, mengurangi, atau mengoreksi stok.';$('storeProductStatus').className='status';$('storeProductStatus').textContent='Sedang mengedit '+p.product_code+' — '+p.product_name+'.';$('storeProductForm').scrollIntoView({behavior:'smooth',block:'start'});$('storeProductCode').focus();
+ $('storeProductEditId').value=String(p.id);$('storeProductCode').value=p.product_code||'';$('storeProductBarcodeType').value=p.barcode_type||'custom';$('storeProductBarcodeValue').value=p.barcode_value||(p.barcode_type==='factory'?'':generateKasUsahaBarcode(p.product_code));$('storeProductBarcodeValue').readOnly=(p.barcode_type||'custom')==='custom';renderStoreProductBarcodePreview();$('storeProductName').value=p.product_name||'';$('storeProductCostPrice').value=String(Number(p.cost_price||0));$('storeProductPrice').value=String(Number(p.price||0));$('storeProductInitialStock').value=String(Number(p.stock_quantity||0));$('storeProductInitialStock').readOnly=true;$('storeProductInitialStock').disabled=true;$('storeProductStockUnit').value=p.stock_unit||'unit';$('storeProductSaleStatus').value=p.item_type||'product';$('storeProductSave').textContent='Simpan perubahan barang';$('storeProductCancelEdit').hidden=false;$('storeProductFormMode').textContent='Mode edit: '+p.product_code+' — '+p.product_name+'. Stok saat ini dipertahankan dan tidak diubah saat menyimpan edit. Gunakan Entri stok barang untuk menambah, mengurangi, atau mengoreksi stok.';$('storeProductStatus').className='status';$('storeProductStatus').textContent='Sedang mengedit '+p.product_code+' — '+p.product_name+'.';$('storeProductForm').scrollIntoView({behavior:'smooth',block:'start'});$('storeProductCode').focus();
 }
 $('storeProductForm')?.addEventListener('submit',async function(e){
  e.preventDefault();if(financeMemberRole!=='owner'||!financeBusiness){return;}
@@ -4466,15 +4599,17 @@ $('storeProductForm')?.addEventListener('submit',async function(e){
  if(!code||!name||!Number.isSafeInteger(price)||price<=0||!Number.isSafeInteger(costPrice)||costPrice<0||!Number.isSafeInteger(initialStock)||initialStock<0){$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Isi kode, nama, harga positif, dan stok berupa bilangan bulat nol atau lebih.';return;}
  const btn=$('storeProductSave');btn.disabled=true;
  try{
-  const itemType=$('storeProductSaleStatus')?.value||'product',stockUnit=String($('storeProductStockUnit')?.value||'unit').trim().toLowerCase();
+  const itemType=$('storeProductSaleStatus')?.value||'product',stockUnit=String($('storeProductStockUnit')?.value||'unit').trim().toLowerCase(),barcodeType=$('storeProductBarcodeType')?.value||'custom',barcodeValue=String($('storeProductBarcodeValue')?.value||'').trim();
   if(!stockUnit||stockUnit.length>24){$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Isi satuan stok, maksimal 24 karakter.';return;}
+  const normalizedBarcode=barcodeType==='custom'?generateKasUsahaBarcode(code):barcodeValue;
+  if(!normalizedBarcode){$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Masukkan nilai barcode pabrik atau pilih barcode otomatis KasUsaha.';return;}
   const currentItem=editId?storeProductRows.find(p=>String(p.id)===String(editId)):null;
-  const payload={product_code:code,product_name:name,price,stock_unit:stockUnit,item_type:itemType,active:editId?Boolean(currentItem?.active):true,updated_at:new Date().toISOString()};
+  const payload={product_code:code,product_name:name,barcode_value:normalizedBarcode,barcode_type:barcodeType,price,stock_unit:stockUnit,item_type:itemType,active:editId?Boolean(currentItem?.active):true,updated_at:new Date().toISOString()};
   if(!editId)payload.stock_quantity=initialStock;
   let error,productId=editId;
   if(editId){({error}=await sb.from('store_products').update(payload).eq('id',editId).eq('business_id',financeBusiness.id));}
   else{const inserted=await sb.from('store_products').insert({...payload,business_id:financeBusiness.id}).select('id').single();error=inserted.error;productId=inserted.data?.id||null;}
-  if(error){if(error.code==='23505')throw new Error('Kode barang sudah dipakai oleh barang lain dalam usaha ini. Periksa kode atau edit barang yang sudah ada.');throw error;}
+  if(error){if(error.code==='23505')throw new Error('Kode barang atau barcode sudah dipakai oleh barang lain dalam usaha ini. Periksa kembali nilai barcode.');throw error;}
   if(!productId)throw new Error('Barang tersimpan tetapi ID barang tidak terbaca. Muat ulang daftar barang sebelum melanjutkan.');
   const {error:costError}=await sb.rpc('set_store_product_cost',{p_product_id:productId,p_cost_price:costPrice});
   if(costError){await loadStoreProducts();cancelStoreProductEdit();$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Barang '+code+' tersimpan, tetapi harga modal gagal disimpan: '+String(costError.message||costError).slice(0,150)+'. Gunakan Edit barang untuk mencoba menyimpan harga modal lagi.';return;}
@@ -4511,6 +4646,7 @@ $('stockEntryForm')?.addEventListener('submit',async function(e){
 $('quickSaleTableNumber')?.addEventListener('input',()=>updateQuickSalePreview(false));
 $('quickSaleAddItem')?.addEventListener('click',addQuickSaleLine);
 if($('quickSaleItems')&&!$('quickSaleItems').children.length)addQuickSaleLine();
+bindKasUsahaBarcodeFeatures();
 $('quickSaleForm')?.addEventListener('submit',async function(e){
  e.preventDefault();if(!sb||!financeBusiness||!financeMemberRole||!financeMemberUserId){setFinanceStatus('Login dan hubungkan akun ke usaha terlebih dahulu.',true);return;}
  const lines=quickSaleItemRows().map(row=>quickSaleLineData(row,false));
@@ -6207,6 +6343,15 @@ html body>header.ks-brand-header .kasusaha-banner-side-products svg path:last-of
   window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
  });
 })();
+
+<div id="quickSaleBarcodeModal" hidden style="display:none;position:fixed;inset:0;z-index:10050;background:rgba(15,23,42,.82);align-items:center;justify-content:center;padding:14px">
+ <div class="card" style="width:min(100%,560px);background:#fff">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><strong>Scan barcode dengan kamera HP</strong><button id="quickSaleBarcodeClose" type="button" class="secondary">Tutup kamera</button></div>
+  <video id="quickSaleBarcodeVideo" autoplay muted playsinline style="width:100%;max-height:65vh;object-fit:contain;background:#111;border-radius:12px;margin-top:12px"></video>
+  <p class="small">Gunakan kamera belakang. Dekatkan barcode dan pastikan cahaya cukup. Barang akan masuk ke tagihan saat barcode terbaca.</p>
+ </div>
+</div>
+
 </script>
 
 
