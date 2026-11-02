@@ -3734,9 +3734,9 @@ function generateKasUsahaBarcode(code){
 }
 function barcodePrintFormat(value,type){
  const v=String(value||'').trim();
- if(type==='factory'&&/^\\d{13}$/.test(v))return 'EAN13';
- if(type==='factory'&&/^\\d{8}$/.test(v))return 'EAN8';
- if(type==='factory'&&/^\\d{12}$/.test(v))return 'UPC';
+ if(type==='factory'&&/^[0-9]{13}$/.test(v))return 'EAN13';
+ if(type==='factory'&&/^[0-9]{8}$/.test(v))return 'EAN8';
+ if(type==='factory'&&/^[0-9]{12}$/.test(v))return 'UPC';
  return 'CODE128';
 }
 function renderStoreProductBarcodePreview(){
