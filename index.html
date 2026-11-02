@@ -3733,6 +3733,20 @@ function generateKasUsahaBarcode(code){
  const clean=String(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,22);
  return clean?'KS'+clean:'';
 }
+function normalizeKasUsahaBarcode(value){
+ let text=String(value??'').trim().toUpperCase();
+ text=text.replace(new RegExp('^\\\\](?:A0|C0|C1|d2|E0|Q3)'),'').replace(/[\\x00-\\x1F\\x7F]/g,'');
+ return text.replace(/[\\s-]+/g,'');
+}
+function kasUsahaBarcodeMatches(a,b){
+ const x=normalizeKasUsahaBarcode(a),y=normalizeKasUsahaBarcode(b);
+ if(!x||!y)return false;
+ if(x===y)return true;
+ if(/^\\d+$/.test(x)&&/^\\d+$/.test(y)){
+  return (x.length===12&&y.length===13&&y==='0'+x)||(y.length===12&&x.length===13&&x==='0'+y);
+ }
+ return false;
+}
 function barcodePrintFormat(value,type){
  const v=String(value||'').trim();
  if(type==='factory'&&/^[0-9]{13}$/.test(v))return 'EAN13';
@@ -3773,8 +3787,10 @@ function setQuickSaleBarcodeStatus(message,error=false){
 }
 function addScannedBarcodeToQuickSale(raw){
  const value=String(raw||'').trim();if(!value)return false;
- const p=storeProductRows.find(x=>x.active&&x.item_type!=='ingredient'&&(String(x.barcode_value||'').trim()===value||String(x.product_code||'').trim().toLowerCase()===value.toLowerCase()));
- if(!p){setQuickSaleBarcodeStatus('Barcode '+value+' belum terdaftar pada produk jual usaha ini. Tambahkan barcode pada menu Barang & Stok.',true);return false;}
+ const candidates=storeProductRows.filter(x=>x.active&&x.item_type!=='ingredient'&&(kasUsahaBarcodeMatches(x.barcode_value||generateKasUsahaBarcode(x.product_code),value)||kasUsahaBarcodeMatches(x.product_code,value)));
+ if(candidates.length>1){setQuickSaleBarcodeStatus('Barcode '+value+' cocok dengan lebih dari satu barang. Owner perlu memeriksa barcode ganda pada menu Barang & Stok.',true);return false;}
+ const p=candidates[0]||null;
+ if(!p){setQuickSaleBarcodeStatus('Barcode '+value+' belum cocok dengan barcode atau kode barang aktif. Periksa nilai barcode di menu Barang & Stok; barcode otomatis lama juga tetap didukung.',true);return false;}
  if(Number(p.stock_quantity||0)<1){setQuickSaleBarcodeStatus(p.product_name+' ditemukan, tetapi stok habis.',true);return false;}
  let row=quickSaleItemRows().find(el=>{const input=el.querySelector('.quick-sale-product');return !String(input?.value||'').trim()&&!input?.dataset.productId;});
  if(!row){addQuickSaleLine();row=quickSaleItemRows().slice(-1)[0];}
@@ -3920,6 +3936,11 @@ function resolveStoreProduct(raw){
  if(!rawText)return null;
  const q=rawText.split(' — ')[0].trim().toLocaleLowerCase('id-ID');
  const active=storeProductRows.filter(p=>p.active&&p.item_type!=='ingredient');
+ const barcodeMatches=active.filter(p=>kasUsahaBarcodeMatches(p.barcode_value||generateKasUsahaBarcode(p.product_code),rawText));
+ if(barcodeMatches.length===1)return barcodeMatches[0];
+ if(barcodeMatches.length>1)return null;
+ const byCodeBarcode=active.filter(p=>kasUsahaBarcodeMatches(p.product_code,rawText));
+ if(byCodeBarcode.length===1)return byCodeBarcode[0];
  const byBarcode=active.find(p=>String(p.barcode_value||'').trim().toLocaleLowerCase('id-ID')===rawText.toLocaleLowerCase('id-ID'));
  if(byBarcode)return byBarcode;
  const exact=active.find(p=>String(p.product_code).toLocaleLowerCase('id-ID')===q);
