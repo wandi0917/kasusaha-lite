@@ -3796,6 +3796,14 @@ function handleQuickSaleCameraResult(raw){
   closeQuickSaleBarcodeCamera();field?.focus();
  }else addScannedBarcodeToQuickSale(value);
 }
+async function ensureKasUsahaZXing(){
+ if(window.ZXingBrowser?.BrowserMultiFormatReader)return window.ZXingBrowser;
+ const sources=['https://unpkg.com/@zxing/browser@0.2.1/umd/zxing-browser.min.js','https://cdn.jsdelivr.net/npm/@zxing/browser@0.2.1/umd/zxing-browser.min.js'];
+ for(const src of sources){
+  try{await new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=src;script.onload=resolve;script.onerror=()=>reject(new Error('CDN tidak dapat dimuat'));document.head.appendChild(script);});if(window.ZXingBrowser?.BrowserMultiFormatReader)return window.ZXingBrowser;}catch(_){}
+ }
+ throw new Error('Pustaka pemindai kamera tidak dapat dimuat dari CDN.');
+}
 async function openQuickSaleBarcodeCamera(mode='cart'){
  quickSaleCameraMode=mode==='product'?'product':'cart';
  const modal=$('quickSaleBarcodeModal'),video=$('quickSaleBarcodeVideo');
@@ -3836,11 +3844,11 @@ async function openQuickSaleBarcodeCamera(mode='cart'){
    quickSaleCameraFrame=requestAnimationFrame(scanFrame);
    return;
   }
-  if(!window.ZXingBrowser?.BrowserMultiFormatReader)throw new Error('Pemindai kamera tidak tersedia. Periksa koneksi internet lalu muat ulang aplikasi.');
-  const devices=await ZXingBrowser.BrowserCodeReader.listVideoInputDevices();
+  const ZX=await ensureKasUsahaZXing();
+  const devices=await ZX.BrowserCodeReader.listVideoInputDevices();
   const rear=devices.find(d=>/back|rear|environment|belakang/i.test(d.label));
   const selected=rear||devices[devices.length-1];
-  quickSaleCameraReader=new ZXingBrowser.BrowserMultiFormatReader();
+  quickSaleCameraReader=new ZX.BrowserMultiFormatReader();
   quickSaleCameraControls=await quickSaleCameraReader.decodeFromVideoDevice(selected?.deviceId||undefined,video,(result)=>{
    if(result)handleQuickSaleCameraResult(typeof result.getText==='function'?result.getText():result.text);
   });
