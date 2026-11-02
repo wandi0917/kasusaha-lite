@@ -3787,22 +3787,57 @@ function setQuickSaleBarcodeStatus(message,error=false){
  const el=$('quickSaleBarcodeStatus');if(el){el.className=error?'status error':'status';el.textContent=message;}
  const camera=$('quickSaleCameraStatus');if(camera){camera.textContent=message;camera.style.color=error?'#b91c1c':'#166534';}
 }
+function showQuickSaleBarcodeLinker(value){
+ const modal=$('quickSaleBarcodeModal'),cameraActive=Boolean(modal&&!modal.hidden);
+ const anchor=cameraActive?$('quickSaleCameraStatus'):$('quickSaleBarcodeStatus');
+ $('quickSaleBarcodeLinker')?.remove();
+ const panel=document.createElement('div');panel.id='quickSaleBarcodeLinker';panel.className='card';panel.style.cssText='margin-top:10px;padding:12px;background:#fff7ed;border:1px solid #fdba74';
+ const title=document.createElement('strong');title.textContent='Hubungkan barcode ini ke barang terdaftar';panel.appendChild(title);
+ const info=document.createElement('p');info.className='small';info.textContent='Barcode '+value+' belum tercatat pada produk jual. Pilih barang yang sesuai. Barcode lama tidak akan dihapus.';panel.appendChild(info);
+ if(financeMemberRole!=='owner'){
+  const hint=document.createElement('p');hint.className='small';hint.textContent='Pengaitan barcode hanya dapat dilakukan Owner. Minta Owner menghubungkan barcode kemasan melalui pemindaian ini.';panel.appendChild(hint);
+ }else{
+  const select=document.createElement('select');select.style.cssText='width:100%;padding:10px;margin:6px 0';
+  const placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Pilih barang jual yang sesuai';select.appendChild(placeholder);
+  storeProductRows.filter(p=>p.active&&p.item_type!=='ingredient').forEach(p=>{const opt=document.createElement('option');opt.value=String(p.id);opt.textContent=p.product_code+' — '+p.product_name+' (stok '+Number(p.stock_quantity||0)+')';select.appendChild(opt);});
+  panel.appendChild(select);
+  const save=document.createElement('button');save.type='button';save.className='primary wide';save.textContent='Simpan hubungan barcode';panel.appendChild(save);
+  save.addEventListener('click',async()=>{
+   const p=storeProductRows.find(x=>String(x.id)===select.value);if(!p){info.textContent='Pilih barang terlebih dahulu.';return;}
+   const duplicate=storeProductRows.find(x=>String(x.id)!==String(p.id)&&x.active&&x.item_type!=='ingredient'&&(kasUsahaBarcodeMatches(x.barcode_value,value)||(Array.isArray(x.barcode_aliases)&&x.barcode_aliases.some(a=>kasUsahaBarcodeMatches(a,value)))||kasUsahaBarcodeMatches(x.product_code,value)));
+   if(duplicate){info.textContent='Barcode ini sudah terhubung ke '+duplicate.product_name+'. Tidak disimpan agar barang tidak tertukar.';return;}
+   const aliases=Array.isArray(p.barcode_aliases)?p.barcode_aliases.slice():[];
+   if(!aliases.some(a=>kasUsahaBarcodeMatches(a,value))&&!kasUsahaBarcodeMatches(p.barcode_value,value)&&!kasUsahaBarcodeMatches(p.product_code,value))aliases.push(value);
+   save.disabled=true;save.textContent='Menyimpan…';
+   try{
+    const {data,error}=await sb.from('store_products').update({barcode_aliases:aliases,updated_at:new Date().toISOString()}).eq('id',p.id).eq('business_id',financeBusiness.id).select('id').maybeSingle();
+    if(error)throw error;if(!data)throw new Error('Tidak ada perubahan tersimpan. Pastikan login sebagai Owner usaha yang benar.');
+    p.barcode_aliases=aliases;panel.remove();const added=addScannedBarcodeToQuickSale(value);if(added&&cameraActive)closeQuickSaleBarcodeCamera();
+   }catch(e){info.textContent='Gagal menghubungkan barcode: '+String(e.message||e).slice(0,180);save.disabled=false;save.textContent='Simpan hubungan barcode';}
+  });
+ }
+ anchor?.insertAdjacentElement('afterend',panel);
+}
 function addScannedBarcodeToQuickSale(raw){
  const value=String(raw||'').trim();if(!value)return false;
- const candidates=storeProductRows.filter(x=>x.active&&x.item_type!=='ingredient'&&(kasUsahaBarcodeMatches(x.barcode_value||generateKasUsahaBarcode(x.product_code),value)||kasUsahaBarcodeMatches(x.product_code,value)));
- if(candidates.length>1){setQuickSaleBarcodeStatus('Barcode '+value+' cocok dengan lebih dari satu barang. Owner perlu memeriksa barcode ganda pada menu Barang & Stok.',true);return false;}
+ const matches=p=>p.active&&p.item_type!=='ingredient'&&(kasUsahaBarcodeMatches(p.barcode_value||generateKasUsahaBarcode(p.product_code),value)||kasUsahaBarcodeMatches(p.product_code,value)||(Array.isArray(p.barcode_aliases)&&p.barcode_aliases.some(a=>kasUsahaBarcodeMatches(a,value))));
+ const candidates=storeProductRows.filter(matches);
+ if(candidates.length>1){setQuickSaleBarcodeStatus('Barcode '+value+' cocok dengan lebih dari satu barang. Owner perlu memeriksa barcode ganda.',true);return false;}
  const p=candidates[0]||null;
- if(!p){setQuickSaleBarcodeStatus('Barcode '+value+' belum cocok dengan barcode atau kode barang aktif. Periksa nilai barcode di menu Barang & Stok; barcode otomatis lama juga tetap didukung.',true);return false;}
+ if(!p){
+  const ingredient=storeProductRows.find(x=>x.active&&x.item_type==='ingredient'&&(kasUsahaBarcodeMatches(x.barcode_value||generateKasUsahaBarcode(x.product_code),value)||kasUsahaBarcodeMatches(x.product_code,value)||(Array.isArray(x.barcode_aliases)&&x.barcode_aliases.some(a=>kasUsahaBarcodeMatches(a,value)))));
+  if(ingredient){setQuickSaleBarcodeStatus(ingredient.product_name+' sudah terdaftar, tetapi jenisnya Bahan Baku sehingga tidak dapat dimasukkan ke penjualan. Ubah jenis menjadi Produk Jual jika barang memang dijual.',true);return false;}
+  setQuickSaleBarcodeStatus('Barcode '+value+' belum terhubung ke barcode produk jual. Pilih barang yang sesuai untuk menyimpan barcode kemasan tanpa menghapus barcode lama.',true);showQuickSaleBarcodeLinker(value);return false;
+ }
  if(Number(p.stock_quantity||0)<1){setQuickSaleBarcodeStatus(p.product_name+' ditemukan, tetapi stok habis.',true);return false;}
+ $('quickSaleBarcodeLinker')?.remove();
  let row=quickSaleItemRows().find(el=>{const input=el.querySelector('.quick-sale-product');return !String(input?.value||'').trim()&&!input?.dataset.productId;});
  if(!row){addQuickSaleLine();row=quickSaleItemRows().slice(-1)[0];}
  const input=row?.querySelector('.quick-sale-product');if(input){input.value=p.product_code+' — '+p.product_name;input.dataset.productId=p.id;}
  const cancelButton=row?.querySelector('.quick-sale-cancel-scan');if(cancelButton)cancelButton.hidden=false;
  const qtyField=row?.querySelector('.quick-sale-qty');if(qtyField){qtyField.value='';qtyField.placeholder='Isi jumlah pesanan';qtyField.min='1';qtyField.step='1';qtyField.style.cssText='width:100%;padding:14px;border:2px solid #16a34a;border-radius:10px;background:#f0fdf4;font-size:20px;font-weight:800;text-align:center';row?.scrollIntoView({behavior:'smooth',block:'center'});qtyField.focus();}
- updateQuickSalePreview(true);
- setQuickSaleBarcodeStatus('✓ '+p.product_name+' terbaca. Kamera dihentikan. Periksa barang, isi jumlah, atau tekan Batalkan scan jika barang keliru.');
- const scanInput=$('quickSaleBarcodeInput');if(scanInput)scanInput.value='';
- return true;
+ updateQuickSalePreview(true);setQuickSaleBarcodeStatus('✓ '+p.product_name+' terbaca. Kamera dihentikan. Periksa barang, isi jumlah, atau tekan Batalkan scan.');
+ const scanInput=$('quickSaleBarcodeInput');if(scanInput)scanInput.value='';return true;
 }
 function handleQuickSaleCameraResult(raw){
  const value=String(raw||'').trim(),now=Date.now();
@@ -3837,16 +3872,16 @@ function ensureQuickSaleCameraPanel(){
  let video=$('quickSaleBarcodeVideo');
  if(!video){video=document.createElement('video');video.id='quickSaleBarcodeVideo';video.autoplay=true;video.muted=true;video.playsInline=true;video.setAttribute('playsinline','');}
  let stage=card.querySelector('.quick-sale-camera-stage');
- if(!stage){stage=document.createElement('div');stage.className='quick-sale-camera-stage';stage.style.cssText='position:relative;width:100%;margin-top:12px;background:#111;border-radius:12px;overflow:hidden;line-height:0';video.style.cssText='display:block;width:100%;max-height:58vh;min-height:220px;object-fit:contain;background:#111';video.remove();stage.appendChild(video);const shade=document.createElement('div');shade.setAttribute('aria-hidden','true');shade.style.cssText='position:absolute;left:4%;top:22%;width:92%;height:56%;border:3px solid #22c55e;border-radius:12px;box-shadow:0 0 0 999px rgba(0,0,0,.38);pointer-events:none';stage.appendChild(shade);const mark=document.createElement('div');mark.textContent='LETAKKAN BARCODE DI DALAM KOTAK';mark.style.cssText='position:absolute;left:10%;right:10%;top:27%;text-align:center;color:white;font:bold 11px Arial;text-shadow:0 1px 4px #000;letter-spacing:.4px;pointer-events:none';stage.appendChild(mark);card.appendChild(stage);}
+ if(!stage){stage=document.createElement('div');stage.className='quick-sale-camera-stage';stage.style.cssText='position:relative;width:100%;margin-top:12px;background:#111;border-radius:12px;overflow:hidden;line-height:0';video.style.cssText='display:block;width:100%;max-height:58vh;min-height:220px;object-fit:contain;background:#111';video.remove();stage.appendChild(video);const shade=document.createElement('div');shade.setAttribute('aria-hidden','true');shade.style.cssText='position:absolute;left:17%;top:35%;width:66%;height:30%;border:3px solid #22c55e;border-radius:12px;box-shadow:0 0 0 999px rgba(0,0,0,.38);pointer-events:none';stage.appendChild(shade);const mark=document.createElement('div');mark.textContent='LETAKKAN BARCODE DI DALAM KOTAK';mark.style.cssText='position:absolute;left:10%;right:10%;top:27%;text-align:center;color:white;font:bold 11px Arial;text-shadow:0 1px 4px #000;letter-spacing:.4px;pointer-events:none';stage.appendChild(mark);card.appendChild(stage);}
  let status=$('quickSaleCameraStatus');if(!status){status=document.createElement('p');status.id='quickSaleCameraStatus';status.className='small';status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.textContent='Menyiapkan kamera…';card.appendChild(status);}
- let note=card.querySelector('.quick-sale-camera-note');if(!note){note=document.createElement('p');note.className='small quick-sale-camera-note';note.textContent='Area baca diperluas untuk barcode 1D dan 2D. Posisikan satu barcode di dalam kotak hijau, jangan terlalu miring, dan pastikan fokus serta cahaya cukup.';card.appendChild(note);}
+ let note=card.querySelector('.quick-sale-camera-note');if(!note){note=document.createElement('p');note.className='small quick-sale-camera-note';note.textContent='Kotak scan dipersempit agar hanya satu barcode terbaca. Posisikan satu barcode tepat di tengah kotak hijau, jangan terlalu miring, dan pastikan fokus serta cahaya cukup.';card.appendChild(note);}
  const closeButton=$('quickSaleBarcodeClose');if(closeButton)closeButton.onclick=closeQuickSaleBarcodeCamera;
  modal.onclick=e=>{if(e.target===modal)closeQuickSaleBarcodeCamera();};
  return {modal,video};
 }
 function quickSaleCameraScanCanvases(video){
  if(!video||video.readyState<2||!video.videoWidth||!video.videoHeight)return [];
- const sw=Math.max(1,Math.round(video.videoWidth*.92)),sh=Math.max(1,Math.round(video.videoHeight*.56)),sx=Math.round((video.videoWidth-sw)/2),sy=Math.round((video.videoHeight-sh)/2);
+ const sw=Math.max(1,Math.round(video.videoWidth*.66)),sh=Math.max(1,Math.round(video.videoHeight*.30)),sx=Math.round((video.videoWidth-sw)/2),sy=Math.round((video.videoHeight-sh)/2);
  const canvas=document.createElement('canvas');canvas.width=sw;canvas.height=sh;
  const ctx=canvas.getContext('2d',{willReadFrequently:true});if(!ctx)return [];
  ctx.imageSmoothingEnabled=false;ctx.drawImage(video,sx,sy,sw,sh,0,0,sw,sh);
@@ -3938,7 +3973,7 @@ function resolveStoreProduct(raw){
  if(!rawText)return null;
  const q=rawText.split(' — ')[0].trim().toLocaleLowerCase('id-ID');
  const active=storeProductRows.filter(p=>p.active&&p.item_type!=='ingredient');
- const barcodeMatches=active.filter(p=>kasUsahaBarcodeMatches(p.barcode_value||generateKasUsahaBarcode(p.product_code),rawText));
+ const barcodeMatches=active.filter(p=>kasUsahaBarcodeMatches(p.barcode_value||generateKasUsahaBarcode(p.product_code),rawText)||(Array.isArray(p.barcode_aliases)&&p.barcode_aliases.some(a=>kasUsahaBarcodeMatches(a,rawText))));
  if(barcodeMatches.length===1)return barcodeMatches[0];
  if(barcodeMatches.length>1)return null;
  const byCodeBarcode=active.filter(p=>kasUsahaBarcodeMatches(p.product_code,rawText));
@@ -4423,7 +4458,7 @@ async function printSelectedReport(){
 async function loadStoreProducts(){
   if(!sb)throw new Error('Koneksi Supabase belum tersedia.');
   if(!financeBusiness||!financeMemberRole)throw new Error('Pilih usaha dan pastikan akun Owner/Karyawan sudah terhubung sebelum memuat barang.');
-  storeProductRows=await financeFetchAllRows(()=>sb.from('store_products').select('id,business_id,product_code,product_name,barcode_value,barcode_type,price,stock_quantity,stock_unit,item_type,active,created_at,updated_at').eq('business_id',financeBusiness.id).order('product_code',{ascending:true}).order('id'));
+  storeProductRows=await financeFetchAllRows(()=>sb.from('store_products').select('id,business_id,product_code,product_name,barcode_value,barcode_aliases,barcode_type,price,stock_quantity,stock_unit,item_type,active,created_at,updated_at').eq('business_id',financeBusiness.id).order('product_code',{ascending:true}).order('id'));
   let costLookupWarning='';
   if(financeMemberRole==='owner'){
     try{
