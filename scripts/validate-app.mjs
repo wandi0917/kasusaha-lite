@@ -80,4 +80,21 @@ if (!/CACHE_PREFIX/.test(sw) || !/request\.method !== 'GET'/.test(sw)) {
   fail("service worker cache safety guard missing");
 } else pass("service worker limits caching to GET requests");
 
+
+if (!/kasusaha_get_business_package_entitlements/.test(html) ||
+    !/package-no-full-finance/.test(html) ||
+    !/package-no-attendance/.test(html) ||
+    !/package-no-employees/.test(html) ||
+    !/package-no-barcode/.test(html)) {
+  fail("package entitlement lookup or UI feature gates are missing");
+} else pass("package entitlements are loaded and UI feature gates are present");
+
+if (!/KS_PACKAGE_PRICES/.test(html) ||
+    !/starter:49000/.test(html) ||
+    !/lite:99000/.test(html) ||
+    !/business:149000/.test(html) ||
+    !/professional:249000/.test(html)) {
+  fail("four-package checkout prices are missing or inconsistent");
+} else pass("four package checkout prices are present");
+
 if (process.exitCode) process.exit(process.exitCode);
