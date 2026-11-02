@@ -3768,6 +3768,7 @@ function printStoreProductBarcode(id){
 let quickSaleCameraControls=null,quickSaleCameraReader=null,quickSaleCameraStream=null,quickSaleCameraFrame=0,quickSaleBarcodeDetector=null,quickSaleLastScanned='',quickSaleLastScannedAt=0,quickSaleCameraMode='cart';
 function setQuickSaleBarcodeStatus(message,error=false){
  const el=$('quickSaleBarcodeStatus');if(el){el.className=error?'status error':'status';el.textContent=message;}
+ const camera=$('quickSaleCameraStatus');if(camera){camera.textContent=message;camera.style.color=error?'#b91c1c':'#166534';}
 }
 function addScannedBarcodeToQuickSale(raw){
  const value=String(raw||'').trim();if(!value)return false;
@@ -3808,31 +3809,39 @@ async function openQuickSaleBarcodeCamera(mode='cart'){
  quickSaleCameraMode=mode==='product'?'product':'cart';
  const modal=$('quickSaleBarcodeModal'),video=$('quickSaleBarcodeVideo');
  if(!modal||!video){setQuickSaleBarcodeStatus('Panel kamera tidak ditemukan. Muat ulang aplikasi.',true);return;}
- if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){setQuickSaleBarcodeStatus('Kamera memerlukan alamat HTTPS dan izin kamera browser. Buka aplikasi melalui situs HTTPS.',true);return;}
+ if(!window.isSecureContext||!navigator.mediaDevices||typeof navigator.mediaDevices.getUserMedia!=='function'){
+  setQuickSaleBarcodeStatus('Browser ini tidak menyediakan akses kamera. Buka https://wandi0917.github.io/kasusaha-lite/ langsung di Chrome HP, bukan dari pratinjau aplikasi lain.',true);return;
+ }
  closeQuickSaleBarcodeCamera();
  quickSaleCameraMode=mode==='product'?'product':'cart';
- modal.hidden=false;modal.style.display='flex';video.muted=true;video.setAttribute('playsinline','');
- setQuickSaleBarcodeStatus('Meminta izin kamera. Pilih Izinkan pada browser jika diminta.');
+ modal.hidden=false;modal.style.display='flex';video.muted=true;video.autoplay=true;video.playsInline=true;video.setAttribute('playsinline','');
+ setQuickSaleBarcodeStatus('Menghubungkan kamera HP… pilih Izinkan jika browser meminta akses kamera.');
  try{
+  // Panggil getUserMedia langsung dari aksi tombol. Jangan menunggu enumerateDevices/CDN
+  // sebelum meminta izin karena beberapa browser HP kehilangan konteks aktivasi pengguna.
+  let stream;
+  try{stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}});}
+  catch(firstError){
+   if(firstError?.name==='OverconstrainedError'||firstError?.name==='NotFoundError')
+    stream=await navigator.mediaDevices.getUserMedia({audio:false,video:true});
+   else throw firstError;
+  }
+  quickSaleCameraStream=stream;video.srcObject=stream;
+  await new Promise((resolve,reject)=>{
+   if(video.readyState>=2&&video.videoWidth){resolve();return;}
+   const timer=setTimeout(()=>reject(new Error('Kamera sudah diizinkan tetapi video tidak mengalir. Tutup aplikasi kamera lain lalu coba lagi.')),10000);
+   video.onloadedmetadata=()=>{clearTimeout(timer);video.play().then(resolve).catch(reject);};
+   video.onerror=()=>{clearTimeout(timer);reject(new Error('Video kamera gagal ditampilkan oleh browser.'));};
+  });
+  await video.play();
   const Detector=window.BarcodeDetector;
   if(typeof Detector==='function'){
    let formats=['ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf','codabar','qr_code','data_matrix','pdf417','aztec'];
    if(typeof Detector.getSupportedFormats==='function'){
-    const supported=await Detector.getSupportedFormats();formats=formats.filter(x=>supported.includes(x));
+    try{const supported=await Detector.getSupportedFormats();formats=formats.filter(x=>supported.includes(x));}catch(_){}
    }
    quickSaleBarcodeDetector=new Detector(formats.length?{formats}:undefined);
-   let stream;
-   try{
-    const devices=await navigator.mediaDevices.enumerateDevices();
-    const cameras=devices.filter(d=>d.kind==='videoinput');
-    const rear=cameras.find(d=>/back|rear|environment|belakang/i.test(d.label));
-    const selected=rear||cameras[cameras.length-1];
-    const constraints=selected?.deviceId?{audio:false,video:{deviceId:{exact:selected.deviceId},width:{ideal:1280},height:{ideal:720}}}:{audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}}};
-    try{stream=await navigator.mediaDevices.getUserMedia(constraints);}
-    catch(_){stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'}}});}
-   }catch(cameraError){throw cameraError;}
-   quickSaleCameraStream=stream;video.srcObject=stream;await video.play();
-   setQuickSaleBarcodeStatus('Kamera aktif. Arahkan barcode ke tengah gambar, jaga jarak dan pencahayaan.');
+   setQuickSaleBarcodeStatus('Kamera HP sudah terhubung. Arahkan barcode ke kotak kamera dan tahan stabil.');
    const scanFrame=async()=>{
     if(!quickSaleCameraStream||modal.hidden)return;
     if(video.readyState>=2){
@@ -3845,19 +3854,20 @@ async function openQuickSaleBarcodeCamera(mode='cart'){
    return;
   }
   const ZX=await ensureKasUsahaZXing();
-  const devices=await ZX.BrowserCodeReader.listVideoInputDevices();
-  const rear=devices.find(d=>/back|rear|environment|belakang/i.test(d.label));
-  const selected=rear||devices[devices.length-1];
   quickSaleCameraReader=new ZX.BrowserMultiFormatReader();
-  quickSaleCameraControls=await quickSaleCameraReader.decodeFromVideoDevice(selected?.deviceId||undefined,video,(result)=>{
-   if(result)handleQuickSaleCameraResult(typeof result.getText==='function'?result.getText():result.text);
-  });
-  setQuickSaleBarcodeStatus('Kamera aktif melalui pemindai cadangan. Arahkan barcode ke tengah gambar.');
+  if(typeof quickSaleCameraReader.decodeFromStream==='function'){
+   quickSaleCameraControls=await quickSaleCameraReader.decodeFromStream(stream,video,(result)=>{
+    if(result)handleQuickSaleCameraResult(typeof result.getText==='function'?result.getText():result.text);
+   });
+  }else{
+   throw new Error('Browser tidak mendukung pemindai barcode cadangan. Coba Chrome versi terbaru.');
+  }
+  setQuickSaleBarcodeStatus('Kamera HP sudah terhubung melalui pemindai cadangan. Arahkan barcode ke kamera.');
  }catch(e){
   closeQuickSaleBarcodeCamera();
   const reason=String(e?.name||e?.message||e);
-  const advice=reason==='NotAllowedError'?'Izin kamera ditolak. Izinkan kamera melalui ikon gembok di bilah alamat browser.':reason==='NotFoundError'?'Perangkat kamera tidak ditemukan.':reason==='NotReadableError'?'Kamera sedang dipakai aplikasi lain. Tutup aplikasi kamera lain lalu coba lagi.':reason==='OverconstrainedError'?'Kamera belakang tidak tersedia; coba kamera lain.':reason;
-  setQuickSaleBarcodeStatus('Kamera tidak dapat dimulai: '+advice+'. Scanner Bluetooth tetap dapat digunakan.',true);
+  const advice=reason==='NotAllowedError'?'Izin kamera ditolak atau diblokir. Buka ikon gembok/pengaturan situs lalu ubah Kamera menjadi Izinkan.':reason==='NotFoundError'?'Kamera HP tidak ditemukan oleh browser.':reason==='NotReadableError'?'Kamera sedang dipakai aplikasi lain. Tutup aplikasi kamera/WhatsApp/Meet lalu coba lagi.':reason==='NotSupportedError'?'Browser tidak mendukung akses kamera. Gunakan Chrome terbaru.':reason;
+  setQuickSaleBarcodeStatus('Gagal menghubungkan kamera: '+advice+'. Pastikan halaman dibuka langsung melalui HTTPS di browser HP.',true);
  }
 }
 function closeQuickSaleBarcodeCamera(){
@@ -6431,7 +6441,7 @@ html body>header.ks-brand-header .kasusaha-banner-image-button img{display:block
  <div class="card" style="width:min(100%,560px);background:#fff">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><strong>Scan barcode dengan kamera HP</strong><button id="quickSaleBarcodeClose" type="button" class="secondary">Tutup kamera</button></div>
   <video id="quickSaleBarcodeVideo" autoplay muted playsinline style="width:100%;max-height:65vh;object-fit:contain;background:#111;border-radius:12px;margin-top:12px"></video>
-  <p class="small">Gunakan kamera belakang. Dekatkan barcode dan pastikan cahaya cukup. Barang akan masuk ke tagihan saat barcode terbaca.</p>
+  <p id="quickSaleCameraStatus" class="small" role="status" aria-live="polite">Menunggu koneksi kamera HP…</p><p class="small">Arahkan kamera belakang ke barcode dengan cahaya cukup. Barang akan masuk ke tagihan saat barcode terbaca.</p>
  </div>
 </div>
 </body>
