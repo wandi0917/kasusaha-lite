@@ -3841,7 +3841,7 @@ function addScannedBarcodeToQuickSale(raw){
 }
 function handleQuickSaleCameraResult(raw){
  const value=String(raw||'').trim(),now=Date.now();
- if(!value||(value===quickSaleLastScanned&&now-quickSaleLastScannedAt<1400))return;
+ if(!value||(value===quickSaleLastScanned&&($('quickSaleBarcodeLinker')||now-quickSaleLastScannedAt<1400)))return;
  quickSaleLastScanned=value;quickSaleLastScannedAt=now;
  if(quickSaleCameraMode==='product'){
   const type=$('storeProductBarcodeType'),field=$('storeProductBarcodeValue');
