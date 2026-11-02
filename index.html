@@ -4349,7 +4349,7 @@ async function loadAttendance(){
   });
   const payrollBody=$('attendancePayrollRows');payrollBody.replaceChildren();
   const list=Array.from(summaries.entries());
-  if(!list.length){const tr=document.createElement('tr');tr.innerHTML='<td colspan="5">Belum ada catatan absensi.</td>';payrollBody.appendChild(tr);}
+  if(!list.length){const tr=document.createElement('tr');tr.innerHTML='<td colspan="6">Belum ada catatan absensi.</td>';payrollBody.appendChild(tr);}
   list.forEach(([uid,item])=>{
     const tr=document.createElement('tr'),name=item.employee_name||(uid===financeMemberUserId?'Owner (akun Anda)':(financeMemberRole==='owner'?'Karyawan/akun '+String(item.user_id||uid).slice(0,8):'Akun Anda'));
     [name,item.days.length?item.days.join('; '):'—',item.hours.toLocaleString('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2})+' jam',attendanceRupiah(item.wage),attendanceRupiah(item.total)].forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;if(i===4){td.className='amount income';td.style.fontWeight='bold';}tr.appendChild(td);});
