@@ -2121,7 +2121,7 @@ async function bagikanKasUsahaLite(){
     <span class="ks-pricing-kicker">HARGA RESMI • MODEL HYBRID</span>
     <h2>Pilih paket KasUsaha Lite</h2>
     <p>Bayar lisensi satu kali untuk hak penggunaan. Setiap paket menyertakan 12 bulan layanan cloud sejak aktivasi. Setelah itu, biaya layanan tahunan dibayar hanya jika ingin melanjutkan sinkronisasi cloud, cadangan online, dan layanan server. Tidak ada penagihan otomatis.</p>
-    <p class="ks-plan-note"><strong>Transparansi status:</strong> checkout dan aktivasi otomatis yang saat ini terhubung di sistem hanya mendukung produk Starter Rp49.000. Paket Lite, Business, dan Professional ditampilkan sebagai struktur harga yang ditetapkan, tetapi belum dapat dibeli sampai SKU, hak fitur server, dan pembayaran perpanjangan selesai diaktifkan. Untuk pembelian Starter melalui checkout yang sekarang, ketentuan lama Rp49.000 sekali bayar tetap berlaku dan belum ada biaya perpanjangan tahunan yang ditagihkan. Biaya tahunan Rp29.000 di atas adalah kebijakan harga baru yang belum diberlakukan sampai alur perpanjangan resmi tersedia. Jangan melakukan pembayaran di luar checkout resmi.</p>
+    <p class="ks-plan-note"><strong>Status checkout:</strong> keempat paket lisensi kini menggunakan checkout digital terpisah dengan harga ditetapkan di server. Login Akun Pembeli diperlukan. Pembayaran tetap mengikuti mode Midtrans yang ditampilkan; selama Sandbox aktif, jangan gunakan uang sungguhan. Perpanjangan tahunan belum tersedia dan tidak ditagih otomatis.</p>
   </div>
   <div class="ks-pricing-grid ks-pricing-grid-four">
     <article class="card ks-pricing-card">
@@ -2135,7 +2135,7 @@ async function bagikanKasUsahaLite(){
         <li>Laporan penjualan dasar</li>
         <li>12 bulan layanan cloud pertama</li>
       </ul>
-      <button class="primary" type="button" onclick="buka('pasar',document.querySelector('nav button[onclick*=\'pasar\']'))">Beli Starter melalui checkout</button>
+      <button class="primary" type="button" onclick="pilihPaketKasUsaha('starter')">Beli Starter</button>
       <p class="small">Paket yang saat ini tersedia pada checkout resmi.</p>
     </article>
     <article class="card ks-pricing-card ks-pricing-featured">
@@ -2151,7 +2151,7 @@ async function bagikanKasUsahaLite(){
         <li>Marketplace dan integrasi pembayaran/pengiriman sesuai ketersediaan</li>
         <li>12 bulan layanan cloud pertama</li>
       </ul>
-      <button class="secondary" type="button" disabled aria-disabled="true">Checkout paket sedang disiapkan</button>
+      <button class="primary" type="button" onclick="pilihPaketKasUsaha('lite')">Beli Lite</button>
     </article>
     <article class="card ks-pricing-card">
       <span class="ks-plan-label">UNTUK USAHA BERKEMBANG</span>
@@ -2165,7 +2165,7 @@ async function bagikanKasUsahaLite(){
         <li>Pengelolaan usaha dan data cloud</li>
         <li>12 bulan layanan cloud pertama</li>
       </ul>
-      <button class="secondary" type="button" disabled aria-disabled="true">Checkout paket sedang disiapkan</button>
+      <button class="primary" type="button" onclick="pilihPaketKasUsaha('business')">Beli Business</button>
     </article>
     <article class="card ks-pricing-card">
       <span class="ks-plan-label">UNTUK OPERASIONAL INTENSIF</span>
@@ -2178,8 +2178,23 @@ async function bagikanKasUsahaLite(){
         <li>Fitur lanjutan sesuai rilis resmi</li>
         <li>12 bulan layanan cloud pertama</li>
       </ul>
-      <button class="secondary" type="button" disabled aria-disabled="true">Checkout paket sedang disiapkan</button>
+      <button class="primary" type="button" onclick="pilihPaketKasUsaha('professional')">Beli Professional</button>
     </article>
+  </div>
+  <div id="ksPackageCheckoutCard" class="card" hidden>
+    <h3 id="ksPackageCheckoutTitle">Checkout lisensi KasUsaha Lite</h3>
+    <p id="ksPackageCheckoutInfo" class="small">Pilih paket, isi data pembeli, lalu lanjutkan ke pembayaran resmi Midtrans.</p>
+    <form id="ksPackageCheckoutForm">
+      <input type="hidden" id="ksSelectedPackageCode" value="">
+      <label for="ksPackageBuyerName">Nama pembeli</label>
+      <input id="ksPackageBuyerName" maxlength="200" autocomplete="name" required placeholder="Nama lengkap">
+      <label for="ksPackageBuyerPhone">Nomor WhatsApp</label>
+      <input id="ksPackageBuyerPhone" maxlength="40" inputmode="tel" autocomplete="tel" required placeholder="Contoh: 628123456789">
+      <p class="small">Produk berupa lisensi digital, tidak memerlukan alamat pengiriman.</p>
+      <button id="ksPackageCheckoutSubmit" class="primary wide" type="submit">Buat pesanan dan lanjutkan pembayaran</button>
+      <button class="secondary wide" type="button" onclick="document.getElementById('ksPackageCheckoutCard').hidden=true">Tutup</button>
+    </form>
+    <div id="ksPackageCheckoutStatus" class="status" role="status" aria-live="polite">Belum ada pesanan dibuat.</div>
   </div>
   <div class="card ks-pricing-policy">
     <h3>Ketentuan lisensi dan layanan</h3>
@@ -3080,6 +3095,70 @@ async function muatPesananSaya(){
     setStatusArea('statusPesananSaya','Gagal memuat pesanan: '+String(e.message||e).slice(0,220)+'. Periksa koneksi, akun pembeli, dan kebijakan SELECT/RLS.',true);
   }
 }
+const KS_PACKAGE_PRICES = {starter:49000,lite:99000,business:149000,professional:249000};
+const KS_PACKAGE_NAMES = {starter:'Starter',lite:'Lite',business:'Business',professional:'Professional'};
+function pilihPaketKasUsaha(code) {
+  if (!Object.prototype.hasOwnProperty.call(KS_PACKAGE_PRICES,code)) return;
+  const card=document.getElementById('ksPackageCheckoutCard');
+  const codeInput=document.getElementById('ksSelectedPackageCode');
+  const title=document.getElementById('ksPackageCheckoutTitle');
+  const info=document.getElementById('ksPackageCheckoutInfo');
+  const status=document.getElementById('ksPackageCheckoutStatus');
+  if(!card||!codeInput||!title||!info||!status)return;
+  codeInput.value=code;
+  title.textContent='Checkout paket '+KS_PACKAGE_NAMES[code];
+  info.textContent='Harga lisensi '+format(KS_PACKAGE_PRICES[code])+'. Termasuk 12 bulan layanan cloud pertama. Perpanjangan tahunan belum tersedia.';
+  status.className='status';
+  status.textContent='Isi nama dan nomor WhatsApp. Pembayaran akan diproses melalui Midtrans.';
+  card.hidden=false;
+  card.scrollIntoView({behavior:'smooth',block:'center'});
+}
+(function initKasUsahaPackageCheckout(){
+  const form=document.getElementById('ksPackageCheckoutForm');
+  if(!form||form.dataset.ready==='1')return;
+  form.dataset.ready='1';
+  form.addEventListener('submit',async function(event){
+    event.preventDefault();
+    const code=document.getElementById('ksSelectedPackageCode')?.value||'';
+    const name=document.getElementById('ksPackageBuyerName')?.value.trim()||'';
+    const phone=document.getElementById('ksPackageBuyerPhone')?.value.trim()||'';
+    const status=document.getElementById('ksPackageCheckoutStatus');
+    const submit=document.getElementById('ksPackageCheckoutSubmit');
+    if(!KS_PACKAGE_PRICES[code]||!name||!phone){if(status)status.textContent='Paket, nama, dan nomor WhatsApp wajib diisi.';return;}
+    if(!sb){if(status)status.textContent='Koneksi Supabase belum tersedia.';return;}
+    submit.disabled=true;
+    submit.textContent='Memeriksa akun dan membuat pesanan...';
+    try{
+      const {data:sessionData,error:sessionError}=await sb.auth.getSession();
+      if(sessionError)throw sessionError;
+      if(!sessionData?.session?.user||sessionData.session.user.is_anonymous===true){
+        if(status){status.className='status warn';status.textContent='Pembelian lisensi memerlukan akun pembeli terdaftar. Silakan login, lalu pilih paket kembali.';}
+        buka('akunPembeli',document.querySelectorAll('nav button')[8]);
+        return;
+      }
+      const {data,error}=await sb.rpc('create_kasusaha_package_order',{
+        p_package_code:code,
+        p_buyer_name:name,
+        p_buyer_phone:phone,
+        p_shipping_address:'Lisensi digital KasUsaha Lite — tidak memerlukan pengiriman.'
+      });
+      if(error)throw error;
+      const order=Array.isArray(data)?data[0]:data;
+      if(!order||order.success!==true||!order.order_id)throw new Error('Server tidak mengembalikan nomor pesanan yang valid.');
+      if(status){status.className='status';status.textContent='Pesanan '+order.order_id+' berhasil dibuat. Total '+format(order.total_amount)+'. Menyiapkan pembayaran Midtrans...';}
+      const pay=document.createElement('button');
+      pay.type='button';pay.className='primary wide';pay.textContent='Lanjutkan pembayaran Midtrans';
+      status?.insertAdjacentElement('afterend',pay);
+      await mulaiPembayaranMidtrans(order.order_id,pay);
+    }catch(error){
+      console.error('Checkout paket KasUsaha Lite gagal:',error);
+      if(status){status.className='status error';status.textContent='Checkout belum berhasil: '+String(error?.message||error).slice(0,220)+'. Jangan membuat pesanan berulang jika nomor pesanan sudah terbentuk.';}
+    }finally{
+      submit.disabled=false;
+      submit.textContent='Buat pesanan dan lanjutkan pembayaran';
+    }
+  });
+})();
 async function mulaiPembayaranMidtrans(orderId, button) {
   if (!sb) {
     alert('Supabase tidak tersedia.');
