@@ -3778,9 +3778,9 @@ function addScannedBarcodeToQuickSale(raw){
  if(Number(p.stock_quantity||0)<1){setQuickSaleBarcodeStatus(p.product_name+' ditemukan, tetapi stok habis.',true);return false;}
  let row=quickSaleItemRows().find(el=>String(el.querySelector('.quick-sale-product')?.dataset.productId||'')===String(p.id));
  if(!row){addQuickSaleLine();row=quickSaleItemRows().slice(-1)[0];const input=row?.querySelector('.quick-sale-product');if(input){input.value=p.product_code+' — '+p.product_name;input.dataset.productId=p.id;}}
- const qtyField=row?.querySelector('.quick-sale-qty');if(qtyField){qtyField.value='';qtyField.focus();}
+ const qtyField=row?.querySelector('.quick-sale-qty');if(qtyField){qtyField.value='';qtyField.placeholder='Isi jumlah pesanan';qtyField.min='1';qtyField.step='1';qtyField.style.cssText='width:100%;padding:14px;border:2px solid #16a34a;border-radius:10px;background:#f0fdf4;font-size:20px;font-weight:800;text-align:center';row?.scrollIntoView({behavior:'smooth',block:'center'});qtyField.focus();}
  updateQuickSalePreview(true);
- setQuickSaleBarcodeStatus('✓ '+p.product_name+' terbaca. Masukkan jumlah yang dipesan secara manual, lalu periksa tagihan.');
+ setQuickSaleBarcodeStatus('✓ '+p.product_name+' terbaca. Kamera dihentikan. Isi jumlah pesanan pada kotak hijau; subtotal dan total seluruh barang akan dihitung otomatis.');
  const scanInput=$('quickSaleBarcodeInput');if(scanInput){scanInput.value='';}
  return true;
 }
@@ -3796,7 +3796,7 @@ function handleQuickSaleCameraResult(raw){
   const help=$('storeProductBarcodeHelp');if(help)help.textContent='Barcode pabrik berhasil dipindai. Pastikan nilainya sesuai label kemasan lalu simpan produk.';
   const status=$('storeProductStatus');if(status){status.className='status';status.textContent='Barcode pabrik terbaca: '+value+'. Periksa lalu simpan produk.';}
   closeQuickSaleBarcodeCamera();field?.focus();
- }else addScannedBarcodeToQuickSale(value);
+ }else{const added=addScannedBarcodeToQuickSale(value);if(added)closeQuickSaleBarcodeCamera();}
 }
 async function ensureKasUsahaZXing(){
  if(window.ZXingBrowser?.BrowserMultiFormatReader)return window.ZXingBrowser;
