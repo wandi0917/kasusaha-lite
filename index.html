@@ -3765,7 +3765,7 @@ function printStoreProductBarcode(id){
   w.document.close();
  }catch(e){alert('Barcode belum dapat dicetak: '+String(e.message||e).slice(0,160));}
 }
-let quickSaleCameraControls=null,quickSaleCameraReader=null,quickSaleCameraStream=null,quickSaleCameraFrame=0,quickSaleBarcodeDetector=null,quickSaleLastScanned='',quickSaleLastScannedAt=0,quickSaleCameraMode='cart';
+let quickSaleCameraControls=null,quickSaleCameraReader=null,quickSaleCameraStream=null,quickSaleCameraFrame=0,quickSaleBarcodeDetector=null,quickSaleCameraFallbackTimer=0,quickSaleBarcodeDetectBusy=false,quickSaleLastScanned='',quickSaleLastScannedAt=0,quickSaleCameraMode='cart';
 function setQuickSaleBarcodeStatus(message,error=false){
  const el=$('quickSaleBarcodeStatus');if(el){el.className=error?'status error':'status';el.textContent=message;}
  const camera=$('quickSaleCameraStatus');if(camera){camera.textContent=message;camera.style.color=error?'#b91c1c':'#166534';}
@@ -3862,14 +3862,36 @@ async function openQuickSaleBarcodeCamera(mode='cart'){
     try{const supported=await Detector.getSupportedFormats();formats=formats.filter(x=>supported.includes(x));}catch(_){}
    }
    quickSaleBarcodeDetector=new Detector(formats.length?{formats}:undefined);
-   setQuickSaleBarcodeStatus('Kamera HP sudah terhubung. Arahkan barcode ke kotak kamera dan tahan stabil.');
+   quickSaleBarcodeDetectBusy=false;
+   setQuickSaleBarcodeStatus('Kamera aktif. Mencoba membaca barcode Code 128, EAN, UPC, QR, dan format umum lainnya…');
+   // Beberapa browser memiliki BarcodeDetector tetapi gagal membaca format tertentu.
+   // Jika belum ada hasil setelah 2,5 detik, alihkan otomatis ke ZXing pada stream kamera yang sama.
+   quickSaleCameraFallbackTimer=setTimeout(async()=>{
+    if(!quickSaleCameraStream||modal.hidden||quickSaleCameraReader)return;
+    if(quickSaleCameraFrame){cancelAnimationFrame(quickSaleCameraFrame);quickSaleCameraFrame=0;}
+    quickSaleBarcodeDetector=null;
+    try{
+     const ZX=await ensureKasUsahaZXing();
+     if(!quickSaleCameraStream||modal.hidden)return;
+     quickSaleCameraReader=new ZX.BrowserMultiFormatReader();
+     if(typeof quickSaleCameraReader.decodeFromStream!=='function')throw new Error('Pemindai cadangan tidak mendukung stream kamera.');
+     quickSaleCameraControls=await quickSaleCameraReader.decodeFromStream(quickSaleCameraStream,video,(result)=>{
+      if(result)handleQuickSaleCameraResult(typeof result.getText==='function'?result.getText():result.text);
+     });
+     setQuickSaleBarcodeStatus('Kamera aktif dengan pemindai kompatibel. Arahkan barcode ke kamera; hasil akan dibaca otomatis.');
+    }catch(fallbackError){
+     setQuickSaleBarcodeStatus('Kamera menyala tetapi barcode belum terbaca. Pastikan label fokus, cukup cahaya, dan coba dekatkan barcode. '+String(fallbackError.message||fallbackError).slice(0,120),true);
+    }
+   },2500);
    const scanFrame=async()=>{
     if(!quickSaleCameraStream||modal.hidden)return;
-    if(video.readyState>=2){
+    if(video.readyState>=2&&quickSaleBarcodeDetector&&!quickSaleBarcodeDetectBusy){
+     quickSaleBarcodeDetectBusy=true;
      try{const found=await quickSaleBarcodeDetector.detect(video);if(found?.length)handleQuickSaleCameraResult(found[0].rawValue);}
      catch(e){console.warn('Pembacaan barcode kamera:',e);}
+     finally{quickSaleBarcodeDetectBusy=false;}
     }
-    if(quickSaleCameraStream&&!modal.hidden)quickSaleCameraFrame=requestAnimationFrame(scanFrame);
+    if(quickSaleCameraStream&&!modal.hidden&&quickSaleBarcodeDetector)quickSaleCameraFrame=requestAnimationFrame(scanFrame);
    };
    quickSaleCameraFrame=requestAnimationFrame(scanFrame);
    return;
@@ -3893,6 +3915,8 @@ async function openQuickSaleBarcodeCamera(mode='cart'){
 }
 function closeQuickSaleBarcodeCamera(){
  if(quickSaleCameraFrame){cancelAnimationFrame(quickSaleCameraFrame);quickSaleCameraFrame=0;}
+ if(quickSaleCameraFallbackTimer){clearTimeout(quickSaleCameraFallbackTimer);quickSaleCameraFallbackTimer=0;}
+ quickSaleBarcodeDetectBusy=false;
  try{quickSaleCameraControls?.stop();}catch(_){}
  quickSaleCameraControls=null;quickSaleCameraReader=null;quickSaleBarcodeDetector=null;
  if(quickSaleCameraStream){quickSaleCameraStream.getTracks().forEach(track=>{try{track.stop();}catch(_){}});quickSaleCameraStream=null;}
