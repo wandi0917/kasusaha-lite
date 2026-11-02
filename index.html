@@ -3812,8 +3812,9 @@ function ensureQuickSaleCameraPanel(){
   modal.style.cssText='display:none;position:fixed;inset:0;z-index:10050;background:rgba(15,23,42,.82);align-items:center;justify-content:center;padding:14px';
   document.body.appendChild(modal);
  }
- let card=modal.querySelector('.quick-sale-camera-card');
- if(!card){card=document.createElement('div');card.className='card quick-sale-camera-card';card.style.cssText='width:min(100%,560px);background:#fff;padding:16px;border-radius:14px';modal.appendChild(card);}
+ let card=modal.querySelector('.quick-sale-camera-card')||modal.querySelector('.card')||$('quickSaleBarcodeVideo')?.parentElement;
+ if(!card){card=document.createElement('div');modal.appendChild(card);}
+ card.classList.add('card','quick-sale-camera-card');card.style.cssText='width:min(100%,560px);background:#fff;padding:16px;border-radius:14px';
  let head=card.querySelector('.quick-sale-camera-head');
  if(!head){head=document.createElement('div');head.className='quick-sale-camera-head';head.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:10px';const title=document.createElement('strong');title.textContent='Scan barcode dengan kamera';head.appendChild(title);const close=document.createElement('button');close.id='quickSaleBarcodeClose';close.type='button';close.className='secondary';close.textContent='Tutup kamera';head.appendChild(close);card.appendChild(head);}
  let video=$('quickSaleBarcodeVideo');
