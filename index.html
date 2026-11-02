@@ -4452,7 +4452,7 @@ async function pilihLaporanTransaksi(category){
  }
 }
 
-async function printSelectedReport(){
+async async function printSelectedReport(){
  const category=$('reportCategorySelect')?.value||'';
  const panelId=category==='stock'?'stockReportTableCard':
    (category==='sales'||category==='finance'||category==='income')?'financeReportCard':
@@ -4809,7 +4809,7 @@ document.querySelectorAll('.quick-sale-cash-option').forEach(button=>button.addE
  const input=$('quickSaleCashReceived'),total=Number(String($('quickSaleTotal')?.textContent||'').replace(/[^0-9]/g,''))||0;
  if(!input)return;input.value=button.dataset.cash==='exact'?String(total):button.dataset.cash;updateQuickSalePreview(false);
 }));
-$('quickSaleAddItem')?.addEventListener('click',()=>{addQuickSaleLine();openQuickSaleBarcodeCamera('cart');});
+$('quickSaleAddItem')?.addEventListener('click',()=>{addQuickSaleLine();});
 if($('quickSaleItems')&&!$('quickSaleItems').children.length)addQuickSaleLine();
 bindKasUsahaBarcodeFeatures();
 $('quickSaleForm')?.addEventListener('submit',async function(e){
@@ -4819,6 +4819,8 @@ $('quickSaleForm')?.addEventListener('submit',async function(e){
  if(stockIssues.length){const detail=stockIssues.map(d=>d.p.product_name+': stok tersedia '+d.stockAvailable+' '+(d.p.stock_unit||'unit')+', diminta '+d.qty+'.').join(' ');setFinanceStatus('PENJUALAN BELUM DIKIRIM: stok tidak mencukupi. '+detail+' Tambahkan/koreksi stok melalui Barang & Stok, lalu coba kembali.',true);updateQuickSalePreview(false);return;}
  if(!lines.length||lines.some(d=>!d.valid)){setFinanceStatus('Lengkapi barang, jumlah, dan harga satuan pada setiap baris. Pastikan setiap barang dipilih dari saran daftar aktif.',true);updateQuickSalePreview(false);return;}
  const amount=lines.reduce((sum,d)=>sum+d.subtotal,0);if(!Number.isSafeInteger(amount)||amount<=0){setFinanceStatus('Total penjualan tidak valid.',true);return;}
+ const cashReceived=Number($('quickSaleCashReceived')?.value||0);
+ if(!Number.isSafeInteger(cashReceived)||cashReceived<amount){setFinanceStatus('PENJUALAN BELUM DISIMPAN: uang diterima pelanggan belum mencukupi total tagihan. Masukkan pembayaran yang benar, lalu periksa kembali kembalian.',true);updateQuickSalePreview(false);return;}
  const tableNumber=String($('quickSaleTableNumber')?.value||'').trim().replace(/[<>]/g,'').slice(0,20),locationLabel=tableNumber?'Meja '+tableNumber:'Kasir';
  const itemLines=lines.map(d=>financeMemberRole==='owner'?'• '+d.p.product_name+' ('+d.p.product_code+') — jumlah '+d.qty+'; modal/unit '+formatStoreRupiah(d.costPrice)+'; jual/unit '+formatStoreRupiah(d.price)+'; laba kotor '+formatStoreRupiah(d.profitTotal)+'; subtotal jual '+formatStoreRupiah(d.subtotal):'• '+d.p.product_name+' ('+d.p.product_code+') — jumlah '+d.qty+'; harga jual/unit '+formatStoreRupiah(d.price)+'; subtotal jual '+formatStoreRupiah(d.subtotal));
  const confirmText='PERIKSA TAGIHAN SEBELUM DISIMPAN\n\nLokasi: '+locationLabel+'\n\n'+itemLines.join('\n')+'\n\nTOTAL YANG HARUS DIBAYAR: '+formatStoreRupiah(amount)+'\n\nSimpan semua barang sebagai transaksi?';
