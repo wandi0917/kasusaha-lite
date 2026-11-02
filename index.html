@@ -3782,7 +3782,7 @@ function printStoreProductBarcode(id){
   w.document.close();
  }catch(e){alert('Barcode belum dapat dicetak: '+String(e.message||e).slice(0,160));}
 }
-let quickSaleCameraControls=null,quickSaleCameraReader=null,quickSaleCameraStream=null,quickSaleCameraFrame=0,quickSaleBarcodeDetector=null,quickSaleCameraFallbackTimer=0,quickSaleBarcodeDetectBusy=false,quickSaleLastDecodeAt=0,quickSaleLastScanned='',quickSaleLastScannedAt=0,quickSaleCameraMode='cart';
+let quickSaleCameraControls=null,quickSaleCameraReader=null,quickSaleCameraStream=null,quickSaleCameraFrame=0,quickSaleBarcodeDetector=null,quickSaleCameraFallbackTimer=0,quickSaleBarcodeDetectBusy=false,quickSaleLastDecodeAt=0,quickSaleLastScanned='',quickSaleLastScannedAt=0,quickSaleCameraMode='cart',quickSaleCameraReadyAt=0,quickSaleCandidateBarcode='',quickSaleCandidateCount=0,quickSaleCandidateSince=0,quickSaleCandidateLastAt=0;
 function setQuickSaleBarcodeStatus(message,error=false){
  const el=$('quickSaleBarcodeStatus');if(el){el.className=error?'status error':'status';el.textContent=message;}
  const camera=$('quickSaleCameraStatus');if(camera){camera.textContent=message;camera.style.color=error?'#b91c1c':'#166534';}
@@ -3842,6 +3842,12 @@ function addScannedBarcodeToQuickSale(raw){
 function handleQuickSaleCameraResult(raw){
  const value=String(raw||'').trim(),now=Date.now();
  if(!value||(value===quickSaleLastScanned&&($('quickSaleBarcodeLinker')||now-quickSaleLastScannedAt<1400)))return;
+ if(quickSaleCameraReadyAt&&now<quickSaleCameraReadyAt){setQuickSaleBarcodeStatus('Kamera sedang bersiap. Arahkan perlahan ke barcode yang ingin dipindai…');return;}
+ if(value!==quickSaleCandidateBarcode){quickSaleCandidateBarcode=value;quickSaleCandidateCount=1;quickSaleCandidateSince=now;quickSaleCandidateLastAt=now;setQuickSaleBarcodeStatus('Barcode terdeteksi. Tahan kamera pada barcode yang dituju sebentar…');return;}
+ if(now-quickSaleCandidateLastAt<300)return;
+ quickSaleCandidateCount++;quickSaleCandidateLastAt=now;
+ if(quickSaleCandidateCount<3||now-quickSaleCandidateSince<850){setQuickSaleBarcodeStatus('Memastikan barcode yang sama terbaca stabil ('+Math.min(quickSaleCandidateCount,3)+'/3)…');return;}
+ quickSaleCandidateBarcode='';quickSaleCandidateCount=0;quickSaleCandidateSince=0;quickSaleCandidateLastAt=0;
  quickSaleLastScanned=value;quickSaleLastScannedAt=now;
  if(quickSaleCameraMode==='product'){
   const type=$('storeProductBarcodeType'),field=$('storeProductBarcodeValue');
@@ -3874,7 +3880,7 @@ function ensureQuickSaleCameraPanel(){
  let stage=card.querySelector('.quick-sale-camera-stage');
  if(!stage){stage=document.createElement('div');stage.className='quick-sale-camera-stage';stage.style.cssText='position:relative;width:100%;margin-top:12px;background:#111;border-radius:12px;overflow:hidden;line-height:0';video.style.cssText='display:block;width:100%;max-height:58vh;min-height:220px;object-fit:contain;background:#111';video.remove();stage.appendChild(video);const shade=document.createElement('div');shade.setAttribute('aria-hidden','true');shade.style.cssText='position:absolute;left:17%;top:41%;width:66%;height:18%;border:3px solid #22c55e;border-radius:12px;box-shadow:0 0 0 999px rgba(0,0,0,.38);pointer-events:none';stage.appendChild(shade);const mark=document.createElement('div');mark.textContent='GARIS BARCODE HARUS DI DALAM KOTAK';mark.style.cssText='position:absolute;left:10%;right:10%;top:27%;text-align:center;color:white;font:bold 11px Arial;text-shadow:0 1px 4px #000;letter-spacing:.4px;pointer-events:none';stage.appendChild(mark);card.appendChild(stage);}
  let status=$('quickSaleCameraStatus');if(!status){status=document.createElement('p');status.id='quickSaleCameraStatus';status.className='small';status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.textContent='Menyiapkan kamera…';card.appendChild(status);}
- let note=card.querySelector('.quick-sale-camera-note');if(!note){note=document.createElement('p');note.className='small quick-sale-camera-note';note.textContent='Kotak scan dibuat lebih pendek agar barcode lain di atas atau bawah tidak ikut terbaca. Posisikan garis barcode tepat di tengah kotak hijau; seluruh garis harus masuk kotak, jangan terlalu miring, dan pastikan fokus serta cahaya cukup.';card.appendChild(note);}
+ let note=card.querySelector('.quick-sale-camera-note');if(!note){note=document.createElement('p');note.className='small quick-sale-camera-note';note.textContent='Pemindaian menunggu 2,5 detik setelah kamera aktif dan memastikan barcode yang sama terbaca stabil 3 kali sebelum diproses. Posisikan garis barcode tepat di tengah kotak hijau; seluruh garis harus masuk kotak, jangan terlalu miring, dan pastikan fokus serta cahaya cukup.';card.appendChild(note);}
  const closeButton=$('quickSaleBarcodeClose');if(closeButton)closeButton.onclick=closeQuickSaleBarcodeCamera;
  modal.onclick=e=>{if(e.target===modal)closeQuickSaleBarcodeCamera();};
  return {modal,video};
@@ -3903,6 +3909,7 @@ async function openQuickSaleBarcodeCamera(mode='cart'){
   quickSaleCameraStream=stream;video.srcObject=stream;
   await new Promise((resolve,reject)=>{if(video.readyState>=2&&video.videoWidth){resolve();return;}const timer=setTimeout(()=>reject(new Error('Kamera aktif tetapi video tidak mengalir.')),10000);video.onloadedmetadata=()=>{clearTimeout(timer);video.play().then(resolve).catch(reject);};video.onerror=()=>{clearTimeout(timer);reject(new Error('Video kamera gagal ditampilkan.'));};});
   await video.play();
+  quickSaleCameraReadyAt=Date.now()+2500;quickSaleCandidateBarcode='';quickSaleCandidateCount=0;quickSaleCandidateSince=0;quickSaleCandidateLastAt=0;
   const Detector=window.BarcodeDetector;
   if(typeof Detector==='function'){
    let detectorFormats=[];
@@ -3910,15 +3917,15 @@ async function openQuickSaleBarcodeCamera(mode='cart'){
    try{quickSaleBarcodeDetector=detectorFormats.length?new Detector({formats:detectorFormats}):new Detector();}
    catch(_){quickSaleBarcodeDetector=new Detector();}
    quickSaleBarcodeDetectBusy=false;
-   setQuickSaleBarcodeStatus('Kamera aktif. Letakkan satu barcode tepat di dalam kotak hijau.');
+   setQuickSaleBarcodeStatus('Kamera aktif. Anda punya waktu 2,5 detik untuk mengarahkan kamera. Barcode harus terbaca stabil 3 kali sebelum diproses.');
    quickSaleCameraFallbackTimer=setTimeout(async()=>{if(!quickSaleCameraStream||modal.hidden||quickSaleCameraReader)return;try{const ZX=await ensureKasUsahaZXing();if(!quickSaleCameraStream||modal.hidden)return;quickSaleCameraReader=new ZX.BrowserMultiFormatReader();setQuickSaleBarcodeStatus('Pemindai cadangan aktif. Arahkan barcode ke kotak hijau.');}catch(e){setQuickSaleBarcodeStatus('Pemindai cadangan tidak tersedia: '+String(e.message||e).slice(0,100),true);}},2500);
    const scanFrame=async()=>{
     if(!quickSaleCameraStream||modal.hidden)return;
-    if(video.readyState>=2&&!quickSaleBarcodeDetectBusy&&Date.now()-(quickSaleLastDecodeAt||0)>=180){quickSaleBarcodeDetectBusy=true;quickSaleLastDecodeAt=Date.now();try{const canvases=quickSaleCameraScanCanvases(video);let decoded='';for(const canvas of canvases){let found=[];if(quickSaleBarcodeDetector){try{found=await quickSaleBarcodeDetector.detect(canvas);}catch(_){}}if(found.length){decoded=found[0].rawValue||'';break;}if(quickSaleCameraReader&&typeof quickSaleCameraReader.decodeFromCanvas==='function'){try{const result=quickSaleCameraReader.decodeFromCanvas(canvas);if(result){decoded=typeof result.getText==='function'?result.getText():result.text||'';if(decoded)break;}}catch(_){}}}if(decoded)handleQuickSaleCameraResult(decoded);}catch(e){console.warn('Pembacaan barcode di area kamera:',e);}finally{quickSaleBarcodeDetectBusy=false;}}
+    if(video.readyState>=2&&!quickSaleBarcodeDetectBusy&&Date.now()-(quickSaleLastDecodeAt||0)>=450){quickSaleBarcodeDetectBusy=true;quickSaleLastDecodeAt=Date.now();try{const canvases=quickSaleCameraScanCanvases(video);let decoded='';for(const canvas of canvases){let found=[];if(quickSaleBarcodeDetector){try{found=await quickSaleBarcodeDetector.detect(canvas);}catch(_){}}if(found.length){decoded=found[0].rawValue||'';break;}if(quickSaleCameraReader&&typeof quickSaleCameraReader.decodeFromCanvas==='function'){try{const result=quickSaleCameraReader.decodeFromCanvas(canvas);if(result){decoded=typeof result.getText==='function'?result.getText():result.text||'';if(decoded)break;}}catch(_){}}}if(decoded)handleQuickSaleCameraResult(decoded);}catch(e){console.warn('Pembacaan barcode di area kamera:',e);}finally{quickSaleBarcodeDetectBusy=false;}}
     if(quickSaleCameraStream&&!modal.hidden)quickSaleCameraFrame=requestAnimationFrame(scanFrame);
    };quickSaleCameraFrame=requestAnimationFrame(scanFrame);return;
   }
-  const ZX=await ensureKasUsahaZXing();quickSaleCameraReader=new ZX.BrowserMultiFormatReader();setQuickSaleBarcodeStatus('Kamera aktif. Pemindai sedang membaca area kotak hijau.');
+  const ZX=await ensureKasUsahaZXing();quickSaleCameraReader=new ZX.BrowserMultiFormatReader();setQuickSaleBarcodeStatus('Kamera aktif. Arahkan kamera dalam 2,5 detik; barcode akan diproses setelah terbaca stabil 3 kali.');
   const scanFrame=()=>{if(!quickSaleCameraStream||modal.hidden)return;if(!quickSaleBarcodeDetectBusy&&Date.now()-(quickSaleLastDecodeAt||0)>=180){quickSaleBarcodeDetectBusy=true;quickSaleLastDecodeAt=Date.now();try{const canvases=quickSaleCameraScanCanvases(video);for(const canvas of canvases){if(typeof quickSaleCameraReader.decodeFromCanvas!=='function')break;try{const result=quickSaleCameraReader.decodeFromCanvas(canvas);if(result){const value=typeof result.getText==='function'?result.getText():result.text;if(value){handleQuickSaleCameraResult(value);break;}}}catch(_){}}}catch(_){}finally{quickSaleBarcodeDetectBusy=false;}}if(quickSaleCameraStream&&!modal.hidden)quickSaleCameraFrame=requestAnimationFrame(scanFrame);};
   quickSaleCameraFrame=requestAnimationFrame(scanFrame);
  }catch(e){closeQuickSaleBarcodeCamera();const reason=String(e?.name||e?.message||e);const advice=reason==='NotAllowedError'?'Izin kamera ditolak. Ubah izin Kamera menjadi Izinkan.':reason==='NotFoundError'?'Kamera tidak ditemukan.':reason==='NotReadableError'?'Kamera sedang dipakai aplikasi lain. Tutup aplikasi lain.':reason;setQuickSaleBarcodeStatus('Gagal menghubungkan kamera: '+advice+'. Buka halaman melalui HTTPS di Chrome.',true);}
