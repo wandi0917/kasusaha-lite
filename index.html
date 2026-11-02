@@ -6512,15 +6512,7 @@ html body>header.ks-brand-header .kasusaha-banner-side-products svg path:last-of
 
 
 
-<style id="ks-banner-clean-wide">
-/* Banner bersih dan proporsional: tanpa ilustrasi samping */
-html body>header.ks-brand-header .kasusaha-banner-stage{display:block!important;width:100%!important;max-width:940px!important;margin:0 auto!important;padding:0!important}
-html body>header.ks-brand-header .kasusaha-banner-side{display:none!important;width:0!important;height:0!important;max-width:0!important;overflow:hidden!important}
-html body>header.ks-brand-header .kasusaha-pwa-install{display:block!important;width:100%!important;max-width:940px!important;margin:8px auto 0!important;padding:0 12px!important;box-sizing:border-box!important}
-html body>header.ks-brand-header .kasusaha-banner-image-button{display:block!important;width:100%!important;max-width:900px!important;margin:0 auto!important;padding:0!important;line-height:0!important}
-html body>header.ks-brand-header .kasusaha-banner-image-button img{display:block!important;width:100%!important;max-width:900px!important;height:auto!important;max-height:none!important;margin:0 auto!important;object-fit:contain!important;border-radius:12px!important}
-@media(max-width:650px){html body>header.ks-brand-header .kasusaha-pwa-install{padding:0 4px!important}html body>header.ks-brand-header .kasusaha-banner-image-button,html body>header.ks-brand-header .kasusaha-banner-image-button img{width:100%!important;max-width:100%!important;border-radius:9px!important}}
-</style>
+
 </body>
 </html>
 
@@ -6528,15 +6520,7 @@ html body>header.ks-brand-header .kasusaha-banner-image-button img{display:block
 
 
 
-<style id="ks-banner-clean-wide">
-/* Banner bersih dan proporsional: tanpa ilustrasi samping */
-html body>header.ks-brand-header .kasusaha-banner-stage{display:block!important;width:100%!important;max-width:940px!important;margin:0 auto!important;padding:0!important}
-html body>header.ks-brand-header .kasusaha-banner-side{display:none!important;width:0!important;height:0!important;max-width:0!important;overflow:hidden!important}
-html body>header.ks-brand-header .kasusaha-pwa-install{display:block!important;width:100%!important;max-width:940px!important;margin:8px auto 0!important;padding:0 12px!important;box-sizing:border-box!important}
-html body>header.ks-brand-header .kasusaha-banner-image-button{display:block!important;width:100%!important;max-width:900px!important;margin:0 auto!important;padding:0!important;line-height:0!important}
-html body>header.ks-brand-header .kasusaha-banner-image-button img{display:block!important;width:100%!important;max-width:900px!important;height:auto!important;max-height:none!important;margin:0 auto!important;object-fit:contain!important;border-radius:12px!important}
-@media(max-width:650px){html body>header.ks-brand-header .kasusaha-pwa-install{padding:0 4px!important}html body>header.ks-brand-header .kasusaha-banner-image-button,html body>header.ks-brand-header .kasusaha-banner-image-button img{width:100%!important;max-width:100%!important;border-radius:9px!important}}
-</style>
+
 <div id="quickSaleBarcodeModal" hidden style="display:none;position:fixed;inset:0;z-index:10050;background:rgba(15,23,42,.82);align-items:center;justify-content:center;padding:14px">
  <div class="card" style="width:min(100%,560px);background:#fff">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><strong>Scan barcode dengan kamera HP</strong><button id="quickSaleBarcodeClose" type="button" class="secondary">Tutup kamera</button></div>
@@ -6544,6 +6528,33 @@ html body>header.ks-brand-header .kasusaha-banner-image-button img{display:block
   <p id="quickSaleCameraStatus" class="small" role="status" aria-live="polite">Menunggu koneksi kamera HP…</p><p class="small">Arahkan kamera belakang ke barcode dengan cahaya cukup. Barang akan masuk ke tagihan saat barcode terbaca.</p>
  </div>
 </div>
+<style id="ks-banner-layout-final-verified">
+/* Tata letak final: banner utama di tengah, ilustrasi grafik dan produk di sisi kiri-kanan. */
+html body>header.ks-brand-header .kasusaha-pwa-install{display:block!important;width:100%!important;max-width:1180px!important;margin:14px auto 0!important;padding:0 clamp(8px,2vw,18px)!important;box-sizing:border-box!important;overflow:visible!important}
+html body>header.ks-brand-header .kasusaha-banner-stage{display:grid!important;grid-template-columns:minmax(92px,138px) minmax(0,1fr) minmax(92px,138px)!important;grid-template-rows:auto!important;align-items:center!important;justify-items:stretch!important;gap:clamp(8px,1.5vw,16px)!important;width:100%!important;max-width:1120px!important;margin:0 auto!important}
+html body>header.ks-brand-header .kasusaha-banner-side{display:flex!important;visibility:visible!important;opacity:1!important;width:100%!important;max-width:138px!important;height:auto!important;align-items:center!important;justify-content:center!important;justify-self:center!important;grid-row:1!important;overflow:visible!important;transform:none!important}
+html body>header.ks-brand-header .kasusaha-banner-side svg{display:block!important;width:100%!important;height:auto!important;max-height:230px!important;border-radius:16px!important;filter:drop-shadow(0 8px 16px rgba(20,55,85,.16))!important}
+html body>header.ks-brand-header .kasusaha-banner-side-chart{grid-column:1!important}
+html body>header.ks-brand-header .kasusaha-banner-side-products{grid-column:3!important}
+html body>header.ks-brand-header .kasusaha-banner-image-button{display:block!important;grid-column:2!important;grid-row:1!important;width:100%!important;max-width:820px!important;min-width:0!important;height:auto!important;margin:0 auto!important;padding:0!important;border:0!important;background:transparent!important;line-height:0!important}
+html body>header.ks-brand-header .kasusaha-banner-image-button img{display:block!important;width:100%!important;max-width:100%!important;height:auto!important;max-height:none!important;margin:0 auto!important;object-fit:contain!important;border-radius:14px!important;box-shadow:0 12px 28px rgba(14,48,76,.13)!important}
+@media(max-width:820px){
+ html body>header.ks-brand-header .kasusaha-banner-stage{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:auto auto!important;gap:10px!important;max-width:680px!important}
+ html body>header.ks-brand-header .kasusaha-banner-image-button{grid-column:1/-1!important;grid-row:1!important;max-width:100%!important}
+ html body>header.ks-brand-header .kasusaha-banner-side{grid-row:2!important;max-width:120px!important}
+ html body>header.ks-brand-header .kasusaha-banner-side-chart{grid-column:1!important}
+ html body>header.ks-brand-header .kasusaha-banner-side-products{grid-column:2!important}
+ html body>header.ks-brand-header .kasusaha-banner-side svg{max-height:145px!important}
+}
+@media(max-width:480px){
+ html body>header.ks-brand-header .kasusaha-pwa-install{padding:0 4px!important}
+ html body>header.ks-brand-header .kasusaha-banner-stage{gap:7px!important}
+ html body>header.ks-brand-header .kasusaha-banner-side{max-width:92px!important}
+ html body>header.ks-brand-header .kasusaha-banner-side svg{max-height:118px!important}
+ html body>header.ks-brand-header .kasusaha-banner-image-button img{border-radius:10px!important}
+}
+@media(prefers-reduced-motion:reduce){html body>header.ks-brand-header .kasusaha-banner-side,html body>header.ks-brand-header .kasusaha-banner-side svg,html body>header.ks-brand-header .kasusaha-banner-side svg *{animation:none!important;transition:none!important}}
+</style>
 </body>
 </html>
 
