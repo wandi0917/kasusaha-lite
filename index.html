@@ -2916,7 +2916,24 @@ async function muatLaporanAfiliasi(){
 }
 function simpanKeranjang(){localStorage.setItem('kasusaha_keranjang',JSON.stringify(keranjang));$('jumlahKeranjang').textContent=keranjang.reduce((n,x)=>n+Number(x.qty||0),0);}
 function tambahKeranjangOnline(p,bukaKeranjang=false){const lisensiTanpaBatas=Number(p&&p.id)===7;const stok=Number(p&&p.stok);if(!lisensiTanpaBatas&&(!Number.isFinite(stok)||stok<=0)){const msg='Stok produk sedang habis. Produk tidak dapat ditambahkan ke keranjang.';const status=$('statusPasar');if(status)status.textContent=msg;else alert(msg);return;}const id='online:'+String(p.id);const old=keranjang.find(x=>x.id===id);if(old&&lisensiTanpaBatas){alert('Lisensi KasUsaha Lite dibatasi 1 per pesanan. Untuk lisensi tambahan, selesaikan pembelian ini terlebih dahulu.');return;}if(old){if(Number(old.qty||1)>=stok){alert('Jumlah di keranjang sudah mencapai stok tersedia ('+stok+').');return;}old.qty=Math.min(Number(old.qty||1)+1,stok,99);}else keranjang.push({id,nama:p.nama_produk||'Produk',harga:Number(p.harga)||0,stok:lisensiTanpaBatas?1:stok,qty:1,penjual:p.nama_penjual||'Penjual',kota:p.kota||'',sumber:'online',kontak:''});simpanKeranjang();tampilKeranjang();if(bukaKeranjang){buka('keranjang',document.querySelector('nav button[onclick*="keranjang"]'));const status=$('statusPesanan');if(status)status.textContent='Produk ditambahkan. Periksa jumlah dan lengkapi data pembeli, lalu tekan Buat pesanan.';}else{alert('Produk ditambahkan ke keranjang.');}}
-function tambahKeranjangLokal(id){const p=produk.find(x=>String(x.id)===String(id));if(!p)return;const key='lokal:'+String(p.id),old=keranjang.find(x=>x.id===key);if(old)old.qty=Math.min(Number(old.qty||1)+1,99);else keranjang.push({id:key,nama:p.nama||'Produk',harga:Number(p.harga)||0,stok:Number(p.stok)||0,qty:1,penjual:'Penjual lokal',kota:'',sumber:'lokal',kontak:p.kontak||''});simpanKeranjang();alert('Produk ditambahkan ke keranjang.');}
+async function tambahKeranjangLokal(id){
+ const p=produk.find(x=>String(x.id)===String(id));if(!p)return;
+ if(p.onlineId){
+  if(!sb){alert('Koneksi Pasar Online belum tersedia. Muat ulang halaman.');return;}
+  try{
+   const {data,error}=await sb.from('produk').select('id,nama_produk,harga,stok,aktif,nama_penjual,kota').eq('id',p.onlineId).eq('aktif',true).maybeSingle();
+   if(error)throw error;
+   if(!data){alert('Produk online terkait tidak ditemukan atau sudah tidak aktif. Periksa Pasar Online.');return;}
+   tambahKeranjangOnline(data,true);
+  }catch(e){alert('Produk belum dapat dimuat dari Pasar Online: '+String(e.message||e).slice(0,180));}
+  return;
+ }
+ if(!sb){alert('Produk ini masih tersimpan lokal pada perangkat. Login penjual dan terbitkan ke Pasar Online agar bisa memakai checkout database dan ongkir Biteship.');return;}
+ const {data:sessionData,error:sessionError}=await sb.auth.getSession();
+ if(sessionError||!sessionData.session){alert('Produk ini masih lokal. Login sebagai penjual, lalu pilih Pasang Online pada Produk Saya.');return;}
+ isiFormOnline(p.id);
+ pesanAkun('Produk lokal dipilih untuk diterbitkan ke Pasar Online. Lengkapi alamat asal, kode pos, kontak pengirim, dan dimensi/berat, lalu tekan Pasang Produk Online. Setelah terbit, tambahkan produk dari Pasar Online ke keranjang.');
+}
 function ubahQty(id,val){const x=keranjang.find(y=>y.id===id);if(!x)return;let q=Number(val);if(x.id==='online:7'&&q>1){q=1;alert('Lisensi KasUsaha Lite maksimal 1 per pesanan.');}if(!Number.isInteger(q)||q<1||q>99){keranjang=keranjang.filter(y=>y.id!==id);}else{x.qty=q;}simpanKeranjang();tampilKeranjang();}
 function hapusDariKeranjang(id){keranjang=keranjang.filter(x=>x.id!==id);simpanKeranjang();tampilKeranjang();}
 function kosongkanKeranjang(){if(!keranjang.length)return;if(confirm('Kosongkan semua isi keranjang?')){keranjang=[];simpanKeranjang();tampilKeranjang();}}
@@ -2936,11 +2953,9 @@ let biteshipQuoteId = null;
 let biteshipQuoteFingerprint = "";
 let biteshipDestinationCoords = null;
 function fingerprintKeranjangFisik(){
- return JSON.stringify(keranjang.map(x=>{
-  const rawId=String(x.id);
-  const productId=Number(rawId.startsWith('online:')?rawId.slice(7):rawId);
-  return {product_id:productId,quantity:Number(x.qty)};
- }).filter(x=>Number.isSafeInteger(x.product_id)&&x.product_id>0&&x.product_id!==7)
+ return JSON.stringify(keranjang.filter(x=>String(x.id).startsWith('online:')).map(x=>({
+  product_id:Number(String(x.id).slice(7)),quantity:Number(x.qty)
+ })).filter(x=>Number.isSafeInteger(x.product_id)&&x.product_id>0&&x.product_id!==7)
  .sort((a,b)=>a.product_id-b.product_id));
 }
 async function pastikanSesiCheckoutTamu(){
@@ -2956,7 +2971,14 @@ async function cekOngkirBiteship(){
  const status=$('statusPesanan');
  const select=$('pilihanOngkir');
  const postal=$('kodePosPembeli').value.trim();
- const items=keranjang.filter(x=>Number(String(x.id).slice(7))!==7).map(x=>({product_id:Number(String(x.id).slice(7)),quantity:Number(x.qty)}));
+ const localItems=keranjang.filter(x=>!String(x.id).startsWith('online:'));
+ if(localItems.length){
+  select.replaceChildren(new Option('Terbitkan produk lokal terlebih dahulu',''));
+  $('ringkasanOngkir').textContent='Produk lokal belum tercatat di database Pasar Online. Pilih produk tersebut di Produk Saya → Pasang Online, lengkapi alamat asal dan data paket, lalu tambahkan ulang dari Pasar Online.';
+  status.className='status warn';status.textContent='Biteship hanya dapat menghitung tarif untuk produk yang sudah terdaftar dan diverifikasi di Pasar Online. Produk lokal: '+localItems.map(x=>x.nama).join(', ')+'.';
+  return;
+ }
+ const items=keranjang.filter(x=>String(x.id).startsWith('online:')&&Number(String(x.id).slice(7))!==7).map(x=>({product_id:Number(String(x.id).slice(7)),quantity:Number(x.qty)}));
  biteshipQuoteId=null;biteshipQuoteFingerprint="";select.replaceChildren(new Option('Memuat tarif...',''));
  if(!items.length){select.replaceChildren(new Option('Produk digital tidak memerlukan ongkir',''));$('ringkasanOngkir').textContent='Keranjang tidak berisi barang fisik.';return;}
  if(!/^\d{5}$/.test(postal)){select.replaceChildren(new Option('Masukkan kode pos tujuan',''));status.textContent='Masukkan kode pos tujuan 5 digit.';return;}
@@ -3019,7 +3041,7 @@ $('formCheckout').addEventListener('submit',async e=>{
  if(!nama||wa.replace(/\D/g,'').length<8){status.textContent='Periksa nama dan nomor WhatsApp pembeli.';return;}
  if(!sb){status.textContent='Koneksi Supabase belum tersedia. Muat ulang halaman dan coba lagi.';return;}
  const nonOnline=keranjang.some(x=>!String(x.id).startsWith('online:'));
- if(nonOnline){status.textContent='Checkout database hanya mendukung produk Pasar Online. Hapus produk lokal dari keranjang terlebih dahulu.';return;}
+ if(nonOnline){status.className='status warn';status.textContent='Produk lokal belum diterbitkan ke Pasar Online sehingga belum dapat diverifikasi stok, harga, dan ongkirnya. Buka Produk Saya → Pasang Online, lengkapi data pengiriman, lalu tambahkan produk dari Pasar Online. Produk lokal tidak akan dikirim ke server sebagai data tepercaya.';return;}
  const items=keranjang.map(x=>({product_id:Number(String(x.id).slice(7)),quantity:Number(x.qty)}));
  if(items.some(x=>!Number.isSafeInteger(x.product_id)||x.product_id<=0||!Number.isSafeInteger(x.quantity)||x.quantity<=0)){status.textContent='Data produk/jumlah di keranjang tidak valid. Hapus produk tersebut lalu tambahkan kembali dari Pasar Online.';return;}
  const physicalItems=items.filter(x=>x.product_id!==7);
