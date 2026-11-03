@@ -1287,8 +1287,8 @@ body.package-no-full-finance #financeSettlementForm{display:none!important}
 body.package-no-attendance #attendanceCard,
 body.package-no-attendance #attendancePayrollCard{display:none!important}
 body.package-no-employees #ownerEmployeeActivationPanel,
-body.package-no-employees #shortcutEmployeeSettings,
-body.package-no-employees nav button[onclick*="loginKaryawan"]{display:none!important}
+body.package-no-employees #shortcutEmployeeSettings{display:none!important}
+/* Login Karyawan tetap tersedia untuk semua paket; pembatasan fitur diterapkan setelah login. */
 body.package-no-barcode #quickSaleBarcodePanel,
 body.package-no-barcode #storeProductBarcodeType,
 body.package-no-barcode #storeProductBarcodeValue,
@@ -6716,11 +6716,7 @@ html body>header.ks-brand-header .kasusaha-banner-side-products svg path:last-of
   window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
  });
 })();
-
-
-
-
-
+</script>
 
 <div id="quickSaleBarcodeModal" hidden style="display:none;position:fixed;inset:0;z-index:10050;background:rgba(15,23,42,.82);align-items:center;justify-content:center;padding:14px">
  <div class="card" style="width:min(100%,560px);background:#fff">
