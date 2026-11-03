@@ -151,13 +151,13 @@ Deno.serve(async (req: Request) => {
         return reply({ success: false, message: "Nama dan kode ID karyawan tidak valid." }, 400);
       }
 
-      const { data: invite, error: inviteError } = await admin
-        .from("employee_invite_codes")
-        .select("*")
-        .eq("invite_code", code)
-        .maybeSingle();
+      // Lookup kode melalui RPC POST agar kode rahasia tidak muncul pada URL/query log PostgREST.
+      const { data: invite, error: inviteError } = await admin.rpc("kasusaha_lookup_employee_invite", {
+        p_invite_code: code,
+      });
       if (inviteError || !invite) {
-        return reply({ success: false, message: "Kode ID karyawan tidak ditemukan." }, 404);
+        console.error("Employee invite lookup failed:", inviteError?.message || "not found");
+        return reply({ success: false, message: "Kode ID karyawan tidak ditemukan atau belum dapat diverifikasi." }, inviteError ? 500 : 404);
       }
       if (invite.status === "revoked") {
         return reply({ success: false, message: "ID karyawan dinonaktifkan Owner. Hubungi Owner untuk mendapatkan ID baru." }, 403);
@@ -180,15 +180,39 @@ Deno.serve(async (req: Request) => {
       if (invite.status === "used") {
         let verifiedHistoricalAlias = false;
         if (invite.user_id !== authUserId) {
-          const { data: aliasMatch, error: aliasError } = await admin.rpc("kasusaha_employee_alias_matches", {
+          let { data: aliasMatch, error: aliasError } = await admin.rpc("kasusaha_employee_alias_matches", {
             p_business_id: invite.business_id,
             p_canonical_user_id: invite.user_id,
             p_alias_user_id: authUserId,
           });
-          if (aliasError || aliasMatch !== true) {
-            return reply({ success: false, message: "ID ini sudah terhubung ke akun Karyawan lain. Sesi ini belum terverifikasi sebagai riwayat akun yang sama. Hubungi Owner." }, 403);
+          if (aliasError) {
+            console.error("Check employee identity alias:", aliasError.message);
+            return reply({ success: false, message: "Identitas karyawan belum dapat diverifikasi. Coba lagi atau hubungi Owner." }, 500);
           }
-          verifiedHistoricalAlias = true;
+          // Kode undangan rahasia + nama terdaftar adalah kredensial login karyawan.
+          // Jika kredensial cocok dengan undangan terpakai, daftarkan sesi anonim baru
+          // sebagai alias identitas yang sama agar login lintas browser/perangkat bekerja.
+          if (aliasMatch !== true) {
+            const { data: registered, error: registerError } = await admin.rpc("kasusaha_employee_register_alias", {
+              p_business_id: invite.business_id,
+              p_canonical_user_id: invite.user_id,
+              p_alias_user_id: authUserId,
+            });
+            if (registerError || registered !== true) {
+              console.error("Register employee identity alias:", registerError?.message || "alias rejected");
+              return reply({ success: false, message: "Sesi baru belum dapat ditautkan dengan aman ke akun karyawan. Hubungi Owner." }, 403);
+            }
+            const { data: confirmed, error: confirmError } = await admin.rpc("kasusaha_employee_alias_matches", {
+              p_business_id: invite.business_id,
+              p_canonical_user_id: invite.user_id,
+              p_alias_user_id: authUserId,
+            });
+            if (confirmError || confirmed !== true) {
+              return reply({ success: false, message: "Tautan identitas karyawan belum lolos verifikasi akhir. Coba lagi." }, 500);
+            }
+            aliasMatch = confirmed;
+          }
+          verifiedHistoricalAlias = aliasMatch === true;
         }
         if (!verifiedHistoricalAlias && (!existing?.active || existing.business_id !== invite.business_id || existing.role !== "employee")) {
           return reply({ success: false, message: "Akses akun ini sedang dinonaktifkan atau telah dihapus Owner. Hubungi Owner." }, 403);
