@@ -2935,7 +2935,12 @@ async function salinPesanan(id){const p=pesanan.find(x=>String(x.id)===String(id
 let biteshipQuoteId = null;
 let biteshipQuoteFingerprint = "";
 function fingerprintKeranjangFisik(){
- return JSON.stringify(keranjang.filter(x=>Number(String(x.id).replace(/^online:/,''))!==7).map(x=>({product_id:Number(String(x.id).slice(7)),quantity:Number(x.qty)})).sort((a,b)=>a.product_id-b.product_id));
+ return JSON.stringify(keranjang.map(x=>{
+  const rawId=String(x.id);
+  const productId=Number(rawId.startsWith('online:')?rawId.slice(7):rawId);
+  return {product_id:productId,quantity:Number(x.qty)};
+ }).filter(x=>Number.isSafeInteger(x.product_id)&&x.product_id>0&&x.product_id!==7)
+ .sort((a,b)=>a.product_id-b.product_id));
 }
 async function pastikanSesiCheckoutTamu(){
  const {data,error}=await sb.auth.getSession();
