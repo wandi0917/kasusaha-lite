@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data: products, error: productError } = await admin.from("produk")
-    .select("id,nama_produk,deskripsi,harga,stok,aktif,owner_id,berat_gram,panjang_cm,lebar_cm,tinggi_cm,kode_pos_asal_pengiriman")
+    .select("id,nama_produk,deskripsi,harga,stok,aktif,owner_id,berat_gram,panjang_cm,lebar_cm,tinggi_cm,kode_pos_asal_pengiriman,latitude_asal_pengiriman,longitude_asal_pengiriman,kategori")
     .in("id", [...quantities.keys()]);
   if (productError || !products || products.length !== quantities.size) {
     console.error("Produk tidak dapat diverifikasi untuk tarif.", productError?.message);
@@ -73,6 +73,18 @@ Deno.serve(async (req) => {
     return reply({ success: false, error: "Untuk saat ini, satu pesanan hanya dapat berisi produk dari satu penjual agar ongkir dihitung dengan benar." }, 400);
   }
 
+  const destinationLat = body.destination_latitude == null ? NaN : Number(body.destination_latitude);
+  const destinationLng = body.destination_longitude == null ? NaN : Number(body.destination_longitude);
+  const buyerCoordsValid = Number.isFinite(destinationLat) && destinationLat >= -90 && destinationLat <= 90 && Number.isFinite(destinationLng) && destinationLng >= -180 && destinationLng <= 180;
+  const originCoordPairs = [...new Set(products.map(p => {
+    if (p.latitude_asal_pengiriman == null || p.longitude_asal_pengiriman == null) return "";
+    const lat = Number(p.latitude_asal_pengiriman), lng = Number(p.longitude_asal_pengiriman);
+    return Number.isFinite(lat) && lat >= -90 && lat <= 90 && Number.isFinite(lng) && lng >= -180 && lng <= 180 ? lat.toFixed(7) + "," + lng.toFixed(7) : "";
+  }))];
+  const originCoordsValid = originCoordPairs.length === 1 && originCoordPairs[0] !== "";
+  const useCoordinates = buyerCoordsValid && originCoordsValid;
+  const [originLat, originLng] = useCoordinates ? originCoordPairs[0].split(",").map(Number) : [null, null];
+
   const fingerprint = products.map(p => ({
     product_id: Number(p.id),
     quantity: quantities.get(Number(p.id)) || 0,
@@ -81,31 +93,50 @@ Deno.serve(async (req) => {
     width: Math.max(1, Number(p.lebar_cm) || 10),
     height: Math.max(1, Number(p.tinggi_cm) || 10),
   })).sort((a,b) => a.product_id-b.product_id);
-  const items = products.map(p => ({
-    name: String(p.nama_produk || "Produk").slice(0, 200),
-    description: String(p.deskripsi || p.nama_produk || "Produk").slice(0, 200),
-    value: Math.max(1, Math.round(Number(p.harga) || 1)),
-    quantity: quantities.get(Number(p.id)) || 1,
-    weight: Math.max(1, Number(p.berat_gram) || 1000),
-    length: Math.max(1, Number(p.panjang_cm) || 10),
-    width: Math.max(1, Number(p.lebar_cm) || 10),
-    height: Math.max(1, Number(p.tinggi_cm) || 10),
-  }));
+  const items = products.map(p => {
+    const categoryText = String(p.kategori || p.nama_produk || "").toLowerCase();
+    const category = /kopi|susu|minuman|teh|jus|makanan/.test(categoryText) ? "food_and_drink" : (/sembako|grocer|kebutuhan/.test(categoryText) ? "groceries" : "others");
+    return {
+      name: String(p.nama_produk || "Produk").slice(0, 200),
+      description: String(p.deskripsi || p.nama_produk || "Produk").slice(0, 200),
+      category,
+      value: Math.max(1, Math.round(Number(p.harga) || 1)),
+      quantity: quantities.get(Number(p.id)) || 1,
+      weight: Math.max(1, Number(p.berat_gram) || 1000),
+      length: Math.max(1, Number(p.panjang_cm) || 10),
+      width: Math.max(1, Number(p.lebar_cm) || 10),
+      height: Math.max(1, Number(p.tinggi_cm) || 10),
+    };
+  });
   const response = await fetch("https://api.biteship.com/v1/rates/couriers", {
     method: "POST",
     headers: { "Authorization": biteshipKey, "Content-Type": "application/json" },
     body: JSON.stringify({
-      origin_postal_code: Number(origins[0]),
-      destination_postal_code: Number(destinationPostal),
-      couriers: "jne,jnt,sicepat,tiki,pos,wahana,anteraja,ninja,lionparcel,idexpress,sap",
+      ...(useCoordinates ? {
+        origin_latitude: originLat, origin_longitude: originLng,
+        destination_latitude: destinationLat, destination_longitude: destinationLng,
+      } : {
+        origin_postal_code: Number(origins[0]), destination_postal_code: Number(destinationPostal),
+      }),
+      couriers: useCoordinates
+        ? "gojek,grab,lalamove,borzo,paxel,jne,jnt,sicepat,tiki,pos,wahana,anteraja,ninja,lionparcel,idexpress,sap"
+        : "jne,jnt,sicepat,tiki,pos,wahana,anteraja,ninja,lionparcel,idexpress,sap",
       items,
     }),
   });
   let data: unknown;
   try { data = await response.json(); } catch { data = null; }
   if (!response.ok || !obj(data) || data.success !== true || !Array.isArray(data.pricing)) {
-    console.error("Biteship rates gagal.", { status: response.status, code: obj(data) ? data.code : null });
-    return reply({ success: false, error: "Biteship belum dapat menghitung ongkir untuk alamat dan produk ini. Periksa konfigurasi akun, kode pos, berat, dan saldo API." }, 502);
+    const providerMessage = obj(data)
+      ? String(data.message || data.error || data.code || "").slice(0, 180)
+      : "";
+    console.error("Biteship rates gagal.", { status: response.status, code: obj(data) ? data.code : null, message: providerMessage });
+    return reply({
+      success: false,
+      error: "Biteship menolak permintaan tarif (HTTP " + response.status + "). " +
+        (providerMessage || "Periksa konfigurasi akun, cakupan kurir, kode pos, berat, dan paket API."),
+      provider_code: obj(data) && (typeof data.code === "string" || typeof data.code === "number") ? data.code : null,
+    }, 502);
   }
 
   const fingerprintJson = fingerprint;
@@ -117,6 +148,10 @@ Deno.serve(async (req) => {
       product_fingerprint: fingerprintJson,
       origin_postal_code: origins[0],
       destination_postal_code: destinationPostal,
+      origin_latitude: useCoordinates ? originLat : null,
+      origin_longitude: useCoordinates ? originLng : null,
+      destination_latitude: useCoordinates ? destinationLat : null,
+      destination_longitude: useCoordinates ? destinationLng : null,
       courier_code: p.company,
       courier_service_code: p.type,
       courier_name: String(p.courier_name || p.company),
@@ -141,5 +176,5 @@ Deno.serve(async (req) => {
       expires_at: row.expires_at,
     });
   }
-  return reply({ success: true, destination_postal_code: destinationPostal, origin_postal_code: origins[0], options });
+  return reply({ success: true, destination_postal_code: destinationPostal, origin_postal_code: origins[0], coordinate_rates: useCoordinates, options });
 });
