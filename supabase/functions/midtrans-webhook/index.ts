@@ -306,7 +306,7 @@ async function recordCommissionForPaidOrder(
 
   for (const item of items) {
     // Lisensi KasUsaha Lite adalah produk aktivasi platform, bukan transaksi marketplace seller.
-    if (Number(item.product_id) === 7) continue;
+    if ([7, 8, 9, 10].includes(Number(item.product_id))) continue;
 
     const base = Number(item.item_subtotal);
 
@@ -436,7 +436,7 @@ async function issueLicenseIfApplicable(
     .from("marketplace_order_items")
     .select("id, product_id")
     .eq("order_id", databaseOrderId)
-    .eq("product_id", 7)
+    .in("product_id", [7, 8, 9, 10])
     .limit(1);
 
   if (itemError) {
@@ -1218,7 +1218,24 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Tandai event selesai hanya setelah pekerjaan utamanya berhasil.
+    // Pastikan tipe barang diketahui sebelum menandai event selesai.
+    const { data: paidItems, error: paidItemsError } = await supabase
+      .from("marketplace_order_items")
+      .select("product_id")
+      .eq("order_id", databaseOrderId);
+    if (paidItemsError || !paidItems?.length) {
+      console.error("Gagal memeriksa item untuk otomatisasi pengiriman:", paidItemsError?.message ?? "Rincian item kosong.");
+      return reply({
+        success: false,
+        message: "Pembayaran terverifikasi, tetapi rincian barang belum dapat diperiksa untuk pengiriman.",
+        order_id: databaseOrderId,
+      }, 500);
+    }
+    const hasPhysicalItems = paidItems.some((item) => ![7, 8, 9, 10].includes(Number(item.product_id)));
+
+    // Tandai event selesai setelah verifikasi pembayaran, komisi, lisensi,
+    // dan rincian pesanan berhasil dipastikan. Fungsi pengiriman mensyaratkan
+    // event ini sudah processed sebelum menerima perintah booking internal.
     const processedError = await markPaymentEventProcessed(
       supabase,
       paymentEventId,
@@ -1233,6 +1250,57 @@ Deno.serve(async (req: Request) => {
       }, 500);
     }
 
+    let shipmentBooking: Record<string, unknown> | null = null;
+    if (hasPhysicalItems) {
+      if (String(Deno.env.get("BITESHIP_ENABLE_SHIPMENT_BOOKING") ?? "").trim().toLowerCase() !== "true") {
+        shipmentBooking = {
+          attempted: false,
+          enabled: false,
+          message: "Pengiriman otomatis belum diaktifkan. Pesanan tetap paid; lengkapi konfigurasi Biteship sebelum booking.",
+        };
+      } else {
+        try {
+          const shipmentResponse = await fetch(
+            supabaseUrl + "/functions/v1/biteship-create-shipment",
+            {
+              method: "POST",
+              headers: {
+                "Authorization": "Bearer " + serviceRoleKey,
+                "apikey": serviceRoleKey,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ order_id: databaseOrderId }),
+              signal: AbortSignal.timeout(25000),
+            },
+          );
+          const shipmentData: unknown = await shipmentResponse.json().catch(() => null);
+          if (shipmentResponse.ok && typeof shipmentData === "object" && shipmentData !== null && (shipmentData as JsonObject).success === true) {
+            shipmentBooking = { attempted: true, success: true, result: shipmentData };
+          } else {
+            console.error("Booking Biteship otomatis belum berhasil:", {
+              status: shipmentResponse.status,
+              order_id: databaseOrderId,
+              response: shipmentData,
+            });
+            shipmentBooking = {
+              attempted: true,
+              success: false,
+              retry_or_manual_action_required: true,
+              message: "Pembayaran sudah terverifikasi. Booking pengiriman belum berhasil; periksa data pengirim dan dashboard Biteship sebelum mencoba ulang.",
+            };
+          }
+        } catch (shipmentError) {
+          console.error("Panggilan internal Biteship gagal:", shipmentError instanceof Error ? shipmentError.message : String(shipmentError));
+          shipmentBooking = {
+            attempted: true,
+            success: false,
+            retry_or_manual_action_required: true,
+            message: "Pembayaran sudah terverifikasi. Koneksi booking Biteship belum dapat dipastikan; periksa dashboard Biteship sebelum mencoba ulang.",
+          };
+        }
+      }
+    }
+
     return reply({
       success: true,
       message:
@@ -1243,6 +1311,7 @@ Deno.serve(async (req: Request) => {
       commission_recorded: true,
       license_issued: licenseResult.applicable,
       license_result: licenseResult.result ?? null,
+      shipment_booking: shipmentBooking,
     });
   }
 
