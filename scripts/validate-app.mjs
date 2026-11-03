@@ -90,6 +90,19 @@ if (!/kasusaha_get_business_package_entitlements/.test(html) ||
   fail("package entitlement lookup or UI feature gates are missing");
 } else pass("package entitlements are loaded and UI feature gates are present");
 
+const transactionMenuChecks = [
+  [/function syncTransactionRoleMenus\(\)/, html, "transaction menus must synchronize with the logged-in role"],
+  [/id="shortcutEmployeeSettings" data-transaction-role="owner"/, html, "employee account settings shortcut must be Owner-only"],
+  [/class="transaction-menu" data-transaction-role="owner"><summary><span class="shortcut-icon">📦/, html, "product and stock management menu must be Owner-only"],
+  [/data-transaction-role="owner" onclick="pilihJenisCatatTransaksi\('expense'\)"/, html, "expense entry must be Owner-only"],
+  [/data-transaction-role="employee" onclick="pilihLaporanTransaksi\('income'\)"/, html, "employee income report must be employee-only"],
+  [/data-transaction-role="owner" onclick="pilihLaporanTransaksi\('accounting'\)"/, html, "full accounting report must be Owner-only"],
+];
+for (const [pattern, source, message] of transactionMenuChecks) {
+  if (!pattern.test(source)) fail(message);
+  else pass(message);
+}
+
 if (!/KS_PACKAGE_PRICES/.test(html) ||
     !/starter:49000/.test(html) ||
     !/lite:99000/.test(html) ||
