@@ -172,7 +172,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const supabase = createClient(supabaseUrl, publicKey, {
+    const supabase = createClient<any>(supabaseUrl, publicKey, {
       global: {
         headers: {
           Authorization: authorization,
@@ -342,7 +342,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       if (!serviceRoleKey) {
         return reply({ success: false, error: "Konfigurasi server pengiriman belum lengkap." }, 503);
       }
-      shippingAdmin = createClient(supabaseUrl!, serviceRoleKey, {
+      shippingAdmin = createClient<any>(supabaseUrl!, serviceRoleKey, {
         auth: { persistSession: false, autoRefreshToken: false },
       });
       const { data: quote, error: quoteError } = await shippingAdmin
@@ -461,7 +461,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     // RPC privileged hanya dipanggil dari backend setelah sesi pembeli diverifikasi.
     // Fungsi SQL secure hanya memberi hak EXECUTE kepada service_role.
-    const orderAdmin = shippingAdmin ?? createClient(supabaseUrl!, rpcServiceKey, {
+    const orderAdmin = shippingAdmin ?? createClient<any>(supabaseUrl!, rpcServiceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
     const { data, error } = await orderAdmin.rpc(
