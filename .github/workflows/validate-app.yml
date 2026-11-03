@@ -2,7 +2,7 @@ name: KasUsaha Lite static validation
 
 on:
   push:
-    branches: [main]
+    branches: [main, "sync/**"]
   pull_request:
     branches: [main]
   workflow_dispatch:
