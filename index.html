@@ -1320,6 +1320,149 @@ html body>header.ks-brand-header .kasusaha-banner-image-button img{display:block
   location.replace('https://kasusaha-lite.pages.dev'+targetPath+location.search+location.hash);
 })();
 </script>
+<style id="ks-responsive-final-polish-20261103">
+/* Penyelarasan lintas halaman — presentasional saja; tidak mengubah alur bisnis. */
+:root{
+  --ks-ui-ink:#183247;
+  --ks-ui-muted:#64748b;
+  --ks-ui-line:#e2e8f0;
+  --ks-ui-paper:#fff;
+  --ks-ui-page:#f5f8fa;
+  --ks-ui-brand:#0f766e;
+  --ks-ui-brand-dark:#115e59;
+  --ks-ui-radius:15px;
+}
+html{scroll-padding-top:88px}
+body{background:var(--ks-ui-page)!important;color:var(--ks-ui-ink)!important}
+[hidden]{display:none!important}
+body>header.ks-brand-header{isolation:isolate}
+body>header.ks-brand-header .ks-brand-float{display:none!important}
+body>header.ks-brand-header .ks-brand-logo{margin:0 auto 8px}
+body>header.ks-brand-header h1,
+body>header.ks-brand-header>p{text-align:center}
+body>nav[aria-label="Navigasi utama"]{
+  z-index:30;
+  max-width:100%;
+  overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;
+}
+body>nav[aria-label="Navigasi utama"] button{
+  flex:0 0 auto;
+  min-height:42px;
+  line-height:1.25;
+  white-space:nowrap;
+}
+body>main{
+  width:min(100% - 28px,1240px)!important;
+  max-width:1240px!important;
+  min-width:0;
+  margin:0 auto!important;
+}
+body>main>.tab{min-width:0;width:100%}
+body>main>.tab>h2,
+body>main>.tab>header h2{
+  color:#173b4d;
+  font-weight:800;
+  line-height:1.25;
+  letter-spacing:-.025em;
+  margin:8px 0 16px;
+}
+body>main .card,
+body>main .item{
+  min-width:0;
+  border-color:var(--ks-ui-line)!important;
+  border-radius:var(--ks-ui-radius)!important;
+  box-shadow:0 5px 18px rgba(15,35,45,.045)!important;
+}
+body>main .card h2,
+body>main .card h3{line-height:1.35}
+body>main p,
+body>main li{overflow-wrap:anywhere}
+body>main input,
+body>main select,
+body>main textarea{
+  max-width:100%;
+  min-width:0;
+  border-radius:10px!important;
+}
+body>main button:focus-visible,
+body>main a:focus-visible,
+body>nav button:focus-visible,
+body>header button:focus-visible,
+body>main summary:focus-visible{
+  outline:3px solid rgba(37,99,235,.35)!important;
+  outline-offset:2px!important;
+}
+body>main button.primary,
+body>main button.secondary{
+  min-height:42px;
+  line-height:1.35;
+}
+body>main .status{overflow-wrap:anywhere}
+body>main .table-wrap,
+body>main .employee-management-wrap,
+body>main .report-table-wrap{
+  max-width:100%;
+  overflow-x:auto!important;
+  overscroll-behavior-x:contain;
+  -webkit-overflow-scrolling:touch;
+}
+body>main table{max-width:100%}
+body>main img{max-width:100%}
+#transaksi .transaction-shortcut{min-width:0;overflow-wrap:anywhere}
+#pasar .item,
+#pasar .card,
+#produk .item{min-width:0}
+#paketKasUsaha .ks-pricing-grid,
+#paketKasUsaha .ks-pricing-grid-four{align-items:stretch}
+#paketKasUsaha .ks-pricing-card{min-width:0;height:100%}
+@media(min-width:1000px){
+  body>nav[aria-label="Navigasi utama"]{justify-content:center;flex-wrap:wrap}
+}
+@media(max-width:999px){
+  body>nav[aria-label="Navigasi utama"]{
+    justify-content:flex-start;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    scrollbar-width:thin;
+  }
+  body>main{width:calc(100% - 20px)!important}
+}
+@media(max-width:600px){
+  html{scroll-padding-top:66px}
+  body>header.ks-brand-header{padding:16px 10px!important}
+  body>header.ks-brand-header h1{font-size:25px!important}
+  body>header.ks-brand-header>p{font-size:12px!important}
+  body>header.ks-brand-header .kasusaha-pwa-install{margin-top:8px!important}
+  body>nav[aria-label="Navigasi utama"]{padding:8px 7px!important;gap:6px!important}
+  body>nav[aria-label="Navigasi utama"] button{min-height:40px;padding:9px 11px!important;font-size:12px!important}
+  body>main{width:calc(100% - 14px)!important;padding:8px 0 24px!important}
+  body>main .card{padding:13px!important;margin-bottom:11px!important}
+  body>main .tab>h2{font-size:22px!important}
+  body>main input,
+  body>main select,
+  body>main textarea{font-size:16px!important;min-height:44px}
+  body>main .grid{grid-template-columns:minmax(0,1fr)}
+  body>main .transaction-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  body>main .transaction-shortcut{padding:11px;min-height:116px}
+  body>main .row-actions{gap:7px}
+  body>main .row-actions button{max-width:100%;white-space:normal}
+  body>main .table-wrap,
+  body>main .employee-management-wrap{border-radius:10px}
+  body>main .report-table th,
+  body>main .report-table td{font-size:12px!important}
+  #ksBackToTop{right:10px!important;bottom:10px!important}
+}
+@media(max-width:360px){
+  body>main .transaction-shortcuts{grid-template-columns:minmax(0,1fr)}
+  body>main .promo-benefits{grid-template-columns:repeat(2,minmax(0,1fr))}
+  body>header.ks-brand-header .kasusaha-banner-image-button img{border-radius:8px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
+}
+</style>
 </head>
 <body>
 <header class="ks-brand-header">
