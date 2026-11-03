@@ -2491,10 +2491,10 @@ async function buka(id,tombol){
             }
           }else if(tujuanId==='transaksi'&&activeMembers.length>1){
             // Buka pemilih usaha saja; fitur tetap terkunci sampai salah satu usaha dipilih.
-            document.body.classList.remove('owner-verified','employee-verified');id=tujuanId;tombol=tujuanTombol;
+            document.body.classList.remove('owner-verified','employee-verified');document.body.classList.add('workspace-selection-pending');id=tujuanId;tombol=tujuanTombol;
           }else{
             if(licenseAccessState!=='active')await periksaAktivasiLisensi();
-            if(licenseAccessState==='active'){id=tujuanId;tombol=tujuanTombol;}
+            if(licenseAccessState==='active'){if(tujuanId==='transaksi'&&activeMembers.length===0)document.body.classList.add('workspace-selection-pending');id=tujuanId;tombol=tujuanTombol;}
             else{id='akunPembeli';tombol=document.querySelector('nav button[onclick*="akunPembeli"]');setStatusAktivasi('Akun sudah login, tetapi lisensi aktif belum terverifikasi oleh server. Verifikasi lisensi untuk membuka fitur.',false);}
           }
         }
