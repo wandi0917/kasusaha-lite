@@ -3649,7 +3649,7 @@ async function muatProdukAsalPengiriman(){
   const {data:sd,error:se}=await sb.auth.getSession();if(se)throw se;
   if(!sd.session){box.textContent='Login dengan akun pemilik produk terlebih dahulu.';return;}
   box.textContent='Memuat produk milik akun ini...';
-  const {data,error}=await sb.from('produk').select('id,nama_produk,nama_penjual,kota,alamat_asal_pengiriman,kode_pos_asal_pengiriman,nama_kontak_pengirim,telepon_pengirim,aktif').eq('owner_id',sd.session.user.id).eq('aktif',true).order('id',{ascending:false}).limit(100);
+  const {data,error}=await sb.from('produk').select('id,nama_produk,nama_penjual,kota,alamat_asal_pengiriman,kode_pos_asal_pengiriman,nama_kontak_pengirim,telepon_pengirim,aktif').eq('owner_id',sd.session.user.id).order('id',{ascending:false}).limit(100);
   if(error)throw error;box.replaceChildren();
   const physical=(data||[]).filter(p=>String(p.nama_produk||'').trim().toLowerCase()!=='kasusaha lite');
   if(!physical.length){box.textContent='Belum ada produk fisik aktif milik akun ini.';return;}
@@ -5443,7 +5443,7 @@ async function simpanPengaturanAsalPengiriman(){
  btn.disabled=true;setStatus('Menyimpan data asal pengiriman ke produk fisik...');
  try{
   const userId=sessionData.session.user.id;
-  const {data:rows,error:readError}=await sb.from('produk').select('id,nama_produk').eq('owner_id',userId).eq('aktif',true).neq('nama_produk','KasUsaha Lite');
+  const {data:rows,error:readError}=await sb.from('produk').select('id,nama_produk').eq('owner_id',userId).neq('nama_produk','KasUsaha Lite');
   if(readError)throw readError;
   if(!Array.isArray(rows)||!rows.length)throw new Error('Tidak ada produk fisik milik akun ini.');
   const {data:updated,error:updateError}=await sb.from('produk').update({nama_kontak_pengirim:contact,telepon_pengirim:phone,alamat_asal_pengiriman:address,kode_pos_asal_pengiriman:postal}).eq('owner_id',userId).eq('aktif',true).neq('nama_produk','KasUsaha Lite').select('id');
