@@ -134,6 +134,8 @@ const operationalChecks = [
   [/\.upsert\(batch,\s*\{\s*onConflict:\s*['"]business_id,legacy_ref['"],\s*ignoreDuplicates:\s*true\s*\}\)/, html, "offline sync must be idempotent by business and legacy reference"],
   [/window\.addEventListener\(['"]offline['"],\s*\(\)\s*=>\s*\{[\s\S]{0,300}activateOfflineTransactionMode\(\)/, html, "active transaction tab must show an offline-mode warning when the connection drops"],
   [/select\(['"]id,legacy_ref['"]\)[\s\S]{0,220}\.in\(['"]legacy_ref['"],\s*refs\)/, html, "offline sync must read back and verify uploaded references"],
+  [/select\(['"]id,legacy_ref,transaction_date,transaction_type,amount,description,category,created_by,created_by_role['"]\)/, html, "offline sync must compare saved row content, not only the legacy reference"],
+  [/const mismatched=batch\.find\(row=>\{[\s\S]{0,900}Number\(saved\.amount\)!==Number\(row\.amount\)/, html, "offline sync must keep conflicting local data pending instead of silently marking it synced"],
   [/offline_user_id===sessionUserId&&t\.offline_business_id===businessId&&t\.offline_role==='employee'/, html, "employee offline sync must be restricted to the current employee and business"],
   [/p_request_id:\s*quickSaleRequestId/, html, "cashier must send a stable idempotency request ID"],
   [/kasusaha_quick_sale_pending_v1/, html, "cashier must retain an unresolved request key on the device"],
