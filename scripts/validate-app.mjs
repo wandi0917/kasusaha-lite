@@ -132,6 +132,7 @@ const biteshipWebhook = fs.readFileSync("supabase/functions/biteship-webhook/ind
 
 const operationalChecks = [
   [/\.upsert\(batch,\s*\{\s*onConflict:\s*['"]business_id,legacy_ref['"],\s*ignoreDuplicates:\s*true\s*\}\)/, html, "offline sync must be idempotent by business and legacy reference"],
+  [/window\.addEventListener\(['"]offline['"],\s*\(\)\s*=>\s*\{[\s\S]{0,300}activateOfflineTransactionMode\(\)/, html, "active transaction tab must show an offline-mode warning when the connection drops"],
   [/select\(['"]id,legacy_ref['"]\)[\s\S]{0,220}\.in\(['"]legacy_ref['"],\s*refs\)/, html, "offline sync must read back and verify uploaded references"],
   [/offline_user_id===sessionUserId&&t\.offline_business_id===businessId&&t\.offline_role==='employee'/, html, "employee offline sync must be restricted to the current employee and business"],
   [/p_request_id:\s*quickSaleRequestId/, html, "cashier must send a stable idempotency request ID"],
