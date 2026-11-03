@@ -9,6 +9,7 @@ const pass = (message) => console.log("PASS:", message);
 
 const html = fs.readFileSync("index.html", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
+const costSecurityMigration = fs.readFileSync("supabase/migrations/20261103030100_restrict_store_product_cost_column_access.sql", "utf8");
 const manifestText = fs.readFileSync("manifest.webmanifest", "utf8");
 
 try {
@@ -123,6 +124,14 @@ for (const [pattern, source, message] of requiredChecks) {
 if (/SUPABASE_SERVICE_ROLE_KEY|MIDTRANS_SERVER_KEY|BITESHIP_API_KEY/.test(html)) {
   fail("server secrets must never appear in frontend HTML");
 } else pass("no known server-secret variable names appear in frontend HTML");
+
+const safeStoreProductGrant = costSecurityMigration.match(/GRANT SELECT\\s*\\(([\\s\\S]*?)\\)\\s*ON TABLE public\\.store_products TO authenticated/i);
+if (!/REVOKE SELECT ON TABLE public\\.store_products FROM authenticated/i.test(costSecurityMigration) ||
+    !safeStoreProductGrant ||
+    /\\bcost_price\\b/i.test(safeStoreProductGrant[1])) {
+  fail("store_products cost_price must not be selectable by authenticated users");
+} else pass("store_products grants exclude cost_price from authenticated column access");
+
 
 
 const employeeActivation = fs.readFileSync("supabase/functions/employee-device-activation/index.ts", "utf8");
