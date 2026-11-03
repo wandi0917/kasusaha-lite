@@ -332,7 +332,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
     let shippingQuote: Record<string, unknown> | null = null;
     let shippingAdmin: ReturnType<typeof createClient> | null = null;
     let shippingProductSnapshot: Array<{product_id:number;quantity:number;weight:number;length:number;width:number;height:number}> = [];
-    let verifiedPublicSubtotal = 0;
 
     if (physicalItems.length > 0) {
       if (!shippingQuoteId || !isValidUuid(shippingQuoteId)) {
@@ -546,6 +545,26 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     let finalTotalAmount: number | null = null;
+    const { data: createdOrderSnapshot, error: createdOrderReadError } = await orderAdmin
+      .from("marketplace_orders")
+      .select("id,buyer_id,status,total_amount")
+      .eq("id", orderId)
+      .eq("buyer_id", authData.user.id)
+      .maybeSingle();
+    if (createdOrderReadError || !createdOrderSnapshot || createdOrderSnapshot.status !== "pending_payment") {
+      console.error("Pesanan baru tidak dapat diverifikasi setelah RPC.", createdOrderReadError?.message);
+      return reply({
+        success: false,
+        order_created_unknown: true,
+        order_id: orderId,
+        error: "Pesanan mungkin sudah dibuat, tetapi verifikasi awal gagal. Jangan membuat pesanan ulang sebelum memeriksa nomor pesanan ini.",
+      }, 502);
+    }
+    finalTotalAmount = Number(createdOrderSnapshot.total_amount);
+    if (!Number.isFinite(finalTotalAmount) || finalTotalAmount <= 0) {
+      console.error("Total pesanan baru tidak valid.", { orderId, total: createdOrderSnapshot.total_amount });
+      return reply({ success: false, order_created_unknown: true, order_id: orderId, error: "Pesanan dibuat tetapi total belum dapat diverifikasi. Jangan membayar atau membuat ulang pesanan." }, 502);
+    }
     if (shippingQuote && shippingAdmin) {
       const { data: orderRow, error: orderReadError } = await shippingAdmin
         .from("marketplace_orders")

@@ -124,4 +124,35 @@ if (/SUPABASE_SERVICE_ROLE_KEY|MIDTRANS_SERVER_KEY|BITESHIP_API_KEY/.test(html))
   fail("server secrets must never appear in frontend HTML");
 } else pass("no known server-secret variable names appear in frontend HTML");
 
+
+const employeeActivation = fs.readFileSync("supabase/functions/employee-device-activation/index.ts", "utf8");
+const licenseActivation = fs.readFileSync("supabase/functions/activate-kasusaha-license/index.ts", "utf8");
+const biteshipShipment = fs.readFileSync("supabase/functions/biteship-create-shipment/index.ts", "utf8");
+const biteshipWebhook = fs.readFileSync("supabase/functions/biteship-webhook/index.ts", "utf8");
+
+const operationalChecks = [
+  [/\.upsert\(batch,\s*\{\s*onConflict:\s*['"]business_id,legacy_ref['"],\s*ignoreDuplicates:\s*true\s*\}\)/, html, "offline sync must be idempotent by business and legacy reference"],
+  [/select\(['"]id,legacy_ref['"]\)[\s\S]{0,220}\.in\(['"]legacy_ref['"],\s*refs\)/, html, "offline sync must read back and verify uploaded references"],
+  [/offline_user_id===sessionUserId&&t\.offline_business_id===businessId&&t\.offline_role==='employee'/, html, "employee offline sync must be restricted to the current employee and business"],
+  [/p_request_id:\s*quickSaleRequestId/, html, "cashier must send a stable idempotency request ID"],
+  [/kasusaha_quick_sale_pending_v1/, html, "cashier must retain an unresolved request key on the device"],
+  [/get_store_product_costs/, html, "owner cost data must be loaded through the protected database function"],
+  [/set_store_product_cost/, html, "owner cost edits must use the protected database function"],
+  [/getUserMedia/, html, "camera barcode scanner must request a device camera"],
+  [/track\.stop\(\)/, html, "camera scanner must release camera tracks on close"],
+  [/ZXingBrowser|BarcodeDetector/, html, "camera barcode decoder must be present"],
+  [/createdOrderSnapshot/, marketplaceCreate, "marketplace checkout must verify the newly created order snapshot"],
+  [/\[7,\s*8,\s*9,\s*10\]\.includes\(Number\(item\.product_id\)\)/, paymentWebhook, "commission must exclude all digital package product IDs 7-10"],
+  [/package_code, package_name, cloud_started_at, cloud_expires_at/, licenseActivation, "license status must return package and cloud-term metadata"],
+  [/kasusaha_lookup_employee_invite/, employeeActivation, "employee login must look up invite codes through the protected RPC"],
+  [/BITESHIP_ENABLE_SHIPMENT_BOOKING/, biteshipShipment, "Biteship shipment booking must remain explicitly gated until verified"],
+  [/verification_status["']?,\s*["']verified["']/, biteshipShipment, "Biteship shipment creation must require a verified payment event"],
+  [/BITESHIP_WEBHOOK_SIGNATURE_KEY/, biteshipWebhook, "Biteship webhook must verify its configured signature key"],
+  [/BITESHIP_WEBHOOK_SIGNATURE_SECRET/, biteshipWebhook, "Biteship webhook must verify its configured signature secret"],
+];
+for (const [pattern, source, message] of operationalChecks) {
+  if (!pattern.test(source)) fail(message);
+  else pass(message);
+}
+
 if (process.exitCode) process.exit(process.exitCode);

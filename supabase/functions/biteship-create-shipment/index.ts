@@ -21,10 +21,15 @@ Deno.serve(async (req) => {
   const auth = req.headers.get("Authorization") || "";
   if (!url || !serviceKey || !biteshipKey || !publicKey) return reply({ success: false, error: "Konfigurasi server pengiriman belum lengkap." }, 503);
   if (Deno.env.get("BITESHIP_ENABLE_SHIPMENT_BOOKING") !== "true") return reply({ success: false, error: "Pembuatan pengiriman langsung masih dinonaktifkan sampai tarif, alamat asal, dan mode akun Biteship selesai diuji." }, 503);
-  if (!/^Bearer\s+\S+$/i.test(auth)) return reply({ success: false, error: "Silakan login terlebih dahulu." }, 401);
-  const userClient = createClient(url, publicKey, { global: { headers: { Authorization: auth } }, auth: { persistSession: false, autoRefreshToken: false } });
-  const { data: ud, error: ue } = await userClient.auth.getUser();
-  if (ue || !ud.user) return reply({ success: false, error: "Sesi login tidak valid." }, 401);
+  const internalRequest = auth === `Bearer ${serviceKey}`;
+  let requesterId: string | null = null;
+  if (!internalRequest) {
+    if (!/^Bearer\s+\S+$/i.test(auth)) return reply({ success: false, error: "Silakan login terlebih dahulu." }, 401);
+    const userClient = createClient(url, publicKey, { global: { headers: { Authorization: auth } }, auth: { persistSession: false, autoRefreshToken: false } });
+    const { data: ud, error: ue } = await userClient.auth.getUser();
+    if (ue || !ud.user) return reply({ success: false, error: "Sesi login tidak valid." }, 401);
+    requesterId = ud.user.id;
+  }
   let body: Record<string, unknown>;
   try { const v = await req.json(); if (!obj(v)) throw new Error(); body = v; }
   catch { return reply({ success: false, error: "Format permintaan tidak valid." }, 400); }
@@ -73,13 +78,16 @@ Deno.serve(async (req) => {
   if (!physicalOrderItems.length) {
     return reply({ success: false, error: "Pesanan ini hanya berisi lisensi digital dan tidak memerlukan pengiriman fisik." }, 400);
   }
-  if (physicalOrderItems.some(i => String(i.seller_id) !== ud.user.id)) return reply({ success: false, error: "Hanya penjual pemilik semua barang fisik dalam pesanan yang dapat membuat pengiriman." }, 403);
+  const sellerIds = [...new Set(physicalOrderItems.map(i => String(i.seller_id || "")).filter(Boolean))];
+  if (sellerIds.length !== 1) return reply({ success: false, error: "Satu pengiriman otomatis hanya dapat dibuat untuk satu penjual." }, 409);
+  const sellerId = sellerIds[0];
+  if (!internalRequest && requesterId !== sellerId) return reply({ success: false, error: "Hanya penjual pemilik semua barang fisik dalam pesanan yang dapat membuat pengiriman." }, 403);
   const productIds = [...new Set(physicalOrderItems.map(i => Number(i.product_id)).filter(Number.isFinite))];
   const { data: products, error: pe } = await admin.from("produk")
     .select("id,nama_produk,deskripsi,harga,berat_gram,panjang_cm,lebar_cm,tinggi_cm,alamat_asal_pengiriman,kode_pos_asal_pengiriman,telepon_pengirim,nama_kontak_pengirim,owner_id,nama_penjual")
     .in("id", productIds);
   if (pe || !products || products.length !== productIds.length) return reply({ success: false, error: "Data produk penjual tidak lengkap untuk membuat pengiriman." }, 400);
-  if (products.some(p => String(p.owner_id) !== ud.user.id)) return reply({ success: false, error: "Data pemilik produk tidak sesuai dengan akun penjual." }, 403);
+  if (products.some(p => String(p.owner_id) !== sellerId)) return reply({ success: false, error: "Data pemilik produk tidak sesuai dengan penjual pada rincian pesanan." }, 403);
   const origins = [...new Set(products.map(p => String(p.kode_pos_asal_pengiriman || "").trim()))];
   const addresses = [...new Set(products.map(p => String(p.alamat_asal_pengiriman || "").trim()))];
   const phones = [...new Set(products.map(p => String(p.telepon_pengirim || "").trim()))];
@@ -103,7 +111,7 @@ Deno.serve(async (req) => {
       height: Math.max(1, Number(p.tinggi_cm) || 10),
     };
   });
-  const { data: sellerUser } = await admin.auth.admin.getUserById(ud.user.id);
+  const { data: sellerUser } = await admin.auth.admin.getUserById(sellerId);
   const sellerEmail = sellerUser?.user?.email || "";
   if (!sellerEmail) return reply({ success: false, error: "Email akun penjual belum tersedia untuk label pengiriman. Perbarui email akun penjual terlebih dahulu." }, 400);
   const { data: buyerUser } = await admin.auth.admin.getUserById(String(order.buyer_id));
@@ -157,14 +165,18 @@ Deno.serve(async (req) => {
     return reply({ success: false, error: "Biteship menolak pembuatan pengiriman. Periksa alamat asal/tujuan, kode pos, dan layanan kurir." }, 502);
   }
   const courier = obj(result.courier) ? result.courier : {};
+  const trackingUrl = typeof courier.link === "string" && /^https:\/\//i.test(courier.link) ? courier.link : null;
   const { data: saved, error: saveError } = await admin.from("marketplace_orders").update({
     shipping_provider: "Biteship",
-    shipping_tracking_id: typeof courier.tracking_id === "string" ? courier.tracking_id : result.id,
+    biteship_order_id: String(result.id),
+    shipping_tracking_id: typeof courier.tracking_id === "string" ? courier.tracking_id : null,
     shipping_waybill_id: typeof courier.waybill_id === "string" ? courier.waybill_id : null,
+    shipping_tracking_url: trackingUrl,
     shipping_status: typeof result.status === "string" ? result.status : "confirmed",
     shipping_created_at: new Date().toISOString(),
+    shipping_last_event_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-  }).eq("id", orderId).eq("shipping_status", "creating").select("id,shipping_tracking_id,shipping_waybill_id,shipping_status").maybeSingle();
+  }).eq("id", orderId).eq("shipping_status", "creating").select("id,biteship_order_id,shipping_tracking_id,shipping_waybill_id,shipping_tracking_url,shipping_status").maybeSingle();
   if (saveError || !saved) {
     console.error("Biteship menerima order tetapi gagal menyimpan hasil di database.", saveError?.message);
     return reply({ success: false, uncertain: true, external_order_id: result.id, error: "Biteship sudah menerima pengiriman tetapi penyimpanan database gagal. Jangan buat pengiriman baru; gunakan ID Biteship saat menghubungi dukungan." }, 502);

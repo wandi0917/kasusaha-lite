@@ -1,0 +1,34 @@
+name: KasUsaha Lite Edge Function source checks
+
+on:
+  push:
+    branches:
+      - main
+      - "sync/**"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deno-source-check:
+    name: Parse and lint Edge Function sources
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Lint all Edge Functions
+        run: deno lint --rules-exclude=no-unversioned-import,prefer-const,no-unused-vars,no-control-regex,no-inner-declarations supabase/functions/*/index.ts
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate application safeguards
+        run: node scripts/validate-app.mjs
