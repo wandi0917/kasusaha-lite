@@ -3010,7 +3010,7 @@ async function cekOngkirBiteship(){
   }else if(detail.includes('kode pos asal')||detail.includes('origin_postal_code')){
    guidance='Kode pos asal produk penjual belum valid. Buka Produk Saya → data pengiriman produk dan isi kode pos asal 5 digit.';
   }else if(detail.includes('api key')||detail.includes('unauthorized')||detail.includes('forbidden')){
-   guidance='Biteship menolak autentikasi. Periksa BITESHIP_API_KEY pada Supabase Edge Function Secrets dan pastikan key aktif untuk API tarif.';
+   guidance='Biteship menolak autentikasi. Periksa kunci API Biteship pada Supabase Edge Function Secrets dan pastikan kunci aktif untuk API tarif.';
   }else if(detail.includes('no rates')||detail.includes('pricing')||detail.includes('courier')){
    guidance='Biteship tidak mengembalikan layanan untuk rute/paket ini. Periksa cakupan kurir, alamat, berat, dan dimensi paket.';
   }
