@@ -2330,6 +2330,22 @@ function activateOfflineTransactionMode(){
 function saveOfflineWorkspace(business,member,user){
  try{localStorage.setItem(OFFLINE_WORKSPACE_KEY,JSON.stringify({businessId:business.id,businessName:business.business_name,role:member.role,userId:user.id,userName:financeUserDisplayName(user),savedAt:new Date().toISOString()}));}catch(e){console.warn('Konteks offline tidak dapat disimpan:',e);}
 }
+// Jika koneksi terputus ketika tab Transaksi sedang terbuka, aktifkan mode offline
+// saat itu juga agar banner peringatan dan identitas lokal tidak terlambat muncul.
+if(!window.__kasusahaOfflineTransitionBound){
+ window.__kasusahaOfflineTransitionBound=true;
+ window.addEventListener('offline',()=>{
+  const panel=$('transaksi');
+  if(!panel||!panel.classList.contains('active'))return;
+  if(!activateOfflineTransactionMode()){
+   const banner=$('offlineTransactionBanner');
+   if(banner){
+    banner.hidden=false;
+    banner.textContent='Koneksi internet terputus. Transaksi yang dicatat hanya tersimpan di perangkat ini dan belum masuk laporan bersama. Login Owner/Karyawan belum tersimpan untuk mode offline; jangan menganggap data telah tersinkron.';
+   }
+  }
+ });
+}
 let platformFinanceData=null,platformFinanceBusy=false;
 function setPlatformFinanceStatus(message,isError=false){const el=$('platformFinanceStatus');if(el){el.textContent=message;el.style.color=isError?'#b42318':'';}}
 function platformFinancePeriodMatch(row,period,reference){
@@ -5302,8 +5318,21 @@ async function imporTransaksiLokalKeBersama(options={}){
    if(error)throw error;
    inserted+=(data||[]).length;
    const refs=batch.map(x=>x.legacy_ref);
-   const {data:confirmed,error:verifyError}=await sb.from('financial_transactions').select('id,legacy_ref').eq('business_id',businessId).in('legacy_ref',refs);
+   const {data:confirmed,error:verifyError}=await sb.from('financial_transactions').select('id,legacy_ref,transaction_date,transaction_type,amount,description,category,created_by,created_by_role').eq('business_id',businessId).in('legacy_ref',refs);
    if(verifyError)throw new Error('Transaksi terkirim tetapi belum dapat diverifikasi dari laporan bersama: '+verifyError.message);
+   const confirmedByRef=new Map((confirmed||[]).map(row=>[String(row.legacy_ref),row]));
+   const mismatched=batch.find(row=>{
+    const saved=confirmedByRef.get(String(row.legacy_ref));
+    return !saved||
+     String(saved.transaction_date)!==String(row.transaction_date)||
+     String(saved.transaction_type)!==String(row.transaction_type)||
+     Number(saved.amount)!==Number(row.amount)||
+     String(saved.description)!==String(row.description)||
+     String(saved.category)!==String(row.category)||
+     String(saved.created_by)!==String(row.created_by)||
+     String(saved.created_by_role)!==String(row.created_by_role);
+   });
+   if(mismatched)throw new Error('Ada ID catatan lokal yang sudah dipakai tetapi isi transaksi di server berbeda. Catatan lokal tidak ditandai tersinkron; Owner perlu memeriksa referensi '+String(mismatched.legacy_ref).slice(0,100)+'.');
    verified+=(confirmed||[]).length;
    if((confirmed||[]).length!==batch.length)throw new Error('Jumlah catatan yang terbaca setelah sinkronisasi tidak cocok. Catatan lokal tetap dipertahankan; periksa laporan sebelum mencoba lagi.');
   }

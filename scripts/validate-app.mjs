@@ -9,6 +9,7 @@ const pass = (message) => console.log("PASS:", message);
 
 const html = fs.readFileSync("index.html", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
+const costSecurityMigration = fs.readFileSync("supabase/migrations/20261103030100_restrict_store_product_cost_column_access.sql", "utf8");
 const manifestText = fs.readFileSync("manifest.webmanifest", "utf8");
 
 try {
@@ -124,6 +125,14 @@ if (/SUPABASE_SERVICE_ROLE_KEY|MIDTRANS_SERVER_KEY|BITESHIP_API_KEY/.test(html))
   fail("server secrets must never appear in frontend HTML");
 } else pass("no known server-secret variable names appear in frontend HTML");
 
+const safeStoreProductGrant = costSecurityMigration.match(/GRANT SELECT\s*\(([\s\S]*?)\)\s*ON TABLE public\.store_products TO authenticated/i);
+if (!/REVOKE SELECT ON TABLE public\.store_products FROM authenticated/i.test(costSecurityMigration) ||
+    !safeStoreProductGrant ||
+    /\bcost_price\b/i.test(safeStoreProductGrant[1])) {
+  fail("store_products cost_price must not be selectable by authenticated users");
+} else pass("store_products grants exclude cost_price from authenticated column access");
+
+
 
 const employeeActivation = fs.readFileSync("supabase/functions/employee-device-activation/index.ts", "utf8");
 const licenseActivation = fs.readFileSync("supabase/functions/activate-kasusaha-license/index.ts", "utf8");
@@ -132,7 +141,10 @@ const biteshipWebhook = fs.readFileSync("supabase/functions/biteship-webhook/ind
 
 const operationalChecks = [
   [/\.upsert\(batch,\s*\{\s*onConflict:\s*['"]business_id,legacy_ref['"],\s*ignoreDuplicates:\s*true\s*\}\)/, html, "offline sync must be idempotent by business and legacy reference"],
-  [/select\(['"]id,legacy_ref['"]\)[\s\S]{0,220}\.in\(['"]legacy_ref['"],\s*refs\)/, html, "offline sync must read back and verify uploaded references"],
+  [/window\.addEventListener\(['"]offline['"],\s*\(\)\s*=>\s*\{[\s\S]{0,300}activateOfflineTransactionMode\(\)/, html, "active transaction tab must show an offline-mode warning when the connection drops"],
+  [/select\(['"]id,legacy_ref,transaction_date,transaction_type,amount,description,category,created_by,created_by_role['"]\)[\s\S]{0,260}\.in\(['"]legacy_ref['"],\s*refs\)/, html, "offline sync must read back and verify uploaded references"],
+  [/select\(['"]id,legacy_ref,transaction_date,transaction_type,amount,description,category,created_by,created_by_role['"]\)/, html, "offline sync must compare saved row content, not only the legacy reference"],
+  [/const mismatched=batch\.find\(row=>\{[\s\S]{0,900}Number\(saved\.amount\)!==Number\(row\.amount\)/, html, "offline sync must keep conflicting local data pending instead of silently marking it synced"],
   [/offline_user_id===sessionUserId&&t\.offline_business_id===businessId&&t\.offline_role==='employee'/, html, "employee offline sync must be restricted to the current employee and business"],
   [/p_request_id:\s*quickSaleRequestId/, html, "cashier must send a stable idempotency request ID"],
   [/kasusaha_quick_sale_pending_v1/, html, "cashier must retain an unresolved request key on the device"],
