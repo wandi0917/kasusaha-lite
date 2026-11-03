@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data: products, error: productError } = await admin.from("produk")
-    .select("id,nama_produk,deskripsi,harga,stok,aktif,owner_id,berat_gram,panjang_cm,lebar_cm,tinggi_cm,kode_pos_asal_pengiriman,latitude_asal_pengiriman,longitude_asal_pengiriman")
+    .select("id,nama_produk,deskripsi,harga,stok,aktif,owner_id,berat_gram,panjang_cm,lebar_cm,tinggi_cm,kode_pos_asal_pengiriman,latitude_asal_pengiriman,longitude_asal_pengiriman,kategori")
     .in("id", [...quantities.keys()]);
   if (productError || !products || products.length !== quantities.size) {
     console.error("Produk tidak dapat diverifikasi untuk tarif.", productError?.message);
