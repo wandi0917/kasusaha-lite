@@ -3271,6 +3271,7 @@ function pilihPaketKasUsaha(code) {
     if(!sb){if(status)status.textContent='Koneksi Supabase belum tersedia.';return;}
     submit.disabled=true;
     submit.textContent='Memeriksa akun dan membuat pesanan...';
+    let createdPackageOrderId=null;
     try{
       const {data:sessionData,error:sessionError}=await sb.auth.getSession();
       if(sessionError)throw sessionError;
@@ -3288,6 +3289,7 @@ function pilihPaketKasUsaha(code) {
       if(error)throw error;
       const order=Array.isArray(data)?data[0]:data;
       if(!order||order.success!==true||!order.order_id)throw new Error('Server tidak mengembalikan nomor pesanan yang valid.');
+      createdPackageOrderId=order.order_id;
       if(status){status.className='status';status.textContent='Pesanan '+order.order_id+' berhasil dibuat. Total '+format(order.total_amount)+'. Menyiapkan pembayaran Midtrans...';}
       const pay=document.createElement('button');
       pay.type='button';pay.className='primary wide';pay.textContent='Lanjutkan pembayaran Midtrans';
@@ -3295,7 +3297,16 @@ function pilihPaketKasUsaha(code) {
       await mulaiPembayaranMidtrans(order.order_id,pay);
     }catch(error){
       console.error('Checkout paket KasUsaha Lite gagal:',error);
-      if(status){status.className='status error';status.textContent='Checkout belum berhasil: '+String(error?.message||error).slice(0,220)+'. Jangan membuat pesanan berulang jika nomor pesanan sudah terbentuk.';}
+      const message=String(error?.message||error).slice(0,220);
+      if(status&&createdPackageOrderId){
+        status.className='status warn';
+        status.textContent='Pesanan paket berhasil dibuat dengan nomor '+createdPackageOrderId+', tetapi tautan pembayaran belum berhasil disiapkan: '+message+'. Jangan membuat pesanan paket baru atau membayar di luar aplikasi. Coba siapkan pembayaran untuk pesanan yang sama.';
+        const retry=document.createElement('button');retry.type='button';retry.className='primary wide';retry.textContent='Coba pembayaran untuk pesanan '+createdPackageOrderId;
+        retry.addEventListener('click',()=>mulaiPembayaranMidtrans(createdPackageOrderId,retry));
+        status.insertAdjacentElement('afterend',retry);
+      }else if(status){
+        status.className='status error';status.textContent='Checkout paket belum berhasil dibuat: '+message+'. Jika respons server tidak pasti, periksa Pesanan Saya sebelum mencoba ulang.';
+      }
     }finally{
       submit.disabled=false;
       submit.textContent='Buat pesanan dan lanjutkan pembayaran';
