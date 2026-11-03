@@ -4734,16 +4734,22 @@ async function editAttendanceRecord(row){
  if(financeMemberRole!=='owner'||!financeBusiness){alert('Hanya Owner yang dapat mengedit absensi.');return;}
  const currentIn=row.check_in_at?new Date(row.check_in_at).toLocaleTimeString('en-GB',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'';
  const currentOut=row.check_out_at?new Date(row.check_out_at).toLocaleTimeString('en-GB',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'';
- const inValue=prompt('Edit jam masuk (format HH:MM:SS, waktu WIB). Kosongkan untuk menghapus jam masuk:',currentIn);if(inValue===null)return;
- const outValue=prompt('Edit jam pulang (format HH:MM:SS, waktu WIB). Kosongkan jika belum pulang:',currentOut);if(outValue===null)return;
- const validTime=v=>v===''||/^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(v);
- if(!validTime(inValue.trim())||!validTime(outValue.trim())){alert('Format waktu tidak valid. Gunakan HH:MM:SS, contoh 19:41:30.');return;}
+ const inValue=prompt('Edit jam masuk (format HH:MM:SS, WIB). Kosongkan untuk menghapus:',currentIn);if(inValue===null)return;
+ const outValue=prompt('Edit jam pulang (format HH:MM:SS, WIB). Kosongkan jika belum pulang:',currentOut);if(outValue===null)return;
+ const validTime=v=>v===''||/^([01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$/.test(v);
+ if(!validTime(inValue.trim())||!validTime(outValue.trim())){alert('Format waktu tidak valid. Gunakan HH:MM:SS.');return;}
  if(outValue.trim()&&!inValue.trim()){alert('Jam masuk harus diisi jika jam pulang diisi.');return;}
  const toIso=v=>v.trim()?new Date(row.work_date+'T'+v.trim()+'+07:00').toISOString():null;
  const checkIn=inValue.trim()?toIso(inValue):null,checkOut=outValue.trim()?toIso(outValue):null;
  if(checkIn&&checkOut&&new Date(checkOut)<=new Date(checkIn)){alert('Jam pulang harus setelah jam masuk.');return;}
- try{const {error}=await sb.from('business_attendance').update({check_in_at:checkIn,check_out_at:checkOut,updated_at:new Date().toISOString()}).eq('id',row.id).eq('business_id',financeBusiness.id);if(error)throw error;const status=$('attendanceStatus');status.className='status';status.textContent='Catatan absensi berhasil diperbarui oleh Owner.';await loadAttendance();}
- catch(e){const status=$('attendanceStatus');status.className='status error';status.textContent='Gagal mengedit absensi. Periksa izin pembaruan Owner di Supabase: '+String(e.message||e).slice(0,180);}
+ try{
+  const {error}=await sb.rpc('edit_business_attendance_record',{
+   p_business_id:financeBusiness.id,p_attendance_id:row.id,p_check_in_at:checkIn,p_check_out_at:checkOut
+  });
+  if(error)throw error;
+  const status=$('attendanceStatus');status.className='status';status.textContent='Catatan absensi berhasil diperbarui dan divalidasi server.';
+  await loadAttendance();
+ }catch(e){const status=$('attendanceStatus');status.className='status error';status.textContent='Gagal mengedit absensi melalui server: '+String(e.message||e).slice(0,180);}
 }
 async function editAttendanceWage(identityId,item){
  if(financeMemberRole!=='owner'||!financeBusiness){alert('Hanya Owner yang dapat menetapkan gaji.');return;}
