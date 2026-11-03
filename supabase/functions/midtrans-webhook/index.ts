@@ -1,5 +1,5 @@
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -114,7 +114,7 @@ function safeNotificationPayload(
 }
 
 async function recordVerifiedPaymentEvent(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<any>,
   args: {
     orderId: string;
     midtransOrderId: string;
@@ -238,7 +238,7 @@ async function recordVerifiedPaymentEvent(
 }
 
 async function markPaymentEventProcessed(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<any>,
   eventId: string,
 ): Promise<string | null> {
   // Pastikan baris event benar-benar ditemukan dan berhasil diperbarui.
@@ -265,7 +265,7 @@ async function markPaymentEventProcessed(
 }
 
 async function recordCommissionForPaidOrder(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<any>,
   orderId: string,
   paymentEventId: string,
 ): Promise<{ success: boolean; error: string | null }> {
@@ -429,7 +429,7 @@ async function recordCommissionForPaidOrder(
 }
 
 async function issueLicenseIfApplicable(
-  supabase: ReturnType<typeof createClient>,
+  supabase: SupabaseClient<any>,
   databaseOrderId: string,
 ) {
   const { data: items, error: itemError } = await supabase
@@ -536,7 +536,7 @@ Deno.serve(async (req: Request) => {
     }, 500);
   }
 
-  const supabase = createClient(
+  const supabase = createClient<any>(
     supabaseUrl,
     serviceRoleKey,
     {
