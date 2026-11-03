@@ -113,7 +113,7 @@ const requiredChecks = [
   [/COMMISSION_RATE\s*=\s*0\.025/, paymentWebhook, "marketplace commission must remain 2.5 percent"],
   [/quote\.used_at/, marketplaceCreate, "shipping quote must not be reusable"],
   [/product_fingerprint/, marketplaceCreate, "shipping quote must match current cart"],
-  [/serviceKey\s*=\s*Deno\.env\.get\(["']SUPABASE_SERVICE_ROLE_KEY["']\)/, marketplaceCreate, "service role key must remain server-side"],
+  [/serviceRoleKey\s*=\s*readText\(Deno\.env\.get\(["']SUPABASE_SERVICE_ROLE_KEY["']\)\)/, marketplaceCreate, "service role key must remain server-side"],
 ];
 for (const [pattern, source, message] of requiredChecks) {
   if (!pattern.test(source)) fail(message);
