@@ -11,9 +11,6 @@ const corsHeaders = {
 
 type JsonObject = Record<string, unknown>;
 
-type DatabaseTable = { Row: Record<string, any>; Insert: Record<string, any>; Update: Record<string, any>; Relationships: []; };
-type Database = { public: { Tables: Record<string, DatabaseTable>; Views: Record<string, never>; Functions: Record<string, { Args: Record<string, any>; Returns: any }>; Enums: Record<string, never>; CompositeTypes: Record<string, never>; } };
-
 type OrderItem = {
   product_id: number;
   quantity: number;
@@ -175,7 +172,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    const supabase = createClient<Database>(supabaseUrl, publicKey, {
+    const supabase = createClient(supabaseUrl, publicKey, {
       global: {
         headers: {
           Authorization: authorization,
@@ -335,7 +332,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
     let shippingQuote: Record<string, unknown> | null = null;
     let shippingAdmin: ReturnType<typeof createClient> | null = null;
     let shippingProductSnapshot: Array<{product_id:number;quantity:number;weight:number;length:number;width:number;height:number}> = [];
-    let verifiedPublicSubtotal = 0;
 
     if (physicalItems.length > 0) {
       if (!shippingQuoteId || !isValidUuid(shippingQuoteId)) {
@@ -345,7 +341,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       if (!serviceRoleKey) {
         return reply({ success: false, error: "Konfigurasi server pengiriman belum lengkap." }, 503);
       }
-      shippingAdmin = createClient<Database>(supabaseUrl!, serviceRoleKey, {
+      shippingAdmin = createClient(supabaseUrl!, serviceRoleKey, {
         auth: { persistSession: false, autoRefreshToken: false },
       });
       const { data: quote, error: quoteError } = await shippingAdmin
@@ -464,7 +460,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
     // RPC privileged hanya dipanggil dari backend setelah sesi pembeli diverifikasi.
     // Fungsi SQL secure hanya memberi hak EXECUTE kepada service_role.
-    const orderAdmin = shippingAdmin ?? createClient<Database>(supabaseUrl!, rpcServiceKey, {
+    const orderAdmin = shippingAdmin ?? createClient(supabaseUrl!, rpcServiceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
     const { data, error } = await orderAdmin.rpc(
