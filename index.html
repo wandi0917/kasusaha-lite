@@ -5222,7 +5222,7 @@ function renderFinanceReport(){
  }
  // Ringkasan arus kas dihitung dari seluruh transaksi usaha, bukan hanya filter tabel rincian.
  // Dengan demikian saldo awal/akhir tidak berubah ketika Owner memfilter kategori atau pencatat.
- const visibleRows=isEmployee?financeRows.filter(r=>r.created_by===financeMemberUserId&&r.created_by_role==='employee'&&r.transaction_type==='income'):financeRows;
+ const visibleRows=isEmployee?financeRows.filter(r=>financeEmployeeIdentityUserIds.includes(String(r.created_by||''))&&r.created_by_role==='employee'&&r.transaction_type==='income'):financeRows;
  const allPeriodRows=visibleRows.filter(r=>r.transaction_date>=bounds.start&&r.transaction_date<=bounds.end);
  const openingRows=isEmployee?[]:visibleRows.filter(r=>r.transaction_date<bounds.start);
  const sumType=(items,type)=>items.filter(r=>r.transaction_type===type).reduce((sum,r)=>sum+Number(r.amount||0),0);
