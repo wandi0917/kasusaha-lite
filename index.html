@@ -3080,11 +3080,13 @@ $('formCheckout').addEventListener('submit',async e=>{
  if(physicalItems.length && (!biteshipQuoteId || biteshipQuoteFingerprint!==fingerprintKeranjangFisik())){status.textContent='Untuk barang fisik, tekan Cek ongkir Biteship, lalu pilih layanan. Jika jumlah barang berubah, hitung ongkir kembali.';return;}
  if(physicalItems.length && !$('kodePosPembeli').value.trim().match(/^\d{5}$/)){status.textContent='Kode pos tujuan harus 5 digit.';return;}
  const form=e.currentTarget,button=form.querySelector('button[type="submit"]');
+ let createdOrderId=null;
  button.disabled=true;status.textContent=checkoutSession&&checkoutSession.user.is_anonymous===true?'Belanja sebagai tamu: mengirim pesanan aman ke server... Jangan tutup halaman.':'Mengirim pesanan ke server... Jangan tutup halaman.';
  try{
    const {data,error}=await sb.functions.invoke('create-marketplace-order',{body:{items,buyer_name:nama,buyer_phone:wa,shipping_address:physicalItems.length?alamat:'Produk digital — tidak memerlukan pengiriman.',destination_postal_code:physicalItems.length?$('kodePosPembeli').value.trim():'',shipping_quote_id:physicalItems.length?biteshipQuoteId:null}});
    if(error){let msg=error.message||'Permintaan checkout gagal.';try{const c=error.context;if(c&&typeof c.json==='function'){const detail=await c.json();if(detail&&detail.error)msg=detail.error;}}catch(_){}throw new Error(msg);}
    if(!data||data.success!==true||!data.order_id)throw new Error((data&&data.error)||'Server tidak mengembalikan nomor pesanan.');
+   createdOrderId=data.order_id;
    const order={id:data.order_id,nomor:data.order_id,tanggal:new Date().toLocaleString('id-ID'),nama,total:Number(data.total_amount||0),status:data.status||'pending_payment'};
    pesanan.push(order);
    try{localStorage.setItem('kasusaha_pesanan',JSON.stringify(pesanan));}catch(_){/* Pesanan tetap tersimpan di server. */}
@@ -3093,7 +3095,20 @@ $('formCheckout').addEventListener('submit',async e=>{
    const payNow=document.createElement('button');payNow.type='button';payNow.className='primary wide';payNow.textContent='Lanjutkan pembayaran via Midtrans';payNow.style.marginTop='10px';
    status.insertAdjacentElement('afterend',payNow);
    await mulaiPembayaranMidtrans(data.order_id,payNow);
- }catch(err){console.error('Checkout online gagal:',err);status.textContent='Checkout gagal: '+String(err.message||err).slice(0,240)+'. Keranjang Anda tetap disimpan. Jika pesan menunjukkan hasil tidak pasti, periksa marketplace_orders sebelum mencoba lagi.';}
+ }catch(err){
+   console.error('Checkout online gagal:',err);
+   const message=String(err&&err.message||err).slice(0,240);
+   if(createdOrderId){
+     status.className='status warn';
+     status.textContent='Pesanan sudah berhasil dibuat dengan nomor '+createdOrderId+', tetapi tautan pembayaran belum berhasil disiapkan: '+message+'. Jangan buat pesanan baru atau membayar di luar aplikasi. Buka Pesanan Saya dan tekan Bayar via Midtrans pada pesanan yang sama setelah pengaturan pembayaran diperbaiki.';
+     const existing=document.createElement('button');existing.type='button';existing.className='primary wide';existing.textContent='Coba siapkan pembayaran untuk pesanan '+createdOrderId;
+     existing.addEventListener('click',()=>mulaiPembayaranMidtrans(createdOrderId,existing));
+     status.insertAdjacentElement('afterend',existing);
+   }else{
+     status.className='status error';
+     status.textContent='Checkout belum berhasil dibuat: '+message+'. Keranjang Anda tetap disimpan. Jika respons server tidak pasti, periksa Pesanan Saya sebelum mencoba ulang.';
+   }
+ }
  finally{button.disabled=false;}
 });
 function setStatusArea(id,teks,error=false){const el=$(id);if(!el)return;el.className=error?'status error':'status';el.textContent=teks;}
