@@ -97,4 +97,31 @@ if (!/KS_PACKAGE_PRICES/.test(html) ||
   fail("four-package checkout prices are missing or inconsistent");
 } else pass("four package checkout prices are present");
 
+
+const paymentCreate = fs.readFileSync("supabase/functions/create-midtrans-payment/index.ts", "utf8");
+const paymentWebhook = fs.readFileSync("supabase/functions/midtrans-webhook/index.ts", "utf8");
+const marketplaceCreate = fs.readFileSync("supabase/functions/create-marketplace-order/index.ts", "utf8");
+
+const requiredChecks = [
+  [/order\.payment_review_required\s*===\s*true/, paymentCreate, "payment creation must block orders requiring review"],
+  [/\.eq\(["']buyer_id["'],\s*user\.id\)/, paymentCreate, "payment creation must verify buyer ownership"],
+  [/statusBase\s*\+\s*["']\/v2\/["']/, paymentCreate, "payment creation must verify status against Midtrans Status API"],
+  [/function\s+amountMatches/, paymentWebhook, "webhook must compare payment amount"],
+  [/constantTimeEqual\s*\(/, paymentWebhook, "webhook must use constant-time signature comparison"],
+  [/payment_review_required/, paymentWebhook, "webhook must preserve manual-review hold"],
+  [/commission:\$\{item\.id\}/, paymentWebhook, "commission ledger must have an idempotency key"],
+  [/COMMISSION_RATE\s*=\s*0\.025/, paymentWebhook, "marketplace commission must remain 2.5 percent"],
+  [/quote\.used_at/, marketplaceCreate, "shipping quote must not be reusable"],
+  [/product_fingerprint/, marketplaceCreate, "shipping quote must match current cart"],
+  [/serviceRoleKey\s*=\s*readText\(Deno\.env\.get\(["']SUPABASE_SERVICE_ROLE_KEY["']\)\)/, marketplaceCreate, "service role key must remain server-side"],
+];
+for (const [pattern, source, message] of requiredChecks) {
+  if (!pattern.test(source)) fail(message);
+  else pass(message);
+}
+
+if (/SUPABASE_SERVICE_ROLE_KEY|MIDTRANS_SERVER_KEY|BITESHIP_API_KEY/.test(html)) {
+  fail("server secrets must never appear in frontend HTML");
+} else pass("no known server-secret variable names appear in frontend HTML");
+
 if (process.exitCode) process.exit(process.exitCode);
