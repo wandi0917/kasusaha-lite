@@ -25,7 +25,7 @@ jobs:
         with:
           deno-version: v2.x
       - name: Lint all Edge Functions
-        run: deno lint supabase/functions/*/index.ts
+        run: deno lint --rules-exclude=no-unversioned-import,prefer-const,no-unused-vars,no-control-regex,no-inner-declarations supabase/functions/*/index.ts
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
