@@ -6769,6 +6769,47 @@ html body>header.ks-brand-header .kasusaha-banner-image-button img{display:block
  html body>header.ks-brand-header .kasusaha-banner-image-button img{border-radius:10px!important}
 }
 @media(prefers-reduced-motion:reduce){html body>header.ks-brand-header .kasusaha-banner-side,html body>header.ks-brand-header .kasusaha-banner-side svg,html body>header.ks-brand-header .kasusaha-banner-side svg *{animation:none!important;transition:none!important}}
+
+
+/* BERANDA HERO CLEANUP 2026-11-03
+   Hilangkan panel grafik/produk di sisi visual dan besarkan banner utama secara proporsional. */
+html body #beranda .promo-home .ks-promo-dashboard-art{
+  min-height:clamp(270px,32vw,380px)!important;
+  padding:clamp(16px,2.5vw,28px)!important;
+  background:radial-gradient(ellipse at 50% 42%,#ffffff 0%,#e8efff 54%,#dfe9ff 100%)!important;
+}
+html body #beranda .promo-home .ks-promo-dashboard-art .ks-dash-window{
+  width:min(100%,820px)!important;
+  max-width:820px!important;
+  margin:0 auto!important;
+  transform:none!important;
+}
+html body #beranda .promo-home .ks-promo-dashboard-art .ks-dash-chart,
+html body #beranda .promo-home .ks-promo-dashboard-art .ks-dash-products,
+html body #beranda .promo-home .ks-promo-dashboard-art .ks-float,
+html body #beranda .promo-home .ks-promo-dashboard-art .ks-orbit{
+  display:none!important;
+}
+html body #beranda .promo-home .ks-promo-dashboard-art .ks-dash-lower{
+  display:none!important;
+}
+html body #beranda .promo-home .ks-promo-dashboard-art .ks-dash-stats{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:clamp(8px,1.5vw,14px)!important;
+}
+@media(max-width:650px){
+  html body #beranda .promo-home .ks-promo-dashboard-art{
+    min-height:230px!important;
+    padding:14px 9px!important;
+  }
+  html body #beranda .promo-home .ks-promo-dashboard-art .ks-dash-window{
+    width:100%!important;
+  }
+  html body #beranda .promo-home .ks-promo-dashboard-art .ks-dash-stats{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:6px!important;
+  }
+}
 </style>
 </body>
 </html>
