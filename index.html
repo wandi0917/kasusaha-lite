@@ -3001,9 +3001,22 @@ async function cekOngkirBiteship(){
   $('ringkasanOngkir').textContent='Asal kode pos '+data.origin_postal_code+' • Tujuan '+data.destination_postal_code+'. Tarif berlaku 20 menit dan terikat pada keranjang ini.';
   status.textContent='Tarif Biteship tersedia: '+data.options.length+' pilihan. Pilih layanan yang diinginkan.';
  }catch(err){
-  select.replaceChildren(new Option('Cek ongkir gagal — coba lagi',''));
-  $('ringkasanOngkir').textContent='Periksa kode pos asal pada data produk penjual dan pastikan API key Biteship sudah diatur di Supabase.';
-  status.textContent='Cek ongkir gagal: '+String(err.message||err).slice(0,220);
+  const raw=String(err&&err.message||err||'Kesalahan tidak diketahui');
+  const detail=raw.toLowerCase();
+  select.replaceChildren(new Option('Ongkir belum tersedia — periksa pesan',''));
+  let guidance='Tarif belum berhasil dihitung. Periksa pesan kesalahan di bawah; jangan membuat pesanan sebelum layanan dan ongkir berhasil dipilih.';
+  if(detail.includes('no sufficient balance')||detail.includes('insufficient balance')||detail.includes('top up')){
+   guidance='Koneksi ke Biteship dan kode pos asal/tujuan sudah mencapai server Biteship, tetapi saldo akun Biteship tidak mencukupi untuk memanggil API tarif. Isi ulang saldo/kuota API Biteship pada dashboard akun Biteship, lalu tekan Cek ongkir kembali. Ini bukan kesalahan alamat produk.';
+  }else if(detail.includes('kode pos asal')||detail.includes('origin_postal_code')){
+   guidance='Kode pos asal produk penjual belum valid. Buka Produk Saya → data pengiriman produk dan isi kode pos asal 5 digit.';
+  }else if(detail.includes('api key')||detail.includes('unauthorized')||detail.includes('forbidden')){
+   guidance='Biteship menolak autentikasi. Periksa BITESHIP_API_KEY pada Supabase Edge Function Secrets dan pastikan key aktif untuk API tarif.';
+  }else if(detail.includes('no rates')||detail.includes('pricing')||detail.includes('courier')){
+   guidance='Biteship tidak mengembalikan layanan untuk rute/paket ini. Periksa cakupan kurir, alamat, berat, dan dimensi paket.';
+  }
+  $('ringkasanOngkir').textContent=guidance;
+  status.className='status warn';
+  status.textContent='Cek ongkir gagal: '+raw.slice(0,260);
  }finally{btn.disabled=false;btn.textContent='Cek ongkir Biteship';}
 }
 $('ambilLokasiPembeliBtn').addEventListener('click',()=>{
