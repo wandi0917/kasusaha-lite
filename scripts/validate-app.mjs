@@ -9,7 +9,7 @@ const pass = (message) => console.log("PASS:", message);
 
 const html = fs.readFileSync("index.html", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
-const costSecurityMigration = fs.readFileSync("supabase/migrations/20261103030100_restrict_store_product_cost_column_access.sql", "utf8");
+const costSecurityMigration = fs.readFileSync("supabase/migrations/20261103020843_restrict_store_product_cost_column_access.sql", "utf8");
 const manifestText = fs.readFileSync("manifest.webmanifest", "utf8");
 
 try {
