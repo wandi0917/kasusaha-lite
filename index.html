@@ -2319,7 +2319,34 @@ function activateOfflineTransactionMode(){
  const cached=readOfflineWorkspace();if(!cached)return false;
  if(!window.__kasusahaOfflineNoticeBound){
   window.__kasusahaOfflineNoticeBound=true;
-  window.addEventListener('online',()=>{if(!offlineTransactionMode)return;const banner=$('offlineTransactionBanner');if(banner)banner.innerHTML='<strong>Koneksi internet kembali</strong><br>Catatan yang dibuat saat offline masih tersimpan hanya di perangkat dan belum disinkronkan. Muat ulang halaman untuk kembali memakai laporan bersama; periksa catatan lokal terlebih dahulu agar tidak tercatat dua kali.';});
+  window.addEventListener('online',async()=>{
+  if(!offlineTransactionMode)return;
+  const banner=$('offlineTransactionBanner'),cached=readOfflineWorkspace();
+  if(banner){banner.hidden=false;banner.textContent='Koneksi internet kembali. Memeriksa sesi akun sebelum menyinkronkan catatan lokal...';}
+  try{
+   if(!sb||!cached)throw new Error('Sesi offline tidak tersedia. Login kembali dengan akun yang sama untuk menyinkronkan catatan.');
+   const {data,error}=await sb.auth.getSession();
+   if(error)throw error;
+   if(!data?.session?.user||data.session.user.id!==cached.userId){
+    if(banner)banner.textContent='Koneksi internet kembali, tetapi sesi akun yang sama belum aktif. Login kembali dengan akun Owner/Karyawan yang membuat catatan offline; data lokal tetap tersimpan dan belum disinkronkan.';
+    return;
+   }
+   offlineTransactionMode=false;
+   await loadFinanceWorkspace();
+   if(!financeBusiness||financeMemberUserId!==cached.userId){
+    offlineTransactionMode=true;
+    throw new Error('Usaha atau peran akun belum berhasil diverifikasi ulang. Catatan lokal tidak dikirim.');
+   }
+   await autoSyncLocalTransactionsIfReady();
+   const pending=transaksi.some(t=>t.offline_pending===true&&!t.offline_synced_at&&t.offline_user_id===cached.userId&&t.offline_business_id===cached.businessId&&t.offline_role===cached.role);
+   if(banner)banner.textContent=pending
+    ?'Koneksi sudah kembali. Sebagian catatan lokal masih menunggu sinkronisasi atau pemeriksaan. Jangan catat ulang; gunakan tombol Sinkronkan Catatan Lokal dan periksa laporan bersama.'
+    :'Koneksi sudah kembali. Antrean offline akun ini sudah tersinkron atau tidak ada catatan yang menunggu. Periksa laporan bersama sebelum melanjutkan.';
+  }catch(error){
+   offlineTransactionMode=true;
+   if(banner)banner.textContent='Koneksi kembali, tetapi sinkronisasi otomatis belum berhasil. Catatan lokal tetap tersimpan dan belum dianggap masuk laporan bersama. '+String(error?.message||error).slice(0,180);
+  }
+ });
  }
  offlineTransactionMode=true;financeMemberRole=cached.role;financeMemberUserId=cached.userId;financeCurrentUserName=cached.userName||'Pengguna tersimpan';financeBusiness={id:cached.businessId,business_name:cached.businessName||'Usaha tersimpan'};financeRows=[];
  document.body.classList.toggle('owner-verified',cached.role==='owner');document.body.classList.toggle('employee-verified',cached.role==='employee');
