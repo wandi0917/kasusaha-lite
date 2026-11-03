@@ -2330,6 +2330,22 @@ function activateOfflineTransactionMode(){
 function saveOfflineWorkspace(business,member,user){
  try{localStorage.setItem(OFFLINE_WORKSPACE_KEY,JSON.stringify({businessId:business.id,businessName:business.business_name,role:member.role,userId:user.id,userName:financeUserDisplayName(user),savedAt:new Date().toISOString()}));}catch(e){console.warn('Konteks offline tidak dapat disimpan:',e);}
 }
+// Jika koneksi terputus ketika tab Transaksi sedang terbuka, aktifkan mode offline
+// saat itu juga agar banner peringatan dan identitas lokal tidak terlambat muncul.
+if(!window.__kasusahaOfflineTransitionBound){
+ window.__kasusahaOfflineTransitionBound=true;
+ window.addEventListener('offline',()=>{
+  const panel=$('transaksi');
+  if(!panel||!panel.classList.contains('active'))return;
+  if(!activateOfflineTransactionMode()){
+   const banner=$('offlineTransactionBanner');
+   if(banner){
+    banner.hidden=false;
+    banner.textContent='Koneksi internet terputus. Transaksi yang dicatat hanya tersimpan di perangkat ini dan belum masuk laporan bersama. Login Owner/Karyawan belum tersimpan untuk mode offline; jangan menganggap data telah tersinkron.';
+   }
+  }
+ });
+}
 let platformFinanceData=null,platformFinanceBusy=false;
 function setPlatformFinanceStatus(message,isError=false){const el=$('platformFinanceStatus');if(el){el.textContent=message;el.style.color=isError?'#b42318':'';}}
 function platformFinancePeriodMatch(row,period,reference){
