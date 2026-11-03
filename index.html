@@ -4728,15 +4728,17 @@ async function saveAttendanceWage(){
   if(btn)btn.disabled=true;
   try{
    localStorage.setItem(attendanceWageKey(),String(wage));
-   const wageUpdate=sb.from('business_attendance').update({hourly_wage:wage,updated_at:new Date().toISOString()}).eq('business_id',financeBusiness.id).eq('user_id',financeMemberUserId);
-   const {data:updatedRows,error}=await wageUpdate.select('id');
+   const {data:result,error}=await sb.rpc('set_business_attendance_hourly_wage',{
+    p_business_id:financeBusiness.id,p_identity_id:null,p_user_id:financeMemberUserId,p_hourly_wage:wage
+   });
    if(error)throw error;
+   const updated=Number(result?.updated_rows||0);
    status.className='status';
-   status.textContent=(updatedRows||[]).length
-    ?'Gaji per jam tersimpan pada perangkat ini dan diterapkan pada '+updatedRows.length+' catatan absensi akun ini. Tarif juga akan digunakan pada absensi berikutnya di perangkat ini.'
-    :'Gaji per jam tersimpan pada perangkat ini dan akan digunakan pada absensi berikutnya. Belum ada catatan absensi akun ini yang perlu diperbarui di server.';
+   status.textContent=updated
+    ?'Tarif gaji per jam disimpan oleh Owner dan diterapkan pada '+updated+' catatan absensi. Tarif juga digunakan pada absensi berikutnya.'
+    :'Tarif gaji per jam disimpan oleh Owner dan akan digunakan pada absensi berikutnya.';
    await loadAttendance();
-  }catch(e){status.className='status error';status.textContent='Tarif tersimpan pada perangkat ini, tetapi pembaruan catatan server gagal: '+String(e.message||e).slice(0,160);}
+  }catch(e){status.className='status error';status.textContent='Gaji per jam gagal disimpan di server: '+String(e.message||e).slice(0,180);}
   finally{if(btn)btn.disabled=false;}
 }
 async function editAttendanceRecord(row){
@@ -4745,34 +4747,42 @@ async function editAttendanceRecord(row){
  const currentOut=row.check_out_at?new Date(row.check_out_at).toLocaleTimeString('en-GB',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'';
  const inValue=prompt('Edit jam masuk (format HH:MM:SS, waktu WIB). Kosongkan untuk menghapus jam masuk:',currentIn);if(inValue===null)return;
  const outValue=prompt('Edit jam pulang (format HH:MM:SS, waktu WIB). Kosongkan jika belum pulang:',currentOut);if(outValue===null)return;
- const validTime=v=>v===''||/^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(v);
+ const validTime=v=>v===''||/^([01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$/.test(v);
  if(!validTime(inValue.trim())||!validTime(outValue.trim())){alert('Format waktu tidak valid. Gunakan HH:MM:SS, contoh 19:41:30.');return;}
  if(outValue.trim()&&!inValue.trim()){alert('Jam masuk harus diisi jika jam pulang diisi.');return;}
  const toIso=v=>v.trim()?new Date(row.work_date+'T'+v.trim()+'+07:00').toISOString():null;
  const checkIn=inValue.trim()?toIso(inValue):null,checkOut=outValue.trim()?toIso(outValue):null;
  if(checkIn&&checkOut&&new Date(checkOut)<=new Date(checkIn)){alert('Jam pulang harus setelah jam masuk.');return;}
- try{const {error}=await sb.from('business_attendance').update({check_in_at:checkIn,check_out_at:checkOut,updated_at:new Date().toISOString()}).eq('id',row.id).eq('business_id',financeBusiness.id);if(error)throw error;const status=$('attendanceStatus');status.className='status';status.textContent='Catatan absensi berhasil diperbarui oleh Owner.';await loadAttendance();}
- catch(e){const status=$('attendanceStatus');status.className='status error';status.textContent='Gagal mengedit absensi. Periksa izin pembaruan Owner di Supabase: '+String(e.message||e).slice(0,180);}
+ try{
+  const {error}=await sb.rpc('edit_business_attendance_record',{
+   p_business_id:financeBusiness.id,p_attendance_id:row.id,p_check_in_at:checkIn,p_check_out_at:checkOut
+  });
+  if(error)throw error;
+  const status=$('attendanceStatus');status.className='status';status.textContent='Catatan absensi berhasil diperbarui oleh Owner.';
+  await loadAttendance();
+ }catch(e){const status=$('attendanceStatus');status.className='status error';status.textContent='Gagal mengedit absensi: '+String(e.message||e).slice(0,180);}
 }
 async function editAttendanceWage(identityId,item){
   if(financeMemberRole!=='owner'||!financeBusiness){alert('Hanya Owner yang dapat menetapkan gaji karyawan.');return;}
   const current=Number(item?.wage||0);
   const raw=prompt('Tetapkan gaji per jam untuk '+(item?.employee_name||'akun ini')+' (Rp). Nilai ini dikelola Owner dan diterapkan pada catatan absensi akun tersebut:',String(current));
   if(raw===null)return;
-  const wage=Number(String(raw).replace(/[.\s]/g,''));
+  const wage=Number(String(raw).replace(/[.\\s]/g,''));
   if(!Number.isSafeInteger(wage)||wage<0){alert('Gaji harus berupa bilangan bulat nol atau lebih.');return;}
-  const targetIds=new Set([String(item?.user_id||identityId)]);
-  for(const [userId,entry] of financeEmployeeDirectory.entries()){
-    if(String(entry?.identity_id||userId)===String(identityId))targetIds.add(String(userId));
-  }
-  if(String(identityId)===String(financeMemberUserId))targetIds.add(String(financeMemberUserId));
   const status=$('attendancePayrollStatus');
   try{
-    const {data,error}=await sb.from('business_attendance').update({hourly_wage:wage,updated_at:new Date().toISOString()})
-      .eq('business_id',financeBusiness.id).in('user_id',Array.from(targetIds)).select('id');
+    const {data:result,error}=await sb.rpc('set_business_attendance_hourly_wage',{
+      p_business_id:financeBusiness.id,
+      p_identity_id:identityId||null,
+      p_user_id:item?.user_id||identityId||null,
+      p_hourly_wage:wage
+    });
     if(error)throw error;
-    if(!data||!data.length)throw new Error('Tidak ada catatan absensi akun ini yang diperbarui.');
-    status.className='status';status.textContent='Gaji per jam berhasil ditetapkan Owner pada '+data.length+' catatan absensi. Catatan berikutnya akan mengikuti tarif terakhir yang ditetapkan.';
+    const updated=Number(result?.updated_rows||0);
+    status.className='status';
+    status.textContent=updated
+      ?'Tarif gaji '+(item?.employee_name||'karyawan')+' disimpan oleh Owner dan diterapkan pada '+updated+' catatan absensi. Tarif juga digunakan pada absensi berikutnya.'
+      :'Tarif gaji '+(item?.employee_name||'karyawan')+' disimpan oleh Owner untuk absensi berikutnya.';
     await loadAttendance();
   }catch(e){status.className='status error';status.textContent='Gagal menetapkan gaji: '+String(e.message||e).slice(0,200);}
 }
@@ -4896,24 +4906,8 @@ async function absenMasuk(){
   if(offlineTransactionMode)throw new Error('Absensi online memerlukan koneksi internet.');
   if(document.body.classList.contains('employee-device-pending'))throw new Error('Akun Karyawan belum diaktifkan oleh Owner.');
   if(!await periksaLisensiWorkspace(financeBusiness.id))throw new Error('Lisensi usaha belum terverifikasi. Minta Owner utama memeriksa aktivasi lisensi.');
-  const wageInput=$('attendanceHourlyWage');
-  let wage=financeMemberRole==='owner'?Number(wageInput?.value??localStorage.getItem(attendanceWageKey())??0):0;
-  if(financeMemberRole==='employee'){
-   const {data:latestWage,error:latestWageError}=await sb.from('business_attendance').select('hourly_wage').eq('business_id',financeBusiness.id).in('user_id',financeEmployeeIdentityUserIds).order('work_date',{ascending:false}).order('created_at',{ascending:false}).limit(1).maybeSingle();
-   if(latestWageError)throw latestWageError;
-   wage=Number(latestWage?.hourly_wage??wageInput?.value??0);
-  }
-  if(!Number.isSafeInteger(wage)||wage<0)throw new Error('Gaji per jam harus berupa bilangan bulat nol atau lebih.');
-  if(financeMemberRole==='owner')localStorage.setItem(attendanceWageKey(),String(wage));
-  const today=attendanceToday();
-  let duplicateQuery=sb.from('business_attendance').select('id').eq('business_id',financeBusiness.id).eq('work_date',today);
-  if(financeMemberRole==='employee')duplicateQuery=duplicateQuery.in('user_id',financeEmployeeIdentityUserIds);
-  else duplicateQuery=duplicateQuery.eq('user_id',financeMemberUserId);
-  const {data:existingAttendance,error:duplicateError}=await duplicateQuery.limit(1).maybeSingle();
-  if(duplicateError)throw duplicateError;
-  if(existingAttendance)throw new Error('Anda sudah memiliki catatan absensi hari ini pada akun karyawan yang sama.');
-  const {data,error}=await sb.from('business_attendance').insert({business_id:financeBusiness.id,user_id:financeMemberUserId,work_date:today,check_in_at:new Date().toISOString(),hourly_wage:wage}).select('id').single();
-  if(error){if(error.code==='23505')throw new Error('Anda sudah absen masuk hari ini.');throw error;}
+  const {error}=await sb.rpc('record_business_attendance_check_in',{p_business_id:financeBusiness.id});
+  if(error)throw error;
   await loadAttendance();await arahkanSetelahLoginFinance();
  }catch(e){$('attendanceStatus').className='status error';$('attendanceStatus').textContent='Absen masuk gagal: '+String(e.message||e).slice(0,200);btn.disabled=false;}
 }
@@ -4924,11 +4918,8 @@ async function absenPulang(){
   if(offlineTransactionMode)throw new Error('Absensi online memerlukan koneksi internet.');
   if(document.body.classList.contains('employee-device-pending'))throw new Error('Akun Karyawan belum diaktifkan oleh Owner.');
   if(!await periksaLisensiWorkspace(financeBusiness.id))throw new Error('Lisensi usaha belum terverifikasi. Minta Owner utama memeriksa aktivasi lisensi.');
-  let checkoutUpdate=sb.from('business_attendance').update({check_out_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('business_id',financeBusiness.id).eq('work_date',attendanceToday()).is('check_out_at',null);
-  if(financeMemberRole==='employee')checkoutUpdate=checkoutUpdate.in('user_id',financeEmployeeIdentityUserIds);
-  else checkoutUpdate=checkoutUpdate.eq('user_id',financeMemberUserId);
-  const {data,error}=await checkoutUpdate.select('id');
-  if(error)throw error;if(!data||!data.length)throw new Error('Absen masuk belum dilakukan atau absen pulang sudah tercatat.');
+  const {error}=await sb.rpc('record_business_attendance_check_out',{p_business_id:financeBusiness.id});
+  if(error)throw error;
   await loadAttendance();setFinanceStatus('Absen pulang berhasil dicatat.');
  }catch(e){$('attendanceStatus').className='status error';$('attendanceStatus').textContent='Absen pulang gagal: '+String(e.message||e).slice(0,200);btn.disabled=false;}
 }
