@@ -53,7 +53,7 @@ Deno.serve(async (req: Request) => {
     if (action === "status") {
       const { data: licenses, error: le } = await admin
         .from("kasusaha_licenses")
-        .select("id, order_id, product_name, status, activated_at, activation_user_id, activation_confirmed_at")
+        .select("id, order_id, product_name, status, activated_at, activation_user_id, activation_confirmed_at, package_code, package_name, cloud_started_at, cloud_expires_at")
         .eq("buyer_id", userId)
         .eq("status", "active")
         .limit(50);
@@ -124,7 +124,7 @@ Deno.serve(async (req: Request) => {
         if (metadataError) console.error("License metadata update:", metadataError.message);
       }
 
-      return respond({ success: true, active: true, message: "Lisensi KasUsaha Lite aktif dan pembayaran terverifikasi." });
+      return respond({ success: true, active: true, package_code: matchingLicense.package_code || "starter", package_name: matchingLicense.package_name || "Starter", cloud_started_at: matchingLicense.cloud_started_at || matchingLicense.activated_at || null, cloud_expires_at: matchingLicense.cloud_expires_at || null, message: "Lisensi KasUsaha Lite aktif dan pembayaran terverifikasi." });
     }
 
     const licenseKey = typeof body.license_key === "string" ? body.license_key.trim() : "";
@@ -134,7 +134,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: license, error: licenseError } = await admin
       .from("kasusaha_licenses")
-      .select("id, order_id, buyer_id, product_name, status, activated_at, activation_user_id, activation_confirmed_at")
+      .select("id, order_id, buyer_id, product_name, status, activated_at, activation_user_id, activation_confirmed_at, package_code, package_name, cloud_started_at, cloud_expires_at")
       .eq("license_key", licenseKey)
       .maybeSingle();
 
@@ -198,7 +198,7 @@ Deno.serve(async (req: Request) => {
       return respond({ success: false, active: false, message: "Aktivasi belum berhasil disimpan." }, 500);
     }
 
-    return respond({ success: true, active: true, message: "Lisensi KasUsaha Lite berhasil diverifikasi dan diaktifkan." });
+    return respond({ success: true, active: true, package_code: license.package_code || "starter", package_name: license.package_name || "Starter", cloud_started_at: license.cloud_started_at || license.activated_at || null, cloud_expires_at: license.cloud_expires_at || null, message: "Lisensi KasUsaha Lite berhasil diverifikasi dan diaktifkan." });
   } catch (error) {
     console.error("Activation error:", error);
     return respond({ success: false, active: false, message: "Terjadi kesalahan saat memproses lisensi." }, 500);
