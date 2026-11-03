@@ -93,6 +93,7 @@ if (!/kasusaha_get_business_package_entitlements/.test(html) ||
 
 
 const employeeSessionChecks = [
+  [/const allDisabled=\{barcode:false,/, html, "barcode entitlement must fail closed when package lookup fails"],
   [/m\.role = 'employee' AND private\.kasusaha_employee_device_is_paid\(w\.id\)/, employeeSessionMigration, "anonymous invite-code sessions must be limited to paid active Employees"],
   [/Sesi anonim hanya diizinkan untuk Karyawan/, employeeSessionMigration, "anonymous Owner and unpaid Employee cashier sessions must remain blocked"],
   [/location\.hostname!=='wandi0917\.github\.io'/, html, "legacy GitHub Pages traffic must redirect to the canonical Cloudflare app"],
