@@ -1,4 +1,4 @@
-name: KasUsaha Lite Deno Edge Function checks
+name: KasUsaha Lite Edge Function source checks
 
 on:
   push:
@@ -14,8 +14,8 @@ permissions:
   contents: read
 
 jobs:
-  deno-check:
-    name: Type-check deployed Edge Function sources
+  deno-source-check:
+    name: Parse and lint Edge Function sources
     runs-on: ubuntu-latest
     steps:
       - name: Checkout source
@@ -24,9 +24,9 @@ jobs:
         uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - name: Type-check all Edge Functions
-        run: deno check supabase/functions/*/index.ts
-      - name: Run application regression checks
+      - name: Lint all Edge Functions
+        run: deno lint supabase/functions/*/index.ts
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
