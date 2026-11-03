@@ -3681,7 +3681,7 @@ async function muatProdukAsalPengiriman(){
 let financeBusiness=null, financeMemberRole=null, financeMemberUserId=null, financeEmployeeIdentityUserIds=[], financeEmployeeDirectory=new Map(), financeRows=[], financeSelectedBusinessId=null, financeCurrentUserName='';
 let financePackageFeatures=null;
 function applyFinancePackageFeatures(features){
- const allDisabled={barcode:true,cashier:false,employees:false,attendance:false,basic_stock:false,marketplace:false,full_finance:false,sales_reports:false,basic_products:false,advanced_reports:false,priority_support:false};
+ const allDisabled={barcode:false,cashier:false,employees:false,attendance:false,basic_stock:false,marketplace:false,full_finance:false,sales_reports:false,basic_products:false,advanced_reports:false,priority_support:false};
  const flags=features&&typeof features==='object'?Object.assign({},allDisabled,features):allDisabled;
  [['package-no-full-finance','full_finance'],['package-no-attendance','attendance'],['package-no-employees','employees'],['package-no-barcode','barcode']].forEach(([cls,key])=>document.body.classList.toggle(cls,flags[key]===false));
  const reports=document.getElementById('reportCategorySelect');
