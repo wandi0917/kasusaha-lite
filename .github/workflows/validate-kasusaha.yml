@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - "hardening/**"
+      - "sync/**"
   pull_request:
     branches:
       - main
