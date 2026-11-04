@@ -5349,31 +5349,7 @@ function quickSaleDraftLines(){
 }
 function quickSaleDraftTotal(lines){return lines.reduce((n,l)=>n+l.quantity*l.unit_price,0);}
 function quickSaleDraftStatus(message,isError=false){const el=$('quickSaleOpenBillsStatus');if(el){el.className=isError?'status error':'status';el.textContent=message;}}
-let quickSaleBillLookupTimer=null;
-function scheduleQuickSaleBillLookup(){
- if(quickSaleBillLookupTimer)clearTimeout(quickSaleBillLookupTimer);
- quickSaleBillLookupTimer=setTimeout(()=>{lookupQuickSaleOpenBill();},350);
-}
-async function lookupQuickSaleOpenBill(){
- const status=$('quickSaleBillLookupStatus');if(!status||!sb||!financeBusiness)return;
- if(activeOpenBillId)return;
- const table=String($('quickSaleTableNumber')?.value||'').trim(),customer=String($('quickSaleCustomerName')?.value||'').trim();
- if(!table&&!customer){status.textContent='Masukkan nomor meja atau nama pelanggan untuk mencari tagihan yang masih terbuka.';return;}
- status.textContent='Mencari tagihan tersimpan...';
- try{
-  const requests=[];
-  if(table)requests.push(sb.from('store_open_bills').select('id,table_number,customer_name,total_amount,created_at').eq('business_id',financeBusiness.id).eq('status','open').eq('table_number',table).order('created_at',{ascending:false}).limit(10));
-  if(customer)requests.push(sb.from('store_open_bills').select('id,table_number,customer_name,total_amount,created_at').eq('business_id',financeBusiness.id).eq('status','open').ilike('customer_name','%'+customer.replace(/[%,]/g,'')+'%').order('created_at',{ascending:false}).limit(10));
-  const results=await Promise.all(requests),found=new Map();
-  for(const result of results){if(result.error)throw result.error;(result.data||[]).forEach(b=>found.set(b.id,b));}
-  const matches=[...found.values()].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
-  if(!matches.length){status.textContent='Tidak ada tagihan terbuka dengan nomor meja/nama tersebut. Silakan lanjutkan membuat pesanan baru.';return;}
-  if(matches.length===1){status.textContent='Tagihan ditemukan. Memuat rincian barang dan total...';await openQuickSaleBill(matches[0].id);if(activeOpenBillId!==matches[0].id)return;status.textContent='Tagihan ditemukan dan rincian pesanan sudah dimuat. Periksa barang dan total sebelum melanjutkan.';return;}
-  status.replaceChildren();
-  const intro=document.createElement('div');intro.textContent='Ditemukan '+matches.length+' tagihan. Pilih pesanan yang benar:';status.appendChild(intro);
-  matches.forEach(b=>{const button=document.createElement('button');button.type='button';button.className='secondary wide';button.style.marginTop='6px';button.textContent=(b.table_number?'Meja '+b.table_number:'Tanpa nomor meja')+(b.customer_name?' • '+b.customer_name:'')+' — '+formatStoreRupiah(b.total_amount)+' — '+new Date(b.created_at).toLocaleString('id-ID');button.addEventListener('click',async()=>{await openQuickSaleBill(b.id);if(activeOpenBillId===b.id)status.textContent='Rincian tagihan berhasil dimuat.';});status.appendChild(button);});
- }catch(e){status.textContent='Pencarian tagihan gagal: '+String(e.message||e).slice(0,200);status.className='status error';}
-}
+// Pencarian tagihan lama dilakukan manual dari daftar tagihan; tidak ada auto-lookup dari kolom pelanggan/meja.
 async function loadQuickSaleOpenBills(){
  const host=$('quickSaleOpenBillsList');if(!host)return;host.replaceChildren();if(!sb||!financeBusiness){quickSaleDraftStatus('Login dan pilih usaha untuk melihat tagihan belum dibayar.',true);return;}
  quickSaleDraftStatus('Memuat tagihan belum dibayar...');
