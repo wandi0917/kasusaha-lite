@@ -5335,7 +5335,7 @@ function quickSaleDraftLines(){
 function quickSaleDraftTotal(lines){return lines.reduce((n,l)=>n+l.quantity*l.unit_price,0);}
 function quickSaleDraftStatus(message,isError=false){const el=$('quickSaleOpenBillsStatus');if(el){el.className=isError?'status error':'status';el.textContent=message;}}
 async function loadQuickSaleOpenBills(){
- const host=$('quickSaleOpenBillsList');if(!host||!sb||!financeBusiness)return;
+ const host=$('quickSaleOpenBillsList');if(!host)return;host.replaceChildren();if(!sb||!financeBusiness){quickSaleDraftStatus('Login dan pilih usaha untuk melihat tagihan belum dibayar.',true);return;}
  quickSaleDraftStatus('Memuat tagihan belum dibayar...');
  try{
   let data=[];for(let offset=0;;offset+=500){const {data:page,error}=await sb.from('store_open_bills').select('id,table_number,customer_name,lines,total_amount,status,created_at,updated_at,version').eq('business_id',financeBusiness.id).eq('status','open').order('created_at',{ascending:false}).range(offset,offset+499);if(error)throw error;if(page?.length)data.push(...page);if(!page||page.length<500)break;}
@@ -5421,11 +5421,12 @@ $('quickSalePayDraft')?.addEventListener('click',async function(){
   if(!confirm('Konfirmasi pembayaran '+formatStoreRupiah(total)+'? Setelah dikonfirmasi, penjualan masuk laporan dan stok dikurangi satu kali.'))return;
   const {data,error}=await sb.rpc('settle_store_open_bill',{p_bill_id:activeOpenBillId,p_cash_received:cash});if(error)throw error;
   if(!data?.ok)throw new Error('Server belum mengonfirmasi pembayaran.');
+  const wasAlreadyPaid=!!data.already_paid;
   const billLabel=$('quickSaleTableNumber').value?'Meja '+$('quickSaleTableNumber').value:($('quickSaleCustomerName').value||'Kasir');
   activeOpenBillId=null;$('quickSaleForm').reset();$('quickSaleCustomerName').value='';$('quickSaleTableNumber').value='';$('quickSaleCashReceived').value='';
   $('quickSaleItems').replaceChildren();addQuickSaleLine();$('quickSaleSaveDraft').textContent='＋ Simpan sebagai tagihan belum dibayar';$('quickSalePayDraft').hidden=true;$('quickSaleSave').hidden=false;
   await loadQuickSaleOpenBills();await loadFinanceWorkspace();
-  setFinanceStatus('Pembayaran '+billLabel+' berhasil dikonfirmasi: '+formatStoreRupiah(total)+'. Penjualan masuk laporan dan stok dikurangi oleh server.');
+  setFinanceStatus(wasAlreadyPaid?'Tagihan '+billLabel+' ternyata sudah dibayar sebelumnya. Sistem tidak membuat penjualan atau pengurangan stok kedua kali.':'Pembayaran '+billLabel+' berhasil dikonfirmasi: '+formatStoreRupiah(total)+'. Penjualan masuk laporan dan stok dikurangi oleh server.');
  }catch(e){quickSaleDraftStatus('Pembayaran belum dikonfirmasi: '+String(e.message||e).slice(0,250),true);}finally{this.disabled=false;}
 });
 $('quickSaleTableNumber')?.addEventListener('input',()=>updateQuickSalePreview(false));
