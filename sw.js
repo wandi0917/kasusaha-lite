@@ -1,12 +1,13 @@
 /* KasUsaha Lite PWA service worker. Only caches the app shell and its banner; never caches Supabase, checkout, or payment API responses. */
 'use strict';
 const CACHE_PREFIX = 'kasusaha-lite-shell-';
-const CACHE_NAME = CACHE_PREFIX + 'v50';
+const CACHE_NAME = CACHE_PREFIX + 'v51';
 const appRoot = new URL('./', self.registration.scope);
 const manifestUrl = new URL('manifest.webmanifest', self.registration.scope);
 const iconUrl = new URL('icons/kasusaha-icon.svg', self.registration.scope);
 const bannerUrl = new URL('assets/kasusaha-banner-baru-3.webp?v=20261102', self.registration.scope);
 const cashierPreviewUrl = new URL('KasUsaha%20Lite%20POS%20Dashboard.png', self.registration.scope);
+const dashboardPromoUrl = new URL('Gambar%20banner%20kedua.png', self.registration.scope);
 // Cache pustaka Supabase yang dimuat sebagai script klasik dari CDN agar shell kasir
 // tetap dapat dijalankan saat perangkat offline setelah pernah dibuka online.
 const supabaseScriptUrl = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0';
@@ -19,7 +20,7 @@ const cachedScriptUrls = [supabaseScriptUrl, ...barcodeScriptUrls];
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
-    await cache.addAll([appRoot.href, manifestUrl.href, iconUrl.href, bannerUrl.href, cashierPreviewUrl.href]);
+    await cache.addAll([appRoot.href, manifestUrl.href, iconUrl.href, bannerUrl.href, cashierPreviewUrl.href, dashboardPromoUrl.href]);
     // Cache script klasik pihak ketiga untuk mempercepat pemuatan PWA.
     // Respons opaque dari CDN dapat disimpan dan dipakai ulang oleh browser.
     await Promise.allSettled(cachedScriptUrls.map(async scriptUrl => {
@@ -86,7 +87,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  if (url.href === manifestUrl.href || url.href === iconUrl.href || url.href === bannerUrl.href) {
+  if (url.href === manifestUrl.href || url.href === iconUrl.href || url.href === bannerUrl.href || url.href === cashierPreviewUrl.href || url.href === dashboardPromoUrl.href) {
     event.respondWith((async () => {
       const cached = await caches.match(request);
       if (cached) return cached;
