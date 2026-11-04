@@ -5384,7 +5384,7 @@ async function loadQuickSaleOpenBills(){
   data.forEach(b=>{
    const card=document.createElement('div');card.className='item';card.style.margin='8px 0';card.dataset.search=(String(b.table_number||'')+' '+String(b.customer_name||'')+' '+(b.table_number?'meja '+b.table_number:'')).toLocaleLowerCase('id-ID');
    const title=document.createElement('strong');title.textContent=(b.table_number?'Meja '+b.table_number:'Kasir')+(b.customer_name?' • '+b.customer_name:'');
-   const meta=document.createElement('p');meta.className='small';meta.textContent='Dibuat '+new Date(b.created_at).toLocaleString('id-ID')+' • '+(b.lines||[]).length+' baris barang';
+   const meta=document.createElement('p');meta.className='small';meta.textContent='No. tagihan '+String(b.id||'').slice(0,8).toUpperCase()+' • Dibuat '+new Date(b.created_at).toLocaleString('id-ID')+' • '+(b.lines||[]).length+' baris barang';
    const amount=document.createElement('p');amount.className='price';amount.textContent='TOTAL TAGIHAN: '+formatStoreRupiah(b.total_amount);
    const detail=document.createElement('div');detail.className='small';detail.style.margin='8px 0';detail.style.padding='8px';detail.style.background='#f8fafc';detail.style.borderRadius='8px';
    (b.lines||[]).forEach(line=>{const product=storeProductRows.find(p=>String(p.id)===String(line.product_id));const row=document.createElement('div');row.textContent=(line.product_name||product?.product_name||'Produk')+(line.product_code?' ['+line.product_code+']':'')+' × '+Number(line.quantity||0)+' = '+formatStoreRupiah(Number(line.quantity||0)*Number(line.unit_price||0));detail.appendChild(row);});
@@ -5449,13 +5449,24 @@ $('quickSaleNewDraft')?.addEventListener('click',async function(){
  const button=this;if(button.disabled)return;button.disabled=true;
  try{
   const hasItems=quickSaleItemRows().some(row=>String(row.querySelector('.quick-sale-product')?.value||'').trim());
-  // Jangan buang pesanan aktif: simpan otomatis sebagai tagihan terbuka sebelum form dikosongkan.
-  if(hasItems)await saveQuickSaleDraft();
-  activeOpenBillId=null;$('quickSaleForm').reset();$('quickSaleTableNumber').value='';$('quickSaleCustomerName').value='';$('quickSaleCashReceived').value='';
-  $('quickSaleItems').replaceChildren();addQuickSaleLine();$('quickSaleSaveDraft').textContent='＋ Simpan sebagai tagihan belum dibayar';$('quickSalePayDraft').hidden=true;$('quickSaleSave').hidden=false;
-  updateQuickSalePreview(false);await loadQuickSaleOpenBills();
-  quickSaleDraftStatus(hasItems?'Tagihan sebelumnya otomatis tersimpan. Form penjualan baru sudah kosong dan siap digunakan.':'Form penjualan baru siap digunakan.');
- }catch(e){quickSaleDraftStatus('Penjualan baru belum dibuka agar pesanan sebelumnya tidak hilang: '+String(e.message||e).slice(0,220),true);}
+  const hasHeader=!!(String($('quickSaleTableNumber')?.value||'').trim()||String($('quickSaleCustomerName')?.value||'').trim());
+  const hasDraftData=hasItems||hasHeader||!!activeOpenBillId;
+  // Simpan tagihan aktif dahulu. Data yang belum lengkap tidak boleh dibuang diam-diam.
+  if(hasDraftData)await saveQuickSaleDraft();
+  activeOpenBillId=null;
+  const form=$('quickSaleForm');if(form)form.reset();
+  $('quickSaleTableNumber').value='';$('quickSaleCustomerName').value='';$('quickSaleCashReceived').value='';
+  $('quickSaleItems').replaceChildren();addQuickSaleLine();
+  $('quickSaleSaveDraft').textContent='＋ Simpan sebagai tagihan belum dibayar';
+  $('quickSalePayDraft').hidden=true;$('quickSaleSave').hidden=false;
+  $('quickSaleOpenBillsSearch').value='';
+  updateQuickSalePreview(false);
+  await loadQuickSaleOpenBills();
+  quickSaleDraftStatus(hasDraftData?'Tagihan sebelumnya tersimpan di daftar tagihan belum dibayar. Form baru sudah dikosongkan.':'Form penjualan baru siap digunakan.');
+  $('quickSaleCustomerName').focus();
+ }catch(e){
+  quickSaleDraftStatus('Penjualan baru belum dibuka agar tagihan sebelumnya tidak hilang. Lengkapi barang, jumlah, dan harga terlebih dahulu. '+String(e.message||e).slice(0,180),true);
+ }
  finally{button.disabled=false;}
 });
 $('quickSaleSaveDraft')?.addEventListener('click',async function(){
