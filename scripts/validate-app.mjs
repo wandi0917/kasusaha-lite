@@ -199,7 +199,7 @@ const operationalChecks = [
   [/package_code, package_name, cloud_started_at, cloud_expires_at/, licenseActivation, "license status must return package and cloud-term metadata"],
   [/kasusaha_lookup_employee_invite/, employeeActivation, "employee login must look up invite codes through the protected RPC"],
   [/BITESHIP_ENABLE_SHIPMENT_BOOKING/, biteshipShipment, "Biteship shipment booking must remain explicitly gated until verified"],
-  [/if \(instantCourier[\\s\\S]{0,700}const \\{ data: lock/, biteshipShipment, "Biteship coordinate validation must happen before locking an order as creating"],
+  [/if \(instantCourier[\s\S]{0,700}const \{ data: lock/, biteshipShipment, "Biteship coordinate validation must happen before locking an order as creating"],
   [/verification_status["']?,\s*["']verified["']/, biteshipShipment, "Biteship shipment creation must require a verified payment event"],
   [/BITESHIP_WEBHOOK_SIGNATURE_KEY/, biteshipWebhook, "Biteship webhook must verify its configured signature key"],
   [/BITESHIP_WEBHOOK_SIGNATURE_SECRET/, biteshipWebhook, "Biteship webhook must verify its configured signature secret"],
