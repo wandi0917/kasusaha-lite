@@ -198,8 +198,20 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const serverKey = Deno.env.get("MIDTRANS_SERVER_KEY");
 
-    const production =
-      norm(Deno.env.get("MIDTRANS_IS_PRODUCTION")) === "true";
+    // KasUsaha Lite is explicitly locked to Midtrans Sandbox for this deployment.
+    // Missing or Production configuration must fail closed; never create real charges.
+    const configuredMode = norm(Deno.env.get("MIDTRANS_IS_PRODUCTION"));
+    if (configuredMode !== "false") {
+      return reply(
+        {
+          success: false,
+          code: "SANDBOX_ONLY",
+          error: "Pembayaran saat ini dikunci ke Sandbox. Periksa MIDTRANS_IS_PRODUCTION di Supabase.",
+        },
+        503,
+      );
+    }
+    const production = false;
 
     const finishUrl = "https://kasusaha-lite.pages.dev/?payment=return";
 
@@ -333,7 +345,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (shippingItemsError || !orderItemsForShipping?.length) {
       return reply({ success: false, error: "Rincian pesanan belum dapat diverifikasi." }, 500);
     }
-    const hasPhysicalProduct = orderItemsForShipping.some((item) => Number(item.product_id) !== 7);
+    // Semua produk lisensi/paket digital (ID 7-10) tidak memerlukan pengiriman.
+    const hasPhysicalProduct = orderItemsForShipping.some(
+      (item) => ![7, 8, 9, 10].includes(Number(item.product_id)),
+    );
     if (hasPhysicalProduct && (
       order.shipping_provider !== "Biteship" ||
       !order.shipping_courier_code ||
