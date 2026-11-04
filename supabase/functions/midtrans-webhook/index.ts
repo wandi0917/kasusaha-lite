@@ -585,7 +585,8 @@ Deno.serve(async (req: Request) => {
   );
   const statusCode = String(notification.status_code ?? "");
   const grossAmount = String(notification.gross_amount ?? "");
-  const signatureKey = String(notification.signature_key ?? "");
+  // Normalize harmless formatting differences while preserving the exact signed fields.
+  const signatureKey = String(notification.signature_key ?? "").trim().toLowerCase();
 
   if (
     !midtransOrderId ||
