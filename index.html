@@ -1901,7 +1901,7 @@ async function bagikanKasUsahaLite(){
 
 <form id="quickSaleForm" class="card" hidden style="background:#f8fbff">
 <label for="quickSaleTableNumber">Nomor meja (kosongkan untuk transaksi kasir)</label><input id="quickSaleTableNumber" type="text" maxlength="20" autocomplete="off" placeholder="Contoh: 1, 5, atau VIP-2">
-<label for="quickSaleCustomerName">Nama pelanggan (opsional)</label><input id="quickSaleCustomerName" type="text" maxlength="80" autocomplete="off" placeholder="Contoh: Budi / Ibu Sari">
+<label for="quickSaleCustomerName">Nama pelanggan (opsional)</label><input id="quickSaleCustomerName" type="text" maxlength="80" autocomplete="off" placeholder="Contoh: Budi / Ibu Sari"><div id="quickSaleBillLookupStatus" class="status" role="status" aria-live="polite">Masukkan nomor meja atau nama pelanggan untuk mencari tagihan yang masih terbuka.</div>
 <div class="card" id="quickSaleBarcodePanel" style="background:#f0fdf4;border:1px solid #86c9a0">
 <strong>Scan barang — Scanner Bluetooth / kamera HP</strong>
 <label for="quickSaleBarcodeInput">Arahkan scanner Bluetooth ke barcode atau ketik/pindai kode di sini</label>
@@ -4657,7 +4657,17 @@ async function bukaPanelTransaksi(tujuan){
     if(tujuan==='kasir'||tujuan==='stok'){
       try{
         await loadStoreProducts();
-        if(tujuan==='kasir'){if(!quickSaleItemRows().length)addQuickSaleLine();updateQuickSalePreview();await loadQuickSaleOpenBills();}
+        if(tujuan==='kasir'){
+          const currentHasProducts=quickSaleItemRows().some(row=>String(row.querySelector('.quick-sale-product')?.value||'').trim());
+          if(currentHasProducts){
+            // Shortcut "Buat penjualan baru" must preserve the current order as an unpaid bill first.
+            await saveQuickSaleDraft();
+            activeOpenBillId=null;$('quickSaleForm').reset();$('quickSaleTableNumber').value='';$('quickSaleCustomerName').value='';$('quickSaleCashReceived').value='';
+            $('quickSaleItems').replaceChildren();addQuickSaleLine();$('quickSaleSaveDraft').textContent='＋ Simpan sebagai tagihan belum dibayar';$('quickSalePayDraft').hidden=true;$('quickSaleSave').hidden=false;
+            const lookup=$('quickSaleBillLookupStatus');if(lookup)lookup.textContent='Pesanan sebelumnya tersimpan sebagai tagihan belum dibayar. Form baru siap digunakan.';
+          }else if(!quickSaleItemRows().length)addQuickSaleLine();
+          updateQuickSalePreview();await loadQuickSaleOpenBills();
+        }
         else if(isOwner){catalog?.scrollIntoView({behavior:'smooth',block:'start'});}
       }catch(e){setFinanceStatus((tujuan==='kasir'?'Kasir':'Menu barang dan stok')+' belum dapat memuat daftar barang: '+String(e.message||e).slice(0,180),true);}
     }
@@ -5330,10 +5340,30 @@ function quickSaleDraftLines(){
  const rows=quickSaleItemRows().map(row=>quickSaleLineData(row,false));
  if(!rows.length||rows.some(d=>!d.valid||!d.p||!Number.isSafeInteger(d.qty)||d.qty<1))throw new Error('Lengkapi semua barang dan jumlah sebelum menyimpan tagihan.');
  if(rows.some(d=>!d.stockOk))throw new Error('Jumlah salah satu barang melebihi stok tersedia. Stok tidak dipesan saat tagihan masih terbuka.');
- return rows.map(d=>({product_id:d.p.id,quantity:d.qty,unit_price:d.price}));
+ return rows.map(d=>({product_id:d.p.id,product_code:d.p.product_code,product_name:d.p.product_name,quantity:d.qty,unit_price:d.price}));
 }
 function quickSaleDraftTotal(lines){return lines.reduce((n,l)=>n+l.quantity*l.unit_price,0);}
 function quickSaleDraftStatus(message,isError=false){const el=$('quickSaleOpenBillsStatus');if(el){el.className=isError?'status error':'status';el.textContent=message;}}
+async function lookupQuickSaleOpenBill(){
+ const status=$('quickSaleBillLookupStatus');if(!status||!sb||!financeBusiness)return;
+ if(activeOpenBillId)return;
+ const table=String($('quickSaleTableNumber')?.value||'').trim(),customer=String($('quickSaleCustomerName')?.value||'').trim();
+ if(!table&&!customer){status.textContent='Masukkan nomor meja atau nama pelanggan untuk mencari tagihan yang masih terbuka.';return;}
+ status.textContent='Mencari tagihan tersimpan...';
+ try{
+  const requests=[];
+  if(table)requests.push(sb.from('store_open_bills').select('id,table_number,customer_name,total_amount,created_at').eq('business_id',financeBusiness.id).eq('status','open').eq('table_number',table).order('created_at',{ascending:false}).limit(10));
+  if(customer)requests.push(sb.from('store_open_bills').select('id,table_number,customer_name,total_amount,created_at').eq('business_id',financeBusiness.id).eq('status','open').ilike('customer_name',customer).order('created_at',{ascending:false}).limit(10));
+  const results=await Promise.all(requests),found=new Map();
+  for(const result of results){if(result.error)throw result.error;(result.data||[]).forEach(b=>found.set(b.id,b));}
+  const matches=[...found.values()].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+  if(!matches.length){status.textContent='Tidak ada tagihan terbuka dengan nomor meja/nama tersebut. Silakan lanjutkan membuat pesanan baru.';return;}
+  if(matches.length===1){status.textContent='Tagihan ditemukan. Memuat rincian barang dan total...';await openQuickSaleBill(matches[0].id);status.textContent='Tagihan ditemukan dan rincian pesanan sudah dimuat. Periksa barang dan total sebelum melanjutkan.';return;}
+  status.replaceChildren();
+  const intro=document.createElement('div');intro.textContent='Ditemukan '+matches.length+' tagihan. Pilih pesanan yang benar:';status.appendChild(intro);
+  matches.forEach(b=>{const button=document.createElement('button');button.type='button';button.className='secondary wide';button.style.marginTop='6px';button.textContent=(b.table_number?'Meja '+b.table_number:'Tanpa nomor meja')+(b.customer_name?' • '+b.customer_name:'')+' — '+formatStoreRupiah(b.total_amount)+' — '+new Date(b.created_at).toLocaleString('id-ID');button.addEventListener('click',async()=>{await openQuickSaleBill(b.id);});status.appendChild(button);});
+ }catch(e){status.textContent='Pencarian tagihan gagal: '+String(e.message||e).slice(0,200);status.className='status error';}
+}
 async function loadQuickSaleOpenBills(){
  const host=$('quickSaleOpenBillsList');if(!host)return;host.replaceChildren();if(!sb||!financeBusiness){quickSaleDraftStatus('Login dan pilih usaha untuk melihat tagihan belum dibayar.',true);return;}
  quickSaleDraftStatus('Memuat tagihan belum dibayar...');
@@ -5347,7 +5377,7 @@ async function loadQuickSaleOpenBills(){
    const meta=document.createElement('p');meta.className='small';meta.textContent='Dibuat '+new Date(b.created_at).toLocaleString('id-ID')+' • '+(b.lines||[]).length+' baris barang';
    const amount=document.createElement('p');amount.className='price';amount.textContent='TOTAL TAGIHAN: '+formatStoreRupiah(b.total_amount);
    const detail=document.createElement('div');detail.className='small';detail.style.margin='8px 0';detail.style.padding='8px';detail.style.background='#f8fafc';detail.style.borderRadius='8px';
-   (b.lines||[]).forEach(line=>{const product=storeProductRows.find(p=>String(p.id)===String(line.product_id));const row=document.createElement('div');row.textContent=(product?.product_name||'Produk')+' × '+Number(line.quantity||0)+' = '+formatStoreRupiah(Number(line.quantity||0)*Number(line.unit_price||0));detail.appendChild(row);});
+   (b.lines||[]).forEach(line=>{const product=storeProductRows.find(p=>String(p.id)===String(line.product_id));const row=document.createElement('div');row.textContent=(line.product_name||product?.product_name||'Produk')+(line.product_code?' ['+line.product_code+']':'')+' × '+Number(line.quantity||0)+' = '+formatStoreRupiah(Number(line.quantity||0)*Number(line.unit_price||0));detail.appendChild(row);});
    const actions=document.createElement('div');actions.className='row-actions';
    const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Buka / Edit';edit.addEventListener('click',()=>openQuickSaleBill(b.id));
    const cancel=document.createElement('button');cancel.type='button';cancel.className='danger';cancel.textContent='Batalkan';cancel.addEventListener('click',async()=>{
@@ -5408,7 +5438,7 @@ async function saveQuickSaleDraft(){
 $('quickSaleNewDraft')?.addEventListener('click',async function(){
  const button=this;if(button.disabled)return;button.disabled=true;
  try{
-  const hasItems=quickSaleItemRows().some(row=>String(row.querySelector('.quick-sale-product')?.value||'').trim()||String(row.querySelector('.quick-sale-qty')?.value||'').trim());
+  const hasItems=quickSaleItemRows().some(row=>String(row.querySelector('.quick-sale-product')?.value||'').trim());
   // Jangan buang pesanan aktif: simpan otomatis sebagai tagihan terbuka sebelum form dikosongkan.
   if(hasItems)await saveQuickSaleDraft();
   activeOpenBillId=null;$('quickSaleForm').reset();$('quickSaleTableNumber').value='';$('quickSaleCustomerName').value='';$('quickSaleCashReceived').value='';
@@ -5441,6 +5471,10 @@ $('quickSalePayDraft')?.addEventListener('click',async function(){
 });
 $('quickSaleTableNumber')?.addEventListener('input',()=>updateQuickSalePreview(false));
 $('quickSaleCustomerName')?.addEventListener('input',()=>updateQuickSalePreview(false));
+$('quickSaleTableNumber')?.addEventListener('change',()=>lookupQuickSaleOpenBill());
+$('quickSaleTableNumber')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lookupQuickSaleOpenBill();}});
+$('quickSaleCustomerName')?.addEventListener('change',()=>lookupQuickSaleOpenBill());
+$('quickSaleCustomerName')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lookupQuickSaleOpenBill();}});
 
 $('quickSaleCashReceived')?.addEventListener('input',()=>updateQuickSalePreview(false));
 document.querySelectorAll('.quick-sale-cash-option').forEach(button=>button.addEventListener('click',()=>{
