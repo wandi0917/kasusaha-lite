@@ -88,6 +88,7 @@ function terminal(data: MidStatus): boolean {
  * - /snap/v2/vtweb/{token}
  * - /snap/v2/redirection/{token}
  * - /snap/v3/redirect/{token}
+ * - /snap/v3/redirection/{token}
  * - /snap/v4/redirection/{token}
  *
  * Host harus sesuai dengan mode Sandbox atau Production.
@@ -110,6 +111,7 @@ function validRedirect(
       /^\/snap\/v2\/vtweb\/[^/]+\/?$/.test(url.pathname) ||
       /^\/snap\/v2\/redirection\/[^/]+\/?$/.test(url.pathname) ||
       /^\/snap\/v3\/redirect\/[^/]+\/?$/.test(url.pathname) ||
+      /^\/snap\/v3\/redirection\/[^/]+\/?$/.test(url.pathname) ||
       /^\/snap\/v4\/redirection\/[^/]+\/?$/.test(url.pathname);
 
     return (
