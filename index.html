@@ -3148,7 +3148,7 @@ async function cekOngkirBiteship(){
   const detail=raw.toLowerCase();
   select.replaceChildren(new Option('Ongkir belum tersedia — periksa pesan',''));
   let guidance='Tarif belum berhasil dihitung. Periksa pesan kesalahan di bawah; jangan membuat pesanan sebelum layanan dan ongkir berhasil dipilih.';
-  if(detail.includes('no sufficient balance')||detail.includes('insufficient balance')||detail.includes('top up')){
+  if(detail.includes('no sufficient balance')||detail.includes('insufficient balance')||detail.includes('top up')||detail.includes('saldo akun biteship')){
    guidance='Koneksi ke Biteship dan kode pos asal/tujuan sudah mencapai server Biteship, tetapi saldo akun Biteship tidak mencukupi untuk memanggil API tarif. Isi ulang saldo/kuota API Biteship pada dashboard akun Biteship, lalu tekan Cek ongkir kembali. Ini bukan kesalahan alamat produk.';
   }else if(detail.includes('kode pos asal')||detail.includes('origin_postal_code')){
    guidance='Kode pos asal produk penjual belum valid. Buka Produk Saya → data pengiriman produk dan isi kode pos asal 5 digit.';
