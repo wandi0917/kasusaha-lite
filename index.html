@@ -4210,7 +4210,7 @@ async function loadFinanceWorkspace(){
  try{return await task;}finally{if(financeWorkspaceLoadPromise===task)financeWorkspaceLoadPromise=null;}
 }
 $('financeForm')?.addEventListener('submit',async function(e){
- e.preventDefault();if(!sb||!financeBusiness||!financeMemberRole||!financeMemberUserId){setFinanceStatus('Hubungkan akun ke usaha terlebih dahulu.',true);return;}
+ e.preventDefault();if(activeOpenBillId){setFinanceStatus('Anda sedang membuka tagihan yang belum dibayar. Gunakan tombol Bayar tagihan tersimpan agar tidak tercatat sebagai penjualan ganda.',true);return;}if(!sb||!financeBusiness||!financeMemberRole||!financeMemberUserId){setFinanceStatus('Hubungkan akun ke usaha terlebih dahulu.',true);return;}
  const description=$('financeDescription').value.trim(),amount=Number($('financeAmount').value),date=$('financeDate').value,category=$('financeCategory').value,type=financeMemberRole==='employee'?'income':$('financeType').value;
  if(!description||description.length>300||!Number.isSafeInteger(amount)||amount<=0||!date||!category){setFinanceStatus('Periksa keterangan (maksimal 300 karakter), tanggal, kategori, dan nominal. Nominal harus bilangan bulat positif.',true);return;}
  const btn=$('financeSave');btn.disabled=true;
@@ -5338,8 +5338,8 @@ async function loadQuickSaleOpenBills(){
  const host=$('quickSaleOpenBillsList');if(!host||!sb||!financeBusiness)return;
  quickSaleDraftStatus('Memuat tagihan belum dibayar...');
  try{
-  const {data,error}=await sb.from('store_open_bills').select('id,table_number,customer_name,lines,total_amount,status,created_at,updated_at,version').eq('business_id',financeBusiness.id).eq('status','open').order('created_at',{ascending:false}).limit(100);
-  if(error)throw error;host.replaceChildren();
+  let data=[];for(let offset=0;;offset+=500){const {data:page,error}=await sb.from('store_open_bills').select('id,table_number,customer_name,lines,total_amount,status,created_at,updated_at,version').eq('business_id',financeBusiness.id).eq('status','open').order('created_at',{ascending:false}).range(offset,offset+499);if(error)throw error;if(page?.length)data.push(...page);if(!page||page.length<500)break;}
+  host.replaceChildren();
   if(!data?.length){quickSaleDraftStatus('Belum ada tagihan tersimpan.');return;}
   data.forEach(b=>{
    const card=document.createElement('div');card.className='item';card.style.margin='8px 0';card.dataset.search=(String(b.table_number||'')+' '+String(b.customer_name||'')+' '+(b.table_number?'meja '+b.table_number:'')).toLocaleLowerCase('id-ID');
@@ -5350,7 +5350,7 @@ async function loadQuickSaleOpenBills(){
    const edit=document.createElement('button');edit.type='button';edit.className='secondary';edit.textContent='Buka / Edit';edit.addEventListener('click',()=>openQuickSaleBill(b.id));
    const cancel=document.createElement('button');cancel.type='button';cancel.className='danger';cancel.textContent='Batalkan';cancel.addEventListener('click',async()=>{
     if(!confirm('Batalkan tagihan ini? Tagihan tidak masuk laporan dan stok tidak berubah.'))return;
-    cancel.disabled=true;try{const {error}=await sb.from('store_open_bills').update({status:'cancelled',updated_at:new Date().toISOString(),version:Number(b.version||1)+1}).eq('id',b.id).eq('status','open');if(error)throw error;await loadQuickSaleOpenBills();quickSaleDraftStatus('Tagihan berhasil dibatalkan.');}catch(e){quickSaleDraftStatus('Gagal membatalkan tagihan: '+String(e.message||e),true);cancel.disabled=false;}
+    cancel.disabled=true;try{const {data:cancelled,error}=await sb.from('store_open_bills').update({status:'cancelled',updated_at:new Date().toISOString(),version:Number(b.version||1)+1}).eq('id',b.id).eq('status','open').eq('version',Number(b.version||1)).select('id').maybeSingle();if(error)throw error;if(!cancelled)throw new Error('Tagihan sudah diubah oleh pengguna lain. Muat ulang daftar tagihan.');await loadQuickSaleOpenBills();quickSaleDraftStatus('Tagihan berhasil dibatalkan.');}catch(e){quickSaleDraftStatus('Gagal membatalkan tagihan: '+String(e.message||e),true);cancel.disabled=false;}
    });
    actions.append(edit,cancel);card.append(title,meta,amount,actions);host.appendChild(card);
   });
@@ -5369,9 +5369,9 @@ async function openQuickSaleBill(id){
    if(!product)throw new Error('Produk pada tagihan tidak ditemukan pada daftar barang aktif. Periksa produk sebelum mengedit.');
    addQuickSaleLine();
    const row=quickSaleItemRows().at(-1),input=row.querySelector('.quick-sale-product');
-   input.value=product.product_code;input.dispatchEvent(new Event('input',{bubbles:true}));
+   input.value=product.product_code+' — '+product.product_name;input.dataset.productId=product.id;
    row.querySelector('.quick-sale-qty').value=String(line.quantity);
-   updateQuickSalePreview(false);
+   updateQuickSalePreview(true);
   }
   $('quickSaleTableNumber').value=b.table_number||'';
   $('quickSaleCustomerName').value=b.customer_name||'';
@@ -5389,14 +5389,14 @@ async function saveQuickSaleDraft(){
  if(!sb||!financeBusiness||!financeMemberRole||!financeMemberUserId)throw new Error('Login dan hubungkan akun ke usaha terlebih dahulu.');
  const lines=quickSaleDraftLines(),total=quickSaleDraftTotal(lines);
  if(!Number.isSafeInteger(total)||total<=0)throw new Error('Total tagihan tidak valid.');
- const payload={business_id:financeBusiness.id,created_by:financeMemberUserId,created_by_role:financeMemberRole,
-  table_number:String($('quickSaleTableNumber').value||'').trim().replace(/[<>]/g,'').slice(0,20)||null,
-  customer_name:String($('quickSaleCustomerName').value||'').trim().replace(/[<>]/g,'').slice(0,80)||null,
-  lines,total_amount:total,status:'open',updated_at:new Date().toISOString()};
+ const tableNumber=String($('quickSaleTableNumber').value||'').trim().replace(/[<>]/g,'').slice(0,20)||null;
+ const customerName=String($('quickSaleCustomerName').value||'').trim().replace(/[<>]/g,'').slice(0,80)||null;
+ if(!tableNumber&&!customerName)throw new Error('Isi nomor meja atau nama pelanggan agar tagihan mudah ditemukan.');
+ const payload={business_id:financeBusiness.id,created_by:financeMemberUserId,created_by_role:financeMemberRole,table_number:tableNumber,customer_name:customerName,lines,total_amount:total};
  if(activeOpenBillId){
   const {data:existing,error:readError}=await sb.from('store_open_bills').select('version,status').eq('id',activeOpenBillId).eq('business_id',financeBusiness.id).single();if(readError)throw readError;
   if(existing.status!=='open')throw new Error('Tagihan tidak lagi terbuka.');
-  const {error}=await sb.from('store_open_bills').update({...payload,version:Number(existing.version||1)+1}).eq('id',activeOpenBillId).eq('status','open');if(error)throw error;
+  const {data:updated,error}=await sb.from('store_open_bills').update({table_number:tableNumber,customer_name:customerName,lines,total_amount:total,updated_at:new Date().toISOString(),version:Number(existing.version||1)+1}).eq('id',activeOpenBillId).eq('business_id',financeBusiness.id).eq('status','open').eq('version',Number(existing.version||1)).select('id').maybeSingle();if(error)throw error;if(!updated)throw new Error('Tagihan baru saja diubah oleh kasir lain. Muat ulang tagihan sebelum menyimpan perubahan.');
  }else{
   const {data,error}=await sb.from('store_open_bills').insert(payload).select('id').single();if(error)throw error;activeOpenBillId=data.id;
  }
