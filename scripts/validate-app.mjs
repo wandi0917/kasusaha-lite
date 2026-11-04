@@ -59,6 +59,10 @@ if (!html.includes('class="quick-sale-camera-head"') ||
   fail("barcode camera panel markup incomplete");
 } else pass("barcode camera panel elements present");
 
+if (!/detail\.includes\(['"]saldo akun biteship['"]\)/.test(html)) {
+  fail("localized Biteship balance errors must show the dedicated checkout guidance");
+} else pass("localized Biteship balance errors map to dedicated checkout guidance");
+
 if (!/getUserMedia/.test(html) || !/ZXingBrowser|BarcodeDetector/.test(html)) {
   fail("camera barcode scanning dependencies or API are missing");
 } else pass("camera barcode scanner code present");
