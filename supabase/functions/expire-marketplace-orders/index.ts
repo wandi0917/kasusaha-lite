@@ -37,8 +37,16 @@ Deno.serve(async (req: Request) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   const serverKey = Deno.env.get("MIDTRANS_SERVER_KEY");
-  const isProduction =
-    String(Deno.env.get("MIDTRANS_IS_PRODUCTION") ?? "").trim().toLowerCase() === "true";
+  // Expiry checks may only query Midtrans Sandbox in this deployment.
+  const configuredMode = String(Deno.env.get("MIDTRANS_IS_PRODUCTION") ?? "").trim().toLowerCase();
+  if (configuredMode !== "false") {
+    return jsonResponse({
+      success: false,
+      code: "SANDBOX_ONLY",
+      message: "Pemeriksaan expiry dikunci ke Sandbox.",
+    }, 503);
+  }
+  const isProduction = false;
 
   if (!supabaseUrl || !serviceRoleKey || !serverKey) {
     return jsonResponse({
