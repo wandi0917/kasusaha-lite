@@ -1515,7 +1515,7 @@ body>main img{max-width:100%}
  <div class="card" style="max-width:1180px;margin:12px auto">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
    <div><h2 id="platformFinanceTitle">Keuangan Marketplace — Owner Platform</h2><p class="small">Ringkasan komisi marketplace, pencairan, dan rincian transaksi. Data diambil langsung dari server setelah hak akses diverifikasi.</p></div>
-   <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="secondary" onclick="muatKeuanganMarketplace()">↻ Muat ulang</button><button type="button" class="secondary" onclick="cetakKeuanganMarketplace()">Cetak laporan</button></div>
+   <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="secondary" onclick="muatKeuanganMarketplace()">↻ Muat ulang</button><button type="button" class="secondary" onclick="rekonsiliasiPembayaranTertahan()">Rekonsiliasi Sandbox</button><button type="button" class="secondary" onclick="cetakKeuanganMarketplace()">Cetak laporan</button></div>
   </div>
   <p id="platformFinanceStatus" class="status" role="status" aria-live="polite">Memeriksa hak akses Owner Platform…</p>
   <div id="platformFinanceContent" hidden>
@@ -2521,7 +2521,7 @@ if(!window.__kasusahaOfflineTransitionBound){
   }
  });
 }
-let platformFinanceData=null,platformFinanceBusy=false;
+let platformFinanceData=null,platformFinanceBusy=false,platformReconcileBusy=false;
 function setPlatformFinanceStatus(message,isError=false){const el=$('platformFinanceStatus');if(el){el.textContent=message;el.style.color=isError?'#b42318':'';}}
 function platformFinancePeriodMatch(row,period,reference){
  if(period==='all')return true;const raw=row.created_at||row.requested_at;if(!raw||!reference)return false;
@@ -2554,6 +2554,29 @@ async function muatKeuanganMarketplace(){
   $('platformFinanceContent').hidden=false;if(!$('platformFinanceDate').value)$('platformFinanceDate').value=new Date().toISOString().slice(0,10);renderKeuanganMarketplace();
   setPlatformFinanceStatus('Laporan berhasil dimuat. Hak akses diverifikasi server. Diperbarui: '+new Date(data.generated_at||Date.now()).toLocaleString('id-ID'));
  }catch(e){platformFinanceData=null;$('platformFinanceContent').hidden=true;setPlatformFinanceStatus('Laporan gagal dimuat: '+String(e.message||e).slice(0,200),true);console.warn(e);}finally{platformFinanceBusy=false;}
+}
+async function rekonsiliasiPembayaranTertahan(){
+ if(!sb||platformReconcileBusy)return;
+ if(!confirm('Jalankan pemeriksaan ulang untuk pesanan pembayaran yang ditahan?\n\nFungsi ini hanya membaca Status API Midtrans Sandbox. Tidak membuat tagihan baru, tidak melakukan pembayaran, dan tidak mengakses Production. Hanya pesanan yang benar-benar terkonfirmasi lunas yang akan diproses oleh webhook utama.'))return;
+ platformReconcileBusy=true;setPlatformFinanceStatus('Memeriksa pesanan tertahan melalui Midtrans Sandbox…');
+ try{
+  const {data,error}=await sb.functions.invoke('midtrans-reconcile-review-orders',{body:{action:'reconcile_review_orders'}});
+  if(error)throw error;
+  if(!data||data.success!==true)throw new Error(data?.message||'Rekonsiliasi tidak berhasil.');
+  const summary='Rekonsiliasi Sandbox selesai: '+Number(data.verified_and_reconciled||0)+' berhasil diverifikasi dari '+Number(data.checked||0)+' pesanan; '+Number(data.not_paid_in_sandbox||0)+' belum lunas; '+Number(data.needs_manual_review||0)+' perlu pemeriksaan lanjutan.';
+  await muatKeuanganMarketplace();
+  setPlatformFinanceStatus(summary);
+  const details=(data.results||[]).filter(x=>x.result!=='verified_and_reconciled').slice(0,8);
+  if(details.length){
+   const detailText=details.map(x=>String(x.order_id||'').slice(0,8)+'…: '+String(x.result||'unknown')+(x.transaction_status?' ('+x.transaction_status+')':'')).join('\n');
+   alert(summary+'\n\nPesanan yang belum selesai:\n'+detailText);
+  }else{
+   alert(summary);
+  }
+ }catch(e){
+  setPlatformFinanceStatus('Rekonsiliasi gagal: '+String(e.message||e).slice(0,220),true);
+  alert('Rekonsiliasi belum selesai: '+String(e.message||e).slice(0,220));
+ }finally{platformReconcileBusy=false;}
 }
 function cetakKeuanganMarketplace(){if(!platformFinanceData)return alert('Muat laporan terlebih dahulu.');window.print();}
 let platformFinanceVisibilityCacheUserId='';
