@@ -4573,7 +4573,7 @@ function updateQuickSalePreview(useCatalogPrice=false){
  const cashValid=Number.isSafeInteger(cash)&&cash>=grandTotal&&grandTotal>0;
  if(changeEl)changeEl.textContent=formatStoreRupiah(cash>=grandTotal?cash-grandTotal:0);
  if(paymentHint)paymentHint.textContent=!grandTotal?'Masukkan barang dan jumlah terlebih dahulu.':cash<grandTotal?'Uang diterima kurang '+formatStoreRupiah(grandTotal-cash)+'.':'Pembayaran cukup. Kembalian '+formatStoreRupiah(cash-grandTotal)+'.';
- if(saveBtn){saveBtn.disabled=!(allValid&&cashValid);saveBtn.textContent=saveBtn.disabled?'Lengkapi jumlah dan pembayaran terlebih dahulu':'Simpan transaksi';}
+ if(saveBtn){saveBtn.disabled=!(allValid&&cashValid);saveBtn.textContent=saveBtn.disabled?'Lengkapi jumlah dan pembayaran terlebih dahulu':'Simpan transaksi';}const draftBtn=$('quickSaleSaveDraft');if(draftBtn)draftBtn.disabled=!(allValid&&grandTotal>0);
 }
 async function bukaPanelTransaksi(tujuan){
   if(!$('transaksi')?.classList.contains('active'))await buka('transaksi',document.querySelector('nav button[onclick*="transaksi"]'));
