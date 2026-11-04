@@ -58,9 +58,12 @@ Deno.serve(async (req) => {
     console.error("Produk tidak dapat diverifikasi untuk tarif.", productError?.message);
     return reply({ success: false, error: "Sebagian produk tidak ditemukan atau data produk belum lengkap." }, 400);
   }
-  // Produk digital KasUsaha Lite (ID 7) tidak boleh masuk perhitungan ongkir.
-  if (products.some(p => Number(p.id) === 7)) {
-    return reply({ success: false, error: "Produk digital KasUsaha Lite tidak memerlukan ongkir. Pisahkan dari keranjang produk fisik." }, 400);
+  // Semua paket KasUsaha Lite (ID 7-10) adalah produk digital, bukan kiriman fisik.
+  if (products.some(p =>
+    [7, 8, 9, 10].includes(Number(p.id)) ||
+    String(p.kategori || "").trim().toLowerCase() === "software digital"
+  )) {
+    return reply({ success: false, error: "Paket digital KasUsaha Lite tidak memerlukan ongkir. Pisahkan dari keranjang produk fisik." }, 400);
   }
   if (products.some(p => p.aktif !== true || !p.owner_id || Number(p.stok) < (quantities.get(Number(p.id)) || 0))) {
     return reply({ success: false, error: "Ada produk tidak aktif atau stok tidak mencukupi." }, 400);
