@@ -7379,6 +7379,31 @@ html body>header.ks-brand-header .kasusaha-pwa-install .kasusaha-banner-image-bu
   html body>header.ks-brand-header .kasusaha-pwa-install .kasusaha-banner-image-button img{width:100%!important;max-width:100%!important}
 }
 </style>
+
+<style id="ks-nav-content-spacing-fix">
+/* JARAK NAVIGASI DAN KONTEN BERANDA: dirapatkan */
+html body>nav[aria-label="Navigasi utama"]{
+  margin-bottom:0!important;
+  padding-bottom:5px!important;
+}
+html body>main{
+  padding-top:3px!important;
+}
+html body>main>#beranda.tab.active{
+  margin-top:0!important;
+  padding-top:5px!important;
+}
+html body>main>#beranda>.usage-guide{
+  margin-top:3px!important;
+  margin-bottom:12px!important;
+}
+@media(max-width:650px){
+  html body>main{padding-top:2px!important}
+  html body>main>#beranda.tab.active{padding-top:3px!important}
+  html body>main>#beranda>.usage-guide{margin-top:2px!important}
+}
+</style>
+
 </body>
 </html>
 
