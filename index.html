@@ -4657,7 +4657,7 @@ async function bukaPanelTransaksi(tujuan){
     if(tujuan==='kasir'||tujuan==='stok'){
       try{
         await loadStoreProducts();
-        if(tujuan==='kasir'){if(!quickSaleItemRows().length)addQuickSaleLine();updateQuickSalePreview();}
+        if(tujuan==='kasir'){if(!quickSaleItemRows().length)addQuickSaleLine();updateQuickSalePreview();await loadQuickSaleOpenBills();}
         else if(isOwner){catalog?.scrollIntoView({behavior:'smooth',block:'start'});}
       }catch(e){setFinanceStatus((tujuan==='kasir'?'Kasir':'Menu barang dan stok')+' belum dapat memuat daftar barang: '+String(e.message||e).slice(0,180),true);}
     }
