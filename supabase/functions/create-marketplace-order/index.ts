@@ -317,11 +317,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
     }
 
     const shippingQuoteId = readText(body.shipping_quote_id);
-    const physicalItems = items.filter((item) => item.product_id !== 7);
+    // Keempat paket KasUsaha Lite (produk 7-10) adalah lisensi digital.
+    const physicalItems = items.filter(
+      (item) => ![7, 8, 9, 10].includes(Number(item.product_id)),
+    );
 
-    // Lisensi KasUsaha Lite (produk 7) tidak dapat digabung dengan barang fisik.
-    // Fungsi pembuatan pengiriman menolak pesanan campuran; cegah checkout sejak awal
-    // agar pembeli tidak membayar barang fisik yang kemudian tidak bisa dikirim.
+    // Paket digital tidak memerlukan Biteship dan tidak boleh digabung
+    // dengan produk fisik dalam satu pesanan.
     if (physicalItems.length > 0 && physicalItems.length !== items.length) {
       return reply({
         success: false,
@@ -332,6 +334,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
     let shippingQuote: Record<string, unknown> | null = null;
     let shippingAdmin: ReturnType<typeof createClient> | null = null;
     let shippingProductSnapshot: Array<{product_id:number;quantity:number;weight:number;length:number;width:number;height:number}> = [];
+    let verifiedPublicSubtotal = 0;
 
     if (physicalItems.length > 0) {
       if (!shippingQuoteId || !isValidUuid(shippingQuoteId)) {
@@ -346,7 +349,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       });
       const { data: quote, error: quoteError } = await shippingAdmin
         .from("biteship_shipping_quotes")
-        .select("id,buyer_id,product_fingerprint,origin_postal_code,destination_postal_code,courier_code,courier_service_code,courier_name,courier_service_name,shipping_amount,expires_at,used_at")
+        .select("id,buyer_id,product_fingerprint,origin_postal_code,destination_postal_code,origin_latitude,origin_longitude,destination_latitude,destination_longitude,courier_code,courier_service_code,courier_name,courier_service_name,shipping_amount,expires_at,used_at")
         .eq("id", shippingQuoteId)
         .eq("buyer_id", authData.user.id)
         .maybeSingle();
@@ -374,7 +377,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
       const { data: currentProducts, error: currentProductsError } = await shippingAdmin
         .from("produk")
-        .select("id,aktif,owner_id,stok,berat_gram,panjang_cm,lebar_cm,tinggi_cm,kode_pos_asal_pengiriman")
+        .select("id,aktif,owner_id,stok,berat_gram,panjang_cm,lebar_cm,tinggi_cm,kode_pos_asal_pengiriman,latitude_asal_pengiriman,longitude_asal_pengiriman")
         .in("id", physicalItems.map((item) => item.product_id));
       if (currentProductsError || !currentProducts || currentProducts.length !== physicalItems.length) {
         return reply({ success: false, error: "Data paket berubah atau tidak dapat diverifikasi. Silakan cek ongkir kembali." }, 409);
@@ -583,7 +586,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
       }
       const { data: finalProducts, error: finalProductsError } = await shippingAdmin
         .from("produk")
-        .select("id,aktif,owner_id,berat_gram,panjang_cm,lebar_cm,tinggi_cm,kode_pos_asal_pengiriman")
+        .select("id,aktif,owner_id,berat_gram,panjang_cm,lebar_cm,tinggi_cm,kode_pos_asal_pengiriman,latitude_asal_pengiriman,longitude_asal_pengiriman")
         .in("id", shippingProductSnapshot.map((p) => p.product_id));
       const finalSnapshot = (finalProducts || []).map((p) => ({
         product_id: Number(p.id),
@@ -594,10 +597,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
         height: Math.max(1, Number(p.tinggi_cm) || 10),
       })).sort((a,b) => a.product_id-b.product_id);
       const finalOrigins = [...new Set((finalProducts || []).map((p) => String(p.kode_pos_asal_pengiriman || "").trim()))];
+      const finalOriginCoordinates = [...new Set((finalProducts || []).map((p) => p.latitude_asal_pengiriman == null || p.longitude_asal_pengiriman == null ? "" : Number(p.latitude_asal_pengiriman).toFixed(7) + "," + Number(p.longitude_asal_pengiriman).toFixed(7)))];
+      const quoteOriginCoordinates = shippingQuote.origin_latitude == null || shippingQuote.origin_longitude == null ? "" : Number(shippingQuote.origin_latitude).toFixed(7) + "," + Number(shippingQuote.origin_longitude).toFixed(7);
       const finalSellers = [...new Set((finalProducts || []).map((p) => String(p.owner_id || "")))];
       if (finalProductsError || !finalProducts || finalProducts.length !== shippingProductSnapshot.length ||
           finalProducts.some((p) => p.aktif !== true) ||
           finalOrigins.length !== 1 || finalOrigins[0] !== String(shippingQuote.origin_postal_code || "") ||
+          (quoteOriginCoordinates && (finalOriginCoordinates.length !== 1 || finalOriginCoordinates[0] !== quoteOriginCoordinates)) ||
           finalSellers.length !== 1 ||
           JSON.stringify(finalSnapshot) !== JSON.stringify(shippingProductSnapshot)) {
         await shippingAdmin.from("marketplace_orders").update({
@@ -626,6 +632,8 @@ Deno.serve(async (req: Request): Promise<Response> => {
           shipping_service_code: String(shippingQuote.courier_service_code),
           shipping_service: String(shippingQuote.courier_name) + " — " + String(shippingQuote.courier_service_name),
           destination_postal_code: String(shippingQuote.destination_postal_code),
+          destination_latitude: shippingQuote.destination_latitude == null ? null : Number(shippingQuote.destination_latitude),
+          destination_longitude: shippingQuote.destination_longitude == null ? null : Number(shippingQuote.destination_longitude),
           payment_review_required: false,
           payment_review_note: null,
           updated_at: new Date().toISOString(),
