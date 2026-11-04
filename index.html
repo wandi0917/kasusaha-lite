@@ -5490,12 +5490,14 @@ $('quickSalePayDraft')?.addEventListener('click',async function(){
   setFinanceStatus(wasAlreadyPaid?'Tagihan '+billLabel+' ternyata sudah dibayar sebelumnya. Sistem tidak membuat penjualan atau pengurangan stok kedua kali.':'Pembayaran '+billLabel+' berhasil dikonfirmasi: '+formatStoreRupiah(total)+'. Penjualan masuk laporan dan stok dikurangi oleh server.');
  }catch(e){quickSaleDraftStatus('Pembayaran belum dikonfirmasi: '+String(e.message||e).slice(0,250),true);}finally{this.disabled=false;}
 });
-$('quickSaleTableNumber')?.addEventListener('input',()=>{updateQuickSalePreview(false);scheduleQuickSaleBillLookup();});
-$('quickSaleCustomerName')?.addEventListener('input',()=>{updateQuickSalePreview(false);scheduleQuickSaleBillLookup();});
-$('quickSaleTableNumber')?.addEventListener('change',()=>lookupQuickSaleOpenBill());
-$('quickSaleTableNumber')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lookupQuickSaleOpenBill();}});
-$('quickSaleCustomerName')?.addEventListener('change',()=>lookupQuickSaleOpenBill());
-$('quickSaleCustomerName')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lookupQuickSaleOpenBill();}});
+// Entri nama pelanggan / nomor meja tidak boleh membuka tagihan lama secara otomatis.
+// Tagihan lama hanya dibuka melalui tombol "Buka / Edit" pada daftar tagihan belum dibayar.
+$('quickSaleTableNumber')?.addEventListener('input',()=>updateQuickSalePreview(false));
+$('quickSaleCustomerName')?.addEventListener('input',()=>updateQuickSalePreview(false));
+$('quickSaleTableNumber')?.addEventListener('keydown',e=>{if(e.key==='Enter')e.preventDefault();});
+$('quickSaleCustomerName')?.addEventListener('keydown',e=>{if(e.key==='Enter')e.preventDefault();});
+const quickSaleLookupHint=$('quickSaleBillLookupStatus');
+if(quickSaleLookupHint)quickSaleLookupHint.textContent='Nama pelanggan dan nomor meja hanya untuk penjualan yang sedang dibuat. Untuk membuka pesanan lama, pilih tombol Buka / Edit pada daftar tagihan belum dibayar.';
 
 $('quickSaleCashReceived')?.addEventListener('input',()=>updateQuickSalePreview(false));
 document.querySelectorAll('.quick-sale-cash-option').forEach(button=>button.addEventListener('click',()=>{
