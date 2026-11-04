@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
 
   const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
   const { data: order, error: oe } = await admin.from("marketplace_orders")
-    .select("id,buyer_id,status,buyer_name,buyer_phone,shipping_address,destination_postal_code,shipping_provider,shipping_courier_code,shipping_service_code,shipping_tracking_id,shipping_waybill_id,shipping_status,shipping_created_at,payment_review_required")
+    .select("id,buyer_id,status,buyer_name,buyer_phone,shipping_address,destination_postal_code,destination_latitude,destination_longitude,shipping_provider,shipping_courier_code,shipping_service_code,shipping_tracking_id,shipping_waybill_id,shipping_status,shipping_created_at,payment_review_required")
     .eq("id", orderId).maybeSingle();
   if (oe || !order) return reply({ success: false, error: "Pesanan tidak ditemukan." }, 404);
   if (order.status !== "paid" && order.status !== "processing") return reply({ success: false, error: "Pengiriman hanya dapat dibuat setelah pembayaran terverifikasi." }, 409);
@@ -72,9 +72,11 @@ Deno.serve(async (req) => {
     .select("product_id,product_name_snapshot,unit_price,quantity,seller_id")
     .eq("order_id", orderId);
   if (ie || !orderItems?.length) return reply({ success: false, error: "Rincian barang pesanan tidak ditemukan." }, 400);
-  // Lisensi KasUsaha Lite ID 7 adalah produk digital; jangan pernah kirim ke Biteship.
+  // Semua paket KasUsaha Lite (ID 7-10) adalah produk digital; jangan kirim ke Biteship.
   // Pesanan campuran lama tetap dapat mengirim barang fisiknya saja.
-  const physicalOrderItems = orderItems.filter(i => Number(i.product_id) !== 7);
+  const physicalOrderItems = orderItems.filter(
+    i => ![7, 8, 9, 10].includes(Number(i.product_id)),
+  );
   if (!physicalOrderItems.length) {
     return reply({ success: false, error: "Pesanan ini hanya berisi lisensi digital dan tidak memerlukan pengiriman fisik." }, 400);
   }
@@ -84,7 +86,7 @@ Deno.serve(async (req) => {
   if (!internalRequest && requesterId !== sellerId) return reply({ success: false, error: "Hanya penjual pemilik semua barang fisik dalam pesanan yang dapat membuat pengiriman." }, 403);
   const productIds = [...new Set(physicalOrderItems.map(i => Number(i.product_id)).filter(Number.isFinite))];
   const { data: products, error: pe } = await admin.from("produk")
-    .select("id,nama_produk,deskripsi,harga,berat_gram,panjang_cm,lebar_cm,tinggi_cm,alamat_asal_pengiriman,kode_pos_asal_pengiriman,telepon_pengirim,nama_kontak_pengirim,owner_id,nama_penjual")
+    .select("id,nama_produk,deskripsi,harga,berat_gram,panjang_cm,lebar_cm,tinggi_cm,alamat_asal_pengiriman,kode_pos_asal_pengiriman,telepon_pengirim,nama_kontak_pengirim,latitude_asal_pengiriman,longitude_asal_pengiriman,owner_id,nama_penjual")
     .in("id", productIds);
   if (pe || !products || products.length !== productIds.length) return reply({ success: false, error: "Data produk penjual tidak lengkap untuk membuat pengiriman." }, 400);
   if (products.some(p => String(p.owner_id) !== sellerId)) return reply({ success: false, error: "Data pemilik produk tidak sesuai dengan penjual pada rincian pesanan." }, 403);
@@ -124,6 +126,19 @@ Deno.serve(async (req) => {
     .select("id").maybeSingle();
   if (lockError || !lock) return reply({ success: false, error: "Pesanan sedang diproses pengiriman oleh proses lain. Periksa status pesanan." }, 409);
 
+  const originCoordinatePairs = [...new Set(products.map(p => {
+    if (p.latitude_asal_pengiriman == null || p.longitude_asal_pengiriman == null) return "";
+    const lat = Number(p.latitude_asal_pengiriman), lng = Number(p.longitude_asal_pengiriman);
+    return Number.isFinite(lat) && lat >= -90 && lat <= 90 && Number.isFinite(lng) && lng >= -180 && lng <= 180 ? lat.toFixed(7) + "," + lng.toFixed(7) : "";
+  }))];
+  const originCoordinatesValid = originCoordinatePairs.length === 1 && originCoordinatePairs[0] !== "";
+  const destinationLat = order.destination_latitude == null ? NaN : Number(order.destination_latitude), destinationLng = order.destination_longitude == null ? NaN : Number(order.destination_longitude);
+  const destinationCoordinatesValid = Number.isFinite(destinationLat) && destinationLat >= -90 && destinationLat <= 90 && Number.isFinite(destinationLng) && destinationLng >= -180 && destinationLng <= 180;
+  const instantCourier = ["gojek", "grab", "lalamove", "borzo", "paxel"].includes(String(order.shipping_courier_code || "").toLowerCase());
+  if (instantCourier && (!originCoordinatesValid || !destinationCoordinatesValid)) {
+    return reply({ success: false, error: "Kurir instan memerlukan koordinat lokasi asal dan tujuan. Minta pembeli dan penjual memperbarui titik lokasi, lalu hitung ongkir kembali." }, 409);
+  }
+  const [originLatitude, originLongitude] = originCoordinatesValid ? originCoordinatePairs[0].split(",").map(Number) : [null, null];
   const payload = {
     reference_id: orderId,
     shipper_contact_name: contacts[0],
@@ -134,11 +149,13 @@ Deno.serve(async (req) => {
     origin_contact_phone: phones[0],
     origin_address: addresses[0],
     origin_postal_code: Number(origins[0]),
+    ...(originCoordinatesValid ? { origin_coordinate: { latitude: originLatitude, longitude: originLongitude } } : {}),
     destination_contact_name: order.buyer_name,
     destination_contact_phone: order.buyer_phone,
     destination_contact_email: buyerEmail,
     destination_address: order.shipping_address,
     destination_postal_code: Number(order.destination_postal_code),
+    ...(destinationCoordinatesValid ? { destination_coordinate: { latitude: destinationLat, longitude: destinationLng } } : {}),
     courier_company: order.shipping_courier_code,
     courier_type: order.shipping_service_code,
     delivery_type: "now",
