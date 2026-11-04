@@ -5426,8 +5426,8 @@ $('quickSaleNewDraft')?.addEventListener('click',async function(){
  try{
   const hasItems=quickSaleItemRows().some(row=>String(row.querySelector('.quick-sale-product')?.value||'').trim());
   const hasHeader=!!(String($('quickSaleTableNumber')?.value||'').trim()||String($('quickSaleCustomerName')?.value||'').trim());
-  const hasDraftData=hasItems||hasHeader||!!activeOpenBillId;
-  // Simpan tagihan aktif dahulu. Data yang belum lengkap tidak boleh dibuang diam-diam.
+  const hasDraftData=hasItems||!!activeOpenBillId;
+  // Simpan hanya jika ada barang/tagihan aktif. Identitas tanpa barang bukan tagihan.
   if(hasDraftData)await saveQuickSaleDraft();
   activeOpenBillId=null;
   const form=$('quickSaleForm');if(form)form.reset();
@@ -5438,7 +5438,7 @@ $('quickSaleNewDraft')?.addEventListener('click',async function(){
   $('quickSaleOpenBillsSearch').value='';
   updateQuickSalePreview(false);
   await loadQuickSaleOpenBills();
-  quickSaleDraftStatus(hasDraftData?'Tagihan sebelumnya tersimpan di daftar tagihan belum dibayar. Form baru sudah dikosongkan.':'Form penjualan baru siap digunakan.');
+  quickSaleDraftStatus(hasDraftData?'Tagihan sebelumnya tersimpan di daftar tagihan belum dibayar. Form baru sudah dikosongkan.':hasHeader?'Identitas meja/pelanggan sebelumnya tidak disimpan karena belum ada barang. Form penjualan baru siap digunakan.':'Form penjualan baru siap digunakan.');
   $('quickSaleCustomerName').focus();
  }catch(e){
   quickSaleDraftStatus('Penjualan baru belum dibuka agar tagihan sebelumnya tidak hilang. Lengkapi barang, jumlah, dan harga terlebih dahulu. '+String(e.message||e).slice(0,180),true);
