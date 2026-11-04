@@ -117,13 +117,13 @@ Deno.serve(async (req: Request) => {
 
     // Only the 31-10 audit-held paid orders are considered. Cancelled and pending
     // orders are never changed by this batch operation.
+    const auditReviewNote = "Audit 31-10-2026: status pesanan paid belum didukung event Midtrans berstatus verified dan processed. Tahan pengiriman, aktivasi lisensi dari pesanan ini, dan pencairan sampai rekonsiliasi pembayaran selesai.";
     const { data: orders, error: ordersError } = await admin
       .from("marketplace_orders")
       .select("id,status,payment_provider,provider_transaction_id,total_amount,payment_review_required,payment_review_note")
       .eq("status", "paid")
       .eq("payment_provider", "midtrans")
       .eq("payment_review_required", true)
-      .not("provider_transaction_id", "is", null)
       .order("created_at", { ascending: true })
       .limit(50);
 
@@ -136,11 +136,12 @@ Deno.serve(async (req: Request) => {
     const apiBase = "https://api.sandbox.midtrans.com";
 
     for (const order of orders || []) {
-      const midtransOrderId = String(order.provider_transaction_id || "");
-      if (!midtransOrderId) {
-        results.push({ order_id: order.id, result: "missing_midtrans_order_id" });
-        continue;
-      }
+      const hasStoredMidtransOrderId = Boolean(order.provider_transaction_id);
+      // Older orders may have used the database UUID as Midtrans order_id.
+      // The Status API must confirm this exact candidate before it is trusted.
+      const midtransOrderId = String(order.provider_transaction_id || order.id);
+      const canAutoReconcile = hasStoredMidtransOrderId &&
+        String(order.payment_review_note || "").trim() === auditReviewNote;
 
       let statusResponse: Response;
       let status: Record<string, unknown>;
@@ -203,6 +204,18 @@ Deno.serve(async (req: Request) => {
 
       const statusCode = String(status.status_code);
       const grossAmount = String(status.gross_amount);
+      if (!canAutoReconcile) {
+        results.push({
+          order_id: order.id,
+          result: "verified_but_manual_review_required",
+          transaction_status: String(status.transaction_status ?? ""),
+          reason: hasStoredMidtransOrderId
+            ? "Catatan review memuat alasan manual tambahan; tidak dibersihkan otomatis."
+            : "ID transaksi tidak tersimpan; Status API hanya diperiksa menggunakan UUID pesanan dan perlu pemeriksaan manual.",
+        });
+        continue;
+      }
+
       const notification: Record<string, unknown> = {
         order_id: midtransOrderId,
         status_code: statusCode,
