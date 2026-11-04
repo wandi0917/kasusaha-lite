@@ -4561,7 +4561,7 @@ function addQuickSaleLine(){
 }
 function updateQuickSalePreview(useCatalogPrice=false){
  const rows=quickSaleItemRows();let grandTotal=0,allValid=rows.length>0;const details=[];
- rows.forEach((row,i)=>{row.querySelector('.quick-sale-line-title').textContent='Barang '+(i+1);const d=quickSaleLineData(row,useCatalogPrice);if(!d.valid)allValid=false;else grandTotal+=d.subtotal;details.push(d);});
+ rows.forEach((row,i)=>{row.querySelector('.quick-sale-line-title').textContent='Barang '+(i+1);const d=quickSaleLineData(row,useCatalogPrice);if(!d.valid)allValid=false;if(d.p&&Number.isSafeInteger(d.qty)&&d.qty>0&&Number.isSafeInteger(d.price)&&d.price>0&&Number.isSafeInteger(d.subtotal)&&d.subtotal>0)grandTotal+=d.subtotal;details.push(d);});
  const table=String($('quickSaleTableNumber')?.value||'').trim(),customer=String($('quickSaleCustomerName')?.value||'').trim(),location=[table?'Meja '+table:'Kasir',customer?'Pelanggan: '+customer:''].filter(Boolean).join(' • ');
  const locationEl=$('quickSaleBillLocation'),tbody=$('quickSaleBillRows'),totalEl=$('quickSaleTotal'),hintEl=$('quickSaleBillHint');
  if(locationEl)locationEl.textContent=location;
@@ -4573,7 +4573,7 @@ function updateQuickSalePreview(useCatalogPrice=false){
  const cashValid=Number.isSafeInteger(cash)&&cash>=grandTotal&&grandTotal>0;
  if(changeEl)changeEl.textContent=formatStoreRupiah(cash>=grandTotal?cash-grandTotal:0);
  if(paymentHint)paymentHint.textContent=!grandTotal?'Masukkan barang dan jumlah terlebih dahulu.':cash<grandTotal?'Uang diterima kurang '+formatStoreRupiah(grandTotal-cash)+'.':'Pembayaran cukup. Kembalian '+formatStoreRupiah(cash-grandTotal)+'.';
- if(saveBtn){saveBtn.disabled=!(allValid&&cashValid);saveBtn.textContent=saveBtn.disabled?'Lengkapi jumlah dan pembayaran terlebih dahulu':'Simpan transaksi';}const draftBtn=$('quickSaleSaveDraft');if(draftBtn)draftBtn.disabled=!(allValid&&grandTotal>0);
+ if(saveBtn){saveBtn.disabled=!(allValid&&cashValid);saveBtn.textContent=saveBtn.disabled?'Lengkapi jumlah dan pembayaran terlebih dahulu':'Simpan transaksi';}const draftBtn=$('quickSaleSaveDraft');const canSaveDraft=details.length>0&&details.every(d=>!!d.p&&Number.isSafeInteger(d.qty)&&d.qty>0&&Number.isSafeInteger(d.price)&&d.price>0&&Number.isSafeInteger(d.subtotal)&&d.subtotal>0);if(draftBtn)draftBtn.disabled=!canSaveDraft;
 }
 async function bukaPanelTransaksi(tujuan){
   if(!$('transaksi')?.classList.contains('active'))await buka('transaksi',document.querySelector('nav button[onclick*="transaksi"]'));
@@ -4665,7 +4665,12 @@ async function bukaPanelTransaksi(tujuan){
             activeOpenBillId=null;$('quickSaleForm').reset();$('quickSaleTableNumber').value='';$('quickSaleCustomerName').value='';$('quickSaleCashReceived').value='';
             $('quickSaleItems').replaceChildren();addQuickSaleLine();$('quickSaleSaveDraft').textContent='＋ Simpan sebagai tagihan belum dibayar';$('quickSalePayDraft').hidden=true;$('quickSaleSave').hidden=false;
             const lookup=$('quickSaleBillLookupStatus');if(lookup)lookup.textContent='Pesanan sebelumnya tersimpan sebagai tagihan belum dibayar. Form baru siap digunakan.';
-          }else if(!quickSaleItemRows().length)addQuickSaleLine();
+          }else if(!activeOpenBillId){
+            $('quickSaleForm').reset();$('quickSaleTableNumber').value='';$('quickSaleCustomerName').value='';$('quickSaleCashReceived').value='';
+            $('quickSaleItems').replaceChildren();addQuickSaleLine();$('quickSaleSaveDraft').textContent='＋ Simpan sebagai tagihan belum dibayar';$('quickSalePayDraft').hidden=true;$('quickSaleSave').hidden=false;
+          }else{
+            throw new Error('Tagihan yang sedang dibuka belum memiliki rincian barang. Rincian tidak dikosongkan agar pesanan tidak hilang.');
+          }
           updateQuickSalePreview();await loadQuickSaleOpenBills();
         }
         else if(isOwner){catalog?.scrollIntoView({behavior:'smooth',block:'start'});}
@@ -5338,8 +5343,8 @@ $('stockEntryForm')?.addEventListener('submit',async function(e){
 let activeOpenBillId=null;
 function quickSaleDraftLines(){
  const rows=quickSaleItemRows().map(row=>quickSaleLineData(row,false));
- if(!rows.length||rows.some(d=>!d.valid||!d.p||!Number.isSafeInteger(d.qty)||d.qty<1))throw new Error('Lengkapi semua barang dan jumlah sebelum menyimpan tagihan.');
- if(rows.some(d=>!d.stockOk))throw new Error('Jumlah salah satu barang melebihi stok tersedia. Stok tidak dipesan saat tagihan masih terbuka.');
+ if(!rows.length||rows.some(d=>!d.p||!Number.isSafeInteger(d.qty)||d.qty<1||!Number.isSafeInteger(d.price)||d.price<1||!Number.isSafeInteger(d.subtotal)||d.subtotal<=0))throw new Error('Lengkapi semua barang, jumlah, dan harga sebelum menyimpan tagihan.');
+ // Tagihan terbuka tidak memesan atau mengurangi stok. Ketersediaan diperiksa kembali oleh server saat pembayaran.
  return rows.map(d=>({product_id:d.p.id,product_code:d.p.product_code,product_name:d.p.product_name,quantity:d.qty,unit_price:d.price}));
 }
 function quickSaleDraftTotal(lines){return lines.reduce((n,l)=>n+l.quantity*l.unit_price,0);}
