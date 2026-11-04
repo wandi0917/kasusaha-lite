@@ -2775,7 +2775,7 @@ $('formKas').addEventListener('submit',async function(e){
  e.preventDefault();
  const description=$('keterangan').value.trim(),amount=Number($('nominal').value),category=$('kategoriLokal').value;
  let type=$('jenis').value==='masuk'?'income':'expense';
- if(!description||!Number.isSafeInteger(amount)||amount<=0){alert('Periksa keterangan dan nominal. Nominal harus bilangan bulat positif.');return;}
+ if(description.length<2||!Number.isSafeInteger(amount)||amount<=0){alert('Keterangan minimal 2 karakter dan nominal harus bilangan bulat positif. Periksa kembali isian transaksi.');return;}
  // Bila akun sudah login, transaksi wajib masuk ke laporan bersama usaha agar tidak hilang di laporan Owner/Karyawan.
  if(sb && navigator.onLine && !offlineTransactionMode){
   try{
@@ -5831,7 +5831,7 @@ async function imporTransaksiLokalKeBersama(options={}){
    if(raw){const d=new Date(raw);if(Number.isFinite(d.getTime()))date=financeDateISO(d);}
    if(!date){const m=String(t.tanggal||'').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);if(m)date=m[3]+'-'+String(m[2]).padStart(2,'0')+'-'+String(m[1]).padStart(2,'0');}
    const desc=String(t.keterangan||t.description||'').trim();
-   if(!kind||!date||!desc||!Number.isSafeInteger(amount)||amount<=0||(role==='employee'&&kind!=='income')){skipped.push(i);return;}
+   if(!kind||!date||desc.length<2||!Number.isSafeInteger(amount)||amount<=0||(role==='employee'&&kind!=='income')){skipped.push(i);return;}
    const rawId=t.id!==undefined&&t.id!==null?String(t.id):(raw||date+':'+desc+':'+amount+':'+i);
    const category=String(t.kategori||t.category||'Lainnya').trim().slice(0,80)||'Lainnya';
    const legacyRef=role==='employee'?'local:'+sessionUserId+':'+rawId.slice(0,150):'local:'+rawId.slice(0,180);
