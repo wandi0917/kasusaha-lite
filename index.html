@@ -1921,7 +1921,7 @@ async function bagikanKasUsahaLite(){
 <p class="small" id="quickSaleBillHint">Tambahkan semua barang untuk meja yang sama atau transaksi kasir. Pastikan rincian dan total benar sebelum menekan Simpan.</p>
 </div>
 <button id="quickSaleSaveDraft" class="secondary wide" type="button" disabled>＋ Simpan sebagai tagihan belum dibayar</button><button id="quickSalePayDraft" class="primary wide" type="button" hidden>Bayar tagihan tersimpan</button><button id="quickSaleSave" class="primary wide" type="submit" disabled>Simpan transaksi setelah periksa total</button>
-<div id="quickSaleOpenBills" class="card" style="background:#fff"><h4>Tagihan belum dibayar</h4><p class="small">Tagihan tersimpan dapat dibuka, ditambah/dikurangi barangnya, diperbaiki, lalu dibayar. Tagihan di sini belum masuk laporan dan belum mengurangi stok.</p><div id="quickSaleOpenBillsStatus" class="status">Memuat tagihan...</div><div id="quickSaleOpenBillsList"></div></div>
+<div id="quickSaleOpenBills" class="card" style="background:#fff"><h4>Tagihan belum dibayar</h4><p class="small">Tagihan tersimpan dapat dibuka, ditambah/dikurangi barangnya, diperbaiki, lalu dibayar. Tagihan di sini belum masuk laporan dan belum mengurangi stok.</p><div id="quickSaleOpenBillsStatus" class="status">Memuat tagihan...</div><button id="quickSaleNewDraft" type="button" class="secondary">＋ Buat tagihan baru</button><div id="quickSaleOpenBillsList"></div></div>
 </form>
 <div id="ownerStoreCatalog" class="card" hidden>
 <h3>Langkah berikutnya: isikan barang di toko Anda</h3>
@@ -5401,6 +5401,11 @@ async function saveQuickSaleDraft(){
  $('quickSaleSaveDraft').textContent='Simpan perubahan tagihan';$('quickSalePayDraft').hidden=false;$('quickSaleSave').hidden=true;
  await loadQuickSaleOpenBills();quickSaleDraftStatus('Tagihan tersimpan. Total '+formatStoreRupiah(total)+'. Belum masuk laporan dan stok belum dikurangi.');
 }
+$('quickSaleNewDraft')?.addEventListener('click',()=>{
+ activeOpenBillId=null;$('quickSaleForm').reset();$('quickSaleTableNumber').value='';$('quickSaleCustomerName').value='';$('quickSaleCashReceived').value='';
+ $('quickSaleItems').replaceChildren();addQuickSaleLine();$('quickSaleSaveDraft').textContent='＋ Simpan sebagai tagihan belum dibayar';$('quickSalePayDraft').hidden=true;$('quickSaleSave').hidden=false;
+ quickSaleDraftStatus('Tagihan baru. Masukkan meja/nama pelanggan dan barang, lalu simpan sebagai tagihan.');
+});
 $('quickSaleSaveDraft')?.addEventListener('click',async function(){
  this.disabled=true;try{await saveQuickSaleDraft();}catch(e){quickSaleDraftStatus('Tagihan gagal disimpan: '+String(e.message||e).slice(0,220),true);}finally{this.disabled=false;}
 });
