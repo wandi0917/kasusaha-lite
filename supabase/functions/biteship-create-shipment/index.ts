@@ -119,13 +119,6 @@ Deno.serve(async (req) => {
   const { data: buyerUser } = await admin.auth.admin.getUserById(String(order.buyer_id));
   const buyerEmail = buyerUser?.user?.email || undefined;
 
-  const { data: lock, error: lockError } = await admin.from("marketplace_orders")
-    .update({ shipping_status: "creating", updated_at: new Date().toISOString() })
-    .eq("id", orderId).in("status", ["paid", "processing"])
-    .is("shipping_tracking_id", null).is("shipping_waybill_id", null).is("shipping_created_at", null)
-    .select("id").maybeSingle();
-  if (lockError || !lock) return reply({ success: false, error: "Pesanan sedang diproses pengiriman oleh proses lain. Periksa status pesanan." }, 409);
-
   const originCoordinatePairs = [...new Set(products.map(p => {
     if (p.latitude_asal_pengiriman == null || p.longitude_asal_pengiriman == null) return "";
     const lat = Number(p.latitude_asal_pengiriman), lng = Number(p.longitude_asal_pengiriman);
@@ -138,6 +131,13 @@ Deno.serve(async (req) => {
   if (instantCourier && (!originCoordinatesValid || !destinationCoordinatesValid)) {
     return reply({ success: false, error: "Kurir instan memerlukan koordinat lokasi asal dan tujuan. Minta pembeli dan penjual memperbarui titik lokasi, lalu hitung ongkir kembali." }, 409);
   }
+  const { data: lock, error: lockError } = await admin.from("marketplace_orders")
+    .update({ shipping_status: "creating", updated_at: new Date().toISOString() })
+    .eq("id", orderId).in("status", ["paid", "processing"])
+    .is("shipping_tracking_id", null).is("shipping_waybill_id", null).is("shipping_created_at", null)
+    .select("id").maybeSingle();
+  if (lockError || !lock) return reply({ success: false, error: "Pesanan sedang diproses pengiriman oleh proses lain. Periksa status pesanan." }, 409);
+
   const [originLatitude, originLongitude] = originCoordinatesValid ? originCoordinatePairs[0].split(",").map(Number) : [null, null];
   const payload = {
     reference_id: orderId,
