@@ -41,7 +41,12 @@ Deno.serve(async (req: Request) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const serverKey = Deno.env.get("MIDTRANS_SERVER_KEY");
-    const production = norm(Deno.env.get("MIDTRANS_IS_PRODUCTION")) === "true";
+    // Employee activation payments are also Sandbox-only in this deployment.
+    const configuredMode = norm(Deno.env.get("MIDTRANS_IS_PRODUCTION"));
+    if (configuredMode !== "false") {
+      return reply({ success: false, code: "SANDBOX_ONLY", message: "Pembayaran aktivasi karyawan dikunci ke Sandbox." }, 503);
+    }
+    const production = false;
     if (!url || !anonKey || !serviceKey || !serverKey) {
       return reply({ success: false, message: "Konfigurasi server aktivasi perangkat belum lengkap." }, 500);
     }
@@ -352,8 +357,8 @@ Deno.serve(async (req: Request) => {
         }
       }
       // Verifikasi transaksi Midtrans di server saat Owner membuka ulang daftar.
-      const productionForCheck = norm(Deno.env.get("MIDTRANS_IS_PRODUCTION")) === "true";
-      const apiForCheck = productionForCheck ? "https://api.midtrans.com" : "https://api.sandbox.midtrans.com";
+      const productionForCheck = false;
+      const apiForCheck = "https://api.sandbox.midtrans.com";
       const authBasicForCheck = "Basic " + btoa(serverKey + ":");
       const recentlyPaid: string[] = [];
       for (const row of activationRows) {
