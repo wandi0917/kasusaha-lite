@@ -3363,7 +3363,7 @@ async function muatPesananSaya(){
           actions.append(reveal,copy);panel.appendChild(actions);
           if(lic.activated_at||lic.created_at){const act=document.createElement('p');act.className='small';act.textContent='Tanggal penerbitan lisensi: '+new Date(lic.activated_at||lic.created_at).toLocaleString('id-ID');panel.appendChild(act);}
           if(lic.cloud_expires_at){const cloud=document.createElement('p');cloud.className='small';cloud.textContent='Layanan cloud termasuk sampai: '+new Date(lic.cloud_expires_at).toLocaleDateString('id-ID');panel.appendChild(cloud);}
-          const alreadyActivated=Boolean(lic.activation_confirmed_at||lic.activation_user_id)||String(lic.status||'').trim().toLowerCase()==='active';
+          const alreadyActivated=Boolean(lic.activation_confirmed_at&&lic.activation_user_id);
           if(!alreadyActivated&&String(lic.status||'').trim().toLowerCase()!=='revoked'&&String(lic.status||'').trim().toLowerCase()!=='expired'){
             const activate=document.createElement('button');activate.type='button';activate.className='primary wide';activate.textContent='Aktivasi Lisensi';
             const activationMessage=document.createElement('p');activationMessage.className='small';activationMessage.setAttribute('role','status');
