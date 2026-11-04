@@ -3144,7 +3144,7 @@ async function cekOngkirBiteship(){
   }
   biteshipQuoteFingerprint=fingerprintKeranjangFisik();
   $('ringkasanOngkir').textContent='Asal kode pos '+data.origin_postal_code+' • Tujuan '+data.destination_postal_code+'. Tarif berlaku 20 menit dan terikat pada keranjang ini.';
-  status.textContent='Tarif Biteship tersedia: '+data.options.length+' pilihan. Pilih layanan yang diinginkan.';
+  status.textContent='Tarif Biteship tersedia: '+data.options.length+' pilihan. '+(data.coordinate_rates?'Koordinat GPS pembeli dan penjual digunakan untuk tarif. ':'Tarif dihitung menggunakan kode pos; koordinat GPS penjual mungkin belum tersedia. ')+'Pilih layanan yang diinginkan.';
  }catch(err){
   const raw=String(err&&err.message||err||'Kesalahan tidak diketahui');
   const detail=raw.toLowerCase();
@@ -3162,7 +3162,7 @@ async function cekOngkirBiteship(){
   $('ringkasanOngkir').textContent=guidance;
   status.className='status warn';
   status.textContent='Cek ongkir gagal: '+raw.slice(0,260);
- }finally{btn.disabled=false;btn.textContent='Cek ongkir Biteship';}
+ }finally{btn.disabled=false;btn.textContent='Cek Ongkos Kirim (GPS otomatis)';}
 }
 async function cekOngkirDenganGps(){
  const btn=$('cekOngkirBtn'),status=$('statusPesanan');
