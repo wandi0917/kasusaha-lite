@@ -130,13 +130,22 @@ Deno.serve(async (req) => {
     const providerMessage = obj(data)
       ? String(data.message || data.error || data.code || "").slice(0, 180)
       : "";
-    console.error("Biteship rates gagal.", { status: response.status, code: obj(data) ? data.code : null, message: providerMessage });
+    const insufficientBalance = response.status === 400 &&
+      /no sufficient balance/i.test(providerMessage);
+    console.error("Biteship rates gagal.", {
+      status: response.status,
+      code: obj(data) ? data.code : null,
+      reason: insufficientBalance ? "insufficient_account_balance" : "provider_rejected_request",
+      message: providerMessage,
+    });
     return reply({
       success: false,
-      error: "Biteship menolak permintaan tarif (HTTP " + response.status + "). " +
-        (providerMessage || "Periksa konfigurasi akun, cakupan kurir, kode pos, berat, dan paket API."),
+      error: insufficientBalance
+        ? "Saldo akun Biteship tidak mencukupi untuk menghitung ongkir. Isi saldo akun Biteship, lalu coba cek ongkir kembali."
+        : "Biteship menolak permintaan tarif (HTTP " + response.status + "). " +
+          (providerMessage || "Periksa konfigurasi akun, cakupan kurir, kode pos, berat, dan paket API."),
       provider_code: obj(data) && (typeof data.code === "string" || typeof data.code === "number") ? data.code : null,
-    }, 502);
+    }, insufficientBalance ? 503 : 502);
   }
 
   const fingerprintJson = fingerprint;

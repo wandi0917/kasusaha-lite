@@ -125,6 +125,17 @@ if (!/KS_PACKAGE_PRICES/.test(html) ||
 } else pass("four package checkout prices are present");
 
 
+const biteshipRates = fs.readFileSync("supabase/functions/biteship-rates/index.ts", "utf8");
+const biteshipBalanceChecks = [
+  [/const insufficientBalance = response\.status === 400/, biteshipRates, "Biteship insufficient-balance responses must be identified separately"],
+  [/Saldo akun Biteship tidak mencukupi untuk menghitung ongkir/, biteshipRates, "Biteship balance errors must show a clear Indonesian action message"],
+  [/insufficientBalance \? 503 : 502/, biteshipRates, "Biteship account-balance failures must not be mislabeled as a generic 502 server error"],
+];
+for (const [pattern, source, message] of biteshipBalanceChecks) {
+  if (!pattern.test(source)) fail(message);
+  else pass(message);
+}
+
 const paymentCreate = fs.readFileSync("supabase/functions/create-midtrans-payment/index.ts", "utf8");
 const paymentWebhook = fs.readFileSync("supabase/functions/midtrans-webhook/index.ts", "utf8");
 const marketplaceCreate = fs.readFileSync("supabase/functions/create-marketplace-order/index.ts", "utf8");
