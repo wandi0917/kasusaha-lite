@@ -5349,6 +5349,11 @@ function quickSaleDraftLines(){
 }
 function quickSaleDraftTotal(lines){return lines.reduce((n,l)=>n+l.quantity*l.unit_price,0);}
 function quickSaleDraftStatus(message,isError=false){const el=$('quickSaleOpenBillsStatus');if(el){el.className=isError?'status error':'status';el.textContent=message;}}
+let quickSaleBillLookupTimer=null;
+function scheduleQuickSaleBillLookup(){
+ if(quickSaleBillLookupTimer)clearTimeout(quickSaleBillLookupTimer);
+ quickSaleBillLookupTimer=setTimeout(()=>{lookupQuickSaleOpenBill();},350);
+}
 async function lookupQuickSaleOpenBill(){
  const status=$('quickSaleBillLookupStatus');if(!status||!sb||!financeBusiness)return;
  if(activeOpenBillId)return;
@@ -5358,7 +5363,7 @@ async function lookupQuickSaleOpenBill(){
  try{
   const requests=[];
   if(table)requests.push(sb.from('store_open_bills').select('id,table_number,customer_name,total_amount,created_at').eq('business_id',financeBusiness.id).eq('status','open').eq('table_number',table).order('created_at',{ascending:false}).limit(10));
-  if(customer)requests.push(sb.from('store_open_bills').select('id,table_number,customer_name,total_amount,created_at').eq('business_id',financeBusiness.id).eq('status','open').ilike('customer_name',customer).order('created_at',{ascending:false}).limit(10));
+  if(customer)requests.push(sb.from('store_open_bills').select('id,table_number,customer_name,total_amount,created_at').eq('business_id',financeBusiness.id).eq('status','open').ilike('customer_name','%'+customer.replace(/[%,]/g,'')+'%').order('created_at',{ascending:false}).limit(10));
   const results=await Promise.all(requests),found=new Map();
   for(const result of results){if(result.error)throw result.error;(result.data||[]).forEach(b=>found.set(b.id,b));}
   const matches=[...found.values()].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
@@ -5474,8 +5479,8 @@ $('quickSalePayDraft')?.addEventListener('click',async function(){
   setFinanceStatus(wasAlreadyPaid?'Tagihan '+billLabel+' ternyata sudah dibayar sebelumnya. Sistem tidak membuat penjualan atau pengurangan stok kedua kali.':'Pembayaran '+billLabel+' berhasil dikonfirmasi: '+formatStoreRupiah(total)+'. Penjualan masuk laporan dan stok dikurangi oleh server.');
  }catch(e){quickSaleDraftStatus('Pembayaran belum dikonfirmasi: '+String(e.message||e).slice(0,250),true);}finally{this.disabled=false;}
 });
-$('quickSaleTableNumber')?.addEventListener('input',()=>updateQuickSalePreview(false));
-$('quickSaleCustomerName')?.addEventListener('input',()=>updateQuickSalePreview(false));
+$('quickSaleTableNumber')?.addEventListener('input',()=>{updateQuickSalePreview(false);scheduleQuickSaleBillLookup();});
+$('quickSaleCustomerName')?.addEventListener('input',()=>{updateQuickSalePreview(false);scheduleQuickSaleBillLookup();});
 $('quickSaleTableNumber')?.addEventListener('change',()=>lookupQuickSaleOpenBill());
 $('quickSaleTableNumber')?.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();lookupQuickSaleOpenBill();}});
 $('quickSaleCustomerName')?.addEventListener('change',()=>lookupQuickSaleOpenBill());
