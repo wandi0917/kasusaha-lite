@@ -107,7 +107,7 @@ Deno.serve(async (req) => {
 
   if (ids.length) {
     const { data, error } = await db.from("marketplace_order_items")
-      .select("id,order_id,product_name_snapshot,unit_price,quantity,item_subtotal")
+      .select("id,order_id,product_id,product_name_snapshot,unit_price,quantity,item_subtotal")
       .in("id", ids);
     if (error) return out({ error: "Unable to load commission details" }, 500, origin);
     for (const item of data || []) items[item.id] = item;
@@ -193,18 +193,30 @@ Deno.serve(async (req) => {
 
   // Semua baris tetap ditampilkan untuk audit. Saldo hanya menghitung
   // pesanan yang benar-benar telah dibayar dan event-nya terverifikasi.
-  const isHeldForReview = (row: (typeof rows)[number]) => {
-    const item = items[row.order_item_id] as { order_id?: string } | null;
-    if (!item?.order_id) return true;
+  const holdReason = (row: (typeof rows)[number]): string | null => {
+    const item = items[row.order_item_id] as { order_id?: string; product_id?: number } | null;
+    if (!item?.order_id) return "Rincian item tidak tersedia; perlu pemeriksaan manual.";
+    if ([7, 8, 9, 10].includes(Number(item.product_id))) {
+      return "Produk lisensi digital KasUsaha Lite bukan transaksi marketplace seller; komisi ditahan untuk koreksi ledger.";
+    }
     const order = orderById.get(item.order_id);
-    if (!order || order.payment_review_required || !order.paid_at) return true;
-    if (!["paid", "processing", "completed", "refunded", "partially_refunded"].includes(order.status)) return true;
-    return !hasVerifiedPaymentEvent(row);
+    if (!order || order.payment_review_required || !order.paid_at) {
+      return "Pesanan menunggu pemeriksaan pembayaran.";
+    }
+    if (!["paid", "processing", "completed", "refunded", "partially_refunded"].includes(order.status)) {
+      return "Status pesanan belum memenuhi syarat komisi.";
+    }
+    if (!hasVerifiedPaymentEvent(row)) {
+      return "Event pembayaran belum terverifikasi dan diproses.";
+    }
+    return null;
   };
+  const isHeldForReview = (row: (typeof rows)[number]) => holdReason(row) !== null;
   const commissions = rows.map((x) => ({
     ...x,
     item: items[x.order_item_id] || null,
     held_for_review: isHeldForReview(x),
+    hold_reason: holdReason(x),
   }));
   const eligibleRows = rows.filter((x) => !isHeldForReview(x));
   const heldRows = rows.filter(isHeldForReview);
