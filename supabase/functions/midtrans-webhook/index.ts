@@ -524,8 +524,17 @@ Deno.serve(async (req: Request) => {
     "SUPABASE_SERVICE_ROLE_KEY",
   );
   const serverKey = Deno.env.get("MIDTRANS_SERVER_KEY");
-  const isProduction =
-    String(Deno.env.get("MIDTRANS_IS_PRODUCTION") ?? "").trim().toLowerCase() === "true";
+  // Explicit user authorization is Sandbox-only. Fail closed if the
+  // environment flag is missing or set to Production.
+  const configuredMode = String(Deno.env.get("MIDTRANS_IS_PRODUCTION") ?? "").trim().toLowerCase();
+  if (configuredMode !== "false") {
+    return reply({
+      success: false,
+      code: "SANDBOX_ONLY",
+      message: "Webhook dikunci ke Sandbox. Periksa MIDTRANS_IS_PRODUCTION di Supabase.",
+    }, 503);
+  }
+  const isProduction = false;
 
   if (!supabaseUrl || !serviceRoleKey || !serverKey) {
     console.error("Konfigurasi server belum lengkap.");
@@ -595,13 +604,19 @@ Deno.serve(async (req: Request) => {
     midtransOrderId + statusCode + grossAmount + serverKey,
   );
 
-  if (!constantTimeEqual(expectedSignature, signatureKey)) {
-    console.error("Signature notifikasi tidak valid.");
+  const notificationSignatureValid = constantTimeEqual(
+    expectedSignature,
+    signatureKey,
+  );
 
-    return reply({
-      success: false,
-      message: "Tanda tangan tidak valid.",
-    }, 401);
+  // Jika signature notifikasi tidak cocok, jangan langsung mengubah pesanan.
+  // Lanjutkan hanya untuk melakukan verifikasi independen ke Status API Midtrans
+  // menggunakan Server Key. Status API harus mengonfirmasi identitas dan nominal
+  // transaksi sebelum event dapat disimpan atau pesanan diproses.
+  if (!notificationSignatureValid) {
+    console.warn(
+      "Signature notifikasi tidak cocok; verifikasi independen Status API diwajibkan.",
+    );
   }
 
   // Pembayaran aktivasi ID Karyawan (KSEMP/KSDEV) tidak disimpan sebagai
@@ -780,19 +795,55 @@ Deno.serve(async (req: Request) => {
     }, 502);
   }
 
+  const statusApiOrderMatches =
+    String(midtransStatus.order_id ?? "") === midtransOrderId;
+  const statusApiAmountMatches =
+    amountMatches(order.total_amount, midtransStatus.gross_amount);
+  const statusApiCurrencyMatches =
+    String(midtransStatus.currency ?? "IDR").toUpperCase() === "IDR";
+  const statusApiCodeValid =
+    String(midtransStatus.status_code ?? "") === "200";
+  const notificationTransactionId = String(
+    notification.transaction_id ?? "",
+  );
+  const statusApiTransactionId = String(
+    midtransStatus.transaction_id ?? "",
+  );
+  const transactionIdMatches =
+    !notificationTransactionId ||
+    !statusApiTransactionId ||
+    notificationTransactionId === statusApiTransactionId;
+
   if (
-    String(midtransStatus.order_id ?? "") !== midtransOrderId ||
-    !amountMatches(order.total_amount, midtransStatus.gross_amount)
+    !statusApiOrderMatches ||
+    !statusApiAmountMatches ||
+    !statusApiCurrencyMatches ||
+    !statusApiCodeValid ||
+    !transactionIdMatches
   ) {
     console.error(
-      "Data Status API tidak cocok:",
+      "Data Status API tidak cocok atau tidak sah:",
       databaseOrderId,
+      {
+        order_matches: statusApiOrderMatches,
+        amount_matches: statusApiAmountMatches,
+        currency_matches: statusApiCurrencyMatches,
+        status_code_valid: statusApiCodeValid,
+        transaction_id_matches: transactionIdMatches,
+      },
     );
 
     return reply({
       success: false,
-      message: "Data transaksi Midtrans tidak cocok.",
+      message: "Data transaksi Midtrans tidak cocok atau belum dapat diverifikasi.",
     }, 400);
+  }
+
+  if (!notificationSignatureValid) {
+    console.warn(
+      "Notifikasi diterima melalui verifikasi independen Status API Midtrans:",
+      databaseOrderId,
+    );
   }
 
   const transactionStatus = String(
