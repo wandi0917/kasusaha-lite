@@ -101,7 +101,10 @@ function isPaidStatus(status: JsonObject): boolean {
 // lebih tepat untuk urutan pembayaran; transaction_time menjadi fallback
 // untuk metode yang belum menyediakan settlement_time.
 function midtransPaidAt(status: JsonObject): string | null {
-  const raw = String(status.settlement_time ?? status.transaction_time ?? "").trim();
+  // An empty settlement_time is not a usable value; fall back to transaction_time.
+  const raw = [status.settlement_time, status.transaction_time]
+    .map((value) => String(value ?? "").trim())
+    .find((value) => value.length > 0) ?? "";
   if (!raw) return null;
   const normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
   const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(normalized);
