@@ -3,7 +3,8 @@
 Status: fondasi teknis sudah digabung ke main dan migrasi additive sudah diterapkan ke Supabase produksi. Belum berlaku untuk pengguna dan belum menagih.
 
 ## Kebijakan yang disepakati
-- Lisensi/penggunaan awal tanpa biaya pendaftaran atau biaya bulanan tetap.
+- Komunikasi promosi wajib membedakan harga lisensi, perpanjangan layanan cloud tahunan, komisi marketplace 2,5%, dan biaya layanan transaksi 0,1%; jangan menyebut seluruh aplikasi/lisensi gratis.
+- Lisensi/paket aplikasi tetap berbayar sesuai harga resmi yang ditampilkan (Starter Rp49.000, Lite Rp99.000, Business Rp149.000, Professional Rp249.000); harga tersebut mencakup 12 bulan layanan cloud pertama. Kebijakan gratis di dokumen ini hanya untuk biaya layanan transaksi, bukan lisensi gratis.
 - Uji coba 30 hari sejak Owner menyetujui ketentuan untuk suatu usaha.
 - Omzet bersih sampai Rp3.000.000 per bulan bebas biaya.
 - Tarif 0,1% hanya atas bagian omzet bersih di atas Rp3.000.000.
@@ -54,3 +55,10 @@ Fondasi sudah digabung ke main dan migrasi additive sudah diterapkan ke Supabase
 9. RPC tidak membocorkan data usaha lain; akses ledger privat tetap tertutup untuk anon/authenticated.
 10. Penagihan tetap nonaktif dan tidak mengubah transaksi, saldo kasir, lisensi, atau hak akses.
 
+
+## Panduan komunikasi promosi
+- Kalimat ringkas: “30 hari pertama gratis biaya layanan. Setelahnya omzet bersih sampai Rp3.000.000 per bulan tetap bebas biaya layanan; hanya bagian di atas Rp3.000.000 dikenai 0,1%.”
+- Sertakan contoh: omzet bersih Rp5.000.000 menghasilkan pratinjau biaya Rp2.000; omzet bersih Rp30.000.000 menghasilkan Rp27.000.
+- Selalu jelaskan bahwa lisensi tetap mengikuti harga paket dan mencakup 12 bulan cloud pertama; perpanjangan cloud tahun berikutnya tetap manual sesuai paket.
+- Masa uji coba baru dimulai setelah Owner sah menyetujui ketentuan untuk usaha tersebut. Jangan mengklaim trial sudah berjalan sebelum persetujuan tercatat.
+- Sampai UI persetujuan Owner, rekonsiliasi retur, dan alur penagihan diuji serta diaktifkan secara resmi, jelaskan bahwa penagihan/pemotongan otomatis belum aktif. Jangan menampilkan estimasi biaya sebagai tagihan.
