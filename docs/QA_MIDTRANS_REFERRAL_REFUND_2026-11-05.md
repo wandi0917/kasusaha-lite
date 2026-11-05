@@ -56,6 +56,8 @@ This branch is a **draft candidate only**. Do not deploy to production until the
 
 ## Regression
 
+- [ ] Owner on Starter/no-`full_finance` plan receives sales-price-only transaction descriptions; cost price and gross profit are not persisted in the description.
+- [ ] Owner with verified `full_finance` entitlement retains cost/gross-profit details; employee descriptions never include them.
 - [ ] Physical marketplace order still records 2.5% commission from product subtotal only, excluding shipping.
 - [ ] Physical order still validates Biteship quote and does not book duplicate shipments.
 - [ ] License purchase still issues exactly one license after verified payment.
