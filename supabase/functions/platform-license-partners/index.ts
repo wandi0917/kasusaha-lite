@@ -69,10 +69,10 @@ Deno.serve(async (req: Request) => {
     if (req.method === "GET") {
       const [partners, commissions] = await Promise.all([
         db.from("license_marketing_partners")
-          .select("id,user_id,referral_code,display_name,status,first_purchase_rate,renewal_rate,approved_at,created_at")
+          .select("id,user_id,referral_code,display_name,status,first_purchase_rate,renewal_rate,approved_at,approved_by,suspended_at,suspended_by,created_at")
           .order("created_at", { ascending: false }).limit(1000),
         db.from("license_partner_commission_ledger")
-          .select("id,partner_id,customer_id,order_id,payment_event_id,commission_type,commission_rate,calculation_base,amount,status,available_at,reviewed_at,paid_at,idempotency_key,notes,created_at")
+          .select("id,partner_id,customer_id,order_id,payment_event_id,commission_type,commission_rate,calculation_base,amount,status,available_at,reviewed_at,reviewed_by,paid_at,paid_by,idempotency_key,notes,created_at")
           .order("created_at", { ascending: false }).limit(2000),
       ]);
       if (partners.error || commissions.error) {
@@ -130,18 +130,18 @@ Deno.serve(async (req: Request) => {
       return { ok: true, message: "" };
     };
 
-    if (action === "approve_partner" || action === "suspend_partner") {
-      const nextStatus = action === "approve_partner" ? "active" : "suspended";
+    if (action === "approve_partner" || action === "suspend_partner" || action === "reactivate_partner") {
+      const nextStatus = action === "suspend_partner" ? "suspended" : "active";
       const update: Record<string, unknown> = {
         status: nextStatus,
         updated_at: new Date().toISOString(),
       };
-      if (action === "approve_partner") update.approved_at = new Date().toISOString();
+      if (action === "approve_partner") { update.approved_at = new Date().toISOString(); update.approved_by = authData.user.id; }\n      if (action === "suspend_partner") { update.suspended_at = new Date().toISOString(); update.suspended_by = authData.user.id; }
 
       const { data, error } = await db.from("license_marketing_partners")
         .update(update).eq("id", id)
-        .eq("status", action === "approve_partner" ? "pending" : "active")
-        .select("id,status,approved_at").maybeSingle();
+        .eq("status", action === "approve_partner" ? "pending" : action === "suspend_partner" ? "active" : "suspended")
+        .select("id,status,approved_at,approved_by,suspended_at,suspended_by").maybeSingle();
       if (error) return reply({ success: false, message: "Status mitra gagal diperbarui." }, 500, origin);
       if (!data) return reply({ success: false, message: "Status mitra berubah atau tidak memenuhi syarat." }, 409, origin);
       return reply({ success: true, partner: data }, 200, origin);
@@ -151,7 +151,7 @@ Deno.serve(async (req: Request) => {
       const safe = await verifyCommissionIsPayable();
       if (!safe.ok) return reply({ success: false, message: safe.message }, 409, origin);
       const { data, error } = await db.from("license_partner_commission_ledger")
-        .update({ status: "approved", reviewed_at: new Date().toISOString() })
+        .update({ status: "approved", reviewed_at: new Date().toISOString(), reviewed_by: authData.user.id })
         .eq("id", id).eq("status", "held")
         .select("id,status,reviewed_at,amount,partner_id").maybeSingle();
       if (error) return reply({ success: false, message: "Persetujuan komisi gagal disimpan." }, 500, origin);
@@ -173,7 +173,7 @@ Deno.serve(async (req: Request) => {
       const previous = typeof existing.notes === "string" ? existing.notes : "";
       const notes = [previous, "Bukti transfer manual: " + reference].filter(Boolean).join("\n");
       const { data, error } = await db.from("license_partner_commission_ledger")
-        .update({ status: "paid", paid_at: new Date().toISOString(), notes })
+        .update({ status: "paid", paid_at: new Date().toISOString(), paid_by: authData.user.id, notes })
         .eq("id", id).eq("status", "approved")
         .select("id,status,paid_at,amount,partner_id,notes").maybeSingle();
       if (error) return reply({ success: false, message: "Pencatatan pembayaran komisi gagal." }, 500, origin);
