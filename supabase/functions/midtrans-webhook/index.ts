@@ -656,6 +656,18 @@ Deno.serve(async (req: Request) => {
   // Akui notifikasi bertanda tangan valid agar Midtrans tidak terus mengulang
   // callback yang memang bukan pesanan marketplace.
   if (/^(?:KSEMP|KSDEV)-[A-F0-9]{32}$/i.test(midtransOrderId)) {
+    // Notifikasi aktivasi karyawan tidak diproses sebagai pesanan marketplace,
+    // tetapi tetap wajib memiliki signature Midtrans yang valid sebelum diakui.
+    // Verifikasi status/nominal pembayaran tetap dilakukan terpisah oleh
+    // employee-device-activation melalui Status API Midtrans.
+    if (!notificationSignatureValid) {
+      return reply({
+        success: false,
+        code: "INVALID_NOTIFICATION_SIGNATURE",
+        message: "Signature notifikasi aktivasi karyawan tidak valid.",
+      }, 401);
+    }
+
     return reply({
       success: true,
       received: true,
