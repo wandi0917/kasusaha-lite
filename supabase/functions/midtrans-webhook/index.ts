@@ -167,6 +167,18 @@ async function recordVerifiedPaymentEvent(
         notification.payment_type ??
         "",
     ),
+    refund_amount: String(midtransStatus.refund_amount ?? notification.refund_amount ?? ""),
+    refunds: Array.isArray(midtransStatus.refunds)
+      ? midtransStatus.refunds.map((refund) => {
+          const row = refund as JsonObject;
+          return {
+            refund_chargeback_id: String(row.refund_chargeback_id ?? ""),
+            refund_amount: String(row.refund_amount ?? ""),
+            refund_key: String(row.refund_key ?? ""),
+            bank_confirmed_at: String(row.bank_confirmed_at ?? ""),
+          };
+        })
+      : [],
   });
 
   const providerEventId = await sha256(fingerprintSource);
@@ -917,6 +929,65 @@ Deno.serve(async (req: Request) => {
 
   const paymentEventId = eventResult.id;
 
+  // Refund/chargeback terverifikasi wajib menahan komisi sampai audit manual.
+  // Midtrans dapat mengirim notifikasi refund lebih dari sekali; fingerprint juga
+  // memasukkan refund_key, jumlah, dan bank_confirmed_at agar pembaruan tercatat.
+  const refundStatuses = ["refund", "partial_refund", "chargeback", "partial_chargeback"];
+  if (refundStatuses.includes(transactionStatus)) {
+    const refundNote = "Midtrans melaporkan " + transactionStatus +
+      ". Tahan persetujuan/pencairan komisi mitra dan lakukan pemeriksaan refund/chargeback.";
+    const { data: reviewOrder, error: reviewError } = await supabase
+      .from("marketplace_orders")
+      .update({
+        payment_review_required: true,
+        payment_review_note: refundNote,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", databaseOrderId)
+      .eq("status", "paid")
+      .select("id")
+      .maybeSingle();
+    if (reviewError) {
+      console.error("Gagal menahan pesanan terkait refund:", reviewError.message);
+      return reply({ success: false, message: "Refund terverifikasi, tetapi penahanan pesanan gagal.", order_id: databaseOrderId }, 500);
+    }
+    const { data: commissionRows, error: commissionReadError } = await supabase
+      .from("license_partner_commission_ledger")
+      .select("id,status,notes")
+      .eq("order_id", databaseOrderId);
+    if (commissionReadError) {
+      console.error("Gagal membaca komisi untuk refund:", commissionReadError.message);
+      return reply({ success: false, message: "Refund tercatat, tetapi status komisi perlu diperiksa manual.", order_id: databaseOrderId }, 500);
+    }
+    for (const row of commissionRows || []) {
+      const previousNotes = typeof row.notes === "string" ? row.notes : "";
+      const notes = [previousNotes, refundNote].filter(Boolean).join("\n");
+      const nextStatus = row.status === "approved" ? "held" : row.status;
+      const { error: holdError } = await supabase
+        .from("license_partner_commission_ledger")
+        .update({ status: nextStatus, notes })
+        .eq("id", row.id)
+        .in("status", ["held", "approved", "paid"]);
+      if (holdError) {
+        console.error("Gagal menahan komisi terkait refund:", holdError.message);
+        return reply({ success: false, message: "Refund tercatat, tetapi komisi belum seluruhnya ditahan.", order_id: databaseOrderId }, 500);
+      }
+    }
+    const processedError = await markPaymentEventProcessed(supabase, paymentEventId);
+    if (processedError) {
+      return reply({ success: false, message: "Refund tertahan untuk pemeriksaan, tetapi event belum selesai.", order_id: databaseOrderId }, 500);
+    }
+    return reply({
+      success: true,
+      message: "Refund/chargeback terverifikasi. Komisi mitra ditahan untuk pemeriksaan manual.",
+      order_id: databaseOrderId,
+      transaction_status: transactionStatus,
+      refund_amount: midtransStatus.refund_amount ?? null,
+      manual_review: true,
+      order_marked_for_review: Boolean(reviewOrder?.id),
+    });
+  }
+
   // 5. Pesanan yang sudah dibatalkan tidak boleh otomatis
   // berubah menjadi paid kembali.
   if (order.status === "cancelled") {
@@ -1246,6 +1317,21 @@ Deno.serve(async (req: Request) => {
           "Pembayaran berhasil, tetapi pencatatan komisi gagal dan perlu dicoba ulang.",
         order_id: databaseOrderId,
       }, 500);
+    }
+
+
+    // Komisi mitra lisensi terpisah dari komisi marketplace 2,5%.
+    const licensePartnerCommission = await supabase.rpc("record_license_partner_commission", {
+      p_order_id: databaseOrderId,
+      p_payment_event_id: paymentEventId,
+    });
+    if (licensePartnerCommission.error ||
+        !licensePartnerCommission.data ||
+        (licensePartnerCommission.data as JsonObject).success !== true) {
+      console.error("Komisi mitra lisensi gagal:", licensePartnerCommission.error?.message ?? JSON.stringify(licensePartnerCommission.data));
+      return reply({ success: false,
+        message: "Pembayaran berhasil, tetapi komisi mitra lisensi belum tercatat. Webhook perlu dicoba ulang.",
+        order_id: databaseOrderId }, 500);
     }
 
     // 8. Pertahankan aktivasi lisensi produk ID 7.
