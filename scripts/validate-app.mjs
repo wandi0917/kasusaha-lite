@@ -48,7 +48,7 @@ try {
 const markupOnly = html
   .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
   .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "");
-const ids = [...markupOnly.matchAll(/\bid\s*=\s*["']([^"']+)["']/gi)].map((m) => m[1]);
+const ids = [...markupOnly.matchAll(/(?:^|\s)id\s*=\s*["']([^"']+)["']/gi)].map((m) => m[1]);
 const duplicates = [...new Set(ids.filter((id, index) => ids.indexOf(id) !== index))];
 if (duplicates.length) fail("duplicate static HTML IDs: " + duplicates.join(", "));
 else pass("no duplicate IDs in static HTML markup");
@@ -127,6 +127,24 @@ if (!/KS_PACKAGE_PRICES/.test(html) ||
     !/professional:249000/.test(html)) {
   fail("four-package checkout prices are missing or inconsistent");
 } else pass("four package checkout prices are present");
+
+if (!/const description=\$\('financeDescription'\)\.value\.trim\(\),amount=Number\(\$\('financeAmount'\)\.value\)[\s\S]{0,500}description\.length<2/.test(html)) {
+  fail("Owner and Employee transaction form must reject descriptions shorter than two characters");
+} else pass("manual finance form requires at least two description characters");
+
+const clientPrivilegeMigration = fs.readFileSync("supabase/migrations/20261105011000_revoke_unsafe_client_table_privileges.sql", "utf8");
+if (!/REVOKE\s+TRUNCATE,\s*REFERENCES,\s*TRIGGER,\s*MAINTAIN\s+ON\s+ALL\s+TABLES\s+IN\s+SCHEMA\s+public\s+FROM\s+anon,\s*authenticated/i.test(clientPrivilegeMigration) ||
+    !/REVOKE ALL PRIVILEGES\s+ON TABLE\s+public\.store_open_bills\s+FROM anon/i.test(clientPrivilegeMigration) ||
+    !/REVOKE DELETE\s+ON TABLE\s+public\.store_open_bills\s+FROM authenticated/i.test(clientPrivilegeMigration)) {
+  fail("client roles must not have truncate, trigger, or maintenance privileges on application tables");
+} else pass("client table privileges exclude truncate, trigger, and maintenance access");
+
+if (!/ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public\s+REVOKE EXECUTE ON FUNCTIONS FROM anon, authenticated/i.test(clientPrivilegeMigration)) {
+  fail("new public functions must require explicit EXECUTE grants");
+} else pass("new public functions default to no client EXECUTE access");
+
+
+
 
 
 const biteshipRates = fs.readFileSync("supabase/functions/biteship-rates/index.ts", "utf8");
