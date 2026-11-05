@@ -26,7 +26,6 @@ CREATE TABLE IF NOT EXISTS private.kasusaha_service_fee_monthly (
 
 ALTER TABLE private.kasusaha_service_fee_monthly ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON private.kasusaha_service_fee_monthly FROM PUBLIC, anon, authenticated;
-REVOKE ALL ON public.business_workspaces FROM anon;
 
 CREATE OR REPLACE FUNCTION public.kasusaha_accept_service_fee_terms(p_business_id uuid)
 RETURNS jsonb
