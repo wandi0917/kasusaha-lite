@@ -4,6 +4,7 @@ This branch is a **draft candidate only**. Do not deploy to production until the
 
 ## Package checkout and referral RPC
 
+- [ ] Customer-facing referral input remains disabled with a clear explanation until partner onboarding, approval, and management are ready; direct RPC tests must not be mistaken for a launched referral program.
 - [ ] Authenticated buyer can create a package order using the four-argument legacy RPC.
 - [ ] Authenticated buyer can create a package order using the five-argument RPC with an active referral code; exactly one referral row is captured for that order.
 - [ ] Empty referral code creates a normal order without a referral row.
