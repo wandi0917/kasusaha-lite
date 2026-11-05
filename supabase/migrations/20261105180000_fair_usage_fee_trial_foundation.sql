@@ -55,17 +55,19 @@ BEGIN
     RAISE EXCEPTION 'Hanya Owner usaha yang sah yang dapat menyetujui ketentuan.';
   END IF;
 
-  IF v_workspace.service_fee_consent_at IS NULL THEN
+  IF v_workspace.service_fee_consent_at IS NULL
+     OR v_workspace.service_fee_trial_started_at IS NULL THEN
     UPDATE public.business_workspaces
-    SET service_fee_consent_at = now(),
-        service_fee_trial_started_at = now(),
-        service_fee_terms_version = '2026-11-v1'
-    WHERE id = p_business_id;
+    SET service_fee_consent_at = coalesce(service_fee_consent_at, now()),
+        service_fee_trial_started_at = coalesce(service_fee_trial_started_at, now()),
+        service_fee_terms_version = coalesce(service_fee_terms_version, '2026-11-v1')
+    WHERE id = p_business_id
+    RETURNING * INTO v_workspace;
   END IF;
 
   RETURN jsonb_build_object(
     'success', true,
-    'trial_started_at', coalesce(v_workspace.service_fee_trial_started_at, now()),
+    'trial_started_at', v_workspace.service_fee_trial_started_at,
     'trial_days', 30,
     'terms_version', '2026-11-v1',
     'fee_enabled', false,
