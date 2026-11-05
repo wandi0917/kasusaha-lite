@@ -4203,6 +4203,7 @@ async function renderOwnerServiceFeePanel(){
 }
 
 async function loadFinanceWorkspaceInternal(){
+ const staleServiceFeePanel=$('serviceFeeOwnerPanel');if(staleServiceFeePanel)staleServiceFeePanel.hidden=true;
  const setup=$('financeSetupForms'),info=$('financeWorkspaceInfo'),entry=$('financeEntryCard'),report=$('financeReportCard');
  if(!sb){setFinanceStatus('Koneksi Supabase belum tersedia.',true);return;}
  try{
