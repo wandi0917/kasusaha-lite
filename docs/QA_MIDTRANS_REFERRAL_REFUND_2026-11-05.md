@@ -21,6 +21,7 @@ This branch is a **draft candidate only**. Do not deploy to production until the
 
 - [ ] Valid settlement: order becomes paid only after signature/Status API, amount, currency, order ID, and transaction ID match.
 - [ ] `paid_at` equals Midtrans `settlement_time` (or `transaction_time` fallback) interpreted as GMT+7, not webhook receipt time.
+- [ ] Empty or whitespace-only `settlement_time` falls back to a valid `transaction_time`; malformed/missing timestamps remain retryable and do not mark an order paid.
 - [ ] `updated_at` records webhook processing time and is not backdated to the provider payment timestamp.
 - [ ] Missing/malformed provider timestamp: webhook returns retryable 5xx and does not mark the order paid.
 - [ ] Valid card capture with `fraud_status=accept` is accepted; capture without accept is not.
