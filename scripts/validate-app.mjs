@@ -63,6 +63,18 @@ if (!/detail\.includes\(['"]saldo akun biteship['"]\)/.test(html)) {
   fail("localized Biteship balance errors must show the dedicated checkout guidance");
 } else pass("localized Biteship balance errors map to dedicated checkout guidance");
 
+const barcodeCartChecks = [
+  [/function addScannedBarcodeToQuickSale\\(raw\\)[\\s\\S]{0,2600}nextQty[\\s\\S]{0,500}qtyField\\.value=String\\(nextQty\\)/, html, "repeated scans of the same product must increment its quantity"],
+  [/function addScannedBarcodeToQuickSale\\(raw\\)[\\s\\S]{0,3000}qtyField\\.value='1'/, html, "first scan must add one unit automatically"],
+  [/function addScannedBarcodeToQuickSale\\(raw\\)[\\s\\S]{0,3200}scanInput\\.focus\\(\\{preventScroll:true\\}\\)/, html, "scanner input must regain focus after a successful scan"],
+  [/updateQuickSalePreview\\(\\);await loadQuickSaleOpenBills\\(\\);const barcodeInput=\\$\\('quickSaleBarcodeInput'\\);if\\(barcodeInput\\)requestAnimationFrame\\(\\(\\)=>barcodeInput\\.focus/, html, "cashier must autofocus the scanner input when opening a new sale"],
+  [/const added=addScannedBarcodeToQuickSale\\(value\\);if\\(added\\)setQuickSaleBarcodeStatus/, html, "camera cart scanning must remain open for consecutive items"],
+];
+for (const [pattern, source, message] of barcodeCartChecks) {
+  if (!pattern.test(source)) fail(message);
+  else pass(message);
+}
+
 if (!/getUserMedia/.test(html) || !/ZXingBrowser|BarcodeDetector/.test(html)) {
   fail("camera barcode scanning dependencies or API are missing");
 } else pass("camera barcode scanner code present");
