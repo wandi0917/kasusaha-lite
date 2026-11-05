@@ -31,7 +31,9 @@ This branch is a **draft candidate only**. Do not deploy to production until the
 ## License partner commissions
 
 - [ ] First paid license order with active referral creates one 15% held commission.
-- [ ] Later paid license order creates one 10% held commission.
+- [ ] First-purchase commission uses the approved partner row's `first_purchase_rate`; renewal uses `renewal_rate` (currently constrained to 10%).
+- [ ] Zero-rate or rounded-to-zero commission does not create a zero-value ledger row.
+- [ ] Later paid license order creates one renewal held commission using the partner's configured renewal rate.
 - [ ] A later order webhook arriving first, followed by an earlier provider-paid order, recalculates unpaid/approved rows to correct first/renewal rates and partner.
 - [ ] Existing approved rows affected by recalculation return to held; no payout is triggered.
 - [ ] A commission already marked paid is never changed financially; it receives a manual-review note if attribution changes.
