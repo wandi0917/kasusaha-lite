@@ -1563,7 +1563,7 @@ Deno.serve(async (req: Request) => {
         notes: reviewNote,
       })
       .eq("order_id", databaseOrderId)
-      .eq("status", "approved");
+      .in("status", ["held", "approved"]);
 
     if (holdPartnerError) {
       console.error("Gagal menahan komisi mitra lisensi:", holdPartnerError.message);
@@ -1572,6 +1572,45 @@ Deno.serve(async (req: Request) => {
         message: "Pesanan ditandai untuk pemeriksaan, tetapi penahanan komisi mitra belum berhasil.",
         order_id: databaseOrderId,
       }, 500);
+    }
+
+    // Komisi yang sudah dibayar tidak diubah nilainya atau di-clawback otomatis.
+    // Tambahkan catatan agar admin meninjau payout yang mungkin sudah terjadi.
+    const { data: paidPartnerRows, error: paidPartnerReadError } = await supabase
+      .from("license_partner_commission_ledger")
+      .select("id, notes")
+      .eq("order_id", databaseOrderId)
+      .eq("status", "paid");
+
+    if (paidPartnerReadError) {
+      console.error("Gagal membaca komisi mitra yang sudah dibayar:", paidPartnerReadError.message);
+      return reply({
+        success: false,
+        message: "Pemeriksaan refund tersimpan, tetapi riwayat komisi yang sudah dibayar belum dapat dibaca.",
+        order_id: databaseOrderId,
+      }, 500);
+    }
+
+    for (const row of paidPartnerRows ?? []) {
+      const priorNotes = String(row.notes ?? "").trim();
+      const paidReviewNote = priorNotes.includes("REVIEW REFUND/CHARGEBACK:")
+        ? priorNotes
+        : [priorNotes, "REVIEW REFUND/CHARGEBACK:", reviewNote].filter(Boolean).join(" ");
+
+      const { error: paidPartnerUpdateError } = await supabase
+        .from("license_partner_commission_ledger")
+        .update({ notes: paidReviewNote })
+        .eq("id", row.id)
+        .eq("status", "paid");
+
+      if (paidPartnerUpdateError) {
+        console.error("Gagal menambahkan catatan pemeriksaan pada komisi mitra yang sudah dibayar:", paidPartnerUpdateError.message);
+        return reply({
+          success: false,
+          message: "Komisi yang sudah dibayar memerlukan pemeriksaan manual; catatan audit belum berhasil disimpan.",
+          order_id: databaseOrderId,
+        }, 500);
+      }
     }
 
     const processedReviewError = await markPaymentEventProcessed(supabase, paymentEventId);
