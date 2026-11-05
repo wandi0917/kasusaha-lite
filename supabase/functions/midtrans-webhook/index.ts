@@ -104,7 +104,7 @@ function midtransPaidAt(status: JsonObject): string | null {
   const raw = String(status.settlement_time ?? status.transaction_time ?? "").trim();
   if (!raw) return null;
   const normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
-  const hasTimezone = /(?:Z|[+-]\\d{2}:?\\d{2})$/i.test(normalized);
+  const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(normalized);
   const iso = hasTimezone ? normalized : normalized + "+07:00";
   const parsed = Date.parse(iso);
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
