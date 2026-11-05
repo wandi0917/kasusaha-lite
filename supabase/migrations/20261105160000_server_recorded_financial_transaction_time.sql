@@ -4,11 +4,12 @@
 ALTER TABLE public.financial_transactions
   ADD COLUMN IF NOT EXISTS server_recorded_at timestamptz;
 
--- Existing rows predate this safeguard. Backfill from the existing timestamp;
--- no business has accepted the service-fee terms yet, so historical rows are
--- outside any future trial-completion window.
+-- Existing rows predate this safeguard. Stamp them at migration time rather than
+-- copying created_at, because created_at may contain a client-supplied offline
+-- timestamp (including a future value). No business has accepted service-fee
+-- terms yet, so these rows must remain outside any future trial-completion window.
 UPDATE public.financial_transactions
-SET server_recorded_at = COALESCE(created_at, now())
+SET server_recorded_at = transaction_timestamp()
 WHERE server_recorded_at IS NULL;
 
 ALTER TABLE public.financial_transactions
