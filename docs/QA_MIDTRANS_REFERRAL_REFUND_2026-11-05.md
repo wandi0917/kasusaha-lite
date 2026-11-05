@@ -20,6 +20,8 @@ This branch is a **draft candidate only**. Do not deploy to production until the
 - [ ] Existing approved rows affected by recalculation return to held; no payout is triggered.
 - [ ] A commission already marked paid is never changed financially; it receives a manual-review note if attribution changes.
 - [ ] First paid license order without referral prevents later referral from claiming the customer.
+- [ ] Orders marked `payment_review_required=true` are excluded from first-purchase and renewal attribution.
+- [ ] Paid orders backed only by manual CSV evidence (`verification_status=received`) are excluded from referral attribution and commission calculations.
 - [ ] Invalid, inactive, or self-referral code cannot create a commission.
 - [ ] Concurrent and repeated webhook delivery is idempotent.
 - [ ] Non-license marketplace orders return success without creating license-partner ledger rows.
