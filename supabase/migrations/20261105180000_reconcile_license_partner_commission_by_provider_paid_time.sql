@@ -347,3 +347,43 @@ GRANT EXECUTE ON FUNCTION public.record_license_partner_commission(uuid, uuid)
 
 COMMENT ON FUNCTION public.record_license_partner_commission(uuid, uuid)
   IS 'Records and reconciles license-partner commissions using provider-paid timestamps; recalculates only held/approved rows and never automatically claws back paid commissions.';
+
+
+-- Backfill historical paid_at values only from independently verified Midtrans
+-- settlement/capture events. Manual CSV reconciliation events are excluded.
+-- Midtrans timestamps without an offset are interpreted as Asia/Jakarta (GMT+7).
+WITH provider_times AS (
+  SELECT DISTINCT ON (e.order_id)
+    e.order_id,
+    COALESCE(
+      NULLIF(e.payload #>> '{verified_status,settlement_time}', ''),
+      NULLIF(e.payload #>> '{verified_status,transaction_time}', '')
+    ) AS provider_time
+  FROM public.marketplace_payment_events e
+  JOIN public.marketplace_orders o ON o.id = e.order_id
+  WHERE e.provider = 'midtrans'
+    AND e.event_type IN ('settlement', 'capture')
+    AND e.verification_status = 'verified'
+    AND o.status = 'paid'
+  ORDER BY e.order_id, e.processed_at DESC NULLS LAST, e.id DESC
+),
+parsed_provider_times AS (
+  SELECT
+    order_id,
+    CASE
+      WHEN provider_time ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}[ T][0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:?[0-9]{2})$'
+        THEN provider_time::timestamptz
+      WHEN provider_time ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}[ T][0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?$'
+        THEN replace(provider_time, 'T', ' ')::timestamp AT TIME ZONE 'Asia/Jakarta'
+      ELSE NULL
+    END AS provider_paid_at
+  FROM provider_times
+  WHERE provider_time IS NOT NULL
+)
+UPDATE public.marketplace_orders o
+SET paid_at = p.provider_paid_at,
+    updated_at = now()
+FROM parsed_provider_times p
+WHERE o.id = p.order_id
+  AND p.provider_paid_at IS NOT NULL
+  AND o.paid_at IS DISTINCT FROM p.provider_paid_at;
