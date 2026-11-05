@@ -371,9 +371,9 @@ parsed_provider_times AS (
   SELECT
     order_id,
     CASE
-      WHEN provider_time ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}[ T][0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:?[0-9]{2})$'
+      WHEN provider_time ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}[ T][0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?(Z|[+-][0-9]{2}:?[0-9]{2})$'
         THEN provider_time::timestamptz
-      WHEN provider_time ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}[ T][0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?$'
+      WHEN provider_time ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}[ T][0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?$'
         THEN replace(provider_time, 'T', ' ')::timestamp AT TIME ZONE 'Asia/Jakarta'
       ELSE NULL
     END AS provider_paid_at
