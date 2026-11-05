@@ -196,22 +196,32 @@ Deno.serve(async (req: Request): Promise<Response> => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const serverKey = Deno.env.get("MIDTRANS_SERVER_KEY");
-
-    // KasUsaha Lite is explicitly locked to Midtrans Sandbox for this deployment.
-    // Missing or Production configuration must fail closed; never create real charges.
+    // Mode harus eksplisit. Kunci Production dipisahkan dari Sandbox.
     const configuredMode = norm(Deno.env.get("MIDTRANS_IS_PRODUCTION"));
-    if (configuredMode !== "false") {
+    if (configuredMode !== "false" && configuredMode !== "true") {
       return reply(
         {
           success: false,
-          code: "SANDBOX_ONLY",
-          error: "Pembayaran saat ini dikunci ke Sandbox. Periksa MIDTRANS_IS_PRODUCTION di Supabase.",
+          code: "PAYMENT_MODE_INVALID",
+          error: "Mode pembayaran belum dikonfigurasi dengan benar.",
         },
         503,
       );
     }
-    const production = false;
+    const production = configuredMode === "true";
+    const serverKey = production
+      ? Deno.env.get("MIDTRANS_SERVER_KEY_PRODUCTION")
+      : (Deno.env.get("MIDTRANS_SERVER_KEY_SANDBOX") || Deno.env.get("MIDTRANS_SERVER_KEY"));
+    if (production && !serverKey) {
+      return reply(
+        {
+          success: false,
+          code: "PRODUCTION_KEY_MISSING",
+          error: "Kunci server Midtrans Production belum dikonfigurasi.",
+        },
+        503,
+      );
+    }
 
     const finishUrl = "https://kasusaha-lite.pages.dev/?payment=return";
 
