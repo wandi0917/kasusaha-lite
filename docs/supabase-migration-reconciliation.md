@@ -1,16 +1,25 @@
 # Rekonsiliasi riwayat migrasi Supabase
 
-Tanggal audit: 5 November 2026  
+Tanggal audit: 6 November 2026  
 Proyek: `flvdudmdltjjdjkdngbv`  
 Repositori: `wandi0917/kasusaha-lite`
 
 ## Hasil pemeriksaan
 
-- Supabase mencatat 99 versi migrasi yang telah diterapkan.
+- Supabase mencatat 108 versi migrasi yang telah diterapkan (pemeriksaan ulang 6 November 2026; versi terbaru tetap `20261105160017`).
 - Direktori `supabase/migrations` pada branch `main` berisi 27 file SQL.
 - Semua 27 versi file yang ada sekarang cocok dengan versi migrasi yang tercatat di Supabase.
-- Sebanyak 72 versi migrasi yang sudah tercatat di Supabase belum memiliki file SQL pasangannya di repositori.
+- Sebanyak 81 versi migrasi yang sudah tercatat di Supabase belum memiliki file SQL pasangannya di branch `main`.
 - Nama file untuk beberapa migrasi yang tersedia telah diselaraskan dengan versi yang tercatat di Supabase. Ini hanya mengganti nama file, bukan menjalankan ulang SQL.
+
+
+## Pemeriksaan ulang 6 November 2026
+
+- Jumlah riwayat migrasi remote bertambah menjadi 108; versi terakhir tetap `20261105160017`.
+- Branch `main` masih memiliki 27 file SQL migrasi yang cocok dengan versi remote.
+- Dengan demikian, 81 versi historis belum memiliki pasangan SQL di branch `main`.
+- Lima migrasi kandidat yang hanya ada di cabang audit tidak dihitung sebagai migrasi produksi dan belum diterapkan.
+- Jangan menutup selisih ini dengan `migration repair`, karena perintah tersebut tidak merekonstruksi isi SQL historis.
 
 ## Dampak
 
