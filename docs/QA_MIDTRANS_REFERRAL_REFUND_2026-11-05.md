@@ -15,6 +15,23 @@ This branch is a **draft candidate only**. Do not deploy to production until the
 - [ ] Verify backup/restore procedure and retain a known-good Cloudflare production deployment for rollback.
 - [ ] Perform a final live smoke test with a low-value real payment only after merchant activation, secrets, migration baseline, and refund procedure are confirmed.
 
+
+## Package entitlement truthfulness — current production snapshot
+
+- [ ] Compare the customer-facing package feature matrix with `kasusaha_license_plans.features` after every package migration.
+- [ ] Current production price snapshot: Starter Rp49.000, Lite Rp99.000, Business Rp149.000, Professional Rp249.000.
+- [ ] Current production entitlement snapshot: Starter has cashier/basic stock/basic products/sales reports; Lite adds barcode, employee/attendance, marketplace, and full finance; Business adds advanced reports.
+- [ ] Professional currently has the same entitlement flags as Business. Do not advertise a distinct Professional-only feature, priority support, SLA, or premium capability until the entitlement is implemented and tested.
+- [ ] Renewal prices shown in the UI are informational only; renewal checkout is not available and there is no automatic renewal billing.
+- [ ] Do not present the planned 0.1% fair-usage/service-fee preview as a charge. It remains informational and requires explicit Owner consent before any future billing.
+
+## Migration baseline — production snapshot
+
+- Production migration history currently contains 108 applied entries and ends at `20261105160017`.
+- Candidate migrations `20261105170000`, `20261105180000`, `20261106100000`, `20261106113000`, and `20261106120000` are not applied in production.
+- The repository does not contain the complete historical SQL baseline represented by the remote migration history. Never bulk-push, reset, or repair migration history until the baseline is reconstructed and reconciled.
+- The five candidate migrations were dry-run in a transaction that was rolled back. This validates selected SQL behavior but is not a substitute for a disposable staging database.
+
 ## Current production boundary
 
 - This PR is not merged. Its preview build does not change the production Pages branch.
