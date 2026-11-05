@@ -98,6 +98,38 @@ Deno.serve(async (req: Request) => {
       return reply({ success: false, message: "ID tidak valid." }, 400, origin);
     }
 
+    const verifyCommissionIsPayable = async () => {
+      const { data: commission, error: commissionError } = await db
+        .from("license_partner_commission_ledger")
+        .select("order_id")
+        .eq("id", id)
+        .maybeSingle();
+      if (commissionError || !commission) {
+        return { ok: false, message: "Data komisi tidak ditemukan atau gagal dibaca." };
+      }
+      const { data: order, error: orderError } = await db
+        .from("marketplace_orders")
+        .select("status,payment_review_required")
+        .eq("id", commission.order_id)
+        .maybeSingle();
+      if (orderError || !order || order.status !== "paid" || order.payment_review_required) {
+        return { ok: false, message: "Pesanan tidak berstatus paid bersih atau sedang ditahan untuk pemeriksaan." };
+      }
+      const { data: refundEvents, error: refundError } = await db
+        .from("marketplace_payment_events")
+        .select("id,event_type")
+        .eq("order_id", commission.order_id)
+        .eq("provider", "midtrans")
+        .eq("verification_status", "verified")
+        .in("event_type", ["refund","partial_refund","chargeback","partial_chargeback"])
+        .limit(1);
+      if (refundError) return { ok: false, message: "Status refund belum dapat diverifikasi." };
+      if (refundEvents && refundEvents.length) {
+        return { ok: false, message: "Pesanan memiliki refund/chargeback terverifikasi. Komisi tidak boleh disetujui atau dicairkan." };
+      }
+      return { ok: true, message: "" };
+    };
+
     if (action === "approve_partner" || action === "suspend_partner") {
       const nextStatus = action === "approve_partner" ? "active" : "suspended";
       const update: Record<string, unknown> = {
@@ -116,6 +148,8 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "approve_commission") {
+      const safe = await verifyCommissionIsPayable();
+      if (!safe.ok) return reply({ success: false, message: safe.message }, 409, origin);
       const { data, error } = await db.from("license_partner_commission_ledger")
         .update({ status: "approved", reviewed_at: new Date().toISOString() })
         .eq("id", id).eq("status", "held")
@@ -126,6 +160,8 @@ Deno.serve(async (req: Request) => {
     }
 
     if (action === "mark_commission_paid") {
+      const safe = await verifyCommissionIsPayable();
+      if (!safe.ok) return reply({ success: false, message: safe.message }, 409, origin);
       const reference = String(body.transfer_reference || "").trim();
       if (reference.length < 4 || reference.length > 120) {
         return reply({ success: false, message: "Nomor referensi transfer wajib diisi (4–120 karakter)." }, 400, origin);
