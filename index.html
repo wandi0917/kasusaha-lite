@@ -4384,12 +4384,14 @@ function addScannedBarcodeToQuickSale(raw){
  if(row){
   const qty=row.querySelector('.quick-sale-qty');
   const current=Math.max(1,Number.parseInt(qty?.value||'1',10)||1);
-  if(qty)qty.value=String(current+1);
+  const available=Math.max(0,Number(p.stock_quantity||0));
+  if(current>=available){setQuickSaleBarcodeStatus('Stok '+p.product_name+' hanya tersedia '+available+' unit. Jumlah di keranjang tidak ditambah.',true);return false;}
+  if(qty){qty.max=String(available);qty.value=String(current+1);}
  }else{
   row=quickSaleItemRows().find(el=>{const input=el.querySelector('.quick-sale-product');return !String(input?.value||'').trim()&&!input?.dataset.productId;});
   if(!row){addQuickSaleLine();row=quickSaleItemRows().slice(-1)[0];}
   const input=row?.querySelector('.quick-sale-product');if(input){input.value=p.product_code+' — '+p.product_name;input.dataset.productId=p.id;}
-  const qtyField=row?.querySelector('.quick-sale-qty');if(qtyField){qtyField.value='1';qtyField.min='1';qtyField.step='1';}
+  const qtyField=row?.querySelector('.quick-sale-qty');if(qtyField){qtyField.value='1';qtyField.min='1';qtyField.max=String(Math.max(0,Number(p.stock_quantity||0)));qtyField.step='1';}
  }
  const cancelButton=row?.querySelector('.quick-sale-cancel-scan');if(cancelButton)cancelButton.hidden=false;
  updateQuickSalePreview(true);setQuickSaleBarcodeStatus('✓ '+p.product_name+' ditambahkan. Scan barang berikutnya; scan ulang akan menambah jumlah.');
