@@ -61,5 +61,5 @@ Fondasi sudah digabung ke main dan migrasi additive sudah diterapkan ke Supabase
 - Migrasi `20261105160000_server_recorded_financial_transaction_time.sql` menambahkan `server_recorded_at`, diisi oleh trigger database pada saat INSERT dan dipertahankan saat UPDATE.
 - Pratinjau biaya menggunakan `server_recorded_at` dan batas bulan Asia/Jakarta; pengguna tidak dapat memundurkan/memajukan waktu penerimaan melalui payload browser.
 - Transaksi offline dialokasikan ke bulan ketika server menerima sinkronisasi. Tanggal transaksi asli tetap berada di `transaction_date` untuk laporan, tetapi bukan dasar waktu penagihan.
-- Data lama diisi dari `created_at` untuk kompatibilitas. Tidak ada usaha yang telah menyetujui ketentuan trial pada saat audit; data lama berada sebelum trial yang kelak dimulai.
+- Data lama diberi cap waktu migrasi (`transaction_timestamp()`), bukan menyalin `created_at` yang dapat berisi waktu perangkat atau waktu masa depan. Tidak ada usaha yang telah menyetujui ketentuan trial pada saat audit; data lama berada sebelum trial yang kelak dimulai.
 - Tagihan tetap dinonaktifkan. Pratinjau belum boleh dipakai untuk penagihan sampai retur ditautkan ke penjualan asal, koreksi manual memiliki audit trail, dan alur offline/online direkonsiliasi.
