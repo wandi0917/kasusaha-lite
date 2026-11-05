@@ -4473,7 +4473,7 @@ function addScannedBarcodeToQuickSale(raw){
  }
  const cancelButton=row?.querySelector('.quick-sale-cancel-scan');if(cancelButton)cancelButton.hidden=false;
  updateQuickSalePreview(true);setQuickSaleBarcodeStatus('✓ '+p.product_name+' ditambahkan. Scan barang berikutnya; scan ulang akan menambah jumlah.');
- const scanInput=$('quickSaleBarcodeInput');if(scanInput){scanInput.value='';scanInput.focus({preventScroll:true});}return true;
+ const scanInput=$('quickSaleBarcodeInput');if(scanInput){scanInput.value='';if($('quickSaleBarcodeModal')?.hidden!==false)scanInput.focus({preventScroll:true});}return true;
 }
 function handleQuickSaleCameraResult(raw){
  const value=String(raw||'').trim(),now=Date.now();
@@ -4493,7 +4493,7 @@ function handleQuickSaleCameraResult(raw){
   const help=$('storeProductBarcodeHelp');if(help)help.textContent='Barcode pabrik berhasil dipindai. Pastikan nilainya sesuai label kemasan lalu simpan produk.';
   const status=$('storeProductStatus');if(status){status.className='status';status.textContent='Barcode pabrik terbaca: '+value+'. Periksa lalu simpan produk.';}
   closeQuickSaleBarcodeCamera();field?.focus();
- }else{const added=addScannedBarcodeToQuickSale(value);if(added)closeQuickSaleBarcodeCamera();}
+ }else{const added=addScannedBarcodeToQuickSale(value);if(added)setQuickSaleBarcodeStatus('✓ Barcode '+value+' berhasil masuk ke keranjang. Arahkan kamera ke barang berikutnya atau tekan Tutup kamera.');}
 }
 async function ensureKasUsahaZXing(){
  if(window.ZXingBrowser?.BrowserMultiFormatReader)return window.ZXingBrowser;

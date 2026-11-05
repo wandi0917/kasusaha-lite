@@ -63,6 +63,25 @@ if (!/detail\.includes\(['"]saldo akun biteship['"]\)/.test(html)) {
   fail("localized Biteship balance errors must show the dedicated checkout guidance");
 } else pass("localized Biteship balance errors map to dedicated checkout guidance");
 
+const barcodeScanStart = html.indexOf("function addScannedBarcodeToQuickSale(raw){");
+const barcodeScanEnd = html.indexOf("\nfunction handleQuickSaleCameraResult", barcodeScanStart);
+const barcodeScan = html.slice(barcodeScanStart, barcodeScanEnd);
+const cameraStart = html.indexOf("function handleQuickSaleCameraResult(raw){");
+const cameraEnd = html.indexOf("\nasync function ensureKasUsahaZXing", cameraStart);
+const cameraScan = html.slice(cameraStart, cameraEnd);
+const barcodeRegressionChecks = [
+  [barcodeScan.includes("qty.value=String(current+1)"), "repeated product scans must increment quantity"],
+  [barcodeScan.includes("qtyField.value='1'"), "first product scan must add one unit automatically"],
+  [barcodeScan.includes("current>=available"), "repeated scans must not exceed available stock"],
+  [barcodeScan.includes("quickSaleBarcodeModal')?.hidden!==false"), "camera mode must not force keyboard focus over the camera"],
+  [cameraScan.includes("if(added)setQuickSaleBarcodeStatus") && !cameraScan.includes("if(added)closeQuickSaleBarcodeCamera()"), "camera cart scanning must remain open for consecutive products"],
+  [html.includes("barcodeInput.focus({preventScroll:true})"), "cashier must focus the scanner input when opening a sale"],
+];
+for (const [ok, message] of barcodeRegressionChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
 if (!/getUserMedia/.test(html) || !/ZXingBrowser|BarcodeDetector/.test(html)) {
   fail("camera barcode scanning dependencies or API are missing");
 } else pass("camera barcode scanner code present");
@@ -132,7 +151,7 @@ if (!/const description=\$\('financeDescription'\)\.value\.trim\(\),amount=Numbe
   fail("Owner and Employee transaction form must reject descriptions shorter than two characters");
 } else pass("manual finance form requires at least two description characters");
 
-const clientPrivilegeMigration = fs.readFileSync("supabase/migrations/20261105011000_revoke_unsafe_client_table_privileges.sql", "utf8");
+const clientPrivilegeMigration = fs.readFileSync("supabase/migrations/20261105014210_revoke_unsafe_client_table_privileges.sql", "utf8");
 if (!/REVOKE\s+TRUNCATE,\s*REFERENCES,\s*TRIGGER,\s*MAINTAIN\s+ON\s+ALL\s+TABLES\s+IN\s+SCHEMA\s+public\s+FROM\s+anon,\s*authenticated/i.test(clientPrivilegeMigration) ||
     !/REVOKE ALL PRIVILEGES\s+ON TABLE\s+public\.store_open_bills\s+FROM anon/i.test(clientPrivilegeMigration) ||
     !/REVOKE DELETE\s+ON TABLE\s+public\.store_open_bills\s+FROM authenticated/i.test(clientPrivilegeMigration)) {
@@ -233,7 +252,7 @@ for (const [pattern, source, message] of operationalChecks) {
 }
 
 
-const employeeCatalogMigration = fs.readFileSync("supabase/migrations/20261105120000_reassert_store_product_employee_read_privileges.sql", "utf8");
+const employeeCatalogMigration = fs.readFileSync("supabase/migrations/20261105081707_reassert_store_product_employee_read_privileges.sql", "utf8");
 const employeeCatalogChecks = [
   [html.includes('data-transaction-role="employee"><summary') && html.includes("Daftar Barang &amp; Barcode"), "Employee must have a dedicated product and barcode catalog menu"],
   [html.includes('id="employeeProductCatalogRows"'), "Employee catalog table must be present"],
