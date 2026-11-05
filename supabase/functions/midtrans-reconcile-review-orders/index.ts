@@ -124,6 +124,7 @@ Deno.serve(async (req: Request) => {
       .eq("status", "paid")
       .eq("payment_provider", "midtrans")
       .eq("payment_review_required", true)
+      .eq("payment_review_note", auditReviewNote)
       .order("created_at", { ascending: true })
       .limit(50);
 
