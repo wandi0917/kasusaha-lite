@@ -92,6 +92,7 @@ DECLARE
   v_returns numeric(18,2) := 0;
   v_net numeric(18,2) := 0;
   v_trial_ends timestamptz;
+  v_month_end_exclusive timestamptz := ((date_trunc('month', p_month) + interval '1 month')::timestamp AT TIME ZONE 'Asia/Jakarta');
   v_eligible boolean := false;
 BEGIN
   IF v_uid IS NULL OR coalesce(((auth.jwt() ->> 'is_anonymous')::boolean), false) THEN
@@ -117,7 +118,10 @@ BEGIN
   WHERE t.business_id = p_business_id
     AND t.transaction_type = 'income'
     AND lower(trim(t.category)) = 'penjualan'
-    AND t.transaction_date BETWEEN v_start AND v_end;
+    AND t.transaction_date BETWEEN v_start AND v_end
+    AND v_workspace.service_fee_trial_started_at IS NOT NULL
+    AND t.created_at >= (v_workspace.service_fee_trial_started_at + interval '30 days')
+    AND t.created_at < v_month_end_exclusive;
 
   SELECT coalesce(sum(t.amount),0)
   INTO v_returns
@@ -125,13 +129,16 @@ BEGIN
   WHERE t.business_id = p_business_id
     AND t.transaction_type = 'expense'
     AND lower(trim(t.category)) IN ('retur penjualan','pengembalian penjualan')
-    AND t.transaction_date BETWEEN v_start AND v_end;
+    AND t.transaction_date BETWEEN v_start AND v_end
+    AND v_workspace.service_fee_trial_started_at IS NOT NULL
+    AND t.created_at >= (v_workspace.service_fee_trial_started_at + interval '30 days')
+    AND t.created_at < v_month_end_exclusive;
 
   v_net := greatest(0, v_sales - v_returns);
   v_trial_ends := v_workspace.service_fee_trial_started_at + interval '30 days';
   v_eligible := v_workspace.service_fee_consent_at IS NOT NULL
     AND v_workspace.service_fee_trial_started_at IS NOT NULL
-    AND (v_end::timestamp AT TIME ZONE 'Asia/Jakarta') >= v_trial_ends;
+    AND v_trial_ends < v_month_end_exclusive;
 
   RETURN jsonb_build_object(
     'business_id', p_business_id,
@@ -150,7 +157,7 @@ BEGIN
     'consent_recorded', v_workspace.service_fee_consent_at IS NOT NULL,
     'trial_completed_for_period', v_eligible,
     'billing_enabled', false,
-    'warning', 'Pratinjau saja. Penjualan manual dan retur yang tidak dicatat dengan kategori retur belum dapat direkonsiliasi otomatis.'
+    'warning', 'Pratinjau saja, bukan tagihan. Perhitungan ini hanya memasukkan baris yang dicatat server setelah masa uji coba berakhir. Transaksi offline yang baru disinkronkan, retur yang tidak ditautkan ke penjualan asal, dan koreksi manual belum dapat direkonsiliasi secara andal; jangan gunakan hasil ini untuk menagih sebelum semua jalur transaksi memiliki waktu kejadian asli dan audit trail.'
   );
 END;
 $function$;
