@@ -46,6 +46,18 @@ Deno.serve(async (req: Request) => {
       return reply({ success: false, code: "PAYMENT_MODE_INVALID", message: "Mode pembayaran belum dikonfigurasi dengan benar." }, 503);
     }
     const production = configuredMode === "true";
+    // Employee-ID payments share the same Production approval gate as checkout.
+    const productionPaymentsEnabled =
+      String(Deno.env.get("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED") ?? "")
+        .trim()
+        .toLowerCase() === "true";
+    if (production && !productionPaymentsEnabled) {
+      return reply({
+        success: false,
+        code: "PRODUCTION_PAYMENTS_NOT_ENABLED",
+        message: "Pembayaran aktivasi Karyawan melalui Midtrans Production belum diaktifkan. Selesaikan persetujuan merchant dan checklist cutover terlebih dahulu.",
+      }, 503);
+    }
     const serverKey = production
       ? Deno.env.get("MIDTRANS_SERVER_KEY_PRODUCTION")
       : (Deno.env.get("MIDTRANS_SERVER_KEY_SANDBOX") || Deno.env.get("MIDTRANS_SERVER_KEY"));
