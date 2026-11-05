@@ -1524,7 +1524,7 @@ body>main img{max-width:100%}
 </div>
 </header>
 <nav aria-label="Navigasi utama">
-<button class="active" type="button" onclick="buka('beranda',this)">Beranda</button><button id="navCompleteGuide" type="button" onclick="buka('panduanLengkap',this)">📘 Panduan Lengkap</button><button id="navTransaksi" type="button" onclick="buka('transaksi',this)">Transaksi</button><button type="button" onclick="buka('produk',this)">Produk Saya</button><button type="button" onclick="buka('pasar',this)">Pasar Online</button><button type="button" onclick="buka('paketKasUsaha',this)">Paket &amp; Harga</button><button type="button" onclick="buka('keranjang',this)">Keranjang <span id="jumlahKeranjang">0</span></button><button type="button" onclick="buka('cadangan',this)">Cadangan</button><button type="button" onclick="buka('akun',this)">Login Owner / Penjual</button><button type="button" onclick="buka('loginKaryawan',this)">Login Karyawan</button><button type="button" onclick="buka('akunPembeli',this)">Akun Pembeli</button><button id="navPesananSaya" type="button" onclick="buka('pesananSaya',this)">Pesanan Saya</button><button type="button" onclick="buka('pesananMasuk',this)">Pesanan Masuk</button><button type="button" id="navKasUsahaSaran" onclick="bukaKotakSaran(this)">💬 Kotak Saran</button>
+<button class="active" type="button" onclick="buka('beranda',this)">Beranda</button><button id="navCompleteGuide" type="button" onclick="buka('panduanLengkap',this)">📘 Panduan Lengkap</button><button id="navTransaksi" type="button" onclick="buka('transaksi',this)">Transaksi</button><button type="button" onclick="buka('produk',this)">Produk Saya</button><button id="navPasarOnline" type="button" onclick="buka('pasar',this)">Pasar Online</button><button type="button" onclick="buka('paketKasUsaha',this)">Paket &amp; Harga</button><button type="button" onclick="buka('keranjang',this)">Keranjang <span id="jumlahKeranjang">0</span></button><button type="button" onclick="buka('cadangan',this)">Cadangan</button><button type="button" onclick="buka('akun',this)">Login Owner / Penjual</button><button type="button" onclick="buka('loginKaryawan',this)">Login Karyawan</button><button id="navAkunPembeli" type="button" onclick="buka('akunPembeli',this)">Akun Pembeli</button><button id="navPesananSaya" type="button" onclick="buka('pesananSaya',this)">Pesanan Saya</button><button type="button" onclick="buka('pesananMasuk',this)">Pesanan Masuk</button><button type="button" id="navKasUsahaSaran" onclick="bukaKotakSaran(this)">💬 Kotak Saran</button>
 <button type="button" id="navKasUsahaSaranMasuk" onclick="bukaKotakSaranMasuk(this)" hidden>🔔 Saran Masuk <span id="ksSuggestionInboxBadge" style="display:inline-block;margin-left:4px;padding:2px 7px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px">0</span></button><button type="button" id="navPlatformMarketplaceFinance" onclick="buka('platformMarketplaceFinance',this)" hidden>📊 Keuangan Marketplace</button>
 </nav>
 <section id="kasusahaPaymentReturnNotice" class="kasusaha-payment-return" hidden role="status" aria-live="polite"><strong id="kasusahaPaymentReturnTitle">Memeriksa pembayaran…</strong><p id="kasusahaPaymentReturnText">Status pembayaran sedang diverifikasi oleh server.</p><div class="kasusaha-payment-return-actions"><button type="button" class="primary" id="kasusahaPaymentOpenAccount">Buka Akun Pembeli &amp; Lisensi</button><button type="button" class="secondary" id="kasusahaPaymentOpenInstall">Panduan instal PWA</button></div><div class="kasusaha-install-after-payment"><h3>Pasang KasUsaha Lite setelah pembayaran</h3><p><strong>HP Android (Chrome):</strong> tekan menu ⋮ di Chrome, lalu pilih Instal aplikasi atau Tambahkan ke layar utama. Ikuti konfirmasi.</p><p><strong>iPhone/iPad:</strong> buka situs melalui Safari, tekan Bagikan, pilih Add to Home Screen / Tambahkan ke Layar Utama, lalu Tambah.</p><p><strong>Komputer (Chrome/Edge):</strong> gunakan ikon Instal di bilah alamat atau menu browser, lalu pilih Install KasUsaha Lite bila tersedia.</p><p>Sesudah terpasang, buka ikon aplikasi dan login dengan akun pembeli yang sama.</p><p class="small">Pemasangan perlu persetujuan pengguna dan tidak berlangsung otomatis. Jika opsi belum muncul, gunakan situs melalui browser yang didukung. Jangan membayar ulang saat status sedang diperiksa.</p></div></section>
@@ -1586,7 +1586,7 @@ body>main img{max-width:100%}
   <p class="ks-free-service-disclaimer">Ini skema biaya layanan, bukan lisensi gratis. Lisensi/paket tetap mengikuti harga di bawah. Panel persetujuan tersedia untuk Owner utama melalui menu Transaksi → Biaya Layanan Usaha. Masa gratis 30 hari baru dimulai setelah Owner membaca dan menyetujui ketentuan untuk usahanya; membuka panel saja tidak memulai masa gratis. Penagihan, invoice, dan pemotongan saldo otomatis saat ini belum aktif.</p>
 </div>
 <div class="promo-actions">
-<button type="button" class="promo-primary" onclick="buka('akunPembeli',document.querySelectorAll('nav button')[8])">Daftar / Masuk untuk Aktivasi ↗</button>
+<button type="button" class="promo-primary" onclick="buka('akunPembeli',document.getElementById('navAkunPembeli'))">Daftar / Masuk untuk Aktivasi ↗</button>
 <button type="button" class="promo-secondary" onclick="document.getElementById('caraAktivasiKasUsaha')?.scrollIntoView({behavior:'smooth',block:'start'})">Cara Aktivasi</button>
 </div>
 <p class="promo-note">Empat paket lisensi tersedia melalui checkout resmi: Starter, Lite, Business, dan Professional. Harga lisensi terpisah dari skema biaya layanan. Login akun pembeli diperlukan. Periksa mode pembayaran sebelum melanjutkan; Sandbox hanya untuk pengujian.</p>
@@ -1616,8 +1616,8 @@ body>main img{max-width:100%}
       <li><span>3</span><div><strong>Periksa Pesanan Saya</strong><p>Setelah pembayaran terverifikasi, periksa lisensi dan petunjuk aktivasi di akun pembeli.</p></div></li>
     </ol>
     <div class="ks-convert-actions">
-      <button type="button" class="promo-primary" onclick="buka('akunPembeli',document.querySelectorAll('nav button')[8])">Daftar / Masuk ↗</button>
-      <button type="button" class="promo-secondary" onclick="buka('pasar',document.querySelectorAll('nav button')[3])">Buka Pasar Online</button>
+      <button type="button" class="promo-primary" onclick="buka('akunPembeli',document.getElementById('navAkunPembeli'))">Daftar / Masuk ↗</button>
+      <button type="button" class="promo-secondary" onclick="buka('pasar',document.getElementById('navPasarOnline'))">Buka Pasar Online</button>
     </div>
     <p class="ks-payment-note"><strong>Catatan pembayaran:</strong> checkout akan menunjukkan peringatan jika masih berada di mode Sandbox. Pembayaran uang sungguhan hanya boleh dilakukan setelah pemilik situs mengatur kunci server Production dan MIDTRANS_IS_PRODUCTION=true di Supabase, mengatur URL notifikasi Midtrans, lalu menguji alur pembayaran dan penerbitan lisensi.</p>
   </div>
@@ -1633,7 +1633,7 @@ body>main img{max-width:100%}
     <div style="display:flex;flex-direction:column;gap:10px">
       <button type="button" class="primary" onclick="bagikanKasUsahaLiteWA()" style="background:#15803d">Bagikan lewat WhatsApp ↗</button>
       <button type="button" class="secondary" onclick="bagikanKasUsahaLite()" style="background:#fff;border-color:#a5b4fc;color:#3730a3">Bagikan / Salin tautan</button>
-      <button type="button" class="secondary" onclick="buka('akunPembeli',document.querySelectorAll('nav button')[8])">Lihat aktivasi lisensi</button>
+      <button type="button" class="secondary" onclick="buka('akunPembeli',document.getElementById('navAkunPembeli'))">Lihat aktivasi lisensi</button>
       <p id="kasusahaShareStatus" aria-live="polite" style="font-size:12px;color:#475569;margin:0">Pilih tombol untuk membagikan tautan situs; pesan tidak dikirim otomatis.</p>
     </div>
   </div>
@@ -1660,7 +1660,7 @@ async function bagikanKasUsahaLite(){
 </script>
 
 <section id="affiliateHomeCatalog" aria-label="Katalog produk Shopee Affiliate">
-<div class="affiliate-home-head"><div><h2>🛍️ Produk Pilihan Shopee Affiliate</h2><p>37 produk pilihan terbaru. Buka produk melalui tautan affiliate yang disediakan untuk melihat detail dan harga terbaru di Shopee.</p></div><a class="affiliate-home-more" href="#affiliateShopeePanel" onclick="buka('pasar',document.querySelectorAll('nav button')[3]);setTimeout(()=>document.getElementById('affiliateShopeePanel')?.scrollIntoView({behavior:'smooth',block:'start'}),150);return false;">Lihat Pasar Online ↗</a></div>
+<div class="affiliate-home-head"><div><h2>🛍️ Produk Pilihan Shopee Affiliate</h2><p>37 produk pilihan terbaru. Buka produk melalui tautan affiliate yang disediakan untuk melihat detail dan harga terbaru di Shopee.</p></div><a class="affiliate-home-more" href="#affiliateShopeePanel" onclick="buka('pasar',document.getElementById('navPasarOnline'));setTimeout(()=>document.getElementById('affiliateShopeePanel')?.scrollIntoView({behavior:'smooth',block:'start'}),150);return false;">Lihat Pasar Online ↗</a></div>
 <div class="affiliate-home-grid"><article class="affiliate-home-card" data-product-id="5289108089" data-category="fashion jas hujan">
 <div style="padding:12px 13px 0;display:flex;justify-content:space-between;gap:8px;align-items:center"><span style="font-size:11px;color:#64748b">ID 5289108089</span><span class="affiliate-rate">Komisi 13,5%</span></div>
 <div class="affiliate-home-gallery" aria-label="Galeri foto Jas Hujan PVC VIN Official">
@@ -1824,7 +1824,7 @@ async function bagikanKasUsahaLite(){
 <section id="tiktokAffiliateHome" aria-label="TikTok Shop Affiliate" style="margin:24px 0;padding:clamp(18px,3vw,30px);border-radius:22px;background:linear-gradient(135deg,#111827 0%,#242424 48%,#0f766e 100%);color:#fff;box-shadow:0 14px 34px rgba(15,23,42,.16)">
  <div style="display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap">
   <div style="flex:1;min-width:240px"><span style="display:inline-block;padding:5px 10px;border:1px solid #ffffff45;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.04em">PROGRAM AFILIASI</span><h2 style="font-size:clamp(22px,3vw,32px);margin:12px 0 8px;color:#fff">🛍️ Rekomendasi Produk TikTok Shop</h2><p style="margin:0;max-width:680px;line-height:1.6;color:#e5e7eb">Tempat khusus untuk menampilkan produk TikTok Shop melalui tautan afiliasi resmi Anda. Tautan produk belum aktif sampai Anda mendaftar dan menempelkan tautan pelacakan dari TikTok.</p><p style="font-size:12px;color:#d1d5db;margin:10px 0 0">KasUsaha Lite tidak mengklaim komisi dari klik atau pembelian yang tidak diatribusikan oleh TikTok Shop.</p></div>
-  <div style="display:flex;gap:10px;flex-wrap:wrap"><a href="https://business.tiktokshop.com/id/affiliate" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:12px;background:#fff;color:#111827;text-decoration:none;font-weight:800">Daftar TikTok Affiliate ↗</a><button type="button" style="padding:12px 16px;border:1px solid #ffffff70;border-radius:12px;background:transparent;color:#fff;font-weight:800;cursor:pointer" onclick="buka('pasar',document.querySelectorAll('nav button')[3]);setTimeout(()=>document.getElementById('tiktokAffiliateSetup')?.scrollIntoView({behavior:'smooth',block:'start'}),180)">Pasang tautan produk</button></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap"><a href="https://business.tiktokshop.com/id/affiliate" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;justify-content:center;padding:12px 16px;border-radius:12px;background:#fff;color:#111827;text-decoration:none;font-weight:800">Daftar TikTok Affiliate ↗</a><button type="button" style="padding:12px 16px;border:1px solid #ffffff70;border-radius:12px;background:transparent;color:#fff;font-weight:800;cursor:pointer" onclick="buka('pasar',document.getElementById('navPasarOnline'));setTimeout(()=>document.getElementById('tiktokAffiliateSetup')?.scrollIntoView({behavior:'smooth',block:'start'}),180)">Pasang tautan produk</button></div>
  </div>
 </section>
 
@@ -3465,7 +3465,7 @@ function pilihPaketKasUsaha(code) {
       if(sessionError)throw sessionError;
       if(!sessionData?.session?.user||sessionData.session.user.is_anonymous===true){
         if(status){status.className='status warn';status.textContent='Pembelian lisensi memerlukan akun pembeli terdaftar. Silakan login, lalu pilih paket kembali.';}
-        buka('akunPembeli',document.querySelectorAll('nav button')[8]);
+        buka('akunPembeli',document.getElementById('navAkunPembeli'));
         return;
       }
       const {data,error}=await sb.rpc('create_kasusaha_package_order',{
