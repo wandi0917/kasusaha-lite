@@ -78,7 +78,7 @@ Deno.serve(async (req: Request) => {
       if (partners.error || commissions.error) {
         return reply({ success: false, message: "Data mitra/komisi gagal dibaca." }, 500, origin);
       }
-      return reply({ success: true, partners: partners.data || [], commissions: commissions.data || [] }, 200, origin);
+      return reply({ success: true, authorized: true, partners: partners.data || [], commissions: commissions.data || [] }, 200, origin);
     }
 
     let body: Record<string, unknown>;
