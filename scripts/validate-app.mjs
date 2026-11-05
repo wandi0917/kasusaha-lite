@@ -63,6 +63,25 @@ if (!/detail\.includes\(['"]saldo akun biteship['"]\)/.test(html)) {
   fail("localized Biteship balance errors must show the dedicated checkout guidance");
 } else pass("localized Biteship balance errors map to dedicated checkout guidance");
 
+const barcodeScanStart = html.indexOf("function addScannedBarcodeToQuickSale(raw){");
+const barcodeScanEnd = html.indexOf("\\nfunction handleQuickSaleCameraResult", barcodeScanStart);
+const barcodeScan = html.slice(barcodeScanStart, barcodeScanEnd);
+const cameraStart = html.indexOf("function handleQuickSaleCameraResult(raw){");
+const cameraEnd = html.indexOf("\\nasync function ensureKasUsahaZXing", cameraStart);
+const cameraScan = html.slice(cameraStart, cameraEnd);
+const barcodeRegressionChecks = [
+  [barcodeScan.includes("qty.value=String(current+1)"), "repeated product scans must increment quantity"],
+  [barcodeScan.includes("qtyField.value='1'"), "first product scan must add one unit automatically"],
+  [barcodeScan.includes("current>=available"), "repeated scans must not exceed available stock"],
+  [barcodeScan.includes("quickSaleBarcodeModal')?.hidden!==false"), "camera mode must not force keyboard focus over the camera"],
+  [cameraScan.includes("if(added)setQuickSaleBarcodeStatus") && !cameraScan.includes("if(added)closeQuickSaleBarcodeCamera()"), "camera cart scanning must remain open for consecutive products"],
+  [html.includes("barcodeInput.focus({preventScroll:true})"), "cashier must focus the scanner input when opening a sale"],
+];
+for (const [ok, message] of barcodeRegressionChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
 if (!/getUserMedia/.test(html) || !/ZXingBrowser|BarcodeDetector/.test(html)) {
   fail("camera barcode scanning dependencies or API are missing");
 } else pass("camera barcode scanner code present");
