@@ -128,7 +128,10 @@ Deno.serve(async (req) => {
       .map((row) => row.payment_event_id)
       .filter((id): id is string => typeof id === "string" && id.length > 0),
   )];
-  const verifiedEventById = new Map<string, boolean>();
+  const verifiedEventById = new Map<string, {
+    order_id: string;
+    verified: boolean;
+  }>();
 
   const [orderResult, eventResult] = await Promise.all([
     orderIds.length
@@ -138,7 +141,7 @@ Deno.serve(async (req) => {
       : Promise.resolve({ data: [], error: null }),
     paymentEventIds.length
       ? db.from("marketplace_payment_events")
-          .select("id,verification_status,processed_at")
+          .select("id,order_id,verification_status,processed_at")
           .in("id", paymentEventIds)
       : Promise.resolve({ data: [], error: null }),
   ]);
@@ -158,10 +161,11 @@ Deno.serve(async (req) => {
     });
   }
   for (const event of eventResult.data || []) {
-    verifiedEventById.set(
-      event.id,
-      event.verification_status === "verified" && event.processed_at !== null,
-    );
+    verifiedEventById.set(event.id, {
+      order_id: event.order_id,
+      verified: event.verification_status === "verified" &&
+        event.processed_at !== null,
+    });
   }
 
   // Komisi baru boleh masuk saldo tersedia setelah event pembayaran
@@ -169,23 +173,41 @@ Deno.serve(async (req) => {
   // terlihat untuk audit, tetapi ditahan sampai bukti pembayarannya sah.
   const verifiedCommissionByItem = new Set(
     rows
-      .filter((row) =>
-        row.entry_type === "commission" &&
-        typeof row.order_item_id === "string" &&
-        typeof row.payment_event_id === "string" &&
-        verifiedEventById.get(row.payment_event_id) === true
-      )
+      .filter((row) => {
+        if (
+          row.entry_type !== "commission" ||
+          typeof row.order_item_id !== "string" ||
+          typeof row.payment_event_id !== "string"
+        ) return false;
+
+        const item = items[row.order_item_id] as { order_id?: string } | null;
+        const event = verifiedEventById.get(row.payment_event_id);
+        return Boolean(
+          item?.order_id &&
+          event?.verified === true &&
+          event.order_id === item.order_id
+        );
+      })
       .map((row) => row.order_item_id),
   );
 
   const hasVerifiedPaymentEvent = (row: (typeof rows)[number]) => {
+    const item = items[row.order_item_id] as { order_id?: string } | null;
+    const event = typeof row.payment_event_id === "string"
+      ? verifiedEventById.get(row.payment_event_id)
+      : undefined;
+
+    // Event harus terverifikasi, sudah diproses, dan milik pesanan
+    // yang sama dengan item ledger. Event dari pesanan lain tidak boleh
+    // membuka saldo komisi.
     if (
-      typeof row.payment_event_id === "string" &&
-      verifiedEventById.get(row.payment_event_id) === true
+      item?.order_id &&
+      event?.verified === true &&
+      event.order_id === item.order_id
     ) return true;
 
     // Koreksi pembalik komisi lama tanpa event tersendiri tetap boleh
-    // mengimbangi komisi asal yang sudah terverifikasi.
+    // mengimbangi komisi asal yang sudah terverifikasi untuk item yang sama.
     return row.entry_type === "refund_reversal" &&
       typeof row.order_item_id === "string" &&
       verifiedCommissionByItem.has(row.order_item_id);
