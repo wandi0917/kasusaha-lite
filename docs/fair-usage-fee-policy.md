@@ -1,6 +1,6 @@
 # Kebijakan Biaya Layanan KasUsaha Lite — Draft Implementasi
 
-Status: rancangan teknis, belum berlaku untuk pengguna dan belum menagih.
+Status: fondasi teknis sudah digabung ke main dan migrasi additive sudah diterapkan ke Supabase produksi. Belum berlaku untuk pengguna dan belum menagih.
 
 ## Kebijakan yang disepakati
 - Lisensi/penggunaan awal tanpa biaya pendaftaran atau biaya bulanan tetap.
@@ -20,6 +20,7 @@ Status: rancangan teknis, belum berlaku untuk pengguna dan belum menagih.
 - RPC pratinjau hanya dapat dipanggil Owner; menghitung penjualan kategori Penjualan dikurangi kategori Retur Penjualan/Pengembalian Penjualan.
 - Tidak ada invoice otomatis, pembayaran otomatis, pemotongan saldo, atau penguncian fitur.
 - Data usaha lama tidak otomatis diberi tanggal mulai uji coba dan tidak otomatis ditagih.
+- Migrasi additive sudah tercatat di Supabase produksi; belum ada usaha yang memulai trial (semua timestamp consent/trial tetap NULL).
 - Penagihan tetap dinonaktifkan sampai pencatatan retur/pembatalan, rekonsiliasi, tampilan persetujuan, dan pengujian end-to-end selesai.
 
 ## Risiko yang harus ditutup sebelum aktivasi
@@ -31,7 +32,7 @@ Status: rancangan teknis, belum berlaku untuk pengguna dan belum menagih.
 6. Pertahankan lisensi lama dan jalur Midtrans sampai migrasi hak akses gratis diuji terpisah.
 
 ## Status
-Draft untuk review PR. Tidak diterapkan ke Supabase produksi dan tidak dideploy ke Cloudflare.
+Fondasi sudah digabung ke main dan migrasi additive sudah diterapkan ke Supabase produksi. Perubahan ini belum mengaktifkan UI, trial pengguna, invoice, penagihan, atau deployment pembayaran produksi.
 
 
 ## Audit tambahan — batas periode dan akurasi
