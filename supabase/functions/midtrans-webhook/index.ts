@@ -930,10 +930,12 @@ Deno.serve(async (req: Request) => {
   const statusApiTransactionId = String(
     midtransStatus.transaction_id ?? "",
   );
+  // Status API selalu mengembalikan transaction_id untuk transaksi yang ditemukan.
+  // Tolak respons yang tidak lengkap; notifikasi boleh tidak menyertakan ID,
+  // tetapi identitas dari Status API wajib ada.
   const transactionIdMatches =
-    !notificationTransactionId ||
-    !statusApiTransactionId ||
-    notificationTransactionId === statusApiTransactionId;
+    Boolean(statusApiTransactionId) &&
+    (!notificationTransactionId || notificationTransactionId === statusApiTransactionId);
 
   if (
     !statusApiOrderMatches ||
