@@ -205,9 +205,13 @@ async function recordVerifiedPaymentEvent(
 
   const providerEventId = await sha256(fingerprintSource);
 
+  const safeStatusPayload: JsonObject = { ...midtransStatus };
+  // Signature hash is not needed after verification; do not persist it.
+  delete safeStatusPayload.signature_key;
+
   const payload: JsonObject = {
     notification: safeNotificationPayload(notification),
-    verified_status: midtransStatus,
+    verified_status: safeStatusPayload,
   };
 
   const { error: insertError } = await supabase
