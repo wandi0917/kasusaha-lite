@@ -1525,10 +1525,27 @@ body>main img{max-width:100%}
 </header>
 <nav aria-label="Navigasi utama">
 <button class="active" type="button" onclick="buka('beranda',this)">Beranda</button><button id="navCompleteGuide" type="button" onclick="buka('panduanLengkap',this)">📘 Panduan Lengkap</button><button id="navTransaksi" type="button" onclick="buka('transaksi',this)">Transaksi</button><button type="button" onclick="buka('produk',this)">Produk Saya</button><button id="navPasarOnline" type="button" onclick="buka('pasar',this)">Pasar Online</button><button type="button" onclick="buka('paketKasUsaha',this)">Paket &amp; Harga</button><button type="button" onclick="buka('keranjang',this)">Keranjang <span id="jumlahKeranjang">0</span></button><button type="button" onclick="buka('cadangan',this)">Cadangan</button><button type="button" onclick="buka('akun',this)">Login Owner / Penjual</button><button type="button" onclick="buka('loginKaryawan',this)">Login Karyawan</button><button id="navAkunPembeli" type="button" onclick="buka('akunPembeli',this)">Akun Pembeli</button><button id="navPesananSaya" type="button" onclick="buka('pesananSaya',this)">Pesanan Saya</button><button type="button" onclick="buka('pesananMasuk',this)">Pesanan Masuk</button><button type="button" id="navKasUsahaSaran" onclick="bukaKotakSaran(this)">💬 Kotak Saran</button>
-<button type="button" id="navKasUsahaSaranMasuk" onclick="bukaKotakSaranMasuk(this)" hidden>🔔 Saran Masuk <span id="ksSuggestionInboxBadge" style="display:inline-block;margin-left:4px;padding:2px 7px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px">0</span></button><button type="button" id="navPlatformMarketplaceFinance" onclick="buka('platformMarketplaceFinance',this)" hidden>📊 Keuangan Marketplace</button>
+<button type="button" id="navKasUsahaSaranMasuk" onclick="bukaKotakSaranMasuk(this)" hidden>🔔 Saran Masuk <span id="ksSuggestionInboxBadge" style="display:inline-block;margin-left:4px;padding:2px 7px;border-radius:999px;background:#dc2626;color:#fff;font-size:11px">0</span></button><button type="button" id="navPlatformMarketplaceFinance" onclick="buka('platformMarketplaceFinance',this)" hidden>📊 Keuangan Marketplace</button><button type="button" id="navLicensePartners" onclick="buka('platformLicensePartners',this)" hidden>🤝 Mitra Lisensi</button>
 </nav>
 <section id="kasusahaPaymentReturnNotice" class="kasusaha-payment-return" hidden role="status" aria-live="polite"><strong id="kasusahaPaymentReturnTitle">Memeriksa pembayaran…</strong><p id="kasusahaPaymentReturnText">Status pembayaran sedang diverifikasi oleh server.</p><div class="kasusaha-payment-return-actions"><button type="button" class="primary" id="kasusahaPaymentOpenAccount">Buka Akun Pembeli &amp; Lisensi</button><button type="button" class="secondary" id="kasusahaPaymentOpenInstall">Panduan instal PWA</button></div><div class="kasusaha-install-after-payment"><h3>Pasang KasUsaha Lite setelah pembayaran</h3><p><strong>HP Android (Chrome):</strong> tekan menu ⋮ di Chrome, lalu pilih Instal aplikasi atau Tambahkan ke layar utama. Ikuti konfirmasi.</p><p><strong>iPhone/iPad:</strong> buka situs melalui Safari, tekan Bagikan, pilih Add to Home Screen / Tambahkan ke Layar Utama, lalu Tambah.</p><p><strong>Komputer (Chrome/Edge):</strong> gunakan ikon Instal di bilah alamat atau menu browser, lalu pilih Install KasUsaha Lite bila tersedia.</p><p>Sesudah terpasang, buka ikon aplikasi dan login dengan akun pembeli yang sama.</p><p class="small">Pemasangan perlu persetujuan pengguna dan tidak berlangsung otomatis. Jika opsi belum muncul, gunakan situs melalui browser yang didukung. Jangan membayar ulang saat status sedang diperiksa.</p></div></section>
 <main>
+<section id="platformLicensePartners" class="tab" aria-labelledby="licensePartnersTitle">
+ <div class="card" style="max-width:1180px;margin:12px auto">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+   <div><h2 id="licensePartnersTitle">Mitra Pemasaran Lisensi — Owner Platform</h2><p class="small">Persetujuan mitra, pemantauan referral, komisi tertahan, dan pencatatan pencairan manual. Semua tindakan diverifikasi server-side.</p></div>
+   <button type="button" class="secondary" onclick="muatLicensePartners()">↻ Muat ulang</button>
+  </div>
+  <p id="licensePartnersStatus" class="status" role="status" aria-live="polite">Memeriksa hak akses Owner Platform…</p>
+  <div id="licensePartnersContent" hidden>
+   <div id="licensePartnersMetrics" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:14px 0"></div>
+   <h3>Daftar mitra pemasaran</h3>
+   <div class="table-wrap"><table class="report-table"><thead><tr><th>Nama</th><th>Kode referral</th><th>Status</th><th>Komisi awal</th><th>Komisi ulang</th><th>Tindakan</th></tr></thead><tbody id="licensePartnersRows"></tbody></table></div>
+   <h3 style="margin-top:22px">Buku besar komisi lisensi</h3>
+   <p class="small">Komisi pembelian pertama 15%; pembelian ulang 10%. Komisi berstatus held tidak dapat dicairkan. Persetujuan dan pembayaran dicatat terpisah.</p>
+   <div class="table-wrap"><table class="report-table"><thead><tr><th>Tanggal</th><th>Mitra</th><th>Jenis</th><th>Dasar</th><th>Tarif</th><th>Komisi</th><th>Status</th><th>Tindakan</th></tr></thead><tbody id="licensePartnerCommissionRows"></tbody></table></div>
+  </div>
+ </div>
+</section>
 <section id="platformMarketplaceFinance" class="tab" aria-labelledby="platformFinanceTitle">
  <div class="card" style="max-width:1180px;margin:12px auto">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
