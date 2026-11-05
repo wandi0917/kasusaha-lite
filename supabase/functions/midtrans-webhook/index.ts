@@ -1510,7 +1510,22 @@ Deno.serve(async (req: Request) => {
   ];
   if (reviewStatuses.includes(transactionStatus)) {
     const refundAmount = String(midtransStatus.refund_amount ?? notification.refund_amount ?? "");
-    const bankConfirmedAt = String(midtransStatus.bank_confirmed_at ?? notification.bank_confirmed_at ?? "");
+    const refundRows = Array.isArray(midtransStatus.refunds)
+      ? midtransStatus.refunds
+      : Array.isArray(notification.refunds)
+      ? notification.refunds
+      : [];
+    const confirmedRefundRow = refundRows.find((row) =>
+      typeof row === "object" &&
+      row !== null &&
+      Boolean(String((row as JsonObject).bank_confirmed_at ?? "").trim())
+    ) as JsonObject | undefined;
+    const bankConfirmedAt = String(
+      midtransStatus.bank_confirmed_at ??
+        notification.bank_confirmed_at ??
+        confirmedRefundRow?.bank_confirmed_at ??
+        "",
+    );
     const reviewNote = [
       "Midtrans melaporkan status " + transactionStatus + ".",
       refundAmount ? "Nominal refund/chargeback: " + refundAmount + " IDR." : "",
