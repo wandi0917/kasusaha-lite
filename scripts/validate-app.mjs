@@ -319,3 +319,75 @@ for (const [block, label] of [
 }
 
 if (process.exitCode) process.exit(process.exitCode);
+
+
+// Exercise the exact Midtrans provider-time parser used by the webhook.
+// Extracting the function keeps this regression test dependency-free in CI.
+const paidAtFunctionMatch = paymentWebhook.match(
+  /function midtransPaidAt\(status: JsonObject\): string \| null \{[\s\S]*?\n\}/,
+);
+if (!paidAtFunctionMatch) {
+  fail("Midtrans webhook must expose the provider-paid timestamp parser");
+} else {
+  try {
+    const executablePaidAtFunction = paidAtFunctionMatch[0]
+      .replace("(status: JsonObject): string | null", "(status)");
+    const midtransPaidAt = vm.runInNewContext("(" + executablePaidAtFunction + ")");
+    const paidAtCases = [
+      [
+        "settlement timestamp is interpreted as WIB",
+        { settlement_time: "2026-11-06 10:15:30", transaction_time: "2026-11-06 10:10:00" },
+        "2026-11-06T03:15:30.000Z",
+      ],
+      [
+        "empty settlement timestamp falls back to transaction timestamp",
+        { settlement_time: "   ", transaction_time: "2026-11-06 10:10:00" },
+        "2026-11-06T03:10:00.000Z",
+      ],
+      [
+        "missing settlement timestamp falls back to transaction timestamp",
+        { transaction_time: "2026-11-06T10:10:00+07:00" },
+        "2026-11-06T03:10:00.000Z",
+      ],
+      [
+        "provider timestamp with explicit UTC offset is preserved",
+        { settlement_time: "2026-11-06T03:15:30Z" },
+        "2026-11-06T03:15:30.000Z",
+      ],
+      [
+        "missing provider timestamps are rejected",
+        {},
+        null,
+      ],
+      [
+        "malformed provider timestamps are rejected",
+        { settlement_time: "not-a-date", transaction_time: "also-not-a-date" },
+        null,
+      ],
+    ];
+    for (const [label, input, expected] of paidAtCases) {
+      const actual = midtransPaidAt(input);
+      if (actual !== expected) fail(label + ": expected " + expected + ", received " + actual);
+      else pass("Midtrans paid-at parser: " + label);
+    }
+  } catch (error) {
+    fail("Midtrans paid-at parser regression tests could not execute: " + error.message);
+  }
+}
+
+const partnerCommissionMigration = fs.readFileSync(
+  "supabase/migrations/20261105180000_reconcile_license_partner_commission_by_provider_paid_time.sql",
+  "utf8",
+);
+const partnerCommissionChecks = [
+  [/first_purchase_rate/, partnerCommissionMigration, "license partner first-purchase rate must come from partner configuration"],
+  [/renewal_rate/, partnerCommissionMigration, "license partner renewal rate must come from partner configuration"],
+  [/v_amount <= 0/, partnerCommissionMigration, "zero-value partner commissions must not create ledger rows"],
+  [/pg_advisory_xact_lock/, partnerCommissionMigration, "partner commission reconciliation must serialize per buyer"],
+  [/v_existing\.status = 'paid'/, partnerCommissionMigration, "already-paid partner commissions must be protected from automatic financial changes"],
+  [/GRANT EXECUTE ON FUNCTION public\.record_license_partner_commission\(uuid, uuid\)\s+TO service_role/i, partnerCommissionMigration, "license partner commission RPC must be service-role only"],
+];
+for (const [pattern, source, message] of partnerCommissionChecks) {
+  if (!pattern.test(source)) fail(message);
+  else pass(message);
+}
