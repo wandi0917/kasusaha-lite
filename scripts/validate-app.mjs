@@ -271,4 +271,15 @@ if (!safeCatalogGrant || safeCatalogGrant.includes("cost_price")) {
   fail("Employee catalog SELECT grant must exclude cost_price");
 } else pass("Employee catalog SELECT grant excludes cost_price");
 
+const employeeWebhookStart = paymentWebhook.indexOf('if (/^(?:KSEMP|KSDEV)-[A-F0-9]{32}$/i.test(midtransOrderId))');
+const employeeWebhookEnd = paymentWebhook.indexOf("const orderSelect", employeeWebhookStart);
+const employeeWebhookBlock = employeeWebhookStart >= 0 && employeeWebhookEnd > employeeWebhookStart
+  ? paymentWebhook.slice(employeeWebhookStart, employeeWebhookEnd)
+  : "";
+if (!employeeWebhookBlock.includes("if (!notificationSignatureValid)") ||
+    !employeeWebhookBlock.includes('code: "INVALID_NOTIFICATION_SIGNATURE"') ||
+    employeeWebhookBlock.indexOf("if (!notificationSignatureValid)") > employeeWebhookBlock.indexOf("success: true")) {
+  fail("employee activation webhook must reject invalid Midtrans signatures before acknowledging receipt");
+} else pass("employee activation webhook rejects invalid Midtrans signatures before acknowledging receipt");
+
 if (process.exitCode) process.exit(process.exitCode);
