@@ -22,7 +22,7 @@ Status: fondasi teknis sudah digabung ke main dan migrasi additive sudah diterap
 - Tidak ada invoice otomatis, pembayaran otomatis, pemotongan saldo, atau penguncian fitur.
 - Data usaha lama tidak otomatis diberi tanggal mulai uji coba dan tidak otomatis ditagih.
 - Migrasi additive sudah tercatat di Supabase produksi; belum ada usaha yang memulai trial (semua timestamp consent/trial tetap NULL).
-- Penagihan tetap dinonaktifkan sampai pencatatan retur/pembatalan, rekonsiliasi, tampilan persetujuan, dan pengujian end-to-end selesai.
+- Panel persetujuan Owner dan pratinjau biaya sudah tersedia di aplikasi utama. Penagihan tetap dinonaktifkan sampai pencatatan retur/pembatalan, rekonsiliasi, dan pengujian end-to-end selesai.
 
 ## Risiko yang harus ditutup sebelum aktivasi
 1. Pastikan semua sumber penjualan (kasir cepat, bill meja, catatan manual, sinkronisasi offline) masuk ke sumber data yang benar.
@@ -33,7 +33,7 @@ Status: fondasi teknis sudah digabung ke main dan migrasi additive sudah diterap
 6. Pertahankan lisensi lama dan jalur Midtrans sampai migrasi hak akses gratis diuji terpisah.
 
 ## Status
-Fondasi sudah digabung ke main dan migrasi additive sudah diterapkan ke Supabase produksi. Perubahan ini belum mengaktifkan UI, trial pengguna, invoice, penagihan, atau deployment pembayaran produksi.
+Fondasi dan panel persetujuan Owner sudah digabung ke main dan diterapkan melalui deployment Cloudflare Pages produksi. UI sudah tersedia, tetapi belum ada Owner yang menyetujui ketentuan; trial pengguna, invoice, penagihan, dan pemotongan saldo belum aktif.
 
 
 ## Audit tambahan — batas periode dan akurasi
@@ -61,7 +61,7 @@ Fondasi sudah digabung ke main dan migrasi additive sudah diterapkan ke Supabase
 - Sertakan contoh: omzet bersih Rp5.000.000 menghasilkan pratinjau biaya Rp2.000; omzet bersih Rp30.000.000 menghasilkan Rp27.000.
 - Selalu jelaskan bahwa lisensi tetap mengikuti harga paket dan mencakup 12 bulan cloud pertama; perpanjangan cloud tahun berikutnya tetap manual sesuai paket.
 - Masa uji coba baru dimulai setelah Owner sah menyetujui ketentuan untuk usaha tersebut. Jangan mengklaim trial sudah berjalan sebelum persetujuan tercatat.
-- Sampai UI persetujuan Owner, rekonsiliasi retur, dan alur penagihan diuji serta diaktifkan secara resmi, jelaskan bahwa penagihan/pemotongan otomatis belum aktif. Jangan menampilkan estimasi biaya sebagai tagihan.
+- Panel persetujuan Owner sudah tersedia, tetapi belum diuji melalui sesi Owner nyata. Sampai rekonsiliasi retur dan alur penagihan diuji serta diaktifkan secara resmi, jelaskan bahwa penagihan/pemotongan otomatis belum aktif. Jangan menampilkan estimasi biaya sebagai tagihan.
 
 ## Audit tambahan — waktu penerimaan server (5 November 2026)
 - Ditemukan bahwa kolom `created_at` dapat diisi saat sinkronisasi offline dari waktu perangkat, sehingga tidak layak menjadi satu-satunya dasar periode penagihan.
@@ -72,3 +72,12 @@ Fondasi sudah digabung ke main dan migrasi additive sudah diterapkan ke Supabase
 - Migrasi ini sengaja memakai versi `20261105115528`, setelah fondasi `20261105180000` yang sudah ada di produksi, agar urutan migrasi Supabase tetap naik.
 - Pengujian SQL terisolasi dalam transaksi `BEGIN/ROLLBACK` berhasil: migrasi dan fungsi dapat dibuat, INSERT menghasilkan timestamp server, UPDATE tidak dapat mengubah timestamp tersebut, dan RPC mengembalikan threshold Rp3.000.000, rate 0,001, serta `billing_enabled=false`. Seluruh perubahan uji dibatalkan dengan ROLLBACK. Setelah PR #24 digabung, migrasi diterapkan melalui Supabase dan diverifikasi: kolom tersedia, tidak ada timestamp kosong, trigger aktif, dan belum ada Owner yang menyetujui atau memulai trial.
 - Tagihan tetap dinonaktifkan. Pratinjau belum boleh dipakai untuk penagihan sampai retur ditautkan ke penjualan asal, koreksi manual memiliki audit trail, dan alur offline/online direkonsiliasi.
+
+
+## Audit panel Owner — 5 November 2026
+- Panel `Biaya Layanan Usaha` ditambahkan pada menu Transaksi dan hanya ditampilkan untuk Owner utama workspace yang cocok dengan `owner_id`.
+- Persetujuan memerlukan centang eksplisit dan konfirmasi kedua, lalu dicatat melalui RPC `kasusaha_accept_service_fee_terms`. RPC mengunci trial pada persetujuan pertama; klik ulang tidak memperpanjang masa trial.
+- Panel menampilkan tanggal trial dan menyediakan pratinjau bulan berjalan melalui `kasusaha_owner_service_fee_preview`. UI memastikan `billing_enabled` bernilai `false` sebelum menampilkan hasil.
+- Panel disembunyikan saat workspace dimuat ulang dan hanya dirender kembali setelah peran Owner tervalidasi. Otorisasi utama tetap berada di RPC/database, bukan hanya visibilitas UI.
+- Perubahan digabung melalui PR #26 dan Cloudflare Pages deployment produksi dari commit `b145d6504161a9ddeac464dd1737771646e82209` berhasil pada 5 November 2026.
+- Pemeriksaan sintaks seluruh 10 blok script inline lulus. Sesi Owner nyata, persetujuan aktual, uji klik/browser, dan pengujian lintas perangkat belum dilakukan. Belum ada consent/trial di database saat audit; billing tetap nonaktif.
