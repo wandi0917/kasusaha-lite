@@ -4380,13 +4380,20 @@ function addScannedBarcodeToQuickSale(raw){
  }
  if(Number(p.stock_quantity||0)<1){setQuickSaleBarcodeStatus(p.product_name+' ditemukan, tetapi stok habis.',true);return false;}
  $('quickSaleBarcodeLinker')?.remove();
- let row=quickSaleItemRows().find(el=>{const input=el.querySelector('.quick-sale-product');return !String(input?.value||'').trim()&&!input?.dataset.productId;});
- if(!row){addQuickSaleLine();row=quickSaleItemRows().slice(-1)[0];}
- const input=row?.querySelector('.quick-sale-product');if(input){input.value=p.product_code+' — '+p.product_name;input.dataset.productId=p.id;}
+ let row=quickSaleItemRows().find(el=>String(el.querySelector('.quick-sale-product')?.dataset.productId||'')===String(p.id));
+ if(row){
+  const qty=row.querySelector('.quick-sale-qty');
+  const current=Math.max(1,Number.parseInt(qty?.value||'1',10)||1);
+  if(qty)qty.value=String(current+1);
+ }else{
+  row=quickSaleItemRows().find(el=>{const input=el.querySelector('.quick-sale-product');return !String(input?.value||'').trim()&&!input?.dataset.productId;});
+  if(!row){addQuickSaleLine();row=quickSaleItemRows().slice(-1)[0];}
+  const input=row?.querySelector('.quick-sale-product');if(input){input.value=p.product_code+' — '+p.product_name;input.dataset.productId=p.id;}
+  const qtyField=row?.querySelector('.quick-sale-qty');if(qtyField){qtyField.value='1';qtyField.min='1';qtyField.step='1';}
+ }
  const cancelButton=row?.querySelector('.quick-sale-cancel-scan');if(cancelButton)cancelButton.hidden=false;
- const qtyField=row?.querySelector('.quick-sale-qty');if(qtyField){qtyField.value='';qtyField.placeholder='Isi jumlah pesanan';qtyField.min='1';qtyField.step='1';qtyField.style.cssText='width:100%;padding:14px;border:2px solid #16a34a;border-radius:10px;background:#f0fdf4;font-size:20px;font-weight:800;text-align:center';row?.scrollIntoView({behavior:'smooth',block:'center'});qtyField.focus();}
- updateQuickSalePreview(true);setQuickSaleBarcodeStatus('✓ '+p.product_name+' terbaca. Kamera dihentikan. Periksa barang, isi jumlah, atau tekan Batalkan scan.');
- const scanInput=$('quickSaleBarcodeInput');if(scanInput)scanInput.value='';return true;
+ updateQuickSalePreview(true);setQuickSaleBarcodeStatus('✓ '+p.product_name+' ditambahkan. Scan barang berikutnya; scan ulang akan menambah jumlah.');
+ const scanInput=$('quickSaleBarcodeInput');if(scanInput){scanInput.value='';scanInput.focus({preventScroll:true});}return true;
 }
 function handleQuickSaleCameraResult(raw){
  const value=String(raw||'').trim(),now=Date.now();
@@ -4513,7 +4520,12 @@ function bindKasUsahaBarcodeFeatures(){
   }catch(e){alert('Barcode belum dapat dicetak: '+String(e.message||e).slice(0,160));}
  });
  $('quickSaleBarcodeInput')?.addEventListener('keydown',e=>{
-  if(e.key==='Enter'){e.preventDefault();addScannedBarcodeToQuickSale(e.currentTarget.value);}
+  if(e.key==='Enter'){
+   e.preventDefault();
+   const field=e.currentTarget,value=field.value;
+   const added=addScannedBarcodeToQuickSale(value);
+   if(added){field.value='';field.focus({preventScroll:true});}
+  }
  });
  $('quickSaleOpenCamera')?.addEventListener('click',()=>openQuickSaleBarcodeCamera('cart'));
  $('storeProductScanFactory')?.addEventListener('click',()=>openQuickSaleBarcodeCamera('product'));
@@ -4688,6 +4700,8 @@ async function bukaPanelTransaksi(tujuan){
             throw new Error('Tagihan yang sedang dibuka belum memiliki rincian barang. Rincian tidak dikosongkan agar pesanan tidak hilang.');
           }
           updateQuickSalePreview();await loadQuickSaleOpenBills();
+          const barcodeInput=$('quickSaleBarcodeInput');
+          if(barcodeInput){barcodeInput.value='';barcodeInput.focus({preventScroll:true});setQuickSaleBarcodeStatus('Kolom scan aktif. Hubungkan scanner USB/Bluetooth atau gunakan kamera HP.');}
         }
         else if(isOwner){catalog?.scrollIntoView({behavior:'smooth',block:'start'});}
       }catch(e){setFinanceStatus((tujuan==='kasir'?'Kasir':'Menu barang dan stok')+' belum dapat memuat daftar barang: '+String(e.message||e).slice(0,180),true);}
