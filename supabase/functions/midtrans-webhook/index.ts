@@ -544,18 +544,27 @@ Deno.serve(async (req: Request) => {
   const serviceRoleKey = Deno.env.get(
     "SUPABASE_SERVICE_ROLE_KEY",
   );
-  const serverKey = Deno.env.get("MIDTRANS_SERVER_KEY");
-  // Explicit user authorization is Sandbox-only. Fail closed if the
-  // environment flag is missing or set to Production.
+  // Mode harus eksplisit. Production memakai secret khusus agar kunci Sandbox
+  // tidak pernah dipakai untuk memproses pembayaran uang sungguhan.
   const configuredMode = String(Deno.env.get("MIDTRANS_IS_PRODUCTION") ?? "").trim().toLowerCase();
-  if (configuredMode !== "false") {
+  if (configuredMode !== "false" && configuredMode !== "true") {
     return reply({
       success: false,
-      code: "SANDBOX_ONLY",
-      message: "Webhook dikunci ke Sandbox. Periksa MIDTRANS_IS_PRODUCTION di Supabase.",
+      code: "PAYMENT_MODE_INVALID",
+      message: "Mode pembayaran belum dikonfigurasi dengan benar.",
     }, 503);
   }
-  const isProduction = false;
+  const isProduction = configuredMode === "true";
+  const serverKey = isProduction
+    ? Deno.env.get("MIDTRANS_SERVER_KEY_PRODUCTION")
+    : (Deno.env.get("MIDTRANS_SERVER_KEY_SANDBOX") || Deno.env.get("MIDTRANS_SERVER_KEY"));
+  if (isProduction && !serverKey) {
+    return reply({
+      success: false,
+      code: "PRODUCTION_KEY_MISSING",
+      message: "Kunci server Midtrans Production belum dikonfigurasi.",
+    }, 503);
+  }
 
   if (!supabaseUrl || !serviceRoleKey || !serverKey) {
     console.error("Konfigurasi server belum lengkap.");
