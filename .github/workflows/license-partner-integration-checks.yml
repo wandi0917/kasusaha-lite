@@ -8,6 +8,7 @@ on:
       - "supabase/functions/create-marketplace-order/**"
       - "supabase/functions/midtrans-webhook/**"
       - "supabase/functions/platform-license-partners/**"
+      - "supabase/functions/license-partner-apply/**"
       - "supabase/migrations/*license_partner*"
 
 jobs:
@@ -23,3 +24,4 @@ jobs:
           deno check supabase/functions/create-marketplace-order/index.ts
           deno check supabase/functions/midtrans-webhook/index.ts
           deno check supabase/functions/platform-license-partners/index.ts
+          deno check supabase/functions/license-partner-apply/index.ts
