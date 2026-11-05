@@ -219,6 +219,7 @@ if (!/REVOKE SELECT ON TABLE public\.store_products FROM authenticated/i.test(co
 
 const employeeActivation = fs.readFileSync("supabase/functions/employee-device-activation/index.ts", "utf8");
 const licenseActivation = fs.readFileSync("supabase/functions/activate-kasusaha-license/index.ts", "utf8");
+const employeeActivation = fs.readFileSync("supabase/functions/employee-device-activation/index.ts", "utf8");
 const biteshipShipment = fs.readFileSync("supabase/functions/biteship-create-shipment/index.ts", "utf8");
 const biteshipWebhook = fs.readFileSync("supabase/functions/biteship-webhook/index.ts", "utf8");
 
@@ -270,5 +271,10 @@ const safeCatalogGrant = employeeCatalogMigration.split("GRANT SELECT (")[1]?.sp
 if (!safeCatalogGrant || safeCatalogGrant.includes("cost_price")) {
   fail("Employee catalog SELECT grant must exclude cost_price");
 } else pass("Employee catalog SELECT grant excludes cost_price");
+
+if (employeeActivation.includes("productionForCheck") ||
+    !employeeActivation.includes("midtransBases(production)")) {
+  fail("employee Owner invite refresh must use the configured Midtrans mode variable");
+} else pass("employee Owner invite refresh uses the configured Midtrans mode variable");
 
 if (process.exitCode) process.exit(process.exitCode);
