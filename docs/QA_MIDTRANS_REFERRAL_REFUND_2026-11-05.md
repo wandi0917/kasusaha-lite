@@ -12,11 +12,15 @@ This branch is a **draft candidate only**. Do not deploy to production until the
 - [ ] Browser-supplied price is ignored; the active license-plan price remains the server-side source of truth.
 - [ ] Anonymous sessions cannot create package orders through either RPC signature.
 - [ ] Authenticated users cannot execute the five-argument RPC through PUBLIC/anon grants.
+- [ ] A buyer with an existing permanent attribution cannot overwrite it by entering a different referral code on a later order.
+- [ ] Concurrent package checkouts for one buyer serialize first-touch referral capture and preserve one permanent attribution.
+- [ ] The existing migration `20261105170000_license_package_checkout_referral_capture.sql` is applied once; no later duplicate migration may replace its stronger first-touch safeguards.
 
 ## Payment timestamp and webhook
 
 - [ ] Valid settlement: order becomes paid only after signature/Status API, amount, currency, order ID, and transaction ID match.
 - [ ] `paid_at` equals Midtrans `settlement_time` (or `transaction_time` fallback) interpreted as GMT+7, not webhook receipt time.
+- [ ] `updated_at` records webhook processing time and is not backdated to the provider payment timestamp.
 - [ ] Missing/malformed provider timestamp: webhook returns retryable 5xx and does not mark the order paid.
 - [ ] Valid card capture with `fraud_status=accept` is accepted; capture without accept is not.
 - [ ] Duplicate settlement notification does not duplicate event, commission, license, or shipment.
