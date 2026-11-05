@@ -1612,12 +1612,12 @@ body>main img{max-width:100%}
     <h3>Bagaimana cara memulai?</h3>
     <ol class="ks-activation-steps">
       <li><span>1</span><div><strong>Buat akun atau login</strong><p>Gunakan email aktif dan selesaikan konfirmasi email bila diminta.</p></div></li>
-      <li><span>2</span><div><strong>Buka Pasar Online</strong><p>Pilih produk lisensi KasUsaha Lite dan ikuti proses pemesanan yang tersedia.</p></div></li>
+      <li><span>2</span><div><strong>Buka Paket &amp; Harga</strong><p>Pilih salah satu dari empat paket lisensi, lalu isi checkout digital yang tersedia.</p></div></li>
       <li><span>3</span><div><strong>Periksa Pesanan Saya</strong><p>Setelah pembayaran terverifikasi, periksa lisensi dan petunjuk aktivasi di akun pembeli.</p></div></li>
     </ol>
     <div class="ks-convert-actions">
       <button type="button" class="promo-primary" onclick="buka('akunPembeli',document.getElementById('navAkunPembeli'))">Daftar / Masuk ↗</button>
-      <button type="button" class="promo-secondary" onclick="buka('pasar',document.getElementById('navPasarOnline'))">Buka Pasar Online</button>
+      <button type="button" class="promo-secondary" onclick="buka('paketKasUsaha',document.querySelector('nav button[onclick*=\'paketKasUsaha\']'))">Lihat Paket &amp; Harga</button>
     </div>
     <p class="ks-payment-note"><strong>Catatan pembayaran:</strong> checkout akan menunjukkan peringatan jika masih berada di mode Sandbox. Pembayaran uang sungguhan hanya tersedia setelah akun merchant Midtrans Production disetujui, kunci server Production yang terpisah dari Sandbox dipasang di Supabase, URL notifikasi diarahkan ke webhook yang benar, dan uji pembayaran hingga penerbitan lisensi berhasil. Selama checkout menampilkan Sandbox atau pembayaran Production belum dinyatakan siap, jangan gunakan uang sungguhan.</p>
   </div>
@@ -2295,7 +2295,7 @@ async function bagikanKasUsahaLite(){
       <span class="ks-plan-label">UNTUK USAHA PEMULA</span>
       <h3>Starter</h3>
       <p class="ks-price">Rp49.000 <small>lisensi sekali bayar</small></p>
-      <p><strong>Rp29.000/tahun</strong> mulai tahun kedua</p>
+      <p><strong>Rp29.000/tahun</strong> <small>rencana perpanjangan tahun kedua; checkout belum tersedia</small></p>
       <ul>
         <li>Kasir dan pencatatan transaksi</li>
         <li>Data produk dan stok dasar</li>
@@ -2309,7 +2309,7 @@ async function bagikanKasUsahaLite(){
       <span class="ks-plan-label">PAKET UTAMA • DIREKOMENDASIKAN</span>
       <h3>Lite</h3>
       <p class="ks-price">Rp99.000 <small>lisensi sekali bayar</small></p>
-      <p><strong>Rp49.000/tahun</strong> mulai tahun kedua</p>
+      <p><strong>Rp49.000/tahun</strong> <small>rencana perpanjangan tahun kedua; checkout belum tersedia</small></p>
       <ul>
         <li>Seluruh fitur Starter</li>
         <li>Manajemen stok dan barcode</li>
@@ -2324,7 +2324,7 @@ async function bagikanKasUsahaLite(){
       <span class="ks-plan-label">UNTUK USAHA BERKEMBANG</span>
       <h3>Business</h3>
       <p class="ks-price">Rp149.000 <small>lisensi sekali bayar</small></p>
-      <p><strong>Rp99.000/tahun</strong> mulai tahun kedua</p>
+      <p><strong>Rp99.000/tahun</strong> <small>rencana perpanjangan tahun kedua; checkout belum tersedia</small></p>
       <ul>
         <li>Seluruh fitur Lite</li>
         <li>Pengelolaan karyawan lebih lengkap</li>
@@ -2338,7 +2338,7 @@ async function bagikanKasUsahaLite(){
       <span class="ks-plan-label">UNTUK OPERASIONAL INTENSIF</span>
       <h3>Professional</h3>
       <p class="ks-price">Rp249.000 <small>lisensi sekali bayar</small></p>
-      <p><strong>Rp199.000/tahun</strong> mulai tahun kedua</p>
+      <p><strong>Rp199.000/tahun</strong> <small>rencana perpanjangan tahun kedua; checkout belum tersedia</small></p>
       <ul>
         <li>Seluruh fitur Business</li>
         <li>Fitur lanjutan sesuai rilis resmi</li>
@@ -2384,11 +2384,11 @@ async function bagikanKasUsahaLite(){
  <div class="card">
   <h2>📘 Panduan Lengkap KasUsaha Lite</h2>
   <p>Panduan ini dibagi menurut kebutuhan Anda. Baca bagian yang sesuai; Anda tidak perlu melakukan semua langkah sekaligus.</p>
-  <div class="status"><strong>Alur pembelian barang fisik:</strong> Pasar Online → pilih barang → Keranjang → isi nama/WhatsApp/alamat → cek ongkir dan pilih kurir → checkout sebagai tamu → bayar → pantau Pesanan Saya di browser yang sama. <strong>Alur pembelian lisensi:</strong> Daftar/Login Akun Pembeli → Pasar Online → pilih lisensi → checkout → verifikasi pembayaran → aktivasi lisensi → buat usaha → isi barang → catat transaksi → periksa laporan. <br><strong>Jika sudah memiliki lisensi:</strong> login dengan akun pembeli yang sama, periksa status lisensi, lalu lanjutkan ke menu Transaksi.</div>
+  <div class="status"><strong>Alur pembelian barang fisik:</strong> Pasar Online → pilih barang → Keranjang → isi nama/WhatsApp/alamat → cek ongkir dan pilih kurir → checkout sebagai tamu → bayar → pantau Pesanan Saya di browser yang sama. <strong>Alur pembelian lisensi:</strong> Daftar/Login Akun Pembeli → Paket &amp; Harga → pilih paket → checkout → verifikasi pembayaran → aktivasi lisensi → buat usaha → isi barang → catat transaksi → periksa laporan. <br><strong>Jika sudah memiliki lisensi:</strong> login dengan akun pembeli yang sama, periksa status lisensi, lalu lanjutkan ke menu Transaksi.</div>
   <p class="small"><strong>Perhatian:</strong> pembayaran tidak otomatis memasang PWA. Jika checkout menunjukkan Sandbox atau pembayaran produksi belum tersedia, jangan membayar dengan uang sungguhan.</p>
  </div>
  <details class="card" open><summary><strong>1. Aktivasi akun dan mulai menggunakan aplikasi</strong></summary>
-  <ol><li><strong>Buat akun pembeli atau login</strong> melalui menu <strong>Akun Pembeli</strong>. Gunakan email yang dapat Anda akses dan selesaikan konfirmasi email jika diminta.</li><li><strong>Pilih lisensi</strong> di <strong>Pasar Online</strong>. Harga paket mengikuti pilihan yang tersedia di halaman Paket & Harga. Checkout resmi menyediakan empat paket: Starter Rp49.000, Lite Rp99.000, Business Rp149.000, dan Professional Rp249.000. Periksa nama paket dan total sebelum membayar. Jika ada peringatan Sandbox atau pembayaran produksi belum tersedia, jangan membayar dengan uang sungguhan.</li><li><strong>Tunggu verifikasi</strong> dari server. Setelah membayar, buka <strong>Pesanan Saya</strong> untuk memeriksa status pesanan. Jangan membayar ulang ketika status masih diproses; simpan nomor pesanan jika perlu meminta bantuan.</li><li><strong>Aktifkan lisensi</strong> dari menu <strong>Akun Pembeli &amp; Aktivasi Lisensi</strong> dengan kode yang terkait ke pesanan Anda. Aktivasi hanya berhasil setelah pembayaran diverifikasi dan server menyetujui lisensi.</li><li><strong>Buat data usaha</strong>: buka <strong>Transaksi</strong>, isi nama dan jenis usaha, lalu tekan <strong>Simpan Usaha</strong>. Setelah itu, tambahkan barang atau bahan baku pada bagian yang tersedia.</li><li>Gunakan akun yang sama dan pilih usaha yang benar saat membuka aplikasi dari perangkat lain. Jangan menganggap data lokal otomatis tersinkron; periksa status penyimpanan terlebih dahulu.</li></ol>
+  <ol><li><strong>Buat akun pembeli atau login</strong> melalui menu <strong>Akun Pembeli</strong>. Gunakan email yang dapat Anda akses dan selesaikan konfirmasi email jika diminta.</li><li><strong>Pilih paket lisensi</strong> di menu <strong>Paket &amp; Harga</strong>. Checkout digital menyediakan Starter Rp49.000, Lite Rp99.000, Business Rp149.000, dan Professional Rp249.000. Periksa nama paket dan total sebelum membayar. Jika ada peringatan Sandbox atau pembayaran produksi belum tersedia, jangan membayar dengan uang sungguhan.</li><li><strong>Tunggu verifikasi</strong> dari server. Setelah membayar, buka <strong>Pesanan Saya</strong> untuk memeriksa status pesanan. Jangan membayar ulang ketika status masih diproses; simpan nomor pesanan jika perlu meminta bantuan.</li><li><strong>Aktifkan lisensi</strong> dari menu <strong>Akun Pembeli &amp; Aktivasi Lisensi</strong> dengan kode yang terkait ke pesanan Anda. Aktivasi hanya berhasil setelah pembayaran diverifikasi dan server menyetujui lisensi.</li><li><strong>Buat data usaha</strong>: buka <strong>Transaksi</strong>, isi nama dan jenis usaha, lalu tekan <strong>Simpan Usaha</strong>. Setelah itu, tambahkan barang atau bahan baku pada bagian yang tersedia.</li><li>Gunakan akun yang sama dan pilih usaha yang benar saat membuka aplikasi dari perangkat lain. Jangan menganggap data lokal otomatis tersinkron; periksa status penyimpanan terlebih dahulu.</li></ol>
  </details>
  <details class="card"><summary><strong>2. Membuat usaha dan mengatur akses anggota</strong></summary>
   <ul><li>Isi nama usaha dan jenis usaha. Nomor telepon, alamat, dan kota dapat diisi bila tersedia.</li><li>Owner adalah pemilik workspace dan mengelola katalog, harga modal, serta laporan keuangan lengkap.</li><li>Untuk menambahkan Karyawan, Owner membagikan kode undangan yang tampil di informasi usaha.</li><li>Karyawan membuka menu Login Karyawan dan memasukkan kode undangan sesuai instruksi pada layar.</li><li>Jika akun terhubung ke beberapa usaha, pilih nama usaha yang benar sebelum bekerja.</li><li>Jangan bagikan kode undangan kepada orang yang tidak diberi izin.</li></ul>
