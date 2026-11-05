@@ -25,4 +25,11 @@ alter default privileges for role postgres in schema public
 alter default privileges for role supabase_admin in schema public
   revoke truncate, references, trigger, maintain on tables from anon, authenticated;
 
+-- New public functions must receive explicit EXECUTE grants in their migration.
+alter default privileges for role postgres in schema public
+  revoke execute on functions from anon, authenticated;
+
+alter default privileges for role supabase_admin in schema public
+  revoke execute on functions from anon, authenticated;
+
 commit;
