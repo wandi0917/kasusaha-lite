@@ -3172,7 +3172,7 @@ let biteshipDestinationCoords = null;
 function fingerprintKeranjangFisik(){
  return JSON.stringify(keranjang.filter(x=>String(x.id).startsWith('online:')).map(x=>({
   product_id:Number(String(x.id).slice(7)),quantity:Number(x.qty)
- })).filter(x=>Number.isSafeInteger(x.product_id)&&x.product_id>0&&x.product_id!==7)
+ })).filter(x=>Number.isSafeInteger(x.product_id)&&x.product_id>0&&![7,8,9,10].includes(x.product_id))
  .sort((a,b)=>a.product_id-b.product_id));
 }
 async function pastikanSesiCheckoutTamu(){
