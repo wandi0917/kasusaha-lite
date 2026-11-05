@@ -261,14 +261,18 @@ BEGIN
     END IF;
 
     IF v_paid_order.order_id = v_first_order.id THEN
-      v_rate := 0.1500;
+      v_rate := v_partner.first_purchase_rate;
       v_type := 'first_purchase';
     ELSE
-      v_rate := 0.1000;
+      v_rate := v_partner.renewal_rate;
       v_type := 'renewal';
     END IF;
 
     v_amount := round(v_paid_order.calculation_base * v_rate, 0);
+    -- A configured zero rate or a sub-rupiah rounded amount must not create a zero-value ledger row.
+    IF v_amount <= 0 THEN
+      CONTINUE;
+    END IF;
     v_idempotency_key := 'license-partner:' || v_paid_order.order_id::text;
 
     SELECT * INTO v_existing
@@ -298,8 +302,8 @@ BEGIN
             reviewed_at = NULL,
             reviewed_by = NULL,
             notes = CASE WHEN v_type = 'first_purchase'
-              THEN 'Rekonsiliasi: komisi pembelian lisensi pertama 15% berdasarkan waktu pembayaran Midtrans; menunggu persetujuan admin.'
-              ELSE 'Rekonsiliasi: komisi pembelian ulang lisensi 10% berdasarkan waktu pembayaran Midtrans; menunggu persetujuan admin.'
+              THEN 'Rekonsiliasi: komisi pembelian lisensi pertama menggunakan first_purchase_rate mitra berdasarkan waktu pembayaran Midtrans; menunggu persetujuan admin.'
+              ELSE 'Rekonsiliasi: komisi pembelian ulang lisensi menggunakan renewal_rate mitra berdasarkan waktu pembayaran Midtrans; menunggu persetujuan admin.'
             END
         WHERE id = v_existing.id;
         v_rows_updated := v_rows_updated + 1;
@@ -327,8 +331,8 @@ BEGIN
          v_paid_order.calculation_base, v_amount, 'held',
          v_idempotency_key,
          CASE WHEN v_type = 'first_purchase'
-           THEN 'Komisi pembelian lisensi pertama 15%; berdasarkan waktu pembayaran Midtrans dan menunggu persetujuan admin.'
-           ELSE 'Komisi pembelian ulang lisensi 10%; berdasarkan waktu pembayaran Midtrans dan menunggu persetujuan admin.'
+           THEN 'Komisi pembelian lisensi pertama menggunakan first_purchase_rate mitra; berdasarkan waktu pembayaran Midtrans dan menunggu persetujuan admin.'
+           ELSE 'Komisi pembelian ulang lisensi menggunakan renewal_rate mitra; berdasarkan waktu pembayaran Midtrans dan menunggu persetujuan admin.'
          END);
       v_rows_inserted := v_rows_inserted + 1;
       IF v_paid_order.order_id = p_order_id THEN
