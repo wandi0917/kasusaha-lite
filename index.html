@@ -2356,6 +2356,9 @@ async function bagikanKasUsahaLite(){
       <input id="ksPackageBuyerName" maxlength="200" autocomplete="name" required placeholder="Nama lengkap">
       <label for="ksPackageBuyerPhone">Nomor WhatsApp</label>
       <input id="ksPackageBuyerPhone" maxlength="40" inputmode="tel" autocomplete="tel" required placeholder="Contoh: 628123456789">
+      <label for="ksPackageReferralCode">Kode referral mitra (opsional)</label>
+      <input id="ksPackageReferralCode" maxlength="32" autocapitalize="characters" autocomplete="off" placeholder="Masukkan kode mitra jika ada">
+      <p class="small">Kode referral hanya berlaku jika mitra telah disetujui dan aktif. Atribusi mitra yang sudah tercatat untuk akun Anda tidak dapat diganti.</p>
       <p class="small">Produk berupa lisensi digital, tidak memerlukan alamat pengiriman.</p>
       <button id="ksPackageCheckoutSubmit" class="primary wide" type="submit">Buat pesanan dan lanjutkan pembayaran</button>
       <button class="secondary wide" type="button" onclick="document.getElementById('ksPackageCheckoutCard').hidden=true">Tutup</button>
@@ -3438,6 +3441,7 @@ function pilihPaketKasUsaha(code) {
     const code=document.getElementById('ksSelectedPackageCode')?.value||'';
     const name=document.getElementById('ksPackageBuyerName')?.value.trim()||'';
     const phone=document.getElementById('ksPackageBuyerPhone')?.value.trim()||'';
+    const referralCode=document.getElementById('ksPackageReferralCode')?.value.trim().toUpperCase()||'';
     const status=document.getElementById('ksPackageCheckoutStatus');
     const submit=document.getElementById('ksPackageCheckoutSubmit');
     if(!KS_PACKAGE_PRICES[code]||!name||!phone){if(status)status.textContent='Paket, nama, dan nomor WhatsApp wajib diisi.';return;}
@@ -3456,7 +3460,8 @@ function pilihPaketKasUsaha(code) {
         p_package_code:code,
         p_buyer_name:name,
         p_buyer_phone:phone,
-        p_shipping_address:'Lisensi digital KasUsaha Lite — tidak memerlukan pengiriman.'
+        p_shipping_address:'Lisensi digital KasUsaha Lite — tidak memerlukan pengiriman.',
+        p_referral_code:referralCode||null
       });
       if(error)throw error;
       const order=Array.isArray(data)?data[0]:data;
