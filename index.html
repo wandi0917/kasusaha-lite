@@ -3456,13 +3456,22 @@ function pilihPaketKasUsaha(code) {
         buka('akunPembeli',document.getElementById('navAkunPembeli'));
         return;
       }
-      const {data,error}=await sb.rpc('create_kasusaha_package_order',{
+      const packageOrderArgs={
         p_package_code:code,
         p_buyer_name:name,
         p_buyer_phone:phone,
         p_shipping_address:'Lisensi digital KasUsaha Lite — tidak memerlukan pengiriman.',
         p_referral_code:referralCode||null
-      });
+      };
+      let {data,error}=await sb.rpc('create_kasusaha_package_order',packageOrderArgs);
+      const missingReferralRpc=error&&(/PGRST202|Could not find the function|schema cache/i.test(String(error.code||'')+' '+String(error.message||'')));
+      if(missingReferralRpc&&!referralCode){
+        const legacyArgs={...packageOrderArgs};
+        delete legacyArgs.p_referral_code;
+        ({data,error}=await sb.rpc('create_kasusaha_package_order',legacyArgs));
+      }else if(missingReferralRpc&&referralCode){
+        throw new Error('Pencatatan kode referral belum aktif di server. Kode referral tidak dikirim dan pesanan belum dibuat. Coba lagi setelah pembaruan server selesai.');
+      }
       if(error)throw error;
       const order=Array.isArray(data)?data[0]:data;
       if(!order||order.success!==true||!order.order_id)throw new Error('Server tidak mengembalikan nomor pesanan yang valid.');
