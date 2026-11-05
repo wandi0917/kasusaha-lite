@@ -54,3 +54,12 @@ Fondasi sudah digabung ke main dan migrasi additive sudah diterapkan ke Supabase
 9. RPC tidak membocorkan data usaha lain; akses ledger privat tetap tertutup untuk anon/authenticated.
 10. Penagihan tetap nonaktif dan tidak mengubah transaksi, saldo kasir, lisensi, atau hak akses.
 
+
+
+## Audit tambahan — waktu penerimaan server (5 November 2026)
+- Ditemukan bahwa kolom `created_at` dapat diisi saat sinkronisasi offline dari waktu perangkat, sehingga tidak layak menjadi satu-satunya dasar periode penagihan.
+- Migrasi `20261105160000_server_recorded_financial_transaction_time.sql` menambahkan `server_recorded_at`, diisi oleh trigger database pada saat INSERT dan dipertahankan saat UPDATE.
+- Pratinjau biaya menggunakan `server_recorded_at` dan batas bulan Asia/Jakarta; pengguna tidak dapat memundurkan/memajukan waktu penerimaan melalui payload browser.
+- Transaksi offline dialokasikan ke bulan ketika server menerima sinkronisasi. Tanggal transaksi asli tetap berada di `transaction_date` untuk laporan, tetapi bukan dasar waktu penagihan.
+- Data lama diisi dari `created_at` untuk kompatibilitas. Tidak ada usaha yang telah menyetujui ketentuan trial pada saat audit; data lama berada sebelum trial yang kelak dimulai.
+- Tagihan tetap dinonaktifkan. Pratinjau belum boleh dipakai untuk penagihan sampai retur ditautkan ke penjualan asal, koreksi manual memiliki audit trail, dan alur offline/online direkonsiliasi.
