@@ -4228,7 +4228,7 @@ async function loadFinanceWorkspace(){
 $('financeForm')?.addEventListener('submit',async function(e){
  e.preventDefault();if(activeOpenBillId){setFinanceStatus('Anda sedang membuka tagihan yang belum dibayar. Gunakan tombol Bayar tagihan tersimpan agar tidak tercatat sebagai penjualan ganda.',true);return;}if(!sb||!financeBusiness||!financeMemberRole||!financeMemberUserId){setFinanceStatus('Hubungkan akun ke usaha terlebih dahulu.',true);return;}
  const description=$('financeDescription').value.trim(),amount=Number($('financeAmount').value),date=$('financeDate').value,category=$('financeCategory').value,type=financeMemberRole==='employee'?'income':$('financeType').value;
- if(!description||description.length>300||!Number.isSafeInteger(amount)||amount<=0||!date||!category){setFinanceStatus('Periksa keterangan (maksimal 300 karakter), tanggal, kategori, dan nominal. Nominal harus bilangan bulat positif.',true);return;}
+ if(description.length<2||description.length>300||!Number.isSafeInteger(amount)||amount<=0||!date||!category){setFinanceStatus('Keterangan minimal 2 karakter (maksimal 300), tanggal, kategori, dan nominal harus valid. Nominal harus bilangan bulat positif.',true);return;}
  const btn=$('financeSave');btn.disabled=true;
  try{
   const editId=$('financeEditId').value;
