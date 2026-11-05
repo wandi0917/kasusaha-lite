@@ -37,10 +37,10 @@ Fondasi sudah digabung ke main dan migrasi additive sudah diterapkan ke Supabase
 
 
 ## Audit tambahan — batas periode dan akurasi
-- Penjualan dan retur pada pratinjau dibatasi pada `created_at >= trial_started_at + 30 days` dan sebelum awal bulan berikutnya dalam zona waktu Asia/Jakarta. Ini mencegah penjualan sebelum akhir masa uji coba ikut masuk dalam pratinjau bulan yang sama.
+- Penjualan dan retur pada pratinjau dibatasi berdasarkan `server_recorded_at >= trial_started_at + 30 days` dan sebelum awal bulan berikutnya dalam zona waktu Asia/Jakarta. Waktu penerimaan server tidak dapat diubah melalui payload browser; transaksi offline dialokasikan ke bulan saat sinkronisasi diterima server.
 - Batas akhir periode memakai awal bulan berikutnya (exclusive), sehingga transaksi pada hari terakhir bulan tetap dihitung.
 - RPC persetujuan mengembalikan timestamp trial yang benar-benar tersimpan di database, bukan perkiraan `now()` kedua.
-- Karena `financial_transactions` saat ini hanya memiliki `transaction_date` bertipe DATE dan `created_at`, waktu kejadian asli transaksi offline belum dapat dipastikan. Karena itu pratinjau tetap bukan tagihan dan tidak boleh digunakan untuk menagih sampai semua jalur offline menyimpan waktu kejadian asli dan audit trail.
+- `transaction_date` tetap menyimpan tanggal transaksi yang dipakai untuk laporan operasional, sedangkan `server_recorded_at` menjadi dasar periode pratinjau biaya. Untuk transaksi offline, waktu kejadian asli perangkat belum dapat diverifikasi; karena itu sinkronisasi masuk ke bulan penerimaan server. Pratinjau tetap bukan tagihan dan tidak boleh digunakan untuk menagih sampai rekonsiliasi, penautan retur ke penjualan asal, dan audit trail koreksi selesai.
 - Pengembalian harus dicatat sebagai expense dengan kategori retur yang dikenal; hubungan retur dengan penjualan asal belum tersedia pada fondasi ini.
 
 ## Kasus uji wajib sebelum aktivasi
