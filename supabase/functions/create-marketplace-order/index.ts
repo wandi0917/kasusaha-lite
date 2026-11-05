@@ -451,6 +451,38 @@ Deno.serve(async (req: Request): Promise<Response> => {
       return reply({ success: false, error: "Konfigurasi server pesanan belum lengkap." }, 503);
     }
 
+    // Referral ditentukan server-side; atribusi pertama pelanggan selalu dipertahankan.
+    let licenseReferral: { partner_id: string; referral_code: string } | null = null;
+    if (containsDigitalLicense) {
+      const referralAdmin = createClient(supabaseUrl!, rpcServiceKey, {
+        auth: { persistSession: false, autoRefreshToken: false },
+      });
+      const { data: existingAttribution, error: attributionReadError } = await referralAdmin
+        .from("license_customer_attributions").select("partner_id")
+        .eq("customer_id", authData.user.id).maybeSingle();
+      if (attributionReadError) {
+        return reply({ success: false, error: "Atribusi mitra belum dapat diverifikasi. Coba kembali." }, 503);
+      }
+      if (existingAttribution?.partner_id) {
+        const { data: originalPartner, error } = await referralAdmin
+          .from("license_marketing_partners").select("id,referral_code")
+          .eq("id", existingAttribution.partner_id).maybeSingle();
+        if (error || !originalPartner) return reply({ success: false, error: "Data mitra rujukan perlu diperiksa admin." }, 503);
+        licenseReferral = { partner_id: String(originalPartner.id), referral_code: String(originalPartner.referral_code) };
+      } else {
+        const code = readText(body.referral_code)?.toUpperCase() ?? null;
+        if (code) {
+          if (!/^[A-Z0-9][A-Z0-9_-]{3,31}$/.test(code)) return reply({ success: false, error: "Kode referral tidak valid." }, 400);
+          const { data: partner, error } = await referralAdmin
+            .from("license_marketing_partners").select("id,user_id,referral_code,status")
+            .eq("referral_code", code).eq("status", "active").maybeSingle();
+          if (error || !partner) return reply({ success: false, error: "Kode referral tidak ditemukan atau mitra belum aktif." }, 400);
+          if (String(partner.user_id) === String(authData.user.id)) return reply({ success: false, error: "Anda tidak dapat menggunakan kode referral sendiri." }, 403);
+          licenseReferral = { partner_id: String(partner.id), referral_code: String(partner.referral_code) };
+        }
+      }
+    }
+
     // Klaim tarif secara atomik setelah validasi keranjang dan SEBELUM membuat pesanan.
     // Satu quote tidak dapat dipakai dua checkout bersamaan oleh pembeli yang sama.
     let claimedQuoteAt: string | null = null;
@@ -580,6 +612,23 @@ Deno.serve(async (req: Request): Promise<Response> => {
     if (!Number.isFinite(finalTotalAmount) || finalTotalAmount <= 0) {
       console.error("Total pesanan baru tidak valid.", { orderId, total: createdOrderSnapshot.total_amount });
       return reply({ success: false, order_created_unknown: true, order_id: orderId, error: "Pesanan dibuat tetapi total belum dapat diverifikasi. Jangan membayar atau membuat ulang pesanan." }, 502);
+    }
+
+    if (containsDigitalLicense && licenseReferral) {
+      const { error } = await orderAdmin.from("license_order_referrals").insert({
+        order_id: orderId, buyer_id: authData.user.id,
+        partner_id: licenseReferral.partner_id, referral_code: licenseReferral.referral_code,
+      });
+      if (error) {
+        console.error("Gagal menyimpan referral pesanan lisensi:", error.message);
+        await orderAdmin.from("marketplace_orders").update({
+          payment_review_required: true,
+          payment_review_note: "Referral lisensi gagal dikunci; pembayaran ditahan untuk pemeriksaan admin.",
+          updated_at: new Date().toISOString(),
+        }).eq("id", orderId).eq("buyer_id", authData.user.id).eq("status", "pending_payment");
+        return reply({ success: false, order_created_unknown: true, order_id: orderId,
+          error: "Kode mitra belum berhasil dikunci. Jangan lanjutkan pembayaran; hubungi admin dengan nomor pesanan." }, 502);
+      }
     }
     if (shippingQuote && shippingAdmin) {
       const { data: orderRow, error: orderReadError } = await shippingAdmin
