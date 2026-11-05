@@ -9,18 +9,18 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="KasUsaha Lite">
-<meta name="description" content="KasUsaha Lite untuk warung dan UMKM: catat pemasukan-pengeluaran, kelola produk dan stok, serta tinjau laporan usaha. Lisensi KasUsaha Lite mulai Rp49.000. Layanan cloud 12 bulan pertama termasuk; perpanjangan tahunan sesuai paket.">
+<meta name="description" content="KasUsaha Lite untuk warung dan UMKM: kasir, transaksi, stok, barcode, dan laporan. Lisensi mulai Rp49.000 dengan 12 bulan layanan cloud pertama. Skema biaya layanan: 30 hari pertama gratis, lalu omzet bersih sampai Rp3 juta per bulan tetap bebas biaya layanan; 0,1% hanya atas kelebihannya.">
 <meta name="keywords" content="aplikasi kasir UMKM, pencatatan keuangan usaha, stok barang, laporan penjualan, KasUsaha Lite, perlengkapan usaha, Shopee Affiliate">
 <link rel="canonical" href="https://kasusaha-lite.pages.dev/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="KasUsaha Lite — Bantu Usaha Lebih Tertata">
-<meta property="og:description" content="Bantu usaha lebih tertata: catat transaksi, kelola produk dan stok, tinjau laporan. Pilih paket lisensi hybrid KasUsaha Lite mulai Rp49.000.">
+<meta property="og:description" content="KasUsaha Lite membantu warung dan UMKM mengelola transaksi, stok, dan laporan. 30 hari pertama bebas biaya layanan; setelahnya omzet bersih hingga Rp3 juta per bulan tetap bebas biaya layanan. Lisensi paket tetap berlaku sesuai harga.">
 <meta property="og:url" content="https://kasusaha-lite.pages.dev/">
 <meta property="og:image" content="https://kasusaha-lite.pages.dev/assets/kasusaha-banner-baru-3.webp?v=20261102">
 <meta property="og:image:alt" content="Banner resmi KasUsaha Lite">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="KasUsaha Lite — Bantu Usaha Lebih Tertata">
-<meta name="twitter:description" content="Catat transaksi, kelola produk dan stok, serta tinjau laporan usaha. Paket lisensi hybrid mulai Rp49.000.">
+<meta name="twitter:description" content="Kelola transaksi, stok, dan laporan dengan KasUsaha Lite. 30 hari pertama gratis biaya layanan; omzet bersih hingga Rp3 juta per bulan tetap bebas biaya layanan setelahnya. Lisensi paket tetap berbayar.">
 <meta name="twitter:image" content="https://kasusaha-lite.pages.dev/assets/kasusaha-banner-baru-3.webp?v=20261102">
 <meta name="kasusaha-build" content="2026-11-04-license-activation-and-offline-validation-2">
 <title>KasUsaha Lite</title>
@@ -862,6 +862,15 @@ html body main #beranda .promo-section-title{color:#244a35!important;font-family
 .ks-cashier-showcase{max-width:1180px;margin:26px auto 30px;padding:clamp(18px,2.5vw,30px);display:grid;grid-template-columns:.72fr 1.28fr;gap:24px;align-items:center;border:1px solid #d9e4f5;border-radius:22px;background:linear-gradient(120deg,#f5f8ff,#fff 58%,#f4f1ff);box-shadow:0 14px 34px rgba(39,65,125,.09)}
 .ks-cashier-showcase-copy>span{display:inline-block;padding:7px 11px;border-radius:999px;background:#e6edff;color:#3154b7;font-size:11px;font-weight:850;letter-spacing:.12em}.ks-cashier-showcase-copy h2{font-size:clamp(25px,3vw,36px);line-height:1.12;color:#182b59;margin:14px 0 10px}.ks-cashier-showcase-copy p{color:#52617d;line-height:1.65;font-size:15px}.ks-cashier-points{display:grid;gap:8px;margin-top:16px;color:#214b92;font-size:14px}.ks-cashier-preview{display:block;position:relative;overflow:hidden;border-radius:15px;border:1px solid #b9d2f5;background:#edf4ff;box-shadow:0 10px 24px rgba(26,66,130,.13)}.ks-cashier-preview img{display:block;width:100%;height:auto}.ks-cashier-preview span{position:absolute;right:14px;bottom:12px;padding:9px 13px;border-radius:999px;background:#145bd6;color:white;font-size:12px;font-weight:800;box-shadow:0 4px 14px #123b7050}.ks-cashier-preview:hover{transform:translateY(-2px);box-shadow:0 14px 28px rgba(26,66,130,.18)}
 @media(max-width:700px){.ks-cashier-showcase{grid-template-columns:1fr;gap:15px;margin:18px auto;padding:15px;border-radius:16px}.ks-cashier-showcase-copy h2{font-size:27px}.ks-cashier-preview span{font-size:11px;right:8px;bottom:8px}}
+
+/* Transparansi promo biaya layanan — tidak menyamarkan harga lisensi */
+.ks-free-service-offer{margin:16px 0 8px;padding:16px 18px;border:1px solid #bbf7d0;border-radius:16px;background:linear-gradient(135deg,#f0fdf4,#f8fafc);color:#14532d;box-shadow:0 8px 20px rgba(22,101,52,.06)}
+.ks-free-service-kicker{display:inline-block;font-size:10px;font-weight:900;letter-spacing:.09em;color:#15803d;text-transform:uppercase}
+.ks-free-service-offer h3{margin:5px 0 8px;font-size:clamp(19px,2.5vw,25px);line-height:1.2;color:#14532d}
+.ks-free-service-offer p{margin:6px 0;font-size:13px;line-height:1.55;color:#365b43}
+.ks-free-service-offer .ks-free-service-example{font-weight:800;color:#166534}
+.ks-free-service-offer .ks-free-service-disclaimer{padding-top:8px;border-top:1px solid #bbf7d0;font-size:11px;color:#52665a}
+@media(max-width:520px){.ks-free-service-offer{padding:13px;border-radius:13px}.ks-free-service-offer h3{font-size:20px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/browser@0.2.1/umd/zxing-browser.min.js"></script>
@@ -1568,12 +1577,19 @@ body>main img{max-width:100%}
 <span class="promo-kicker">UNTUK USAHA KECIL YANG INGIN TERUS MAJU</span>
 <h2>Kelola usaha lebih rapi, <span>setiap hari.</span></h2>
 <p>Catat penjualan dan pengeluaran, pantau stok, lalu tinjau laporan usaha dalam satu tempat. KasUsaha Lite membantu pekerjaan harian terasa lebih teratur sehingga Anda bisa fokus melayani pelanggan.</p>
-<div class="ks-license-price"><span class="ks-price-label">PAKET STARTER</span><strong>Mulai Rp49.000</strong><span class="ks-price-once">Lisensi permanen · 12 bulan layanan cloud termasuk</span></div>
+<div class="ks-license-price"><span class="ks-price-label">LISENSI STARTER</span><strong>Rp49.000</strong><span class="ks-price-once">Sekali bayar · 12 bulan layanan cloud pertama termasuk</span></div>
+<div class="ks-free-service-offer" aria-label="Skema gratis biaya layanan KasUsaha Lite">
+  <span class="ks-free-service-kicker">PROMO BIAYA LAYANAN</span>
+  <h3>30 hari pertama gratis biaya layanan</h3>
+  <p>Setelah masa uji coba 30 hari sejak Owner menyetujui ketentuan, omzet bersih hingga <strong>Rp3.000.000 per bulan tetap bebas biaya layanan</strong>. Jika lebih, biayanya hanya <strong>0,1% dari bagian omzet bersih yang melebihi Rp3.000.000</strong>.</p>
+  <p class="ks-free-service-example">Contoh: omzet bersih Rp5 juta → Rp2.000; omzet bersih Rp30 juta → Rp27.000.</p>
+  <p class="ks-free-service-disclaimer">Ini promo biaya layanan, bukan lisensi gratis. Lisensi/paket tetap mengikuti harga di bawah. Masa uji coba dimulai setelah Owner menyetujui ketentuan di aplikasi. Penagihan dan pemotongan saldo otomatis belum diaktifkan.</p>
+</div>
 <div class="promo-actions">
 <button type="button" class="promo-primary" onclick="buka('akunPembeli',document.querySelectorAll('nav button')[8])">Daftar / Masuk untuk Aktivasi ↗</button>
 <button type="button" class="promo-secondary" onclick="document.getElementById('caraAktivasiKasUsaha')?.scrollIntoView({behavior:'smooth',block:'start'})">Cara Aktivasi</button>
 </div>
-<p class="promo-note">Empat paket lisensi tersedia melalui checkout resmi: Starter, Lite, Business, dan Professional. Login akun pembeli diperlukan. Periksa mode pembayaran sebelum melanjutkan; Sandbox hanya untuk pengujian.</p>
+<p class="promo-note">Empat paket lisensi tersedia melalui checkout resmi: Starter, Lite, Business, dan Professional. Harga lisensi terpisah dari skema biaya layanan. Login akun pembeli diperlukan. Periksa mode pembayaran sebelum melanjutkan; Sandbox hanya untuk pengujian.</p>
 </div>
 <div class="promo-art ks-promo-dashboard-art" aria-label="Tampilan promosi KasUsaha Lite">
   <img src="./Gambar%20banner%20kedua.png" alt="Gambar promosi KasUsaha Lite: ringkasan usaha, pemasukan, pengeluaran, dan produk" loading="eager" decoding="async" style="display:block;position:relative;z-index:2;width:100%;height:auto;max-height:none;object-fit:contain;border-radius:16px">
@@ -1612,7 +1628,7 @@ body>main img{max-width:100%}
     <div><span style="display:inline-block;background:#e0e7ff;color:#3730a3;font-size:12px;font-weight:800;padding:6px 10px;border-radius:999px">BANTU UMKM LEBIH TERTATA</span>
       <h2 style="margin:12px 0 8px;color:#172554;font-size:clamp(22px,3vw,30px)">Punya teman yang punya usaha?</h2>
       <p style="margin:0;color:#475569;line-height:1.65">Kenal pemilik warung, kedai, toko kecil, atau usaha rumahan? Bagikan aplikasi untuk membantu mereka mencatat pemasukan dan pengeluaran, mengelola stok, serta meninjau laporan. Ajak mereka melihat fitur terlebih dahulu—tanpa janji keuntungan dan tanpa tekanan untuk membeli.</p>
-      <p style="margin:10px 0 0;font-size:13px;color:#64748b">Paket lisensi mulai Rp49.000: Starter Rp49.000, Lite Rp99.000, Business Rp149.000, dan Professional Rp249.000. Setiap paket mencakup 12 bulan layanan cloud pertama. Detail perpanjangan dan status ketersediaannya tercantum di menu Paket &amp; Harga. Sebelum membayar, periksa mode pembayaran di checkout.</p>
+      <p style="margin:10px 0 0;font-size:13px;color:#64748b">Lisensi sekali bayar: Starter Rp49.000, Lite Rp99.000, Business Rp149.000, Professional Rp249.000. Setiap paket mencakup 12 bulan layanan cloud pertama. Skema biaya layanan: 30 hari pertama gratis sejak persetujuan Owner; setelahnya omzet bersih sampai Rp3 juta per bulan bebas biaya, dan hanya kelebihannya dikenai 0,1%. Penagihan otomatis belum aktif. Lihat ketentuan lengkap di menu Paket &amp; Harga.</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
       <button type="button" class="primary" onclick="bagikanKasUsahaLiteWA()" style="background:#15803d">Bagikan lewat WhatsApp ↗</button>
@@ -1624,7 +1640,7 @@ body>main img{max-width:100%}
 </section>
 <script>
 function teksPromosiKasUsahaLite(){
- return "Punya warung, kedai, toko kecil, atau usaha rumahan?\n\nKasUsaha Lite membantu Anda: \n✅ Mencatat pemasukan dan pengeluaran\n✅ Mengelola produk dan stok\n✅ Meninjau laporan usaha\n\n💰 Pilihan paket lisensi mulai Rp49.000. Setiap paket mencakup 12 bulan layanan cloud pertama. Lihat rincian paket, biaya perpanjangan, dan ketersediaannya di situs resmi:\nhttps://kasusaha-lite.pages.dev/\n\nSilakan cek apakah cocok untuk usaha Anda. Pastikan metode pembayaran di checkout sudah aktif sebelum membayar." ;
+ return "Punya warung, kedai, toko kecil, atau usaha rumahan?\n\nKasUsaha Lite membantu Anda: \n✅ Mencatat pemasukan dan pengeluaran\n✅ Mengelola produk dan stok\n✅ Meninjau laporan usaha\n\n💰 Lisensi sekali bayar mulai Rp49.000 dan mencakup 12 bulan layanan cloud pertama. Biaya layanan: 30 hari pertama gratis setelah Owner menyetujui ketentuan; setelahnya omzet bersih sampai Rp3 juta per bulan bebas biaya, hanya kelebihannya dikenai 0,1%. Ini bukan lisensi gratis dan belum ada penagihan otomatis. Lihat rincian paket dan ketentuan di situs resmi:\nhttps://kasusaha-lite.pages.dev/\n\nSilakan cek apakah cocok untuk usaha Anda. Pastikan metode pembayaran di checkout sudah aktif sebelum membayar." ;
 }
 function bagikanKasUsahaLiteWA(){
  const url="https://wa.me/?text="+encodeURIComponent(teksPromosiKasUsahaLite());
@@ -2276,7 +2292,7 @@ async function bagikanKasUsahaLite(){
   <div class="card ks-pricing-intro">
     <span class="ks-pricing-kicker">HARGA RESMI • MODEL HYBRID</span>
     <h2>Pilih paket KasUsaha Lite</h2>
-    <p>Bayar lisensi satu kali untuk hak penggunaan. Setiap paket menyertakan 12 bulan layanan cloud sejak aktivasi. Setelah itu, biaya layanan tahunan dibayar hanya jika ingin melanjutkan sinkronisasi cloud, cadangan online, dan layanan server. Tidak ada penagihan otomatis.</p>
+    <p>Bayar lisensi satu kali untuk hak penggunaan. Setiap paket menyertakan 12 bulan layanan cloud sejak aktivasi. Setelah itu, perpanjangan layanan cloud tahunan tetap manual dan memerlukan persetujuan. Terpisah dari lisensi dan perpanjangan cloud, tersedia skema biaya layanan transaksi: 30 hari pertama gratis sejak Owner menyetujui ketentuan; setelahnya omzet bersih sampai Rp3.000.000 per bulan bebas biaya, dan hanya bagian di atas batas tersebut dikenai 0,1%. Penagihan otomatis belum diaktifkan.</p>
     <p class="ks-plan-note"><strong>Status checkout:</strong> keempat paket lisensi kini menggunakan checkout digital terpisah dengan harga ditetapkan di server. Login Akun Pembeli diperlukan. Pembayaran tetap mengikuti mode Midtrans yang ditampilkan; selama Sandbox aktif, jangan gunakan uang sungguhan. Perpanjangan tahunan belum tersedia dan tidak ditagih otomatis.</p>
   </div>
   <div class="ks-pricing-grid ks-pricing-grid-four">
@@ -2360,7 +2376,8 @@ async function bagikanKasUsahaLite(){
       <li><strong>Tidak memperpanjang:</strong> fitur lokal yang memang tersedia tetap dapat digunakan. Sinkronisasi, backup online, pembaruan layanan server, dan fitur cloud dapat dihentikan setelah masa tenggang yang diumumkan.</li>
       <li><strong>Data pelanggan:</strong> tidak langsung dihapus ketika layanan berakhir. Pelanggan harus diberi kesempatan mengunduh/mengekspor data sebelum penghapusan sesuai kebijakan retensi.</li>
       <li><strong>Pelanggan lama:</strong> lisensi yang sudah dibeli tetap mengikuti harga dan hak yang dijanjikan saat pembelian; perubahan paket baru tidak berlaku surut.</li>
-      <li><strong>Biaya pihak ketiga:</strong> biaya Midtrans, kurir, atau penyedia eksternal ditampilkan terpisah jika berlaku. Komisi marketplace tetap 2,5% dari subtotal produk yang pembayarannya telah terverifikasi, tidak termasuk ongkir.</li>
+      <li><strong>Biaya layanan transaksi:</strong> uji coba 30 hari dimulai setelah Owner menyetujui ketentuan untuk usaha tersebut. Setelah uji coba, omzet bersih sampai Rp3.000.000 per bulan bebas biaya layanan. Tarif 0,1% hanya dikenakan pada bagian omzet bersih di atas Rp3.000.000, setelah retur penjualan yang tercatat diperhitungkan. Tidak ada pemotongan diam-diam dari kasir; penagihan hanya dapat dilakukan setelah fitur, persetujuan, rekonsiliasi, dan pemberitahuan tagihan dinyatakan aktif.</li>
+      <li><strong>Biaya pihak ketiga dan marketplace:</strong> biaya Midtrans, kurir, atau penyedia eksternal ditampilkan terpisah jika berlaku. Komisi marketplace tetap 2,5% dari subtotal produk yang pembayarannya telah terverifikasi, tidak termasuk ongkir, dan terpisah dari biaya layanan transaksi usaha.</li>
       <li><strong>Fitur paket:</strong> fitur yang belum tersedia atau belum lulus pengujian tidak dianggap aktif hanya karena tercantum pada rencana paket.</li>
     </ul>
   </div>
