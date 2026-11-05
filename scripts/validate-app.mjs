@@ -231,6 +231,13 @@ for (const [source, gateSnippet] of midtransProductionGateChecks) {
     fail("all Midtrans Production entry points must require the explicit production cutover gate");
   } else pass("Midtrans Production entry point requires explicit production cutover gate");
 }
+
+const requiredStatusApiIdentityCheck = `const transactionIdMatches =
+    Boolean(statusApiTransactionId) &&
+    (!notificationTransactionId || notificationTransactionId === statusApiTransactionId);`;
+if (!paymentWebhook.includes(requiredStatusApiIdentityCheck)) {
+  fail("Midtrans Status API must provide a transaction_id before a payment event can be trusted");
+} else pass("Midtrans Status API transaction identity is mandatory");
 const biteshipShipment = fs.readFileSync("supabase/functions/biteship-create-shipment/index.ts", "utf8");
 const biteshipWebhook = fs.readFileSync("supabase/functions/biteship-webhook/index.ts", "utf8");
 
