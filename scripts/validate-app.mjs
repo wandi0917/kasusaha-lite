@@ -218,7 +218,19 @@ if (!/REVOKE SELECT ON TABLE public\.store_products FROM authenticated/i.test(co
 
 
 const employeeActivation = fs.readFileSync("supabase/functions/employee-device-activation/index.ts", "utf8");
+const midtransPaymentCreation = fs.readFileSync("supabase/functions/create-midtrans-payment/index.ts", "utf8");
 const licenseActivation = fs.readFileSync("supabase/functions/activate-kasusaha-license/index.ts", "utf8");
+
+const midtransProductionGateChecks = [
+  [midtransPaymentCreation, /production && norm\\(Deno\\.env\\.get\\(["']MIDTRANS_PRODUCTION_PAYMENTS_ENABLED["']\\)\\) !== ["']true["']/],
+  [paymentWebhook, /isProduction && String\\(Deno\\.env\\.get\\(["']MIDTRANS_PRODUCTION_PAYMENTS_ENABLED["']\\)/],
+  [employeeActivation, /production && norm\\(Deno\\.env\\.get\\(["']MIDTRANS_PRODUCTION_PAYMENTS_ENABLED["']\\)\\) !== ["']true["']/],
+];
+for (const [source, gatePattern] of midtransProductionGateChecks) {
+  if (!gatePattern.test(source) || !source.includes("PRODUCTION_PAYMENTS_NOT_ENABLED")) {
+    fail("all Midtrans Production entry points must require the explicit production cutover gate");
+  } else pass("Midtrans Production entry point requires explicit production cutover gate");
+}
 const biteshipShipment = fs.readFileSync("supabase/functions/biteship-create-shipment/index.ts", "utf8");
 const biteshipWebhook = fs.readFileSync("supabase/functions/biteship-webhook/index.ts", "utf8");
 
