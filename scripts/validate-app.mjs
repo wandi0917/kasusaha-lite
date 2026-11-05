@@ -287,4 +287,35 @@ if (employeeActivation.includes("productionForCheck") ||
   fail("employee Owner invite refresh must use the configured Midtrans mode variable");
 } else pass("employee Owner invite refresh uses the configured Midtrans mode variable");
 
+const protectedBuyerStart = html.indexOf("async function muatPesananSaya(){");
+const protectedBuyerEnd = html.indexOf("async function mulaiPembayaranMidtrans", protectedBuyerStart);
+const protectedBuyerBlock = protectedBuyerStart >= 0 && protectedBuyerEnd > protectedBuyerStart
+  ? html.slice(protectedBuyerStart, protectedBuyerEnd)
+  : "";
+const protectedPaymentStart = protectedBuyerEnd;
+const protectedPaymentEnd = html.indexOf("async function muatPesananMasuk", protectedPaymentStart);
+const protectedPaymentBlock = protectedPaymentStart >= 0 && protectedPaymentEnd > protectedPaymentStart
+  ? html.slice(protectedPaymentStart, protectedPaymentEnd)
+  : "";
+const protectedSellerStart = protectedPaymentEnd;
+const protectedSellerEnd = html.indexOf("function resetFilterPasar", protectedSellerStart);
+const protectedSellerBlock = protectedSellerStart >= 0 && protectedSellerEnd > protectedSellerStart
+  ? html.slice(protectedSellerStart, protectedSellerEnd)
+  : "";
+const protectedPublishStart = html.indexOf("async function terbitkanProdukLokal(");
+const protectedPublishEnd = html.indexOf("async function siapkanFotoOnline", protectedPublishStart);
+const protectedPublishBlock = protectedPublishStart >= 0 && protectedPublishEnd > protectedPublishStart
+  ? html.slice(protectedPublishStart, protectedPublishEnd)
+  : "";
+for (const [block, label] of [
+  [protectedBuyerBlock, "buyer order and license workflows"],
+  [protectedPaymentBlock, "Midtrans payment workflow"],
+  [protectedSellerBlock, "seller incoming-order and shipping workflow"],
+  [protectedPublishBlock, "seller product publishing workflow"],
+]) {
+  if (!block.includes("getVerifiedAppSession()") || block.includes("sb.auth.getSession()")) {
+    fail(label + " must refresh and verify the authenticated session before protected requests");
+  } else pass(label + " refreshes and verifies the session before protected requests");
+}
+
 if (process.exitCode) process.exit(process.exitCode);
