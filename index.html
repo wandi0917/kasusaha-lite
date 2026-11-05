@@ -2356,9 +2356,9 @@ async function bagikanKasUsahaLite(){
       <input id="ksPackageBuyerName" maxlength="200" autocomplete="name" required placeholder="Nama lengkap">
       <label for="ksPackageBuyerPhone">Nomor WhatsApp</label>
       <input id="ksPackageBuyerPhone" maxlength="40" inputmode="tel" autocomplete="tel" required placeholder="Contoh: 628123456789">
-      <label for="ksPackageReferralCode">Kode referral mitra (opsional)</label>
-      <input id="ksPackageReferralCode" maxlength="32" autocapitalize="characters" autocomplete="off" placeholder="Masukkan kode mitra jika ada">
-      <p class="small">Kode referral hanya berlaku jika mitra telah disetujui dan aktif. Atribusi mitra yang sudah tercatat untuk akun Anda tidak dapat diganti.</p>
+      <label for="ksPackageReferralCode">Kode referral mitra</label>
+      <input id="ksPackageReferralCode" maxlength="32" autocapitalize="characters" autocomplete="off" placeholder="Belum tersedia" disabled aria-describedby="ksPackageReferralStatus">
+      <p id="ksPackageReferralStatus" class="small">Program referral sedang disiapkan. Pencatatan kode mitra belum aktif di server; checkout paket tetap dapat dilakukan tanpa kode referral.</p>
       <p class="small">Produk berupa lisensi digital, tidak memerlukan alamat pengiriman.</p>
       <button id="ksPackageCheckoutSubmit" class="primary wide" type="submit">Buat pesanan dan lanjutkan pembayaran</button>
       <button class="secondary wide" type="button" onclick="document.getElementById('ksPackageCheckoutCard').hidden=true">Tutup</button>
