@@ -133,9 +133,9 @@ if (!/const description=\$\('financeDescription'\)\.value\.trim\(\),amount=Numbe
 } else pass("manual finance form requires at least two description characters");
 
 const clientPrivilegeMigration = fs.readFileSync("supabase/migrations/20261105011000_revoke_unsafe_client_table_privileges.sql", "utf8");
-if (!/REVOKE TRUNCATE, REFERENCES, TRIGGER, MAINTAIN ON ALL TABLES IN SCHEMA public FROM anon, authenticated/i.test(clientPrivilegeMigration) ||
-    !/REVOKE ALL ON TABLE public\.store_open_bills FROM anon/i.test(clientPrivilegeMigration) ||
-    !/REVOKE DELETE ON TABLE public\.store_open_bills FROM authenticated/i.test(clientPrivilegeMigration)) {
+if (!/REVOKE\s+TRUNCATE,\s*REFERENCES,\s*TRIGGER,\s*MAINTAIN\s+ON\s+ALL\s+TABLES\s+IN\s+SCHEMA\s+public\s+FROM\s+anon,\s*authenticated/i.test(clientPrivilegeMigration) ||
+    !/REVOKE ALL PRIVILEGES\s+ON TABLE\s+public\.store_open_bills\s+FROM anon/i.test(clientPrivilegeMigration) ||
+    !/REVOKE DELETE\s+ON TABLE\s+public\.store_open_bills\s+FROM authenticated/i.test(clientPrivilegeMigration)) {
   fail("client roles must not have truncate, trigger, or maintenance privileges on application tables");
 } else pass("client table privileges exclude truncate, trigger, and maintenance access");
 
