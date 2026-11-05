@@ -252,7 +252,7 @@ for (const [pattern, source, message] of operationalChecks) {
 }
 
 
-const employeeCatalogMigration = fs.readFileSync("supabase/migrations/20261105120000_reassert_store_product_employee_read_privileges.sql", "utf8");
+const employeeCatalogMigration = fs.readFileSync("supabase/migrations/20261105081707_reassert_store_product_employee_read_privileges.sql", "utf8");
 const employeeCatalogChecks = [
   [html.includes('data-transaction-role="employee"><summary') && html.includes("Daftar Barang &amp; Barcode"), "Employee must have a dedicated product and barcode catalog menu"],
   [html.includes('id="employeeProductCatalogRows"'), "Employee catalog table must be present"],
