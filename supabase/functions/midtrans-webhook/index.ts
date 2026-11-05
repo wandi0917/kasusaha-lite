@@ -1054,7 +1054,7 @@ Deno.serve(async (req: Request) => {
           status: "paid",
           provider_transaction_id: midtransOrderId,
           paid_at: paidAt,
-          updated_at: paidAt,
+          updated_at: new Date().toISOString(),
         })
         .eq("id", databaseOrderId)
         .eq("status", "pending_payment")
