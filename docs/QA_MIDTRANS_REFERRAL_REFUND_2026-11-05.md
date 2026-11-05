@@ -2,6 +2,26 @@
 
 This branch is a **draft candidate only**. Do not deploy to production until the cases below pass against a disposable/staging Supabase project and Midtrans Sandbox.
 
+## Release gates — must be completed before public launch
+
+- [ ] Reconcile the Supabase migration baseline first. The remote database has historical migration records whose SQL files are not present in this repository; do not run `supabase db push`, `db reset --remote`, or bulk migration repair until the missing history has been safely reconstructed and reviewed.
+- [ ] Apply candidate database migrations to a disposable/staging database first, then compare the resulting schema, function definitions, grants, and RLS policies with production.
+- [ ] Confirm the Midtrans merchant account has completed Production activation and at least one payment channel is actually enabled; a dashboard set to Production is not proof that checkout can collect payment.
+- [ ] Configure separate secrets for each environment: `MIDTRANS_IS_PRODUCTION`, `MIDTRANS_SERVER_KEY_SANDBOX`, and `MIDTRANS_SERVER_KEY_PRODUCTION`. Production mode must fail closed when the Production key is missing; never point a live webhook at a Sandbox key.
+- [ ] Verify the exact Midtrans notification URL is `https://flvdudmdltjjdjkdngbv.supabase.co/functions/v1/midtrans-webhook` and test signature, Status API, amount, currency, order identity, duplicate notifications, and refund handling in Sandbox.
+- [ ] Confirm the Biteship sender address, API key, webhook signature secret, courier services, and shipping booking flag. Keep automatic booking disabled until a real paid test order passes end-to-end.
+- [ ] Enable Supabase Auth leaked-password protection in the Auth dashboard and review password policy before public customer onboarding.
+- [ ] Run owner, employee, buyer, and anonymous-session tests using separate test accounts; verify package entitlements and ensure no test account can read another business's data.
+- [ ] Verify backup/restore procedure and retain a known-good Cloudflare production deployment for rollback.
+- [ ] Perform a final live smoke test with a low-value real payment only after merchant activation, secrets, migration baseline, and refund procedure are confirmed.
+
+## Current production boundary
+
+- This PR is not merged. Its preview build does not change the production Pages branch.
+- Candidate SQL migrations have only been dry-run in a rolled-back transaction; they have not been applied to production.
+- Candidate Edge Function source has not been deployed to the production Supabase project.
+- No real orders, payment events, licenses, or commission rows were created by this audit.
+
 ## Package checkout and referral RPC
 
 - [ ] Customer-facing referral input remains disabled with a clear explanation until partner onboarding, approval, and management are ready; direct RPC tests must not be mistaken for a launched referral program.
