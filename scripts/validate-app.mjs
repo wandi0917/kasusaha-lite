@@ -364,6 +364,26 @@ if (!paidAtFunctionMatch) {
         { settlement_time: "not-a-date", transaction_time: "also-not-a-date" },
         null,
       ],
+      [
+        "impossible calendar dates are rejected",
+        { settlement_time: "2026-02-30 10:15:30" },
+        null,
+      ],
+      [
+        "out-of-range clock times are rejected",
+        { settlement_time: "2026-11-06 24:00:00" },
+        null,
+      ],
+      [
+        "out-of-range timezone offsets are rejected",
+        { settlement_time: "2026-11-06T10:15:30+25:00" },
+        null,
+      ],
+      [
+        "valid fractional seconds are preserved",
+        { settlement_time: "2026-11-06T10:15:30.125+07:00" },
+        "2026-11-06T03:15:30.125Z",
+      ],
     ];
     for (const [label, input, expected] of paidAtCases) {
       const actual = midtransPaidAt(input);
