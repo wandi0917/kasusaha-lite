@@ -48,7 +48,7 @@ try {
 const markupOnly = html
   .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
   .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "");
-const ids = [...markupOnly.matchAll(/\bid\s*=\s*["']([^"']+)["']/gi)].map((m) => m[1]);
+const ids = [...markupOnly.matchAll(/(?:^|\s)id\s*=\s*["']([^"']+)["']/gi)].map((m) => m[1]);
 const duplicates = [...new Set(ids.filter((id, index) => ids.indexOf(id) !== index))];
 if (duplicates.length) fail("duplicate static HTML IDs: " + duplicates.join(", "));
 else pass("no duplicate IDs in static HTML markup");
@@ -127,6 +127,11 @@ if (!/KS_PACKAGE_PRICES/.test(html) ||
     !/professional:249000/.test(html)) {
   fail("four-package checkout prices are missing or inconsistent");
 } else pass("four package checkout prices are present");
+
+if (!/const description=\$\('financeDescription'\)\.value\.trim\(\),amount=Number\(\$\('financeAmount'\)\.value\)[\s\S]{0,500}description\.length<2/.test(html)) {
+  fail("Owner and Employee transaction form must reject descriptions shorter than two characters");
+} else pass("manual finance form requires at least two description characters");
+
 
 
 const biteshipRates = fs.readFileSync("supabase/functions/biteship-rates/index.ts", "utf8");
