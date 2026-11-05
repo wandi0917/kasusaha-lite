@@ -82,6 +82,15 @@ BEGIN
   WHERE o.buyer_id = v_order.buyer_id
     AND o.status = 'paid'
     AND o.paid_at IS NOT NULL
+    AND COALESCE(o.payment_review_required, false) = false
+    AND EXISTS (
+      SELECT 1
+      FROM public.marketplace_payment_events e
+      WHERE e.order_id = o.id
+        AND e.provider = 'midtrans'
+        AND e.event_type IN ('settlement', 'capture')
+        AND e.verification_status = 'verified'
+    )
     AND EXISTS (
       SELECT 1 FROM public.marketplace_order_items i
       WHERE i.order_id = o.id AND i.product_id IN (7, 8, 9, 10)
@@ -228,7 +237,16 @@ BEGIN
     WHERE o.buyer_id = v_order.buyer_id
       AND o.status = 'paid'
       AND o.paid_at IS NOT NULL
+      AND COALESCE(o.payment_review_required, false) = false
       AND i.product_id IN (7, 8, 9, 10)
+      AND EXISTS (
+        SELECT 1
+        FROM public.marketplace_payment_events ev
+        WHERE ev.order_id = o.id
+          AND ev.provider = 'midtrans'
+          AND ev.event_type IN ('settlement', 'capture')
+          AND ev.verification_status = 'verified'
+      )
       AND NOT EXISTS (
         SELECT 1
         FROM public.marketplace_order_items ix
@@ -365,6 +383,7 @@ WITH provider_times AS (
     AND e.event_type IN ('settlement', 'capture')
     AND e.verification_status = 'verified'
     AND o.status = 'paid'
+    AND COALESCE(o.payment_review_required, false) = false
   ORDER BY e.order_id, e.processed_at DESC NULLS LAST, e.id DESC
 ),
 parsed_provider_times AS (
