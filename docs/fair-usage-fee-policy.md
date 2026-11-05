@@ -62,3 +62,13 @@ Fondasi sudah digabung ke main dan migrasi additive sudah diterapkan ke Supabase
 - Selalu jelaskan bahwa lisensi tetap mengikuti harga paket dan mencakup 12 bulan cloud pertama; perpanjangan cloud tahun berikutnya tetap manual sesuai paket.
 - Masa uji coba baru dimulai setelah Owner sah menyetujui ketentuan untuk usaha tersebut. Jangan mengklaim trial sudah berjalan sebelum persetujuan tercatat.
 - Sampai UI persetujuan Owner, rekonsiliasi retur, dan alur penagihan diuji serta diaktifkan secara resmi, jelaskan bahwa penagihan/pemotongan otomatis belum aktif. Jangan menampilkan estimasi biaya sebagai tagihan.
+
+## Audit tambahan — waktu penerimaan server (5 November 2026)
+- Ditemukan bahwa kolom `created_at` dapat diisi saat sinkronisasi offline dari waktu perangkat, sehingga tidak layak menjadi satu-satunya dasar periode penagihan.
+- Migrasi `20261105200000_server_recorded_financial_transaction_time.sql` menambahkan `server_recorded_at`, diisi oleh trigger database pada saat INSERT dan dipertahankan saat UPDATE.
+- Pratinjau biaya menggunakan `server_recorded_at` dan batas bulan Asia/Jakarta; pengguna tidak dapat memundurkan/memajukan waktu penerimaan melalui payload browser.
+- Transaksi offline dialokasikan ke bulan ketika server menerima sinkronisasi. Tanggal transaksi asli tetap berada di `transaction_date` untuk laporan, tetapi bukan dasar waktu penagihan.
+- Data lama diberi cap waktu migrasi (`transaction_timestamp()`), bukan menyalin `created_at` yang dapat berisi waktu perangkat atau waktu masa depan. Tidak ada usaha yang telah menyetujui ketentuan trial saat audit.
+- Migrasi ini sengaja memakai versi `20261105200000`, setelah fondasi `20261105180000` yang sudah ada di produksi, agar urutan migrasi Supabase tetap naik.
+- Pengujian SQL terisolasi dalam transaksi `BEGIN/ROLLBACK` berhasil: migrasi dan fungsi dapat dibuat, INSERT menghasilkan timestamp server, UPDATE tidak dapat mengubah timestamp tersebut, dan RPC mengembalikan threshold Rp3.000.000, rate 0,001, serta `billing_enabled=false`. Seluruh perubahan uji dibatalkan dengan ROLLBACK; produksi belum berubah.
+- Tagihan tetap dinonaktifkan. Pratinjau belum boleh dipakai untuk penagihan sampai retur ditautkan ke penjualan asal, koreksi manual memiliki audit trail, dan alur offline/online direkonsiliasi.
