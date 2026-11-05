@@ -4376,6 +4376,7 @@ function showQuickSaleBarcodeLinker(value){
   addNew.addEventListener('click',async()=>{
    addNew.disabled=true;addNew.textContent='Membuka formulir barang…';
    try{
+    if(cameraActive&&typeof closeQuickSaleBarcodeCamera==='function')closeQuickSaleBarcodeCamera();
     if(typeof cancelStoreProductEdit==='function')cancelStoreProductEdit();
     await bukaPanelTransaksi('stok');
     const type=$('storeProductBarcodeType'),barcode=$('storeProductBarcodeValue'),help=$('storeProductBarcodeHelp');
