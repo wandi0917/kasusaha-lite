@@ -232,4 +232,24 @@ for (const [pattern, source, message] of operationalChecks) {
   else pass(message);
 }
 
+
+const employeeCatalogMigration = fs.readFileSync("supabase/migrations/20261105120000_reassert_store_product_employee_read_privileges.sql", "utf8");
+const employeeCatalogChecks = [
+  [html.includes('data-transaction-role="employee"><summary') && html.includes("Daftar Barang &amp; Barcode"), "Employee must have a dedicated product and barcode catalog menu"],
+  [html.includes('id="employeeProductCatalogRows"'), "Employee catalog table must be present"],
+  [html.includes("function renderEmployeeProductCatalog()"), "Employee catalog must render product, barcode, selling price and stock"],
+  [html.includes("Hubungi atasan atau Owner untuk entri barang dan stok terlebih dahulu"), "unknown barcode scan must instruct Employee to contact Owner"],
+  [html.includes("Entri barang baru (Owner)"), "Owner must have a shortcut to enter a newly scanned barcode as a new product"],
+  [employeeCatalogMigration.includes("REVOKE SELECT ON TABLE public.store_products FROM authenticated"), "reasserted product catalog migration must revoke table-wide SELECT"],
+  [employeeCatalogMigration.includes("GRANT SELECT ("), "reasserted product catalog migration must grant only explicit catalog columns"],
+];
+for (const [ok, message] of employeeCatalogChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+const safeCatalogGrant = employeeCatalogMigration.split("GRANT SELECT (")[1]?.split(") ON TABLE public.store_products TO authenticated")[0] || "";
+if (!safeCatalogGrant || safeCatalogGrant.includes("cost_price")) {
+  fail("Employee catalog SELECT grant must exclude cost_price");
+} else pass("Employee catalog SELECT grant excludes cost_price");
+
 if (process.exitCode) process.exit(process.exitCode);
