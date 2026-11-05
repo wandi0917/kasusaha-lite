@@ -209,6 +209,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
       );
     }
     const production = configuredMode === "true";
+    // Production charges remain disabled until the merchant is approved and
+    // the operator explicitly enables the dedicated cutover feature flag.
+    const productionPaymentsEnabled =
+      String(Deno.env.get("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED") ?? "")
+        .trim()
+        .toLowerCase() === "true";
+    if (production && !productionPaymentsEnabled) {
+      return reply({
+        success: false,
+        code: "PRODUCTION_PAYMENTS_NOT_ENABLED",
+        error: "Pembayaran Midtrans Production belum diaktifkan. Selesaikan persetujuan merchant dan checklist cutover terlebih dahulu.",
+      }, 503);
+    }
     const serverKey = production
       ? Deno.env.get("MIDTRANS_SERVER_KEY_PRODUCTION")
       : (Deno.env.get("MIDTRANS_SERVER_KEY_SANDBOX") || Deno.env.get("MIDTRANS_SERVER_KEY"));
