@@ -36,17 +36,26 @@ Deno.serve(async (req: Request) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const serverKey = Deno.env.get("MIDTRANS_SERVER_KEY");
-  // Expiry checks may only query Midtrans Sandbox in this deployment.
+  // Gunakan kunci dan API Midtrans yang sesuai dengan mode aktif.
   const configuredMode = String(Deno.env.get("MIDTRANS_IS_PRODUCTION") ?? "").trim().toLowerCase();
-  if (configuredMode !== "false") {
+  if (configuredMode !== "false" && configuredMode !== "true") {
     return jsonResponse({
       success: false,
-      code: "SANDBOX_ONLY",
-      message: "Pemeriksaan expiry dikunci ke Sandbox.",
+      code: "PAYMENT_MODE_INVALID",
+      message: "Mode pembayaran belum dikonfigurasi dengan benar.",
     }, 503);
   }
-  const isProduction = false;
+  const isProduction = configuredMode === "true";
+  const serverKey = isProduction
+    ? Deno.env.get("MIDTRANS_SERVER_KEY_PRODUCTION")
+    : (Deno.env.get("MIDTRANS_SERVER_KEY_SANDBOX") || Deno.env.get("MIDTRANS_SERVER_KEY"));
+  if (isProduction && !serverKey) {
+    return jsonResponse({
+      success: false,
+      code: "PRODUCTION_KEY_MISSING",
+      message: "Kunci server Midtrans Production belum dikonfigurasi.",
+    }, 503);
+  }
 
   if (!supabaseUrl || !serviceRoleKey || !serverKey) {
     return jsonResponse({
