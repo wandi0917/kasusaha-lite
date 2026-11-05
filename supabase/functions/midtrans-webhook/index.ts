@@ -273,6 +273,24 @@ async function recordCommissionForPaidOrder(
   // Dasar perhitungan hanya subtotal produk, bukan ongkos kirim.
   const COMMISSION_RATE = 0.025;
 
+  // Komisi hanya boleh dikaitkan ke event pembayaran yang telah diverifikasi
+  // untuk pesanan yang sama. Event masih boleh belum processed karena fungsi
+  // ini dipanggil sebelum markPaymentEventProcessed pada alur webhook.
+  const { data: verifiedEvent, error: verifiedEventError } = await supabase
+    .from("marketplace_payment_events")
+    .select("id, order_id, verification_status")
+    .eq("id", paymentEventId)
+    .eq("order_id", orderId)
+    .eq("verification_status", "verified")
+    .maybeSingle();
+
+  if (verifiedEventError || !verifiedEvent) {
+    const message = verifiedEventError?.message ??
+      "Event pembayaran tidak terverifikasi untuk pesanan ini.";
+    console.error("Komisi ditahan karena event pembayaran belum terverifikasi:", message);
+    return { success: false, error: message };
+  }
+
   const { data: items, error: itemsError } = await supabase
     .from("marketplace_order_items")
     .select("id, item_subtotal, product_id")
@@ -358,7 +376,9 @@ async function recordCommissionForPaidOrder(
     .from("marketplace_commission_ledger")
     .upsert(ledgerRows, {
       onConflict: "idempotency_key",
-      ignoreDuplicates: true,
+      // Perbarui event pembayaran pada baris lama dengan event terverifikasi
+      // terbaru; kunci unik tetap mencegah pembuatan komisi ganda.
+      ignoreDuplicates: false,
     });
 
   if (ledgerError) {
@@ -379,7 +399,7 @@ async function recordCommissionForPaidOrder(
   const { data: savedLedgerRows, error: verifyLedgerError } = await supabase
     .from("marketplace_commission_ledger")
     .select(
-      "order_item_id, entry_type, commission_rate, calculation_base, amount, idempotency_key",
+      "order_item_id, entry_type, commission_rate, calculation_base, amount, idempotency_key, payment_event_id",
     )
     .in("idempotency_key", ledgerRows.map((row) => row.idempotency_key));
 
@@ -405,7 +425,8 @@ async function recordCommissionForPaidOrder(
       String(saved.entry_type) === expected.entry_type &&
       Number(saved.commission_rate) === COMMISSION_RATE &&
       Number(saved.calculation_base) === Number(expected.calculation_base) &&
-      Number(saved.amount) === Number(expected.amount);
+      Number(saved.amount) === Number(expected.amount) &&
+      String(saved.payment_event_id) === String(expected.payment_event_id);
 
     if (!matches) {
       const message =
