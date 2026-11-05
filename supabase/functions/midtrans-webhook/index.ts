@@ -1248,6 +1248,21 @@ Deno.serve(async (req: Request) => {
       }, 500);
     }
 
+
+    // Komisi mitra lisensi terpisah dari komisi marketplace 2,5%.
+    const licensePartnerCommission = await supabase.rpc("record_license_partner_commission", {
+      p_order_id: databaseOrderId,
+      p_payment_event_id: paymentEventId,
+    });
+    if (licensePartnerCommission.error ||
+        !licensePartnerCommission.data ||
+        (licensePartnerCommission.data as JsonObject).success !== true) {
+      console.error("Komisi mitra lisensi gagal:", licensePartnerCommission.error?.message ?? JSON.stringify(licensePartnerCommission.data));
+      return reply({ success: false,
+        message: "Pembayaran berhasil, tetapi komisi mitra lisensi belum tercatat. Webhook perlu dicoba ulang.",
+        order_id: databaseOrderId }, 500);
+    }
+
     // 8. Pertahankan aktivasi lisensi produk ID 7.
     const licenseResult = await issueLicenseIfApplicable(
       supabase,
