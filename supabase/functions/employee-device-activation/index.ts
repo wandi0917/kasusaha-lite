@@ -46,6 +46,11 @@ Deno.serve(async (req: Request) => {
       return reply({ success: false, code: "PAYMENT_MODE_INVALID", message: "Mode pembayaran belum dikonfigurasi dengan benar." }, 503);
     }
     const production = configuredMode === "true";
+    // Employee-ID payments share the same Production approval gate as checkout.
+    const productionPaymentsEnabled =
+      String(Deno.env.get("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED") ?? "")
+        .trim()
+        .toLowerCase() === "true";
     const serverKey = production
       ? Deno.env.get("MIDTRANS_SERVER_KEY_PRODUCTION")
       : (Deno.env.get("MIDTRANS_SERVER_KEY_SANDBOX") || Deno.env.get("MIDTRANS_SERVER_KEY"));
@@ -67,6 +72,16 @@ Deno.serve(async (req: Request) => {
     const action = String(body.action || "");
     if (!["status", "employee_join_code", "owner_list", "owner_create", "owner_check", "owner_create_code", "owner_revoke_code", "owner_deactivate", "owner_reactivate", "owner_delete_inactive"].includes(action)) {
       return reply({ success: false, message: "Aksi tidak dikenal." }, 400);
+    }
+    // Keep read-only Owner/Employee screens available while Production is gated.
+    // Only actions that create or reconcile Midtrans payments require approval.
+    const productionPaymentActions = ["owner_create", "owner_check", "owner_create_code"];
+    if (production && !productionPaymentsEnabled && productionPaymentActions.includes(action)) {
+      return reply({
+        success: false,
+        code: "PRODUCTION_PAYMENTS_NOT_ENABLED",
+        message: "Pembayaran aktivasi Karyawan melalui Midtrans Production belum diaktifkan. Selesaikan persetujuan merchant dan checklist cutover terlebih dahulu.",
+      }, 503);
     }
     const admin = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
     const authUserId = auth.user.id;
@@ -366,6 +381,7 @@ Deno.serve(async (req: Request) => {
       const authBasicForCheck = "Basic " + btoa(serverKey + ":");
       const recentlyPaid: string[] = [];
       for (const row of activationRows) {
+        if (production && !productionPaymentsEnabled) continue;
         if (row.status !== "pending_payment" || !row.midtrans_order_id) continue;
         const txResponse = await fetch(apiForCheck + "/v2/" + encodeURIComponent(row.midtrans_order_id) + "/status", {
           headers: { Authorization: authBasicForCheck, Accept: "application/json" },
@@ -414,6 +430,14 @@ Deno.serve(async (req: Request) => {
       const inviteAuthBasic = "Basic " + btoa(serverKey + ":");
       const refreshedCodes = [];
       for (const invite of inviteCodes || []) {
+        if (production && !productionPaymentsEnabled) {
+          refreshedCodes.push({
+            id: invite.id, employee_name: invite.employee_name, invite_code: invite.invite_code,
+            status: invite.status, amount: invite.amount, payment_url: invite.payment_url,
+            paid_at: invite.paid_at, user_id: invite.user_id, created_at: invite.created_at
+          });
+          continue;
+        }
         if (invite.status === "pending_payment" && invite.midtrans_order_id) {
           const txResponse = await fetch(inviteApi + "/v2/" + encodeURIComponent(invite.midtrans_order_id) + "/status", {
             headers: { Authorization: inviteAuthBasic, Accept: "application/json" }, signal: AbortSignal.timeout(8000)
