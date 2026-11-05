@@ -180,6 +180,27 @@ async function recordVerifiedPaymentEvent(
         notification.payment_type ??
         "",
     ),
+    refund_amount: String(
+      midtransStatus.refund_amount ??
+        notification.refund_amount ??
+        "",
+    ),
+    refund_chargeback_id: String(
+      midtransStatus.refund_chargeback_id ??
+        notification.refund_chargeback_id ??
+        "",
+    ),
+    refund_key: String(
+      midtransStatus.refund_key ??
+        notification.refund_key ??
+        "",
+    ),
+    bank_confirmed_at: String(
+      midtransStatus.bank_confirmed_at ??
+        notification.bank_confirmed_at ??
+        "",
+    ),
+    refunds: midtransStatus.refunds ?? notification.refunds ?? null,
   });
 
   const providerEventId = await sha256(fingerprintSource);
