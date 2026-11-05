@@ -1,0 +1,25 @@
+name: License partner integration checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "supabase/functions/create-marketplace-order/**"
+      - "supabase/functions/midtrans-webhook/**"
+      - "supabase/functions/platform-license-partners/**"
+      - "supabase/migrations/*license_partner*"
+
+jobs:
+  deno-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check changed Edge Functions
+        run: |
+          deno check supabase/functions/create-marketplace-order/index.ts
+          deno check supabase/functions/midtrans-webhook/index.ts
+          deno check supabase/functions/platform-license-partners/index.ts
