@@ -22,6 +22,7 @@ declare
   v_rate numeric;
   v_type text;
   v_amount numeric;
+  v_rows_inserted integer := 0;
   v_existing public.license_partner_commission_ledger%rowtype;
 begin
   select * into v_order
@@ -163,6 +164,7 @@ begin
        else 'Komisi pembelian ulang lisensi 10%; atribusi mitra mengikuti paid_at pertama dan menunggu persetujuan admin.'
      end)
   on conflict (idempotency_key) do nothing;
+  get diagnostics v_rows_inserted = row_count;
 
   select * into v_existing
   from public.license_partner_commission_ledger
@@ -170,7 +172,7 @@ begin
 
   return jsonb_build_object(
     'success', true,
-    'commission_created', found,
+    'commission_created', v_rows_inserted = 1,
     'ledger_id', v_existing.id,
     'commission_type', v_existing.commission_type,
     'commission_rate', v_existing.commission_rate,
