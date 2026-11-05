@@ -106,9 +106,39 @@ function midtransPaidAt(status: JsonObject): string | null {
     .map((value) => String(value ?? "").trim())
     .find((value) => value.length > 0) ?? "";
   if (!raw) return null;
-  const normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
-  const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(normalized);
-  const iso = hasTimezone ? normalized : normalized + "+07:00";
+
+  // Date.parse can normalize impossible dates (for example, February 30).
+  // Validate Midtrans wall-clock fields before converting them to an instant.
+  const match = raw.match(
+    /^(\d{4})-(\d{2})-(\d{2})[ Tt](\d{2}):(\d{2}):(\d{2})(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/i,
+  );
+  if (!match) return null;
+
+  const [, yearText, monthText, dayText, hourText, minuteText, secondText, , timezone] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  const second = Number(secondText);
+
+  if (year < 1000 || month < 1 || month > 12 || hour > 23 ||
+      minute > 59 || second > 59) return null;
+
+  const calendarDate = new Date(Date.UTC(year, month - 1, day));
+  if (
+    calendarDate.getUTCFullYear() !== year ||
+    calendarDate.getUTCMonth() !== month - 1 ||
+    calendarDate.getUTCDate() !== day
+  ) return null;
+
+  if (timezone && !/^Z$/i.test(timezone)) {
+    const offset = timezone.match(/^[+-](\d{2}):?(\d{2})$/);
+    if (!offset || Number(offset[1]) > 23 || Number(offset[2]) > 59) return null;
+  }
+
+  const normalized = raw.replace(/[ Tt]/, "T");
+  const iso = timezone ? normalized : normalized + "+07:00";
   const parsed = Date.parse(iso);
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
 }
