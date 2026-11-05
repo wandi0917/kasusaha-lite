@@ -349,6 +349,16 @@ Deno.serve(async (req: Request): Promise<Response> => {
     const hasPhysicalProduct = orderItemsForShipping.some(
       (item) => ![7, 8, 9, 10].includes(Number(item.product_id)),
     );
+    const hasDigitalProduct = orderItemsForShipping.some(
+      (item) => [7, 8, 9, 10].includes(Number(item.product_id)),
+    );
+    if (hasDigitalProduct && user.is_anonymous === true) {
+      return reply({
+        success: false,
+        code: "DIGITAL_LICENSE_REQUIRES_REGISTERED_ACCOUNT",
+        error: "Untuk membayar lisensi KasUsaha Lite, silakan buat akun atau masuk menggunakan akun terdaftar terlebih dahulu.",
+      }, 403);
+    }
     if (hasPhysicalProduct && (
       order.shipping_provider !== "Biteship" ||
       !order.shipping_courier_code ||

@@ -316,6 +316,19 @@ Deno.serve(async (req: Request): Promise<Response> => {
       });
     }
 
+    // Akun anonim boleh menyiapkan keranjang, tetapi tidak boleh membeli lisensi digital.
+    // Akun permanen harus memiliki identitas login yang dapat dipakai kembali.
+    const containsDigitalLicense = items.some((item) =>
+      [7, 8, 9, 10].includes(Number(item.product_id))
+    );
+    if (containsDigitalLicense && authData.user.is_anonymous === true) {
+      return reply({
+        success: false,
+        code: "DIGITAL_LICENSE_REQUIRES_REGISTERED_ACCOUNT",
+        error: "Untuk membeli lisensi KasUsaha Lite, silakan buat akun atau masuk menggunakan akun terdaftar terlebih dahulu.",
+      }, 403);
+    }
+
     const shippingQuoteId = readText(body.shipping_quote_id);
     // Keempat paket KasUsaha Lite (produk 7-10) adalah lisensi digital.
     const physicalItems = items.filter(
