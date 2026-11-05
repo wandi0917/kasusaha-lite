@@ -130,6 +130,7 @@ Deno.serve(async (req) => {
   )];
   const verifiedEventById = new Map<string, {
     order_id: string;
+    paid: boolean;
     verified: boolean;
   }>();
 
@@ -141,7 +142,7 @@ Deno.serve(async (req) => {
       : Promise.resolve({ data: [], error: null }),
     paymentEventIds.length
       ? db.from("marketplace_payment_events")
-          .select("id,order_id,verification_status,processed_at")
+          .select("id,order_id,event_type,verification_status,processed_at")
           .in("id", paymentEventIds)
       : Promise.resolve({ data: [], error: null }),
   ]);
@@ -163,6 +164,9 @@ Deno.serve(async (req) => {
   for (const event of eventResult.data || []) {
     verifiedEventById.set(event.id, {
       order_id: event.order_id,
+      paid: ["settlement", "capture"].includes(
+        String(event.event_type || "").toLowerCase(),
+      ),
       verified: event.verification_status === "verified" &&
         event.processed_at !== null,
     });
@@ -185,6 +189,7 @@ Deno.serve(async (req) => {
         return Boolean(
           item?.order_id &&
           event?.verified === true &&
+          event.paid === true &&
           event.order_id === item.order_id
         );
       })
@@ -203,6 +208,7 @@ Deno.serve(async (req) => {
     if (
       item?.order_id &&
       event?.verified === true &&
+      event.paid === true &&
       event.order_id === item.order_id
     ) return true;
 
