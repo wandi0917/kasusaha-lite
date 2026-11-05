@@ -4380,13 +4380,20 @@ function addScannedBarcodeToQuickSale(raw){
  }
  if(Number(p.stock_quantity||0)<1){setQuickSaleBarcodeStatus(p.product_name+' ditemukan, tetapi stok habis.',true);return false;}
  $('quickSaleBarcodeLinker')?.remove();
- let row=quickSaleItemRows().find(el=>{const input=el.querySelector('.quick-sale-product');return !String(input?.value||'').trim()&&!input?.dataset.productId;});
- if(!row){addQuickSaleLine();row=quickSaleItemRows().slice(-1)[0];}
- const input=row?.querySelector('.quick-sale-product');if(input){input.value=p.product_code+' — '+p.product_name;input.dataset.productId=p.id;}
+ let row=quickSaleItemRows().find(el=>String(el.querySelector('.quick-sale-product')?.dataset.productId||'')===String(p.id));
+ if(row){
+  const qty=row.querySelector('.quick-sale-qty');
+  const current=Math.max(1,Number.parseInt(qty?.value||'1',10)||1);
+  if(qty)qty.value=String(current+1);
+ }else{
+  row=quickSaleItemRows().find(el=>{const input=el.querySelector('.quick-sale-product');return !String(input?.value||'').trim()&&!input?.dataset.productId;});
+  if(!row){addQuickSaleLine();row=quickSaleItemRows().slice(-1)[0];}
+  const input=row?.querySelector('.quick-sale-product');if(input){input.value=p.product_code+' — '+p.product_name;input.dataset.productId=p.id;}
+  const qtyField=row?.querySelector('.quick-sale-qty');if(qtyField){qtyField.value='1';qtyField.min='1';qtyField.step='1';}
+ }
  const cancelButton=row?.querySelector('.quick-sale-cancel-scan');if(cancelButton)cancelButton.hidden=false;
- const qtyField=row?.querySelector('.quick-sale-qty');if(qtyField){qtyField.value='';qtyField.placeholder='Isi jumlah pesanan';qtyField.min='1';qtyField.step='1';qtyField.style.cssText='width:100%;padding:14px;border:2px solid #16a34a;border-radius:10px;background:#f0fdf4;font-size:20px;font-weight:800;text-align:center';row?.scrollIntoView({behavior:'smooth',block:'center'});qtyField.focus();}
- updateQuickSalePreview(true);setQuickSaleBarcodeStatus('✓ '+p.product_name+' terbaca. Kamera dihentikan. Periksa barang, isi jumlah, atau tekan Batalkan scan.');
- const scanInput=$('quickSaleBarcodeInput');if(scanInput)scanInput.value='';return true;
+ updateQuickSalePreview(true);setQuickSaleBarcodeStatus('✓ '+p.product_name+' ditambahkan. Scan barang berikutnya; scan ulang akan menambah jumlah.');
+ const scanInput=$('quickSaleBarcodeInput');if(scanInput){scanInput.value='';scanInput.focus({preventScroll:true});}return true;
 }
 function handleQuickSaleCameraResult(raw){
  const value=String(raw||'').trim(),now=Date.now();
@@ -4494,9 +4501,21 @@ function bindKasUsahaBarcodeFeatures(){
  type?.addEventListener('change',()=>{
   const custom=type.value==='custom';value.readOnly=custom;
   if(custom)value.value=generateKasUsahaBarcode(code?.value);
-  else value.value='';
+  else {value.value='';value.focus({preventScroll:true});}
   renderStoreProductBarcodePreview();
-  $('storeProductBarcodeHelp').textContent=custom?'Barcode Code 128 dibuat otomatis dari kode barang.':'Masukkan barcode asli pada kemasan produk. Nilainya akan dipakai untuk pencarian saat scan.';
+  $('storeProductBarcodeHelp').textContent=custom?'Barcode Code 128 dibuat otomatis dari kode barang.':'Pilih kolom ini lalu pindai barcode kemasan dengan scanner USB/Bluetooth, atau gunakan tombol kamera. Kode pabrik disimpan persis termasuk angka nol di depan.';
+ });
+ value?.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'||type?.value!=='factory')return;
+  e.preventDefault();e.stopPropagation();
+  const scanned=String(value.value||'').trim();
+  if(!scanned){$('storeProductBarcodeHelp').textContent='Belum ada kode yang terbaca. Coba pindai kembali barcode kemasan.';return;}
+  value.value=scanned;
+  renderStoreProductBarcodePreview();
+  const help=$('storeProductBarcodeHelp');
+  if(help)help.textContent='Barcode pabrik terbaca dari scanner. Pastikan barang yang dipilih benar, lalu simpan produk. Kode asli dan angka nol di depan dipertahankan.';
+  $('storeProductStatus').className='status';
+  $('storeProductStatus').textContent='Barcode pabrik berhasil diterima dari scanner: '+scanned+'. Belum disimpan sampai tombol Simpan barang ditekan.';
  });
  code?.addEventListener('input',()=>{if(type?.value==='custom')value.value=generateKasUsahaBarcode(code.value);renderStoreProductBarcodePreview();});
  value?.addEventListener('input',renderStoreProductBarcodePreview);
@@ -4513,11 +4532,17 @@ function bindKasUsahaBarcodeFeatures(){
   }catch(e){alert('Barcode belum dapat dicetak: '+String(e.message||e).slice(0,160));}
  });
  $('quickSaleBarcodeInput')?.addEventListener('keydown',e=>{
-  if(e.key==='Enter'){e.preventDefault();addScannedBarcodeToQuickSale(e.currentTarget.value);}
+  if(e.key==='Enter'){
+   e.preventDefault();
+   const field=e.currentTarget,value=field.value;
+   const added=addScannedBarcodeToQuickSale(value);
+   if(added){field.value='';field.focus({preventScroll:true});}
+  }
  });
  $('quickSaleOpenCamera')?.addEventListener('click',()=>openQuickSaleBarcodeCamera('cart'));
  $('storeProductScanFactory')?.addEventListener('click',()=>openQuickSaleBarcodeCamera('product'));
- $('storeProductBarcodeValue')?.addEventListener('keydown',e=>{if(e.key==='Enter'&&$('storeProductBarcodeType')?.value==='factory'){e.preventDefault();renderStoreProductBarcodePreview();}});
+ // Scanner USB/Bluetooth mengirimkan kode sebagai ketikan keyboard dan diakhiri Enter.
+ // Penerimaan scanner ditangani pada input barcode produk agar tidak mengirim form lebih awal.
  $('quickSaleBarcodeClose')?.addEventListener('click',closeQuickSaleBarcodeCamera);
  $('quickSaleBarcodeModal')?.addEventListener('click',e=>{if(e.target===$('quickSaleBarcodeModal'))closeQuickSaleBarcodeCamera();});
  renderStoreProductBarcodePreview();
@@ -4688,6 +4713,8 @@ async function bukaPanelTransaksi(tujuan){
             throw new Error('Tagihan yang sedang dibuka belum memiliki rincian barang. Rincian tidak dikosongkan agar pesanan tidak hilang.');
           }
           updateQuickSalePreview();await loadQuickSaleOpenBills();
+          const barcodeInput=$('quickSaleBarcodeInput');
+          if(barcodeInput){barcodeInput.value='';barcodeInput.focus({preventScroll:true});setQuickSaleBarcodeStatus('Kolom scan aktif. Hubungkan scanner USB/Bluetooth atau gunakan kamera HP.');}
         }
         else if(isOwner){catalog?.scrollIntoView({behavior:'smooth',block:'start'});}
       }catch(e){setFinanceStatus((tujuan==='kasir'?'Kasir':'Menu barang dan stok')+' belum dapat memuat daftar barang: '+String(e.message||e).slice(0,180),true);}
