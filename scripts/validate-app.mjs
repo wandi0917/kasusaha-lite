@@ -64,7 +64,7 @@ if (!/detail\.includes\(['"]saldo akun biteship['"]\)/.test(html)) {
 } else pass("localized Biteship balance errors map to dedicated checkout guidance");
 
 const barcodeScanFunctionStart = html.indexOf("function addScannedBarcodeToQuickSale(raw){");
-const barcodeScanFunctionEnd = html.indexOf("\\nfunction handleQuickSaleCameraResult", barcodeScanFunctionStart);
+const barcodeScanFunctionEnd = html.indexOf("\nfunction handleQuickSaleCameraResult", barcodeScanFunctionStart);
 const barcodeScanFunction = html.slice(barcodeScanFunctionStart, barcodeScanFunctionEnd);
 const barcodeCartChecks = [
   [barcodeScanFunction.includes("const nextQty=") && barcodeScanFunction.includes("qtyField.value=String(nextQty)"), "repeated scans of the same product must increment its quantity"],
