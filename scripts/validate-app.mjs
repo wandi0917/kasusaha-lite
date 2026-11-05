@@ -182,6 +182,8 @@ const paymentWebhook = fs.readFileSync("supabase/functions/midtrans-webhook/inde
 const marketplaceCreate = fs.readFileSync("supabase/functions/create-marketplace-order/index.ts", "utf8");
 
 const requiredChecks = [
+  [/productionPaymentsEnabled[\\s\\S]{0,260}PRODUCTION_PAYMENTS_NOT_ENABLED/, paymentCreate, "Midtrans Production checkout must remain blocked until the explicit approval gate is enabled"],
+  [/productionPaymentsEnabled[\\s\\S]{0,260}PRODUCTION_PAYMENTS_NOT_ENABLED/, paymentWebhook, "Midtrans Production webhook processing must remain blocked until the explicit approval gate is enabled"],
   [/order\.payment_review_required\s*===\s*true/, paymentCreate, "payment creation must block orders requiring review"],
   [/\.eq\(["']buyer_id["'],\s*user\.id\)/, paymentCreate, "payment creation must verify buyer ownership"],
   [/authData\.user\.is_anonymous === true/, marketplaceCreate, "anonymous buyers must be blocked from digital license checkout"],
@@ -218,6 +220,9 @@ if (!/REVOKE SELECT ON TABLE public\.store_products FROM authenticated/i.test(co
 
 
 const employeeActivation = fs.readFileSync("supabase/functions/employee-device-activation/index.ts", "utf8");
+if (!/productionPaymentsEnabled[\\s\\S]{0,260}PRODUCTION_PAYMENTS_NOT_ENABLED/.test(employeeActivation)) {
+  fail("Employee-ID Midtrans Production payments must remain blocked until the explicit approval gate is enabled");
+} else pass("Employee-ID Midtrans Production payments require the explicit approval gate");
 const licenseActivation = fs.readFileSync("supabase/functions/activate-kasusaha-license/index.ts", "utf8");
 const biteshipShipment = fs.readFileSync("supabase/functions/biteship-create-shipment/index.ts", "utf8");
 const biteshipWebhook = fs.readFileSync("supabase/functions/biteship-webhook/index.ts", "utf8");
