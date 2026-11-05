@@ -136,7 +136,8 @@ Deno.serve(async (req: Request) => {
         status: nextStatus,
         updated_at: new Date().toISOString(),
       };
-      if (action === "approve_partner") { update.approved_at = new Date().toISOString(); update.approved_by = authData.user.id; }\n      if (action === "suspend_partner") { update.suspended_at = new Date().toISOString(); update.suspended_by = authData.user.id; }
+      if (action === "approve_partner") { update.approved_at = new Date().toISOString(); update.approved_by = authData.user.id; }
+      if (action === "suspend_partner") { update.suspended_at = new Date().toISOString(); update.suspended_by = authData.user.id; }
 
       const { data, error } = await db.from("license_marketing_partners")
         .update(update).eq("id", id)
