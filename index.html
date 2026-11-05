@@ -4501,9 +4501,21 @@ function bindKasUsahaBarcodeFeatures(){
  type?.addEventListener('change',()=>{
   const custom=type.value==='custom';value.readOnly=custom;
   if(custom)value.value=generateKasUsahaBarcode(code?.value);
-  else value.value='';
+  else {value.value='';value.focus({preventScroll:true});}
   renderStoreProductBarcodePreview();
-  $('storeProductBarcodeHelp').textContent=custom?'Barcode Code 128 dibuat otomatis dari kode barang.':'Masukkan barcode asli pada kemasan produk. Nilainya akan dipakai untuk pencarian saat scan.';
+  $('storeProductBarcodeHelp').textContent=custom?'Barcode Code 128 dibuat otomatis dari kode barang.':'Pilih kolom ini lalu pindai barcode kemasan dengan scanner USB/Bluetooth, atau gunakan tombol kamera. Kode pabrik disimpan persis termasuk angka nol di depan.';
+ });
+ value?.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'||type?.value!=='factory')return;
+  e.preventDefault();e.stopPropagation();
+  const scanned=String(value.value||'').trim();
+  if(!scanned){$('storeProductBarcodeHelp').textContent='Belum ada kode yang terbaca. Coba pindai kembali barcode kemasan.';return;}
+  value.value=scanned;
+  renderStoreProductBarcodePreview();
+  const help=$('storeProductBarcodeHelp');
+  if(help)help.textContent='Barcode pabrik terbaca dari scanner. Pastikan barang yang dipilih benar, lalu simpan produk. Kode asli dan angka nol di depan dipertahankan.';
+  $('storeProductStatus').className='status';
+  $('storeProductStatus').textContent='Barcode pabrik berhasil diterima dari scanner: '+scanned+'. Belum disimpan sampai tombol Simpan barang ditekan.';
  });
  code?.addEventListener('input',()=>{if(type?.value==='custom')value.value=generateKasUsahaBarcode(code.value);renderStoreProductBarcodePreview();});
  value?.addEventListener('input',renderStoreProductBarcodePreview);
@@ -4529,7 +4541,8 @@ function bindKasUsahaBarcodeFeatures(){
  });
  $('quickSaleOpenCamera')?.addEventListener('click',()=>openQuickSaleBarcodeCamera('cart'));
  $('storeProductScanFactory')?.addEventListener('click',()=>openQuickSaleBarcodeCamera('product'));
- $('storeProductBarcodeValue')?.addEventListener('keydown',e=>{if(e.key==='Enter'&&$('storeProductBarcodeType')?.value==='factory'){e.preventDefault();renderStoreProductBarcodePreview();}});
+ // Scanner USB/Bluetooth mengirimkan kode sebagai ketikan keyboard dan diakhiri Enter.
+ // Penerimaan scanner ditangani pada input barcode produk agar tidak mengirim form lebih awal.
  $('quickSaleBarcodeClose')?.addEventListener('click',closeQuickSaleBarcodeCamera);
  $('quickSaleBarcodeModal')?.addEventListener('click',e=>{if(e.target===$('quickSaleBarcodeModal'))closeQuickSaleBarcodeCamera();});
  renderStoreProductBarcodePreview();
