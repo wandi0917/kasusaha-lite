@@ -139,8 +139,7 @@ if (!/REVOKE\s+TRUNCATE,\s*REFERENCES,\s*TRIGGER,\s*MAINTAIN\s+ON\s+ALL\s+TABLES
   fail("client roles must not have truncate, trigger, or maintenance privileges on application tables");
 } else pass("client table privileges exclude truncate, trigger, and maintenance access");
 
-if (!/ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public\s+REVOKE EXECUTE ON FUNCTIONS FROM anon, authenticated/i.test(clientPrivilegeMigration) ||
-  ) {
+if (!/ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public\s+REVOKE EXECUTE ON FUNCTIONS FROM anon, authenticated/i.test(clientPrivilegeMigration)) {
   fail("new public functions must require explicit EXECUTE grants");
 } else pass("new public functions default to no client EXECUTE access");
 
