@@ -282,4 +282,9 @@ if (!employeeWebhookBlock.includes("if (!notificationSignatureValid)") ||
   fail("employee activation webhook must reject invalid Midtrans signatures before acknowledging receipt");
 } else pass("employee activation webhook rejects invalid Midtrans signatures before acknowledging receipt");
 
+if (employeeActivation.includes("productionForCheck") ||
+    !employeeActivation.includes("midtransBases(production)")) {
+  fail("employee Owner invite refresh must use the configured Midtrans mode variable");
+} else pass("employee Owner invite refresh uses the configured Midtrans mode variable");
+
 if (process.exitCode) process.exit(process.exitCode);

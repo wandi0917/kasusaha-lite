@@ -410,7 +410,7 @@ Deno.serve(async (req: Request) => {
         .select("id,employee_name,invite_code,status,amount,midtrans_order_id,payment_url,paid_at,user_id,created_at")
         .eq("business_id", businessId).order("created_at", { ascending: false });
       if (inviteCodeError) return reply({ success: false, message: "Daftar ID karyawan belum dapat dimuat." }, 500);
-      const { api: inviteApi } = midtransBases(productionForCheck);
+      const { api: inviteApi } = midtransBases(production);
       const inviteAuthBasic = "Basic " + btoa(serverKey + ":");
       const refreshedCodes = [];
       for (const invite of inviteCodes || []) {
