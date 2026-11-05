@@ -1,6 +1,8 @@
 name: License partner integration checks
 
 on:
+  push:
+    branches: [feat/license-partner-commission-integration]
   pull_request:
     branches: [main]
     paths:
