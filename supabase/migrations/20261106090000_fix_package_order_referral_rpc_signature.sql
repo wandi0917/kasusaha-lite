@@ -93,3 +93,5 @@ GRANT EXECUTE ON FUNCTION public.create_kasusaha_package_order(text, text, text,
 
 COMMENT ON FUNCTION public.create_kasusaha_package_order(text, text, text, text, text)
   IS 'Creates a licensed package order and atomically captures an optional active, non-self referral code.';
+
+NOTIFY pgrst, 'reload schema';
