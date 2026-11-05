@@ -2,6 +2,17 @@
 
 This branch is a **draft candidate only**. Do not deploy to production until the cases below pass against a disposable/staging Supabase project and Midtrans Sandbox.
 
+## Package checkout and referral RPC
+
+- [ ] Authenticated buyer can create a package order using the four-argument legacy RPC.
+- [ ] Authenticated buyer can create a package order using the five-argument RPC with an active referral code; exactly one referral row is captured for that order.
+- [ ] Empty referral code creates a normal order without a referral row.
+- [ ] Invalid, inactive, unknown, and self-owned referral codes are rejected before an order remains committed.
+- [ ] Referral insert failure rolls back the package order; no orphan pending order remains.
+- [ ] Browser-supplied price is ignored; the active license-plan price remains the server-side source of truth.
+- [ ] Anonymous sessions cannot create package orders through either RPC signature.
+- [ ] Authenticated users cannot execute the five-argument RPC through PUBLIC/anon grants.
+
 ## Payment timestamp and webhook
 
 - [ ] Valid settlement: order becomes paid only after signature/Status API, amount, currency, order ID, and transaction ID match.
