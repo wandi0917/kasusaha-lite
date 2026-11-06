@@ -4855,6 +4855,11 @@ async function loadFinanceAccounting(){
  if(!sb||!financeBusiness||financeMemberRole!=='owner'){if(host)host.textContent='Modul akuntansi lengkap hanya tersedia untuk Owner.';return;}
  financeAccounting.entries=[];financeAccounting.lines=[];financeAccounting.parties=[];financeAccounting.items=[];
  try{
+  const packageAccess=await loadFinancePackageFeatures(financeBusiness.id);
+  if(!packageAccess.features||packageAccess.features.full_finance!==true){
+   if(host)host.textContent='Fitur akuntansi lengkap memerlukan paket Lite atau lebih tinggi dengan lisensi aktif.';
+   return;
+  }
   await financeAccountingEnsureAccounts();
   const [entries,lines,parties,items]=await Promise.all([
    financeFetchAllRows(()=>sb.from('finance_journal_entries').select('id,business_id,entry_number,entry_date,description,source_type,status,created_by,posted_at').eq('business_id',financeBusiness.id).order('entry_date').order('id')),
