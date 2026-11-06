@@ -59,3 +59,24 @@ Tidak ada perubahan schema/database produksi yang dilakukan selama audit ini. Mi
 - Uji browser end-to-end dengan akun Owner dan Karyawan: belum dilakukan.
 - Uji perangkat barcode fisik/Bluetooth/kamera: belum dilakukan dalam sesi audit ini.
 - Penerapan migration dan deployment produksi: belum dilakukan.
+
+
+## Inventaris UI menu Transaksi (audit statis lanjutan)
+
+Pemeriksaan struktur HTML dan binding JavaScript pada branch PR #95:
+
+- 63 elemen tombol ditemukan di area menu Transaksi, termasuk submenu Kasir Cepat, Absensi, katalog karyawan, Pengaturan Akun Karyawan, Catat Transaksi, Barang & Stok, Laporan, biaya layanan, akuntansi, dan transaksi lokal.
+- 9 form ditemukan: `quickSaleForm`, `storeProductForm`, `stockEntryForm`, `financeForm`, `financeJournalForm`, `financePartyForm`, `financeOpenItemForm`, `financeSettlementForm`, dan `formKas`. Kesembilan form memiliki binding submit di JavaScript.
+- Enam tombol nominal uang tunai menggunakan binding kelas `.quick-sale-cash-option`; masing-masing mengisi nominal dan memperbarui preview pembayaran.
+- Tombol aksi utama dengan ID (simpan transaksi, simpan tagihan, bayar tagihan, tambah barang, cetak barcode, stok, absensi, dan simpan transaksi bersama) memiliki binding event JavaScript.
+- Tombol submenu yang memakai `onclick` mengarahkan ke panel atau fungsi terkait. Tombol laporan mencakup penjualan, stok, keuangan Owner, akuntansi, pemasukan Karyawan, laporan harian lokal, dan riwayat lokal.
+
+Inventaris ini adalah pemeriksaan statis struktur dan binding, bukan bukti bahwa seluruh klik berhasil pada browser/perangkat nyata. Tombol yang dibuat secara dinamis di baris tabel (misalnya edit/hapus produk, edit absensi, buka tagihan, dan aksi jurnal) masih harus diuji dengan akun Owner dan Karyawan.
+
+## Status uji yang belum boleh diklaim lulus
+
+- Belum dilakukan uji klik end-to-end untuk seluruh 63 tombol pada browser desktop dan HP.
+- Belum dilakukan uji akun Owner dan Karyawan pada data usaha nyata/simulasi yang terisolasi.
+- Belum dilakukan uji fisik scanner Bluetooth dan kamera pada perangkat Android.
+- Mode offline hanya menyimpan catatan lokal di perangkat; transaksi lokal tidak otomatis masuk ke laporan bersama. Pemindahan data dilakukan melalui aksi impor dan perlu verifikasi duplikasi sebelum dipakai pada data nyata.
+- PR #95 masih draft. Tiga workflow CI pada commit `f147337df69d36068abd4c6b9c8981eacdbb6168` lulus, tetapi kelulusan CI tidak menggantikan pengujian browser, perangkat, dan cutover Supabase.
