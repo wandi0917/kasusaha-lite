@@ -615,6 +615,21 @@ for (const [ok, message] of paymentIntegrityChecks) {
 
 
 const marketplacePolicyOccurrences = (needle) => marketplaceProductPolicyMigration.split(needle).length - 1;
+const sellerMarketplaceUiSource = html.slice(html.indexOf("async function pastikanHakMarketplace("), html.indexOf("async function siapkanFotoOnline("));
+const marketplaceUiChecks = [
+  [sellerMarketplaceUiSource.includes("user.is_anonymous===true") &&
+   sellerMarketplaceUiSource.includes("kasusaha_get_business_package_entitlements") &&
+   sellerMarketplaceUiSource.includes("result.features.marketplace!==true"),
+   "seller publishing checks registered account and verified marketplace package entitlement before upload"],
+  [html.includes("await pastikanHakMarketplace(user)") &&
+   html.includes("await pastikanHakMarketplace(sesiData.session.user)"),
+   "both manual and local-product marketplace publishing paths enforce package entitlement"],
+];
+for (const [ok, message] of marketplaceUiChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
 const marketplaceProductPolicyChecks = [
   [marketplaceProductPolicyMigration.includes('CREATE POLICY "Penjual dapat menambah produk miliknya"'), "seller product INSERT policy is present"],
   [marketplaceProductPolicyMigration.includes('CREATE POLICY "Penjual dapat mengubah produk miliknya"'), "seller product UPDATE policy is present"],
