@@ -405,18 +405,22 @@ BEGIN
   FROM private.store_quick_sale_requests r
   WHERE r.business_id = p_business_id AND r.request_id = v_request_id FOR UPDATE;
   IF FOUND THEN
-    IF NOT (v_existing_result ? 'cash_received') THEN
-      RAISE EXCEPTION 'Transaksi dengan ID ini pernah diproses oleh versi kasir sebelumnya. Periksa laporan sebelum membuat transaksi baru.';
-    END IF;
-    IF (v_existing_result->>'cash_received')::numeric IS DISTINCT FROM p_cash_received THEN
-      RAISE EXCEPTION 'Transaksi ini sudah diproses dengan nominal uang diterima yang berbeda. Periksa laporan sebelum mengulang.';
-    END IF;
     IF v_existing_hash <> v_request_hash THEN
       RAISE EXCEPTION 'ID permintaan penjualan ini sudah dipakai untuk rincian berbeda. Muat ulang kasir dan periksa laporan sebelum membuat transaksi baru.';
     END IF;
     IF NOT EXISTS (SELECT 1 FROM private.store_quick_sale_requests r
       WHERE r.business_id = p_business_id AND r.request_id = v_request_id AND r.user_id = v_uid) THEN
       RAISE EXCEPTION 'ID permintaan penjualan tidak cocok dengan akun yang login.';
+    END IF;
+    -- A request from the legacy client was already committed without a cash_received field.
+    -- Return its stored result without re-selling or decrementing stock a second time.
+    IF NOT (v_existing_result ? 'cash_received') THEN
+      RETURN v_existing_result || jsonb_build_object(
+        'replayed', true, 'already_processed', true, 'legacy_cash_unverified', true
+      );
+    END IF;
+    IF (v_existing_result->>'cash_received')::numeric IS DISTINCT FROM p_cash_received THEN
+      RAISE EXCEPTION 'Transaksi ini sudah diproses dengan nominal uang diterima yang berbeda. Periksa laporan sebelum mengulang.';
     END IF;
     RETURN v_existing_result || jsonb_build_object('replayed', true);
   END IF;
