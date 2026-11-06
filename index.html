@@ -5754,8 +5754,9 @@ $('quickSaleForm')?.addEventListener('submit',async function(e){
   if(pending&&pending.businessId!==financeBusiness.id){
    throw new Error('Ada tagihan tertunda dari usaha lain yang belum dipastikan tersimpan. Kembali ke usaha tersebut dan selesaikan pemeriksaan tagihannya terlebih dahulu; kunci pengaman tidak akan ditimpa.');
   }
-  if(pending&&pending.businessId===financeBusiness.id&&pending.fingerprint!==quickSaleFingerprint){
-   throw new Error('Ada tagihan sebelumnya yang hasil penyimpanannya belum dipastikan. Kembalikan rincian tagihan sebelumnya dan kirim ulang dengan rincian yang sama; jangan membuat tagihan baru dahulu.');
+  const legacyQuickSaleFingerprint=JSON.stringify({businessId:financeBusiness.id,tableNumber:tableNumber||null,lines:lines.map(d=>({product_id:d.p.id,quantity:d.qty,unit_price:d.price}))});
+  if(pending&&pending.businessId===financeBusiness.id&&pending.fingerprint!==quickSaleFingerprint&&pending.fingerprint!==legacyQuickSaleFingerprint){
+   throw new Error('Ada tagihan sebelumnya yang hasil penyimpanannya belum dipastikan. Kembalikan rincian dan nominal pembayaran yang sama; jangan membuat transaksi baru dahulu.');
   }
   if(pending&&pending.businessId===financeBusiness.id&&pending.fingerprint===quickSaleFingerprint&&typeof pending.requestId==='string'){
    quickSaleRequestId=pending.requestId;
