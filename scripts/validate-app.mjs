@@ -228,6 +228,21 @@ if (financeEntitlementGuard < 0 ||
   fail("accounting module must verify active full_finance entitlement before seeding finance accounts");
 } else pass("accounting module verifies full_finance entitlement before seeding finance accounts");
 
+const cashierCustomerStart = html.indexOf("$('quickSaleForm')?.addEventListener('submit',async function(e){");
+const cashierCustomerEnd = html.indexOf("\nfunction financePeriodBounds(){", cashierCustomerStart);
+const cashierCustomerBlock = cashierCustomerStart >= 0 && cashierCustomerEnd > cashierCustomerStart
+  ? html.slice(cashierCustomerStart, cashierCustomerEnd)
+  : "";
+const cashierCustomerChecks = [
+  [cashierCustomerBlock.includes("customerName=String($('quickSaleCustomerName')") && cashierCustomerBlock.includes("transactionLocationRef=customerName?('Pelanggan: '"), "cashier must preserve the optional customer name in the server-side sale reference"],
+  [cashierCustomerBlock.includes("p_table_number:transactionLocationRef||null"), "cashier must send the customer/table reference to the atomic sale RPC"],
+  [html.includes("description.match(/^(Meja .+?|Kasir|Pelanggan: .+?) — Penjualan /)"), "sales report must group customer-labelled sales instead of hiding them as generic sales"],
+];
+for (const [ok, message] of cashierCustomerChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
 const transactionMenuChecks = [
   [/function syncTransactionRoleMenus\(\)/, html, "transaction menus must synchronize with the logged-in role"],
   [/id="shortcutEmployeeSettings" data-transaction-role="owner"/, html, "employee account settings shortcut must be Owner-only"],
