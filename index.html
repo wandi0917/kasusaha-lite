@@ -4197,8 +4197,21 @@ async function renderOwnerServiceFeePanel(){
     return;
    }
    if(!sb){if(status)status.textContent='Koneksi server belum tersedia. Periksa internet lalu coba kembali.';return;}
-      submit.disabled=true;if(status)status.textContent='Menyimpan persetujuan dan awal pratinjau ke server…';
+      submit.disabled=true;if(status)status.textContent='Memverifikasi sesi Owner dan usaha ke server…';
    try{
+    // Verifikasi ulang sesi dan hak Owner pada saat klik; jangan mengandalkan state UI yang mungkin kedaluwarsa.
+    const {data:sessionData,error:sessionError}=await sb.auth.getSession();
+    if(sessionError)throw sessionError;
+    const liveUserId=sessionData?.session?.user?.id;
+    if(!liveUserId)throw new Error('Sesi login tidak ditemukan. Login ulang melalui menu Owner, lalu pilih usaha.');
+    if(liveUserId!==financeMemberUserId)throw new Error('Akun login berubah sejak usaha dimuat. Muat ulang login Owner dan pilih kembali usaha yang benar.');
+    const {data:liveMembership,error:membershipError}=await sb.from('business_members').select('business_id,user_id,role,active').eq('business_id',targetBusinessId).eq('user_id',liveUserId).eq('active',true).maybeSingle();
+    if(membershipError)throw membershipError;
+    if(!liveMembership||liveMembership.role!=='owner')throw new Error('Akun ini tidak memiliki keanggotaan Owner aktif pada usaha yang dipilih. Gunakan akun Owner utama.');
+    const {data:liveWorkspace,error:workspaceError}=await sb.from('business_workspaces').select('id,owner_id').eq('id',targetBusinessId).maybeSingle();
+    if(workspaceError)throw workspaceError;
+    if(!liveWorkspace||liveWorkspace.owner_id!==liveUserId)throw new Error('Akun ini bukan Owner utama usaha yang dipilih. Pilih usaha milik akun Owner utama.');
+    if(status)status.textContent='Sesi Owner terverifikasi. Menyimpan persetujuan pratinjau ke server…';
     const {data,error}=await sb.rpc('kasusaha_accept_service_fee_terms',{p_business_id:targetBusinessId});if(error)throw error;
     if(!data||data.success!==true||!data.trial_started_at||data.billing_enabled===true||data.fee_enabled===true)throw new Error('Respons server tidak memenuhi pengaman pratinjau. Billing tetap tidak boleh diaktifkan.');
     financeBusiness={...financeBusiness,service_fee_trial_started_at:data.trial_started_at,service_fee_consent_at:data.consent_recorded===true?(financeBusiness.service_fee_consent_at||data.trial_started_at):financeBusiness.service_fee_consent_at,service_fee_terms_version:data.terms_version||financeBusiness.service_fee_terms_version};
