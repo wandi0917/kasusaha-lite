@@ -15,7 +15,7 @@ Repositori: `wandi0917/kasusaha-lite`
 
 ## Pemeriksaan ulang 6 November 2026
 
-- Jumlah riwayat migrasi remote bertambah menjadi 110; versi terakhir `20261106113750`.
+- Jumlah riwayat migrasi remote bertambah menjadi 111; versi terakhir `20261106115240`.
 - Branch `main` masih memiliki 27 file SQL migrasi yang cocok dengan versi remote.
 - Dengan demikian, 81 versi historis belum memiliki pasangan SQL di branch `main`; dua migrasi entitlement terbaru sudah memiliki pasangan file yang cocok.
 - Migrasi fail-closed entitlement telah diterapkan sebagai remote version `20261106113748` dan `20261106113750`; migrasi referral/commission lainnya tetap kandidat dan belum diterapkan.
@@ -43,7 +43,7 @@ Aplikasi produksi tetap berjalan; kondisi ini tidak dengan sendirinya berarti sk
 Status: perlu rekonstruksi/arsip untuk 81 migrasi historis yang belum tersedia di repositori.
 ## Update 6 November 2026 setelah fail-closed entitlement
 
-- Remote migration history kini berisi 110 versi, berakhir pada `20261106113750`.
+- Remote migration history kini berisi 111 versi, berakhir pada `20261106115240`.
 - Dua migrasi entitlement diterapkan sebagai remote version `20261106113748` dan `20261106113750`, dan file SQL dengan nama versi yang sama tersedia di repository.
 - Karena remote history bertambah dua sementara baseline historis belum lengkap, jumlah versi historis tanpa pasangan SQL tetap 81. Ini bukan bukti schema rusak, tetapi tetap menghalangi rekonstruksi project baru yang dapat diulang.
 - Migrasi referral capture yang masih pending dengan versi lokal `20261105170000` lebih tua daripada remote latest; harus diberi versi baru sebelum diterapkan. Migrasi komisi provider-paid-time juga harus mengikuti urutan versi yang sama.
