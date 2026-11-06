@@ -146,6 +146,10 @@ for (const [ok, message] of biteshipAmbiguousBookingChecks) {
   else pass(message);
 }
 
+const backupDisclosure = /Cadangan JSON ini hanya berisi data lokal[\s\S]{0,300}Data transaksi server, katalog online, akun, lisensi, dan pembayaran di Supabase tidak termasuk/.test(html);
+if (!backupDisclosure) fail("backup UI must clearly disclose that JSON export excludes server-side data");
+else pass("backup UI clearly discloses local-only scope and server data exclusions");
+
 const backupRestoreAssertions = [
   [backupRestoreChecks.includes("const previous={}") && backupRestoreChecks.includes("localStorage.getItem(key)"), "backup restore must snapshot existing local data before replacement"],
   [backupRestoreChecks.includes("rollbackFailed") && backupRestoreChecks.includes("localStorage.removeItem(key)"), "backup restore must roll back partially written localStorage keys on failure"],
