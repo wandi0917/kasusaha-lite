@@ -150,7 +150,7 @@ BEGIN
     RAISE EXCEPTION 'Lisensi atau paket belum mengizinkan pengelolaan stok.';
   END IF;
   IF p_request_id IS NULL OR p_product_id IS NULL OR p_quantity IS NULL
-     OR p_movement_type NOT IN ('in','out','set') OR p_quantity < 0
+     OR p_movement_type IS NULL OR p_movement_type NOT IN ('in','out','set') OR p_quantity < 0
      OR (p_movement_type IN ('in','out') AND p_quantity < 1) THEN
     RAISE EXCEPTION 'Permintaan perubahan stok tidak valid.';
   END IF;
