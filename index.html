@@ -4874,7 +4874,7 @@ async function loadFinanceAccounting(){
   if(invalid.length)throw new Error('Laporan akuntansi DIKUNCI: ditemukan '+invalid.length+' jurnal posted yang tidak seimbang atau baris jurnalnya tidak lengkap. Periksa jurnal sumber sebelum memakai angka laporan.');
   financeExpandDefaultReportRange(financeAccounting.entries,'financeAccountingStart','financeAccountingEnd','entry_date');
   financeAccountingPopulateControls();renderFinanceAccountingReport();
- }catch(err){console.error('Akuntansi KasUsaha gagal dimuat',err);if(host)host.textContent='Data akuntansi belum dapat dimuat atau validasi integritas gagal: '+String(err.message||err).slice(0,260);}
+ }catch(err){console.error('Akuntansi KasUsaha gagal dimuat',err);const errorCode=String(err?.code||''),errorMessage=String(err?.message||'');if(host&&errorCode==='P0001'&&errorMessage.includes('Paket aktif dan pembayaran terverifikasi tidak ditemukan')){host.textContent='Fitur akuntansi lengkap memerlukan lisensi KasUsaha Lite yang aktif dan pembayarannya telah terverifikasi. Silakan aktifkan lisensi terlebih dahulu.';return;}if(host)host.textContent='Data akuntansi belum dapat dimuat atau validasi integritas gagal: '+String(err.message||err).slice(0,260);}
 }
 function financeAccountingPopulateControls(){
  const accounts=financeAccounting.accounts.filter(function(a){return a.is_active;});
