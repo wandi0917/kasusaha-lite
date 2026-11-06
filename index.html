@@ -4200,11 +4200,14 @@ async function renderOwnerServiceFeePanel(){
   submit?.addEventListener('click',async()=>{
    const status=$('serviceFeeOwnerStatus');
    if(!check?.checked){if(status)status.textContent='Centang pernyataan pratinjau terlebih dahulu.';return;}
-   const targetBusinessId=String(financeBusiness?.id||'').trim();
+   // financeBusiness dapat sementara dikosongkan oleh proses pemuatan ulang bersamaan.
+   // ID pilihan tersimpan menjadi fallback, tetapi tetap diverifikasi keanggotaan dan owner_id di server.
+   const targetBusinessId=String(financeBusiness?.id||financeSelectedBusinessId||'').trim();
    if(!targetBusinessId){
-    if(status)status.textContent='Usaha belum dipilih atau sesi sedang dimuat ulang. Pilih usaha Owner, lalu coba kembali.';
+    if(status)status.textContent='ID usaha belum tersedia. Buka kembali menu Transaksi dan pilih usaha Owner sampai nama usaha tampil.';
     return;
    }
+   financeSelectedBusinessId=targetBusinessId;
    if(!sb){if(status)status.textContent='Koneksi server belum tersedia. Periksa internet lalu coba kembali.';return;}
       submit.disabled=true;if(status)status.textContent='Memverifikasi sesi Owner dan usaha ke server…';
    try{
@@ -4223,7 +4226,10 @@ async function renderOwnerServiceFeePanel(){
     if(status)status.textContent='Sesi Owner terverifikasi. Menyimpan persetujuan pratinjau ke server…';
     const {data,error}=await sb.rpc('kasusaha_accept_service_fee_terms',{p_business_id:targetBusinessId});if(error)throw error;
     if(!data||data.success!==true||!data.trial_started_at||data.billing_enabled===true||data.fee_enabled===true)throw new Error('Respons server tidak memenuhi pengaman pratinjau. Billing tetap tidak boleh diaktifkan.');
-    financeBusiness={...financeBusiness,service_fee_trial_started_at:data.trial_started_at,service_fee_consent_at:data.consent_recorded===true?(financeBusiness.service_fee_consent_at||data.trial_started_at):financeBusiness.service_fee_consent_at,service_fee_terms_version:data.terms_version||financeBusiness.service_fee_terms_version};
+    const {data:confirmedWorkspace,error:confirmedWorkspaceError}=await sb.from('business_workspaces').select('id,business_name,invite_code,owner_id,service_fee_consent_at,service_fee_trial_started_at,service_fee_terms_version').eq('id',targetBusinessId).single();
+    if(confirmedWorkspaceError)throw confirmedWorkspaceError;
+    if(confirmedWorkspace.owner_id!==liveUserId)throw new Error('Kepemilikan usaha berubah saat proses berlangsung. Persetujuan tidak dapat dilanjutkan.');
+    financeBusiness=confirmedWorkspace;
     await renderOwnerServiceFeePanel();
     setFinanceStatus('Persetujuan dan awal pratinjau tersimpan di server. Periode 30 hari dimulai '+new Date(data.trial_started_at).toLocaleString('id-ID',{timeZone:'Asia/Jakarta'})+'. Penagihan, invoice, pemotongan saldo, dan penguncian fitur tetap nonaktif.');
    }catch(e){
