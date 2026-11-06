@@ -313,6 +313,18 @@ if (!/const transactionIdMatches =\s*Boolean\(statusApiTransactionId\)\s*&&\s*\(
   fail("Midtrans webhook must require a transaction_id from Status API and match notification transaction_id when present");
 } else pass("Midtrans webhook requires and cross-checks the Status API transaction_id");
 
+const refundReviewChecks = [
+  [/const reviewStatuses = \[\s*"refund",\s*"partial_refund",\s*"chargeback",\s*"partial_chargeback"/, paymentWebhook, "refund and chargeback statuses must enter manual review"],
+  [/payment_review_required: true,[\s\S]{0,260}payment_review_note: reviewNote/, paymentWebhook, "refund and chargeback must set the order payment-review hold"],
+  [/\.from\("license_partner_commission_ledger"\)[\s\S]{0,260}status: "held"/, paymentWebhook, "unpaid or approved partner commissions must be held on refund or chargeback"],
+  [/Tidak ada pencabutan lisensi atau clawback otomatis/, paymentWebhook, "refund review must not automatically revoke licenses or claw back paid commissions"],
+  [/for \(const row of paidPartnerRows \?\? \[\]\) \{[\s\S]{0,1200}\.update\(\{ notes: paidReviewNote \}\)[\s\S]{0,200}\.eq\("id", row\.id\)[\s\S]{0,200}\.eq\("status", "paid"\)/, paymentWebhook, "already-paid partner commissions must be annotated for manual review, not clawed back"],
+];
+for (const [pattern, source, message] of refundReviewChecks) {
+  if (!pattern.test(source)) fail(message);
+  else pass(message);
+}
+
 const operationalChecks = [
   [/\.upsert\(batch,\s*\{\s*onConflict:\s*['"]business_id,legacy_ref['"],\s*ignoreDuplicates:\s*true\s*\}\)/, html, "offline sync must be idempotent by business and legacy reference"],
   [/window\.addEventListener\(['"]offline['"],\s*\(\)\s*=>\s*\{[\s\S]{0,300}activateOfflineTransactionMode\(\)/, html, "active transaction tab must show an offline-mode warning when the connection drops"],

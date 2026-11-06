@@ -1408,6 +1408,141 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  // Refund/chargeback dapat terjadi setelah settlement. Jangan menganggapnya
+  // sebagai notifikasi pending biasa: tahan akses dan komisi yang belum dibayar
+  // untuk pemeriksaan manual. Tidak ada clawback otomatis untuk dana yang sudah
+  // dibayarkan, dan refund parsial tidak otomatis mencabut seluruh lisensi.
+  const reviewStatuses = [
+    "refund",
+    "partial_refund",
+    "chargeback",
+    "partial_chargeback",
+  ];
+  if (reviewStatuses.includes(transactionStatus)) {
+    const refundAmount = String(midtransStatus.refund_amount ?? notification.refund_amount ?? "");
+    const refundRows = Array.isArray(midtransStatus.refunds)
+      ? midtransStatus.refunds
+      : Array.isArray(notification.refunds)
+      ? notification.refunds
+      : [];
+    const confirmedRefundRow = refundRows.find((row) =>
+      typeof row === "object" &&
+      row !== null &&
+      Boolean(String((row as JsonObject).bank_confirmed_at ?? "").trim())
+    ) as JsonObject | undefined;
+    const bankConfirmedAt = String(
+      midtransStatus.bank_confirmed_at ??
+        notification.bank_confirmed_at ??
+        confirmedRefundRow?.bank_confirmed_at ??
+        "",
+    );
+    const reviewNote = [
+      "Midtrans melaporkan status " + transactionStatus + ".",
+      refundAmount ? "Nominal refund/chargeback: " + refundAmount + " IDR." : "",
+      bankConfirmedAt ? "Konfirmasi bank: " + bankConfirmedAt + "." : "Konfirmasi bank belum terlihat pada notifikasi ini.",
+      "Tahan pencairan dan lakukan pemeriksaan manual; jangan lakukan clawback otomatis.",
+    ].filter(Boolean).join(" ");
+
+    const { data: reviewOrder, error: reviewError } = await supabase
+      .from("marketplace_orders")
+      .update({
+        payment_review_required: true,
+        payment_review_note: reviewNote,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", databaseOrderId)
+      .select("id")
+      .maybeSingle();
+
+    if (reviewError || !reviewOrder?.id) {
+      console.error("Gagal menandai refund/chargeback untuk pemeriksaan manual:", reviewError?.message);
+      return reply({
+        success: false,
+        message: "Status refund/chargeback terverifikasi, tetapi penanda pemeriksaan manual gagal disimpan.",
+        order_id: databaseOrderId,
+      }, 500);
+    }
+
+    const { error: holdPartnerError } = await supabase
+      .from("license_partner_commission_ledger")
+      .update({
+        status: "held",
+        available_at: null,
+        reviewed_at: null,
+        reviewed_by: null,
+        notes: reviewNote,
+      })
+      .eq("order_id", databaseOrderId)
+      .in("status", ["held", "approved"]);
+
+    if (holdPartnerError) {
+      console.error("Gagal menahan komisi mitra lisensi:", holdPartnerError.message);
+      return reply({
+        success: false,
+        message: "Pesanan ditandai untuk pemeriksaan, tetapi penahanan komisi mitra belum berhasil.",
+        order_id: databaseOrderId,
+      }, 500);
+    }
+
+    // Komisi yang sudah dibayar tidak diubah nilainya atau di-clawback otomatis.
+    // Tambahkan catatan agar admin meninjau payout yang mungkin sudah terjadi.
+    const { data: paidPartnerRows, error: paidPartnerReadError } = await supabase
+      .from("license_partner_commission_ledger")
+      .select("id, notes")
+      .eq("order_id", databaseOrderId)
+      .eq("status", "paid");
+
+    if (paidPartnerReadError) {
+      console.error("Gagal membaca komisi mitra yang sudah dibayar:", paidPartnerReadError.message);
+      return reply({
+        success: false,
+        message: "Pemeriksaan refund tersimpan, tetapi riwayat komisi yang sudah dibayar belum dapat dibaca.",
+        order_id: databaseOrderId,
+      }, 500);
+    }
+
+    for (const row of paidPartnerRows ?? []) {
+      const priorNotes = String(row.notes ?? "").trim();
+      const paidReviewNote = priorNotes.includes("REVIEW REFUND/CHARGEBACK:")
+        ? priorNotes
+        : [priorNotes, "REVIEW REFUND/CHARGEBACK:", reviewNote].filter(Boolean).join(" ");
+
+      const { error: paidPartnerUpdateError } = await supabase
+        .from("license_partner_commission_ledger")
+        .update({ notes: paidReviewNote })
+        .eq("id", row.id)
+        .eq("status", "paid");
+
+      if (paidPartnerUpdateError) {
+        console.error("Gagal menambahkan catatan pemeriksaan pada komisi mitra yang sudah dibayar:", paidPartnerUpdateError.message);
+        return reply({
+          success: false,
+          message: "Komisi yang sudah dibayar memerlukan pemeriksaan manual; catatan audit belum berhasil disimpan.",
+          order_id: databaseOrderId,
+        }, 500);
+      }
+    }
+
+    const processedReviewError = await markPaymentEventProcessed(supabase, paymentEventId);
+    if (processedReviewError) {
+      return reply({
+        success: false,
+        message: "Pemeriksaan refund/chargeback tersimpan, tetapi event belum ditandai selesai.",
+        order_id: databaseOrderId,
+      }, 500);
+    }
+
+    return reply({
+      success: true,
+      message: "Refund/chargeback terverifikasi dan pesanan ditahan untuk pemeriksaan manual. Tidak ada pencabutan lisensi atau clawback otomatis.",
+      order_id: databaseOrderId,
+      transaction_status: transactionStatus,
+      refund_amount: refundAmount || null,
+      bank_confirmed_at: bankConfirmedAt || null,
+      manual_review: true,
+    });
+  }
+
   // 9. Proses transaksi yang batal/kedaluwarsa.
   const terminalStatuses = [
     "expire",
