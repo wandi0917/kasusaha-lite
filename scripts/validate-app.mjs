@@ -187,7 +187,7 @@ const sellerAccountShortcut = html.includes("buka('akun',document.querySelector(
 if (!sellerAccountShortcut) fail("seller account shortcut must navigate to the existing Owner/Seller account page");
 else pass("seller account shortcut navigates to the existing Owner/Seller account page");
 
-const financeUnlicensedMessage = /errorCode==='P0001'[\\s\\S]{0,240}Paket aktif dan pembayaran terverifikasi tidak ditemukan[\\s\\S]{0,260}Fitur akuntansi lengkap memerlukan lisensi KasUsaha Lite yang aktif/.test(html);
+const financeUnlicensedMessage = /errorCode==='P0001'[\s\S]{0,240}Paket aktif dan pembayaran terverifikasi tidak ditemukan[\s\S]{0,260}Fitur akuntansi lengkap memerlukan lisensi KasUsaha Lite yang aktif/.test(html);
 if (!financeUnlicensedMessage) fail("unlicensed finance access must show a clear license activation message instead of a raw database exception");
 else pass("unlicensed finance access shows a clear license activation message");
 
