@@ -5490,8 +5490,19 @@ document.getElementById('attendanceSaveWage')?.addEventListener('click',function
 document.getElementById('attendanceHourlyWage')?.addEventListener('input',function(){this.dataset.userEdited='1';});
 async function deactivateStoreProduct(id){
  if(!confirm('Nonaktifkan barang ini? Riwayat penjualan lama tetap tersimpan.'))return;
- try{const {data:updated,error}=await sb.from('store_products').update({active:false,updated_at:new Date().toISOString()}).eq('id',id).eq('business_id',financeBusiness.id).select('id').maybeSingle();if(error)throw error;if(!updated)throw new Error('Barang tidak ditemukan atau tidak dapat dinonaktifkan.');await loadStoreProducts();const st=$('storeProductStatus');st.className='status';st.textContent='Barang dinonaktifkan. Riwayat penjualan tidak dihapus.';}
- catch(e){const st=$('storeProductStatus');st.className='status error';st.textContent='Gagal mengubah barang: '+String(e.message||e).slice(0,180);}
+ let deactivated=false;
+ try{
+  const {data:updated,error}=await sb.from('store_products').update({active:false,updated_at:new Date().toISOString()}).eq('id',id).eq('business_id',financeBusiness.id).select('id').maybeSingle();
+  if(error)throw error;
+  if(!updated)throw new Error('Barang tidak ditemukan atau tidak dapat dinonaktifkan.');
+  deactivated=true;
+  const st=$('storeProductStatus');st.className='status';st.textContent='Barang sudah dinonaktifkan di server. Riwayat penjualan tidak dihapus.';
+  try{await loadStoreProducts();st.textContent='Barang dinonaktifkan dan daftar barang berhasil diperbarui.';}
+  catch(refreshErr){st.className='status error';st.textContent='Barang SUDAH DINONAKTIFKAN di server, tetapi daftar barang belum berhasil dimuat ulang. Jangan ulangi tindakan. Detail: '+String(refreshErr.message||refreshErr).slice(0,160);}
+ }catch(e){
+  const st=$('storeProductStatus');st.className='status error';
+  st.textContent=deactivated?'Barang sudah dinonaktifkan di server, tetapi tampilan belum selesai diperbarui. Jangan ulangi tindakan. Detail: '+String(e.message||e).slice(0,160):'Gagal mengubah barang: '+String(e.message||e).slice(0,180);
+ }
 }
 function cancelStoreProductEdit(){
  const form=$('storeProductForm');if(!form)return;form.reset();$('storeProductEditId').value='';$('storeProductInitialStock').value='0';$('storeProductInitialStock').readOnly=false;$('storeProductInitialStock').disabled=false;$('storeProductCostPrice').value='';$('storeProductStockUnit').value='unit';$('storeProductSaleStatus').value='product';$('storeProductBarcodeType').value='custom';$('storeProductBarcodeValue').value=generateKasUsahaBarcode($('storeProductCode').value);$('storeProductBarcodeValue').readOnly=true;renderStoreProductBarcodePreview();$('storeProductSave').textContent='Simpan barang, harga, stok, dan status';$('storeProductCancelEdit').hidden=true;$('storeProductFormMode').textContent='Tambah barang baru. Stok awal dicatat sekali saat barang dibuat; perubahan stok berikutnya gunakan Entri stok barang.';
@@ -5506,6 +5517,7 @@ $('storeProductForm')?.addEventListener('submit',async function(e){
  const editId=$('storeProductEditId').value.trim(),code=$('storeProductCode').value.trim().toUpperCase(),name=$('storeProductName').value.trim(),price=Number($('storeProductPrice').value),costPrice=Number($('storeProductCostPrice')?.value||0),initialStock=Number($('storeProductInitialStock')?.value);
  if(!code||!name||!Number.isSafeInteger(price)||price<=0||!Number.isSafeInteger(costPrice)||costPrice<0||!Number.isSafeInteger(initialStock)||initialStock<0){$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Isi kode, nama, harga positif, dan stok berupa bilangan bulat nol atau lebih.';return;}
  const btn=$('storeProductSave');btn.disabled=true;
+ let productConfirmed=false;
  try{
   const itemType=$('storeProductSaleStatus')?.value||'product',stockUnit=String($('storeProductStockUnit')?.value||'unit').trim().toLowerCase(),barcodeType=$('storeProductBarcodeType')?.value||'custom',barcodeValue=String($('storeProductBarcodeValue')?.value||'').trim();
   if(!stockUnit||stockUnit.length>24){$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Isi satuan stok, maksimal 24 karakter.';return;}
@@ -5520,10 +5532,16 @@ $('storeProductForm')?.addEventListener('submit',async function(e){
   else{const inserted=await sb.from('store_products').insert({...payload,business_id:financeBusiness.id}).select('id').single();error=inserted.error;productId=inserted.data?.id||null;}
   if(error){if(error.code==='23505')throw new Error('Kode barang atau barcode sudah dipakai oleh barang lain dalam usaha ini. Periksa kembali nilai barcode.');throw error;}
   if(!productId)throw new Error('Barang tersimpan tetapi ID barang tidak terbaca. Muat ulang daftar barang sebelum melanjutkan.');
-  const {error:costError}=await sb.rpc('set_store_product_cost',{p_product_id:productId,p_cost_price:costPrice});
-  if(costError){await loadStoreProducts();cancelStoreProductEdit();$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Barang '+code+' tersimpan, tetapi harga modal gagal disimpan: '+String(costError.message||costError).slice(0,150)+'. Gunakan Edit barang untuk mencoba menyimpan harga modal lagi.';return;}
-  await loadStoreProducts();cancelStoreProductEdit();$('storeProductStatus').className='status';$('storeProductStatus').textContent=(editId?'Perubahan barang ':'Barang baru ')+code+' — '+name+' berhasil '+(editId?'diperbarui.':'disimpan dengan stok awal '+initialStock+' '+stockUnit+'.')+' Jenis: '+(itemType==='product'?'produk jual.':'bahan baku/persediaan.');
- }catch(e){$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Gagal menyimpan barang: '+String(e.message||e).slice(0,200);}
+  productConfirmed=true;
+  const previousCost=Number(currentItem?.cost_price||0),needsCostUpdate=editId?previousCost!==costPrice:costPrice>0;
+  if(needsCostUpdate){
+   const {error:costError}=await sb.rpc('set_store_product_cost',{p_product_id:productId,p_cost_price:costPrice});
+   if(costError){try{await loadStoreProducts();}catch(refreshErr){console.warn('Barang tersimpan; daftar barang belum dimuat ulang:',refreshErr);}cancelStoreProductEdit();$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Barang '+code+' tersimpan di server, tetapi harga modal gagal disimpan: '+String(costError.message||costError).slice(0,150)+'. Gunakan Edit barang setelah paket/akses harga modal tersedia.';return;}
+  }
+  cancelStoreProductEdit();$('storeProductStatus').className='status';$('storeProductStatus').textContent=(editId?'Perubahan barang ':'Barang baru ')+code+' — '+name+' berhasil '+(editId?'diperbarui.':'disimpan dengan stok awal '+initialStock+' '+stockUnit+'.')+' Jenis: '+(itemType==='product'?'produk jual.':'bahan baku/persediaan.');
+  try{await loadStoreProducts();$('storeProductStatus').textContent=(editId?'Perubahan barang ':'Barang baru ')+code+' — '+name+' tersimpan dan daftar barang berhasil diperbarui.';}
+  catch(refreshErr){$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Barang '+code+' SUDAH TERSIMPAN di server, tetapi daftar belum berhasil dimuat ulang. Jangan simpan ulang barang yang sama. Detail: '+String(refreshErr.message||refreshErr).slice(0,160);}
+ }catch(e){$('storeProductStatus').className='status error';$('storeProductStatus').textContent=productConfirmed?'Barang sudah tersimpan di server, tetapi tampilan belum selesai diperbarui. Jangan simpan ulang barang yang sama. Detail: '+String(e.message||e).slice(0,180):'Gagal menyimpan barang: '+String(e.message||e).slice(0,200);}
  finally{btn.disabled=false;}
 });
 $('stockProductSelect')?.addEventListener('change',()=>{const p=storeProductRows.find(x=>x.id===$('stockProductSelect').value);$('stockEntryStatus').textContent=p?'Stok saat ini '+p.product_name+': '+Number(p.stock_quantity||0)+' '+(p.stock_unit||'unit')+'.':'Pilih barang untuk mencatat perubahan stok.';});
