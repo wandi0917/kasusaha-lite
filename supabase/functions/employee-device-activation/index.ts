@@ -498,7 +498,7 @@ Deno.serve(async (req: Request) => {
       const identityUserIds = new Set<string>([targetUserId]);
       const { data: identityDirectory, error: identityDirectoryError } = await userClient.rpc("kasusaha_owner_employee_directory", { p_business_id: businessId });
       if (identityDirectoryError) return reply({ success: false, message: "Identitas dan sesi karyawan belum dapat diverifikasi." }, 500);
-      const targetIdentityId = (identityDirectory || []).find((entry: { user_id: string }) => entry.user_id === targetUserId)?.identity_id;
+      const targetIdentityId = (identityDirectory || []).find((entry: { user_id: string; identity_id: string | null }) => entry.user_id === targetUserId)?.identity_id;
       if (targetIdentityId) {
         for (const entry of identityDirectory || []) {
           if (entry.identity_id === targetIdentityId && entry.user_id) identityUserIds.add(entry.user_id);
@@ -512,7 +512,7 @@ Deno.serve(async (req: Request) => {
         const { data: identityBindings, error: identityBindingsError } = await admin.from("employee_invite_code_users")
           .select("user_id").eq("business_id", businessId).in("invite_code_id", identityInviteIds);
         if (identityBindingsError) return reply({ success: false, message: "Daftar sesi ID karyawan belum dapat dibaca." }, 500);
-        for (const binding of identityBindings || []) if (boundUserId) identityUserIds.add(boundUserId);
+        for (const binding of identityBindings || []) if (binding.user_id) identityUserIds.add(binding.user_id);
       }
       const targetUserIds = [...identityUserIds];
       if (action === "owner_deactivate") {
