@@ -294,13 +294,18 @@ if (!/REVOKE SELECT ON TABLE public\.store_products FROM authenticated/i.test(co
 const employeeActivation = fs.readFileSync("supabase/functions/employee-device-activation/index.ts", "utf8");
 const midtransProductionGateChecks = [
   [paymentCreate, 'if (production && norm(Deno.env.get("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED")) !== "true")'],
-  [paymentWebhook, 'if (isProduction && String(Deno.env.get("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED") ?? "").trim().toLowerCase() !== "true")'],
   [employeeActivation, 'if (production && norm(Deno.env.get("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED")) !== "true")'],
 ];
 for (const [source, gateSnippet] of midtransProductionGateChecks) {
   if (!source.includes(gateSnippet) || !source.includes("PRODUCTION_PAYMENTS_NOT_ENABLED")) {
     fail("all Midtrans Production entry points must require the explicit production cutover gate");
   } else pass("Midtrans Production entry point requires explicit production cutover gate");
+}
+
+if (paymentWebhook.includes("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED")) {
+  fail("Midtrans webhook must not be blocked by the new-payment production gate");
+} else {
+  pass("Midtrans webhook remains available for verified in-flight payment and refund notifications when new checkout is disabled");
 }
 
 const requiredStatusApiIdentityCheck = `const transactionIdMatches =
