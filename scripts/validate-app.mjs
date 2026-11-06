@@ -627,4 +627,23 @@ for (const [ok, message] of paymentIntegrityChecks) {
   else pass(message);
 }
 
+
+const serviceFeePanelStart = html.indexOf("function toggleOwnerServiceFeePanel(show){");
+const serviceFeePanelEnd = html.indexOf("\\nasync function loadFinanceWorkspaceInternal(){", serviceFeePanelStart);
+const serviceFeePanel = serviceFeePanelStart >= 0 && serviceFeePanelEnd > serviceFeePanelStart
+  ? html.slice(serviceFeePanelStart, serviceFeePanelEnd)
+  : "";
+const serviceFeePreviewChecks = [
+  [serviceFeePanel.includes("kasusaha_accept_service_fee_terms"), "Owner preview activation must call the server-side trial RPC"],
+  [serviceFeePanel.includes("data.preview_only!==true") && serviceFeePanel.includes("data.billing_enabled!==false") && serviceFeePanel.includes("data.fee_enabled!==false"), "Owner preview activation must fail closed unless server confirms preview-only and billing/fee disabled"],
+  [serviceFeePanel.includes("financeBusiness={...financeBusiness,service_fee_trial_started_at:data.trial_started_at}"), "Successful trial RPC response must immediately update the active workspace UI without depending on a second table read"],
+  [!serviceFeePanel.includes("confirm("), "Owner preview activation must not depend on a browser confirmation dialog after explicit checkbox consent"],
+  [serviceFeePanel.includes("formatToParts") && serviceFeePanel.includes("timeZone:'Asia/Jakarta'"), "Monthly preview must derive the month safely in Asia/Jakarta"],
+  [serviceFeePanel.includes("String(financeBusiness.owner_id||'').toLowerCase()") && serviceFeePanel.includes("String(financeMemberUserId||'').toLowerCase()"), "Owner preview UI must compare normalized owner and session identifiers"],
+];
+for (const [ok, message] of serviceFeePreviewChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
 if (process.exitCode) process.exit(process.exitCode);
