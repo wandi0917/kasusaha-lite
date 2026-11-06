@@ -629,7 +629,7 @@ for (const [ok, message] of paymentIntegrityChecks) {
 
 
 const serviceFeePanelStart = html.indexOf("function toggleOwnerServiceFeePanel(show){");
-const serviceFeePanelEnd = html.indexOf("\\nasync function loadFinanceWorkspaceInternal(){", serviceFeePanelStart);
+const serviceFeePanelEnd = html.indexOf("\nasync function loadFinanceWorkspaceInternal(){", serviceFeePanelStart);
 const serviceFeePanel = serviceFeePanelStart >= 0 && serviceFeePanelEnd > serviceFeePanelStart
   ? html.slice(serviceFeePanelStart, serviceFeePanelEnd)
   : "";
