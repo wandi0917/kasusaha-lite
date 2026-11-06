@@ -21,6 +21,14 @@ Deno.serve(async (req) => {
   const auth = req.headers.get("Authorization") || "";
   if (!url || !serviceKey || !biteshipKey || !publicKey) return reply({ success: false, error: "Konfigurasi server pengiriman belum lengkap." }, 503);
   if (Deno.env.get("BITESHIP_ENABLE_SHIPMENT_BOOKING") !== "true") return reply({ success: false, error: "Pembuatan pengiriman langsung masih dinonaktifkan sampai tarif, alamat asal, dan mode akun Biteship selesai diuji." }, 503);
+  const isTestBiteshipKey = biteshipKey.startsWith("biteship_test.");
+  const isLiveBiteshipKey = biteshipKey.startsWith("biteship_live.");
+  if (!isTestBiteshipKey && !isLiveBiteshipKey) {
+    return reply({ success: false, code: "BITESHIP_KEY_MODE_UNKNOWN", error: "Mode API key Biteship tidak dapat diverifikasi; pembuatan pengiriman ditahan." }, 503);
+  }
+  if (isLiveBiteshipKey && Deno.env.get("BITESHIP_PRODUCTION_BOOKING_ENABLED") !== "true") {
+    return reply({ success: false, code: "BITESHIP_PRODUCTION_BOOKING_DISABLED", error: "Pembuatan pengiriman Production belum diaktifkan melalui pengaman server." }, 503);
+  }
   const internalRequest = auth === `Bearer ${serviceKey}`;
   let requesterId: string | null = null;
   if (!internalRequest) {
