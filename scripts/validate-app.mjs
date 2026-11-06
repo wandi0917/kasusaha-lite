@@ -118,13 +118,15 @@ if (!/kasusaha_get_business_package_entitlements/.test(html) ||
 
 
 const failClosedEntitlementChecks = [
-  [/kasusaha_business_has_feature\\(v_business_id, 'full_finance'\\)[\\s\\S]*?IS DISTINCT FROM true/, failClosedStoreCostMigration, "store product cost RPC must deny missing/NULL full_finance entitlement"],
-  [/SELECT coalesce\\(\\([\\s\\S]*?\\), false\\);/, failClosedFinanceMigration, "package entitlement helper must return false when no verified matching entitlement exists"],
-  [/kasusaha_business_has_feature\\(v_business_id,'full_finance'\\) IS DISTINCT FROM true/, failClosedFinanceMigration, "finance journal posting must deny missing/NULL entitlement"],
-  [/kasusaha_business_has_feature\\(v_item\\.business_id,'full_finance'\\) IS DISTINCT FROM true/, failClosedFinanceMigration, "finance open-item settlement must deny missing/NULL entitlement"],
+  [failClosedStoreCostMigration.includes("IS DISTINCT FROM true") &&
+   failClosedStoreCostMigration.includes("private.kasusaha_business_has_feature"), "store product cost RPC must deny missing/NULL full_finance entitlement"],
+  [failClosedFinanceMigration.includes("SELECT coalesce((") &&
+   failClosedFinanceMigration.includes("), false);"), "package entitlement helper must return false when no verified matching entitlement exists"],
+  [failClosedFinanceMigration.includes("kasusaha_business_has_feature(v_business_id,'full_finance') IS DISTINCT FROM true"), "finance journal posting must deny missing/NULL entitlement"],
+  [failClosedFinanceMigration.includes("kasusaha_business_has_feature(v_item.business_id,'full_finance') IS DISTINCT FROM true"), "finance open-item settlement must deny missing/NULL entitlement"],
 ];
-for (const [pattern, source, message] of failClosedEntitlementChecks) {
-  if (!pattern.test(source)) fail(message);
+for (const [ok, message] of failClosedEntitlementChecks) {
+  if (!ok) fail(message);
   else pass(message);
 }
 
