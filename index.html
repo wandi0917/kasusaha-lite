@@ -6132,7 +6132,57 @@ function applyHomeFinanceRole(){
  $('employeeHomeRecentRows').innerHTML=recent.length?recent.map(r=>{const d=new Date(r.created_at);return '<tr><td>'+aman(formatHariTanggal(r.transaction_date))+'</td><td>'+aman(Number.isFinite(d.getTime())?d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'—')+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+format(r.amount)+'</td></tr>';}).join(''):'<tr><td colspan="5">Belum ada pemasukan.</td></tr>';
 }
 function ekspor(){const cadangan={versi:3,tanggal:new Date().toISOString(),transaksi,produk,keranjang,pesanan};const blob=new Blob([JSON.stringify(cadangan,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='kasusaha-cadangan.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-function impor(){const file=$('fileCadangan').files[0];if(!file){alert('Pilih file JSON terlebih dahulu.');return;}const reader=new FileReader();reader.onload=function(){try{const x=JSON.parse(reader.result);if(!x||!Array.isArray(x.transaksi)||!Array.isArray(x.produk))throw Error();if(!confirm('Data transaksi dan produk lokal saat ini akan diganti. Pastikan sudah mengunduh cadangan terbaru. Lanjutkan?'))return;transaksi=x.transaksi;produk=x.produk;keranjang=Array.isArray(x.keranjang)?x.keranjang:[];pesanan=Array.isArray(x.pesanan)?x.pesanan:[];simpan();simpanKeranjang();localStorage.setItem('kasusaha_pesanan',JSON.stringify(pesanan));tampil();tampilKeranjang();tampilRiwayatPesanan();alert('Cadangan berhasil dipulihkan.');}catch(e){alert('File cadangan tidak valid. Data lama tidak diubah.');}};reader.readAsText(file);}
+function impor(){
+ const file=$('fileCadangan').files[0];
+ if(!file){alert('Pilih file JSON terlebih dahulu.');return;}
+ const reader=new FileReader();
+ reader.onerror=()=>alert('File cadangan tidak dapat dibaca. Data lama tidak diubah.');
+ reader.onload=function(){
+  let x;
+  try{
+   x=JSON.parse(String(reader.result||''));
+   if(!x||typeof x!=='object'||!Array.isArray(x.transaksi)||!Array.isArray(x.produk)||
+      x.transaksi.some(item=>!item||typeof item!=='object'||Array.isArray(item))||
+      x.produk.some(item=>!item||typeof item!=='object'||Array.isArray(item)))throw new Error('Struktur cadangan tidak valid.');
+  }catch(e){alert('File cadangan tidak valid. Data lama tidak diubah.');return;}
+  if(!confirm('Data transaksi dan produk lokal saat ini akan diganti. Pastikan sudah mengunduh cadangan terbaru. Lanjutkan?'))return;
+  const next={
+   transaksi:JSON.stringify(x.transaksi),
+   produk:JSON.stringify(x.produk),
+   keranjang:JSON.stringify(Array.isArray(x.keranjang)?x.keranjang:[]),
+   pesanan:JSON.stringify(Array.isArray(x.pesanan)?x.pesanan:[])
+  };
+  const keys={transaksi:'kasusaha_transaksi',produk:'kasusaha_produk',keranjang:'kasusaha_keranjang',pesanan:'kasusaha_pesanan'};
+  const previous={};
+  for(const key of Object.values(keys))previous[key]=localStorage.getItem(key);
+  try{
+   for(const [name,key] of Object.entries(keys))localStorage.setItem(key,next[name]);
+  }catch(error){
+   let rollbackFailed=false;
+   for(const key of Object.values(keys)){
+    try{if(previous[key]===null)localStorage.removeItem(key);else localStorage.setItem(key,previous[key]);}
+    catch(rollbackError){rollbackFailed=true;console.error('Rollback cadangan gagal untuk',key,rollbackError);}
+   }
+   alert(rollbackFailed
+    ?'Pemulihan cadangan gagal dan pengembalian data lokal tidak dapat dipastikan. Jangan tutup aplikasi; unduh cadangan yang masih tersedia dan periksa penyimpanan perangkat.'
+    :'Pemulihan cadangan gagal. Data lokal sebelumnya telah dipertahankan; periksa ruang penyimpanan perangkat.');
+   return;
+  }
+  transaksi=x.transaksi;produk=x.produk;
+  keranjang=Array.isArray(x.keranjang)?x.keranjang:[];
+  pesanan=Array.isArray(x.pesanan)?x.pesanan:[];
+  const basketCount=$('jumlahKeranjang');
+  if(basketCount)basketCount.textContent=keranjang.reduce((n,item)=>n+Number(item.qty||0),0);
+  try{
+   tampil();tampilKeranjang();tampilRiwayatPesanan();
+   alert('Cadangan berhasil dipulihkan dan disimpan pada perangkat ini.');
+  }catch(renderError){
+   console.error('Data cadangan tersimpan, tetapi tampilan gagal diperbarui:',renderError);
+   alert('Cadangan berhasil disimpan, tetapi tampilan belum berhasil diperbarui. Muat ulang aplikasi untuk melihat data.');
+  }
+ };
+ reader.readAsText(file);
+}
 function hapusSemua(){if(confirm('Hapus semua transaksi dan produk lokal di perangkat ini? Data online tidak ikut terhapus. Tindakan ini tidak dapat dibatalkan tanpa cadangan.')){transaksi=[];produk=[];simpan();tampil();}}
 // Inisialisasi aman: sebagian input laporan lokal lama sudah tidak ada pada tampilan baru.
 const tanggalPeriodeInput=$("tanggalPeriodeLaporan");if(tanggalPeriodeInput)tanggalPeriodeInput.value=tanggalISO(new Date());
