@@ -11,6 +11,7 @@ const html = fs.readFileSync("index.html", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
 const costSecurityMigration = fs.readFileSync("supabase/migrations/20261103020843_restrict_store_product_cost_column_access.sql", "utf8");
 const employeeSessionMigration = fs.readFileSync("supabase/migrations/20261103062527_allow_paid_employee_invite_sessions_in_transactions.sql", "utf8");
+const biteshipShipmentSource = fs.readFileSync("supabase/functions/biteship-create-shipment/index.ts", "utf8");
 const failClosedStoreCostMigration = fs.readFileSync("supabase/migrations/20261106113748_fail_closed_store_product_cost_entitlement.sql", "utf8");
 const failClosedFinanceMigration = fs.readFileSync("supabase/migrations/20261106113750_fail_closed_package_entitlement_helper_and_finance_rpcs.sql", "utf8");
 const manifestText = fs.readFileSync("manifest.webmanifest", "utf8");
@@ -126,6 +127,19 @@ const failClosedEntitlementChecks = [
   [failClosedFinanceMigration.includes("kasusaha_business_has_feature(v_item.business_id,'full_finance') IS DISTINCT FROM true"), "finance open-item settlement must deny missing/NULL entitlement"],
 ];
 for (const [ok, message] of failClosedEntitlementChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
+const biteshipAmbiguousBookingChecks = [
+  [biteshipShipmentSource.includes("const definitelyRejected = response.status >= 400") &&
+   biteshipShipmentSource.includes("obj(result) && result.success === false"),
+   "Biteship booking lock may be released only on an explicit provider rejection"],
+  [biteshipShipmentSource.includes("Keep shipping_status='creating'") &&
+   biteshipShipmentSource.includes("uncertain: true"),
+   "ambiguous Biteship responses must retain the shipment lock to prevent duplicates"],
+];
+for (const [ok, message] of biteshipAmbiguousBookingChecks) {
   if (!ok) fail(message);
   else pass(message);
 }

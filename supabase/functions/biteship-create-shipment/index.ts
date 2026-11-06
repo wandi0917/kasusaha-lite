@@ -176,10 +176,30 @@ Deno.serve(async (req) => {
   let result: unknown;
   try { result = await response.json(); } catch { result = null; }
   if (!response.ok || !obj(result) || result.success !== true || typeof result.id !== "string") {
-    console.error("Biteship order gagal.", { status: response.status, code: obj(result) ? result.code : null });
-    await admin.from("marketplace_orders").update({ shipping_status: null, updated_at: new Date().toISOString() })
-      .eq("id", orderId).eq("shipping_status", "creating").is("shipping_tracking_id", null);
-    return reply({ success: false, error: "Biteship menolak pembuatan pengiriman. Periksa alamat asal/tujuan, kode pos, dan layanan kurir." }, 502);
+    const definitelyRejected = response.status >= 400 && response.status < 500 &&
+      obj(result) && result.success === false;
+    console.error("Biteship order response tidak valid.", {
+      status: response.status,
+      code: obj(result) ? result.code : null,
+      definitelyRejected,
+    });
+    if (definitelyRejected) {
+      // Release the lock only when Biteship explicitly confirms rejection.
+      // For 5xx, malformed 2xx, or missing external ID, booking may have succeeded.
+      await admin.from("marketplace_orders").update({ shipping_status: null, updated_at: new Date().toISOString() })
+        .eq("id", orderId).eq("shipping_status", "creating").is("shipping_tracking_id", null);
+      return reply({
+        success: false,
+        uncertain: false,
+        error: "Biteship menolak pembuatan pengiriman. Periksa alamat asal/tujuan, kode pos, dan layanan kurir.",
+      }, 502);
+    }
+    // Keep shipping_status='creating' so a retry cannot create a duplicate shipment.
+    return reply({
+      success: false,
+      uncertain: true,
+      error: "Hasil pembuatan pengiriman belum dapat dipastikan. Pesanan tetap ditahan; periksa dashboard Biteship sebelum mencoba lagi.",
+    }, 502);
   }
   const courier = obj(result.courier) ? result.courier : {};
   const trackingUrl = typeof courier.link === "string" && /^https:\/\//i.test(courier.link) ? courier.link : null;
