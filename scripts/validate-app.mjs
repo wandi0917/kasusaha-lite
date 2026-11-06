@@ -14,6 +14,7 @@ const employeeSessionMigration = fs.readFileSync("supabase/migrations/2026110306
 const storeProductsEntitlementMigration = fs.readFileSync("supabase/migrations/20261106115240_guard_store_products_by_license_and_entitlement.sql", "utf8");
 const backupRestoreChecks = html.slice(html.indexOf("function impor(){"), html.indexOf("function hapusSemua()", html.indexOf("function impor(){")));
 const biteshipShipmentSource = fs.readFileSync("supabase/functions/biteship-create-shipment/index.ts", "utf8");
+const marketplaceFinance = fs.readFileSync("supabase/functions/platform-marketplace-finance/index.ts", "utf8");
 const failClosedStoreCostMigration = fs.readFileSync("supabase/migrations/20261106113748_fail_closed_store_product_cost_entitlement.sql", "utf8");
 const failClosedFinanceMigration = fs.readFileSync("supabase/migrations/20261106113750_fail_closed_package_entitlement_helper_and_finance_rpcs.sql", "utf8");
 const manifestText = fs.readFileSync("manifest.webmanifest", "utf8");
@@ -345,6 +346,18 @@ if (!/isLiveBiteshipKey && Deno\.env\.get\("BITESHIP_PRODUCTION_BOOKING_ENABLED"
 if (!/isTestBiteshipKey[\s\S]{0,220}BITESHIP_PRODUCTION_BOOKING_ENABLED/.test(paymentWebhook)) {
   fail("Midtrans webhook must not call live Biteship booking without the separate production flag");
 } else pass("Midtrans webhook only triggers live Biteship booking when the production flag is enabled");
+
+const payoutBalanceChecks = [
+  [marketplaceFinance.includes('const pending = sum(payouts.filter((x) => ["pending", "submitted"].includes(x.status)));') &&
+    marketplaceFinance.includes("const availableNotPaidOut = net - paid - pending;"),
+    "pending and submitted marketplace payouts must reserve funds from available balance"],
+  [marketplaceFinance.includes("available_not_paid_out: availableNotPaidOut,"),
+    "platform finance response must publish the reserved available balance"],
+];
+for (const [ok, message] of payoutBalanceChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
 
 const operationalChecks = [
   [/\.upsert\(batch,\s*\{\s*onConflict:\s*['"]business_id,legacy_ref['"],\s*ignoreDuplicates:\s*true\s*\}\)/, html, "offline sync must be idempotent by business and legacy reference"],
