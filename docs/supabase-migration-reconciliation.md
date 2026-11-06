@@ -84,3 +84,6 @@ File `supabase/migrations/20261107120000_transaction_cash_validation_and_stock_m
 - Dry-run hanya memverifikasi sintaks dan privilege. Belum menggantikan pengujian konkurensi dan alur browser Owner/Karyawan pada staging.
 - Jangan jalankan `supabase db push` atau reset. Rekonsiliasi baseline/riwayat historis dan uji staging tetap wajib sebelum penerapan.
 - Ledger mulai mencatat perubahan sejak migrasi diterapkan; tidak ada backfill mutasi stok historis.
+
+- Pembaruan lanjutan pada audit Transaksi: RPC `settle_store_open_bill` kini mempertahankan nama pelanggan sekaligus nomor meja pada referensi penjualan; laporan penjualan mengelompokkan label `Pelanggan: ... • Meja ...` sebagai satu tagihan. Perubahan ini juga masih hanya diuji dalam dry-run rollback, belum diterapkan ke Production.
+- RPC penyesuaian stok menormalkan `stock_quantity IS NULL` menjadi nol sebelum perhitungan agar tidak pernah mengembalikan sukses tanpa perubahan stok.
