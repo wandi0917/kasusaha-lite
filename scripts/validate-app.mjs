@@ -521,4 +521,21 @@ if (!employeeDeactivateBlock.includes("revokeError") ||
   fail("owner deactivation must revoke employee activations before deactivating membership");
 } else pass("owner deactivation revokes employee activations before deactivating membership");
 
+const employeeOwnerListStart = employeeActivation.indexOf('if (action === "owner_list")');
+const employeeOwnerListEnd = employeeActivation.indexOf('if (action === "owner_deactivate" || action === "owner_reactivate")', employeeOwnerListStart);
+const employeeOwnerListBlock = employeeOwnerListStart >= 0 && employeeOwnerListEnd > employeeOwnerListStart ? employeeActivation.slice(employeeOwnerListStart, employeeOwnerListEnd) : "";
+if (!employeeOwnerListBlock.includes('.eq("status", "pending_payment")') || !employeeOwnerListBlock.includes('.select("id").maybeSingle()') || !employeeOwnerListBlock.includes('confirmedActivation?.status !== "paid"') || !employeeOwnerListBlock.includes('.update({ active: false })')) fail("Owner list Midtrans refresh must use compare-and-set and fail closed after a concurrent revocation"); else pass("Owner list Midtrans refresh uses compare-and-set and fails closed after concurrent revocation");
+
+const employeeOwnerIdentityStart = employeeActivation.indexOf('if (action === "owner_deactivate" || action === "owner_reactivate")');
+const employeeOwnerIdentityEnd = employeeActivation.indexOf('if (action === "owner_delete_inactive")', employeeOwnerIdentityStart);
+const employeeOwnerIdentityBlock = employeeOwnerIdentityStart >= 0 && employeeOwnerIdentityEnd > employeeOwnerIdentityStart ? employeeActivation.slice(employeeOwnerIdentityStart, employeeOwnerIdentityEnd) : "";
+if (!employeeOwnerIdentityBlock.includes('kasusaha_owner_employee_directory') || !employeeOwnerIdentityBlock.includes('.in("user_id", targetUserIds)') || !employeeOwnerIdentityBlock.includes('restoredStatus')) fail("Owner deactivation/reactivation must apply to the canonical employee identity and all aliases"); else pass("Owner deactivation/reactivation applies to the canonical employee identity and all aliases");
+
+const employeeJoinCodeStart = employeeActivation.indexOf('if (action === "employee_join_code")');
+const employeeJoinCodeEnd = employeeActivation.indexOf('if (action === "owner_create_code")', employeeJoinCodeStart);
+const employeeJoinCodeBlock = employeeJoinCodeStart >= 0 && employeeJoinCodeEnd > employeeJoinCodeStart ? employeeActivation.slice(employeeJoinCodeStart, employeeJoinCodeEnd) : "";
+if (!employeeJoinCodeBlock.includes('canonicalActivation?.status !== "paid"')) fail("Historical employee aliases must not restore access after the canonical activation was revoked"); else pass("Historical employee aliases cannot restore access after the canonical activation was revoked");
+
+if (!employeeRevokeBlock.includes("bindingsError") || !employeeRevokeBlock.includes("boundUserIds") || !employeeRevokeBlock.includes("invite.user_id")) fail("employee invite revocation must verify all session bindings and include the canonical user"); else pass("employee invite revocation verifies all session bindings and includes the canonical user");
+
 if (process.exitCode) process.exit(process.exitCode);
