@@ -1345,7 +1345,14 @@ Deno.serve(async (req: Request) => {
 
     let shipmentBooking: Record<string, unknown> | null = null;
     if (hasPhysicalItems) {
-      if (String(Deno.env.get("BITESHIP_ENABLE_SHIPMENT_BOOKING") ?? "").trim().toLowerCase() !== "true") {
+      const biteshipKeyForBooking = Deno.env.get("BITESHIP_API_KEY") || "";
+      const isTestBiteshipKey = biteshipKeyForBooking.startsWith("biteship_test.");
+      const isLiveBiteshipKey = biteshipKeyForBooking.startsWith("biteship_live.");
+      const biteshipBookingEnabled =
+        String(Deno.env.get("BITESHIP_ENABLE_SHIPMENT_BOOKING") ?? "").trim().toLowerCase() === "true" &&
+        (isTestBiteshipKey ||
+          (isLiveBiteshipKey && Deno.env.get("BITESHIP_PRODUCTION_BOOKING_ENABLED") === "true"));
+      if (!biteshipBookingEnabled) {
         shipmentBooking = {
           attempted: false,
           enabled: false,
