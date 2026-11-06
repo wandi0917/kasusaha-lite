@@ -11,6 +11,7 @@ const html = fs.readFileSync("index.html", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
 const costSecurityMigration = fs.readFileSync("supabase/migrations/20261103020843_restrict_store_product_cost_column_access.sql", "utf8");
 const employeeSessionMigration = fs.readFileSync("supabase/migrations/20261103062527_allow_paid_employee_invite_sessions_in_transactions.sql", "utf8");
+const backupRestoreChecks = html.slice(html.indexOf("function impor(){"), html.indexOf("function hapusSemua()", html.indexOf("function impor(){")));
 const biteshipShipmentSource = fs.readFileSync("supabase/functions/biteship-create-shipment/index.ts", "utf8");
 const failClosedStoreCostMigration = fs.readFileSync("supabase/migrations/20261106113748_fail_closed_store_product_cost_entitlement.sql", "utf8");
 const failClosedFinanceMigration = fs.readFileSync("supabase/migrations/20261106113750_fail_closed_package_entitlement_helper_and_finance_rpcs.sql", "utf8");
@@ -140,6 +141,16 @@ const biteshipAmbiguousBookingChecks = [
    "ambiguous Biteship responses must retain the shipment lock to prevent duplicates"],
 ];
 for (const [ok, message] of biteshipAmbiguousBookingChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
+const backupRestoreAssertions = [
+  [backupRestoreChecks.includes("const previous={}") && backupRestoreChecks.includes("localStorage.getItem(key)"), "backup restore must snapshot existing local data before replacement"],
+  [backupRestoreChecks.includes("rollbackFailed") && backupRestoreChecks.includes("localStorage.removeItem(key)"), "backup restore must roll back partially written localStorage keys on failure"],
+  [backupRestoreChecks.includes("localStorage.setItem(key,next[name])") && !backupRestoreChecks.includes("simpan();"), "backup restore must verify all local writes before reporting success"],
+];
+for (const [ok, message] of backupRestoreAssertions) {
   if (!ok) fail(message);
   else pass(message);
 }
