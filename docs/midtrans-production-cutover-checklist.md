@@ -7,6 +7,7 @@ This checklist is intentionally separate from merchant approval. Do not enable P
 - Keep `MIDTRANS_IS_PRODUCTION=false`.
 - Keep Sandbox and Production Server Keys in Supabase Edge Function secrets only.
 - Keep `MIDTRANS_PRODUCTION_PAYMENTS_ENABLED` unset or set to `false`.
+- Keep `MARKETPLACE_PRODUCTION_PAYMENTS_ENABLED` unset or set to `false`; physical marketplace checkout has a separate production gate.
 - Keep the Midtrans notification URL pointed at:
   `https://flvdudmdltjjdjkdngbv.supabase.co/functions/v1/midtrans-webhook`
 - Do not use the retired `midtrans-payment-notification` endpoint.
@@ -17,14 +18,18 @@ This checklist is intentionally separate from merchant approval. Do not enable P
 1. Confirm the Midtrans dashboard Result is approved and the required Production payment channels are active.
 2. Add the Production Server Key to Supabase as `MIDTRANS_SERVER_KEY_PRODUCTION`. Never paste it into chat, GitHub, or frontend code.
 3. Confirm the Production Client Key is configured only where the frontend integration actually requires it; never expose the Server Key.
-4. Set `MIDTRANS_PRODUCTION_PAYMENTS_ENABLED=true` in Supabase Edge Function secrets.
-5. Set `MIDTRANS_IS_PRODUCTION=true` only after the Production key and webhook URL are verified.
-6. Confirm `midtrans-webhook` remains deployed with JWT gateway verification disabled, while its own Midtrans signature and Status API checks remain mandatory.
-7. Verify Midtrans can reach the webhook and receives HTTP 200 for a valid notification. Invalid signatures and amount mismatches must not mark orders paid.
-8. With explicit operator approval, run one minimum-value real payment only after all payment channels are active. Confirm order state, payment event, license eligibility, commission ledger, and refund/reversal path before inviting customers.
+4. Complete Sandbox end-to-end tests first: create checkout, pay, receive notification, verify Status API identity and amount, activate one test license, test duplicate notifications, expiry, and refund/chargeback review. Do not use Production credentials for this test.
+5. Set `MIDTRANS_PRODUCTION_PAYMENTS_ENABLED=true` in Supabase Edge Function secrets only after the merchant and payment channels are approved.
+6. Set `MIDTRANS_IS_PRODUCTION=true` only after the Production key and webhook URL are verified.
+7. Confirm `midtrans-webhook` remains deployed with JWT gateway verification disabled, while its own Midtrans signature and Status API checks remain mandatory. The webhook must continue processing verified notifications/refunds even when new-payment creation is disabled, so in-flight transactions are not stranded.
+8. Verify Midtrans can reach the webhook and receives HTTP 200 for a valid notification. Invalid signatures, missing/mismatched transaction IDs, and amount mismatches must not mark orders paid.
+9. Keep `MARKETPLACE_PRODUCTION_PAYMENTS_ENABLED` disabled until seller payout recording, order completion, Biteship booking, tracking, and refund review have passed end-to-end tests. Only then enable it separately.
+10. With explicit operator approval, run one minimum-value real license payment only after all payment channels are active. Confirm order state, payment event, license eligibility, duplicate-notification idempotency, and refund/reversal review before inviting customers.
 
 ## Fail-closed behavior
 
-The three payment entry points — marketplace/package checkout, Midtrans webhook processing, and Employee-ID activation — now require `MIDTRANS_PRODUCTION_PAYMENTS_ENABLED=true` whenever `MIDTRANS_IS_PRODUCTION=true`. If the flag is absent, they return HTTP 503 with `PRODUCTION_PAYMENTS_NOT_ENABLED`. Sandbox behavior is unchanged.
-
-Do not enable this flag while the merchant review is pending.
+- New package/license and Employee-ID payment creation require `MIDTRANS_PRODUCTION_PAYMENTS_ENABLED=true` whenever `MIDTRANS_IS_PRODUCTION=true`. If absent, they return HTTP 503 with `PRODUCTION_PAYMENTS_DISABLED`.
+- New physical marketplace payment creation additionally requires `MARKETPLACE_PRODUCTION_PAYMENTS_ENABLED=true`. If absent, it returns HTTP 503 with `MARKETPLACE_PRODUCTION_PAYMENTS_DISABLED`.
+- Sandbox checkout is unaffected by either Production flag.
+- `midtrans-webhook` does **not** use the new-payment gate. It must continue to verify and process authentic provider notifications, including refund/chargeback review, for transactions already in flight.
+- Do not enable either flag while merchant approval, seller payouts, Biteship booking, or the relevant end-to-end tests are pending.
