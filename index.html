@@ -5785,6 +5785,13 @@ $('quickSaleForm')?.addEventListener('submit',async function(e){
    throw new Error('Hasil penyimpanan belum dapat dipastikan karena koneksi terputus. Kunci transaksi tetap disimpan. Periksa laporan, lalu kirim ulang tagihan dengan rincian yang SAMA. Detail: '+String(error.message||error).slice(0,180));
   }
   if(!result||result.ok!==true)throw new Error('Server belum mengonfirmasi penyimpanan penjualan. Kunci permintaan dipertahankan agar pengulangan tidak menggandakan transaksi.');
+  if(result.legacy_cash_unverified===true){
+   try{const saved=JSON.parse(localStorage.getItem(quickSalePendingKey)||'null');if(saved?.requestId===quickSaleRequestId)localStorage.removeItem(quickSalePendingKey);}catch(_){}
+   this.reset();$('quickSaleTableNumber').value='';if($('quickSaleCashReceived'))$('quickSaleCashReceived').value='';$('quickSaleItems').replaceChildren();addQuickSaleLine();
+   try{await loadFinanceWorkspace();}catch(refreshErr){console.warn('Penjualan lama terkonfirmasi tetapi laporan belum dimuat ulang:',refreshErr);}
+   setFinanceStatus('Transaksi ini sudah tersimpan oleh versi kasir sebelumnya. Sistem tidak membuat penjualan atau mengurangi stok lagi. Nominal uang diterima dan kembalian dari transaksi lama tidak tersimpan; periksa kas fisik dan laporan sebelum melanjutkan.');
+   return;
+  }
   try{const saved=JSON.parse(localStorage.getItem(quickSalePendingKey)||'null');if(saved?.requestId===quickSaleRequestId)localStorage.removeItem(quickSalePendingKey);}catch(_){}
   
   // Server sudah mengonfirmasi penyimpanan. Kegagalan muat ulang laporan tidak berarti transaksi gagal.
