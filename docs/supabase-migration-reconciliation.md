@@ -43,11 +43,11 @@ Aplikasi produksi tetap berjalan; kondisi ini tidak dengan sendirinya berarti sk
 Status: perlu rekonstruksi/arsip untuk 81 migrasi historis yang belum tersedia di repositori.
 ## Pembaruan setelah dua migrasi entitlement
 
-Dua file migrasi entitlement baru kini menjadi bagian `main` dan cocok dengan remote version `20261106113748` dan `20261106113750`. Karena jumlah file lokal dan jumlah migrasi remote sama-sama bertambah dua, selisih migrasi historis tanpa SQL counterpart tetap 81 (bukan 83). Tidak ada data bisnis yang dihapus atau diubah.
+Tiga file migrasi baru kini menjadi bagian `main` dan cocok dengan remote versions `20261106113748`, `20261106113750`, dan `20261106115240` (dua migrasi entitlement dan satu penguatan RLS stok). Karena jumlah file lokal dan jumlah migrasi remote sama-sama bertambah tiga, selisih migrasi historis tanpa SQL counterpart tetap 81. Tidak ada data bisnis yang dihapus atau diubah.
 
 ## Versi migrasi pending setelah entitlement
 
-- Migrasi referral capture belum diterapkan ke Production. File lokalnya telah diberi versi baru `20261106115500_license_package_checkout_referral_capture.sql`, karena versi sebelumnya `20261105170000` lebih tua daripada remote latest `20261106113750`.
+- Migrasi referral capture belum diterapkan ke Production. File lokalnya telah diberi versi baru `20261106115500_license_package_checkout_referral_capture.sql`, karena versi sebelumnya `20261105170000` lebih tua daripada remote latest `20261106115240`.
 - Migrasi ini tetap kandidat dan hanya boleh diterapkan setelah baseline historis/staging dan pengujian Midtrans Sandbox selesai. Re-version file tidak menjalankan SQL dan tidak mengubah database.
 
 ## Pembaruan RLS store_products 6 November 2026
