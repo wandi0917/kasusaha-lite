@@ -660,6 +660,9 @@ if (!stockSubmitBlock.includes("rpc('adjust_store_product_stock'") ||
     stockSubmitBlock.includes(".from('store_products').update({stock_quantity")) {
   fail("Owner stock adjustments must use the server-side atomic stock RPC, not direct browser updates");
 } else pass("Owner stock adjustments use the server-side atomic stock RPC");
+if (!html.includes("legacyQuickSaleFingerprint") || !html.includes("pending.fingerprint!==legacyQuickSaleFingerprint")) {
+  fail("pending cashier requests created before cash validation must have a safe recovery path");
+} else pass("legacy pending cashier requests retain a safe recovery path");
 if (!html.includes("p_cash_received:cashReceived") ||
     !html.includes("cashReceived,lines:lines.map")) {
   fail("quick cashier must send the received cash amount and bind it to the idempotency fingerprint");
@@ -678,6 +681,7 @@ const stockLedgerChecks = [
   [transactionHardeningMigration.includes("GRANT EXECUTE ON FUNCTION public.record_store_quick_sale(uuid,text,jsonb,uuid,numeric) TO authenticated, service_role"), "authenticated cashier clients receive only the cash-validating RPC overload"],
   [transactionHardeningMigration.includes("kasusaha.stock_movement_type', 'sale'"), "cashier sales are classified in stock movement history"],
   [transactionHardeningMigration.includes("store_stock_adjustment_requests") && transactionHardeningMigration.includes("request_hash"), "stock adjustment retries are protected by server-side idempotency"],
+  [transactionHardeningMigration.includes("p_movement_type IS NULL OR p_movement_type NOT IN"), "stock movement type validation rejects null and unsupported values"],
 ];
 for (const [ok, message] of stockLedgerChecks) {
   if (!ok) fail(message);
