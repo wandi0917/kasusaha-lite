@@ -35,7 +35,7 @@ Aplikasi produksi tetap berjalan; kondisi ini tidak dengan sendirinya berarti sk
 
 ## Perbaikan yang sudah dilakukan pada audit ini
 
-- Menyamakan nama file migrasi yang tersedia dengan versi remote untuk 27 file yang ada.
+- Menyamakan nama file migrasi yang tersedia dengan versi remote untuk 30 file yang ada.
 - Menambahkan migrasi server timestamp dengan versi remote `20261105115528`.
 - Menerapkan migrasi tersebut ke Supabase setelah pengujian aman dalam transaksi `BEGIN/ROLLBACK`.
 - Memverifikasi kolom `server_recorded_at` tersedia, tidak ada nilai kosong, trigger aktif, dan belum ada usaha yang menyetujui atau memulai trial.
