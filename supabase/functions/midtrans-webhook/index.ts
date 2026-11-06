@@ -97,6 +97,52 @@ function isPaidStatus(status: JsonObject): boolean {
       (transactionStatus === "capture" && fraudStatus === "accept"));
 }
 
+// Midtrans mengirim waktu transaksi dalam WIB (GMT+7). settlement_time
+// lebih tepat untuk urutan pembayaran; transaction_time menjadi fallback
+// untuk metode yang belum menyediakan settlement_time.
+function midtransPaidAt(status: JsonObject): string | null {
+  // An empty settlement_time is not a usable value; fall back to transaction_time.
+  const raw = [status.settlement_time, status.transaction_time]
+    .map((value) => String(value ?? "").trim())
+    .find((value) => value.length > 0) ?? "";
+  if (!raw) return null;
+
+  // Date.parse can normalize impossible dates (for example, February 30).
+  // Validate Midtrans wall-clock fields before converting them to an instant.
+  const match = raw.match(
+    /^(\d{4})-(\d{2})-(\d{2})[ Tt](\d{2}):(\d{2}):(\d{2})(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/i,
+  );
+  if (!match) return null;
+
+  const [, yearText, monthText, dayText, hourText, minuteText, secondText, , timezone] = match;
+  const year = Number(yearText);
+  const month = Number(monthText);
+  const day = Number(dayText);
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  const second = Number(secondText);
+
+  if (year < 1000 || month < 1 || month > 12 || hour > 23 ||
+      minute > 59 || second > 59) return null;
+
+  const calendarDate = new Date(Date.UTC(year, month - 1, day));
+  if (
+    calendarDate.getUTCFullYear() !== year ||
+    calendarDate.getUTCMonth() !== month - 1 ||
+    calendarDate.getUTCDate() !== day
+  ) return null;
+
+  if (timezone && !/^Z$/i.test(timezone)) {
+    const offset = timezone.match(/^[+-](\d{2}):?(\d{2})$/);
+    if (!offset || Number(offset[1]) > 23 || Number(offset[2]) > 59) return null;
+  }
+
+  const normalized = raw.replace(/[ Tt]/, "T");
+  const iso = timezone ? normalized : normalized + "+07:00";
+  const parsed = Date.parse(iso);
+  return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
+}
+
 function isUuid(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     .test(value);
@@ -167,13 +213,38 @@ async function recordVerifiedPaymentEvent(
         notification.payment_type ??
         "",
     ),
+    refund_amount: String(
+      midtransStatus.refund_amount ??
+        notification.refund_amount ??
+        "",
+    ),
+    refund_chargeback_id: String(
+      midtransStatus.refund_chargeback_id ??
+        notification.refund_chargeback_id ??
+        "",
+    ),
+    refund_key: String(
+      midtransStatus.refund_key ??
+        notification.refund_key ??
+        "",
+    ),
+    bank_confirmed_at: String(
+      midtransStatus.bank_confirmed_at ??
+        notification.bank_confirmed_at ??
+        "",
+    ),
+    refunds: midtransStatus.refunds ?? notification.refunds ?? null,
   });
 
   const providerEventId = await sha256(fingerprintSource);
 
+  const safeStatusPayload: JsonObject = { ...midtransStatus };
+  // Signature hash is not needed after verification; do not persist it.
+  delete safeStatusPayload.signature_key;
+
   const payload: JsonObject = {
     notification: safeNotificationPayload(notification),
-    verified_status: midtransStatus,
+    verified_status: safeStatusPayload,
   };
 
   const { error: insertError } = await supabase
@@ -555,6 +626,13 @@ Deno.serve(async (req: Request) => {
     }, 503);
   }
   const isProduction = configuredMode === "true";
+  if (isProduction && String(Deno.env.get("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED") ?? "").trim().toLowerCase() !== "true") {
+    return reply({
+      success: false,
+      code: "PRODUCTION_PAYMENTS_NOT_ENABLED",
+      message: "Pemrosesan pembayaran Production belum diaktifkan melalui gerbang cutover.",
+    }, 503);
+  }
   const serverKey = isProduction
     ? Deno.env.get("MIDTRANS_SERVER_KEY_PRODUCTION")
     : (Deno.env.get("MIDTRANS_SERVER_KEY_SANDBOX") || Deno.env.get("MIDTRANS_SERVER_KEY"));
@@ -852,10 +930,12 @@ Deno.serve(async (req: Request) => {
   const statusApiTransactionId = String(
     midtransStatus.transaction_id ?? "",
   );
+  // Status API selalu mengembalikan transaction_id untuk transaksi yang ditemukan.
+  // Tolak respons yang tidak lengkap; notifikasi boleh tidak menyertakan ID,
+  // tetapi identitas dari Status API wajib ada.
   const transactionIdMatches =
-    !notificationTransactionId ||
-    !statusApiTransactionId ||
-    notificationTransactionId === statusApiTransactionId;
+    Boolean(statusApiTransactionId) &&
+    (!notificationTransactionId || notificationTransactionId === statusApiTransactionId);
 
   if (
     !statusApiOrderMatches ||
@@ -994,8 +1074,18 @@ Deno.serve(async (req: Request) => {
   if (paid) {
     let paidOrder: WebhookOrder = order;
 
+    const providerPaidAt = midtransPaidAt(midtransStatus);
+    if (!providerPaidAt) {
+      console.error("Midtrans tidak memberikan waktu transaksi pembayaran yang valid:", databaseOrderId);
+      return reply({
+        success: false,
+        message: "Waktu pembayaran dari Midtrans belum dapat dipastikan. Pesanan belum diproses.",
+        order_id: databaseOrderId,
+      }, 500);
+    }
+
     if (order.status === "pending_payment") {
-      const paidAt = new Date().toISOString();
+      const paidAt = providerPaidAt;
 
       const {
         data: updatedOrder,
@@ -1006,7 +1096,7 @@ Deno.serve(async (req: Request) => {
           status: "paid",
           provider_transaction_id: midtransOrderId,
           paid_at: paidAt,
-          updated_at: paidAt,
+          updated_at: new Date().toISOString(),
         })
         .eq("id", databaseOrderId)
         .eq("status", "pending_payment")
@@ -1218,12 +1308,30 @@ Deno.serve(async (req: Request) => {
       }, 400);
     }
 
-    if (!paidOrder.paid_at) {
-      console.error(
-        "Pesanan paid tidak memiliki paid_at:",
-        databaseOrderId,
-      );
+    // paid_at mengikuti waktu provider, bukan waktu webhook diterima.
+    // Ini penting untuk menentukan pembelian lisensi pertama saat notifikasi terlambat.
+    if (paidOrder.paid_at !== providerPaidAt) {
+      const { data: timestampOrder, error: timestampError } = await supabase
+        .from("marketplace_orders")
+        .update({ paid_at: providerPaidAt, updated_at: new Date().toISOString() })
+        .eq("id", databaseOrderId)
+        .eq("status", "paid")
+        .select(orderSelect)
+        .maybeSingle();
 
+      if (timestampError || !timestampOrder) {
+        console.error("Gagal menyelaraskan waktu pembayaran dari Midtrans:", timestampError?.message);
+        return reply({
+          success: false,
+          message: "Waktu pembayaran belum dapat diselaraskan. Webhook perlu dicoba ulang.",
+          order_id: databaseOrderId,
+        }, 500);
+      }
+      paidOrder = timestampOrder as WebhookOrder;
+    }
+
+    if (!paidOrder.paid_at) {
+      console.error("Pesanan paid tidak memiliki paid_at:", databaseOrderId);
       return reply({
         success: false,
         message: "Waktu pembayaran belum tercatat. Perlu pemeriksaan.",
@@ -1244,6 +1352,29 @@ Deno.serve(async (req: Request) => {
         success: false,
         message:
           "Pembayaran berhasil, tetapi pencatatan komisi gagal dan perlu dicoba ulang.",
+        order_id: databaseOrderId,
+      }, 500);
+    }
+
+    // Komisi mitra lisensi terpisah dari komisi marketplace 2,5%.
+    // Fungsi SQL mengabaikan pesanan non-lisensi dan hanya mencatat referral
+    // untuk pesanan lisensi yang pembayarannya sudah diverifikasi.
+    const licensePartnerCommission = await supabase.rpc("record_license_partner_commission", {
+      p_order_id: databaseOrderId,
+      p_payment_event_id: paymentEventId,
+    });
+    if (
+      licensePartnerCommission.error ||
+      !licensePartnerCommission.data ||
+      (licensePartnerCommission.data as JsonObject).success !== true
+    ) {
+      console.error(
+        "Komisi mitra lisensi gagal:",
+        licensePartnerCommission.error?.message ?? JSON.stringify(licensePartnerCommission.data),
+      );
+      return reply({
+        success: false,
+        message: "Pembayaran berhasil, tetapi pencatatan komisi mitra lisensi belum selesai. Webhook perlu dicoba ulang.",
         order_id: databaseOrderId,
       }, 500);
     }
@@ -1406,6 +1537,141 @@ Deno.serve(async (req: Request) => {
       license_issued: licenseResult.applicable,
       license_result: licenseResult.result ?? null,
       shipment_booking: shipmentBooking,
+    });
+  }
+
+  // Refund/chargeback dapat terjadi setelah settlement. Jangan menganggapnya
+  // sebagai notifikasi pending biasa: tahan akses dan komisi yang belum dibayar
+  // untuk pemeriksaan manual. Tidak ada clawback otomatis untuk dana yang sudah
+  // dibayarkan, dan refund parsial tidak otomatis mencabut seluruh lisensi.
+  const reviewStatuses = [
+    "refund",
+    "partial_refund",
+    "chargeback",
+    "partial_chargeback",
+  ];
+  if (reviewStatuses.includes(transactionStatus)) {
+    const refundAmount = String(midtransStatus.refund_amount ?? notification.refund_amount ?? "");
+    const refundRows = Array.isArray(midtransStatus.refunds)
+      ? midtransStatus.refunds
+      : Array.isArray(notification.refunds)
+      ? notification.refunds
+      : [];
+    const confirmedRefundRow = refundRows.find((row) =>
+      typeof row === "object" &&
+      row !== null &&
+      Boolean(String((row as JsonObject).bank_confirmed_at ?? "").trim())
+    ) as JsonObject | undefined;
+    const bankConfirmedAt = String(
+      midtransStatus.bank_confirmed_at ??
+        notification.bank_confirmed_at ??
+        confirmedRefundRow?.bank_confirmed_at ??
+        "",
+    );
+    const reviewNote = [
+      "Midtrans melaporkan status " + transactionStatus + ".",
+      refundAmount ? "Nominal refund/chargeback: " + refundAmount + " IDR." : "",
+      bankConfirmedAt ? "Konfirmasi bank: " + bankConfirmedAt + "." : "Konfirmasi bank belum terlihat pada notifikasi ini.",
+      "Tahan pencairan dan lakukan pemeriksaan manual; jangan lakukan clawback otomatis.",
+    ].filter(Boolean).join(" ");
+
+    const { data: reviewOrder, error: reviewError } = await supabase
+      .from("marketplace_orders")
+      .update({
+        payment_review_required: true,
+        payment_review_note: reviewNote,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", databaseOrderId)
+      .select("id")
+      .maybeSingle();
+
+    if (reviewError || !reviewOrder?.id) {
+      console.error("Gagal menandai refund/chargeback untuk pemeriksaan manual:", reviewError?.message);
+      return reply({
+        success: false,
+        message: "Status refund/chargeback terverifikasi, tetapi penanda pemeriksaan manual gagal disimpan.",
+        order_id: databaseOrderId,
+      }, 500);
+    }
+
+    const { error: holdPartnerError } = await supabase
+      .from("license_partner_commission_ledger")
+      .update({
+        status: "held",
+        available_at: null,
+        reviewed_at: null,
+        reviewed_by: null,
+        notes: reviewNote,
+      })
+      .eq("order_id", databaseOrderId)
+      .in("status", ["held", "approved"]);
+
+    if (holdPartnerError) {
+      console.error("Gagal menahan komisi mitra lisensi:", holdPartnerError.message);
+      return reply({
+        success: false,
+        message: "Pesanan ditandai untuk pemeriksaan, tetapi penahanan komisi mitra belum berhasil.",
+        order_id: databaseOrderId,
+      }, 500);
+    }
+
+    // Komisi yang sudah dibayar tidak diubah nilainya atau di-clawback otomatis.
+    // Tambahkan catatan agar admin meninjau payout yang mungkin sudah terjadi.
+    const { data: paidPartnerRows, error: paidPartnerReadError } = await supabase
+      .from("license_partner_commission_ledger")
+      .select("id, notes")
+      .eq("order_id", databaseOrderId)
+      .eq("status", "paid");
+
+    if (paidPartnerReadError) {
+      console.error("Gagal membaca komisi mitra yang sudah dibayar:", paidPartnerReadError.message);
+      return reply({
+        success: false,
+        message: "Pemeriksaan refund tersimpan, tetapi riwayat komisi yang sudah dibayar belum dapat dibaca.",
+        order_id: databaseOrderId,
+      }, 500);
+    }
+
+    for (const row of paidPartnerRows ?? []) {
+      const priorNotes = String(row.notes ?? "").trim();
+      const paidReviewNote = priorNotes.includes("REVIEW REFUND/CHARGEBACK:")
+        ? priorNotes
+        : [priorNotes, "REVIEW REFUND/CHARGEBACK:", reviewNote].filter(Boolean).join(" ");
+
+      const { error: paidPartnerUpdateError } = await supabase
+        .from("license_partner_commission_ledger")
+        .update({ notes: paidReviewNote })
+        .eq("id", row.id)
+        .eq("status", "paid");
+
+      if (paidPartnerUpdateError) {
+        console.error("Gagal menambahkan catatan pemeriksaan pada komisi mitra yang sudah dibayar:", paidPartnerUpdateError.message);
+        return reply({
+          success: false,
+          message: "Komisi yang sudah dibayar memerlukan pemeriksaan manual; catatan audit belum berhasil disimpan.",
+          order_id: databaseOrderId,
+        }, 500);
+      }
+    }
+
+    const processedReviewError = await markPaymentEventProcessed(supabase, paymentEventId);
+    if (processedReviewError) {
+      return reply({
+        success: false,
+        message: "Pemeriksaan refund/chargeback tersimpan, tetapi event belum ditandai selesai.",
+        order_id: databaseOrderId,
+      }, 500);
+    }
+
+    return reply({
+      success: true,
+      message: "Refund/chargeback terverifikasi dan pesanan ditahan untuk pemeriksaan manual. Tidak ada pencabutan lisensi atau clawback otomatis.",
+      order_id: databaseOrderId,
+      transaction_status: transactionStatus,
+      refund_amount: refundAmount || null,
+      bank_confirmed_at: bankConfirmedAt || null,
+      manual_review: true,
     });
   }
 
