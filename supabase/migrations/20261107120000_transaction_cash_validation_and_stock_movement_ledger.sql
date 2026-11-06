@@ -343,8 +343,7 @@ BEGIN
   VALUES (v_request_id, p_business_id, v_uid, v_request_hash, v_result);
   RETURN v_result;
 END;
-$function$
-
+$function$;
 
 CREATE OR REPLACE FUNCTION public.record_store_quick_sale(p_business_id uuid, p_table_number text, p_lines jsonb, p_request_id uuid, p_cash_received numeric)
  RETURNS jsonb
@@ -485,8 +484,7 @@ BEGIN
   VALUES (v_request_id, p_business_id, v_uid, v_request_hash, v_result);
   RETURN v_result;
 END;
-$function$
-
+$function$;
 
 REVOKE ALL ON FUNCTION public.record_store_quick_sale(uuid,text,jsonb,uuid) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.record_store_quick_sale(uuid,text,jsonb,uuid) TO service_role;
