@@ -6,7 +6,7 @@ Repositori: `wandi0917/kasusaha-lite`
 
 ## Hasil pemeriksaan
 
-- Supabase mencatat 110 versi migrasi yang telah diterapkan (pemeriksaan ulang 6 November 2026; versi terbaru `20261106113750`).
+- Supabase mencatat 111 versi migrasi yang telah diterapkan (pemeriksaan ulang 6 November 2026; versi terbaru `20261106115240`).
 - Direktori `supabase/migrations` pada branch `main` berisi 27 file SQL.
 - Semua 27 versi file yang ada sekarang cocok dengan versi migrasi yang tercatat di Supabase.
 - Sebanyak 81 versi migrasi historis yang sudah tercatat di Supabase belum memiliki file SQL pasangannya di branch `main`; dua migrasi entitlement terbaru sudah direkam dengan file bernama versi remote yang tepat.
@@ -47,3 +47,7 @@ Status: perlu rekonstruksi/arsip untuk 81 migrasi historis yang belum tersedia d
 - Dua migrasi entitlement diterapkan sebagai remote version `20261106113748` dan `20261106113750`, dan file SQL dengan nama versi yang sama tersedia di repository.
 - Karena remote history bertambah dua sementara baseline historis belum lengkap, jumlah versi historis tanpa pasangan SQL tetap 81. Ini bukan bukti schema rusak, tetapi tetap menghalangi rekonstruksi project baru yang dapat diulang.
 - Migrasi referral capture yang masih pending dengan versi lokal `20261105170000` lebih tua daripada remote latest; harus diberi versi baru sebelum diterapkan. Migrasi komisi provider-paid-time juga harus mengikuti urutan versi yang sama.
+
+## Update setelah store_products RLS 6 November 2026
+
+Remote migration history berisi 111 versi dan berakhir pada `20261106115240`. Direktori main memiliki 30 file SQL yang cocok, sehingga 81 migrasi historis tetap belum memiliki file SQL pasangan. Pending referral capture kini menggunakan versi `20261106115500`, provider-paid-time commission reconciliation `20261106115600`, dan quick-sale entitlement guard `20261106120000`; ketiganya belum diterapkan.
