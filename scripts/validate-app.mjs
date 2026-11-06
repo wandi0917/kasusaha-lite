@@ -468,4 +468,18 @@ for (const [block, label] of [
   } else pass(label + " refreshes and verifies the session before protected requests");
 }
 
+// Production cutover gate: new payment requests must fail closed until explicitly enabled.
+const paymentGate = 'if (production && norm(Deno.env.get("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED")) !== "true")';
+for (const [source, label] of [
+  [paymentCreate, "package checkout"],
+  [employeeActivation, "employee device activation"],
+]) {
+  if (!source.includes(paymentGate) || !source.includes("PRODUCTION_PAYMENTS_NOT_ENABLED")) {
+    fail(label + " must require the explicit Midtrans Production cutover gate");
+  } else pass(label + " requires the explicit Midtrans Production cutover gate");
+}
+if (paymentWebhook.includes("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED")) {
+  fail("Midtrans webhook must remain available for authentic in-flight settlement and refund notifications");
+} else pass("Midtrans webhook is not blocked by the new-payment cutover gate");
+
 if (process.exitCode) process.exit(process.exitCode);
