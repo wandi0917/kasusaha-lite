@@ -131,6 +131,19 @@ const sellerAccountShortcut = html.includes("buka('akun',document.querySelector(
 if (!sellerAccountShortcut) fail("seller account shortcut must navigate to the existing Owner/Seller account page");
 else pass("seller account shortcut navigates to the existing Owner/Seller account page");
 
+const financeAccountingStart = html.indexOf("async function loadFinanceAccounting(){");
+const financeAccountingEnd = html.indexOf("\\nfunction financeAccountingPopulateControls", financeAccountingStart);
+const financeAccountingBlock = financeAccountingStart >= 0 && financeAccountingEnd > financeAccountingStart
+  ? html.slice(financeAccountingStart, financeAccountingEnd)
+  : "";
+const financeEntitlementGuard = financeAccountingBlock.indexOf("await loadFinancePackageFeatures(financeBusiness.id)");
+const financeAccountSeed = financeAccountingBlock.indexOf("await financeAccountingEnsureAccounts()");
+if (financeEntitlementGuard < 0 ||
+    !financeAccountingBlock.includes("packageAccess.features.full_finance!==true") ||
+    financeAccountSeed < financeEntitlementGuard) {
+  fail("accounting module must verify active full_finance entitlement before seeding finance accounts");
+} else pass("accounting module verifies full_finance entitlement before seeding finance accounts");
+
 const transactionMenuChecks = [
   [/function syncTransactionRoleMenus\(\)/, html, "transaction menus must synchronize with the logged-in role"],
   [/id="shortcutEmployeeSettings" data-transaction-role="owner"/, html, "employee account settings shortcut must be Owner-only"],
