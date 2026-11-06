@@ -659,4 +659,32 @@ for (const [pattern, source, message] of openBillPaymentChecks) {
   else pass(message);
 }
 
+const stockEntryStart = html.indexOf("$('stockEntryForm')?.addEventListener('submit',async function(e){");
+const stockEntryEnd = html.indexOf("\nlet activeOpenBillId=null;", stockEntryStart);
+const stockEntryBlock = stockEntryStart >= 0 && stockEntryEnd > stockEntryStart
+  ? html.slice(stockEntryStart, stockEntryEnd)
+  : "";
+const stockMovementChecks = [
+  [/rpc\('adjust_store_product_stock'/, stockEntryBlock, "stock entry must use the atomic stock-adjustment RPC"],
+  [/p_movement_type:type/, stockEntryBlock, "stock entry must send the selected movement type"],
+  [/p_quantity:qty/, stockEntryBlock, "stock entry must send the requested integer quantity"],
+  [/p_request_id:requestId/, stockEntryBlock, "stock entry must use a stable idempotency request ID"],
+  [/kasusaha_stock_adjustment_pending_v1/, stockEntryBlock, "stock entry must persist an unresolved request key"],
+  [/result\.quantity_before/, stockEntryBlock, "stock entry must verify the server's before quantity"],
+  [/result\.quantity_after/, stockEntryBlock, "stock entry must verify the server's after quantity"],
+  [/result\.quantity_delta/, stockEntryBlock, "stock entry must verify the server's stock delta"],
+  [/CREATE OR REPLACE FUNCTION public\.adjust_store_product_stock/, transactionCashMigration, "database migration must define the stock-adjustment RPC"],
+  [/GRANT EXECUTE ON FUNCTION public\.adjust_store_product_stock\(uuid,uuid,text,integer,uuid\) TO authenticated, service_role/, transactionCashMigration, "stock-adjustment RPC must be granted to authenticated users with server-side Owner checks"],
+];
+for (const [pattern, source, message] of stockMovementChecks) {
+  if (!source || !pattern.test(source)) fail(message);
+  else pass(message);
+}
+if (!html.includes("input.min=this.value==='set'?'0':'1'")) {
+  fail("stock correction mode must allow setting the stock quantity to zero");
+} else pass("stock correction mode allows a zero stock quantity");
+if (/\.from\('store_products'\)\.update\(\{stock_quantity:next/.test(stockEntryBlock)) {
+  fail("stock entry must not directly update store_products.stock_quantity from the client");
+} else pass("stock entry does not directly update store_products.stock_quantity from the client");
+
 if (process.exitCode) process.exit(process.exitCode);
