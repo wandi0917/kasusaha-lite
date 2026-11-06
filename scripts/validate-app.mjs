@@ -348,11 +348,14 @@ if (!/isTestBiteshipKey[\s\S]{0,220}BITESHIP_PRODUCTION_BOOKING_ENABLED/.test(pa
 } else pass("Midtrans webhook only triggers live Biteship booking when the production flag is enabled");
 
 const payoutBalanceChecks = [
-  [/const paid = sum\\(payouts\\.filter\\(\\(x\\) => x\\.status === "paid"\\)\\);[\\s\\S]{0,220}const pending = sum\\(payouts\\.filter\\(\\(x\\) => \\["pending", "submitted"\\]\\.includes\\(x\\.status\\)\\)\\);[\\s\\S]{0,350}const availableNotPaidOut = net - paid - pending;/, marketplaceFinance, "pending and submitted marketplace payouts must reserve funds from available balance"],
-  [/available_not_paid_out: availableNotPaidOut/, marketplaceFinance, "platform finance response must publish the reserved available balance"],
+  [marketplaceFinance.includes('const pending = sum(payouts.filter((x) => ["pending", "submitted"].includes(x.status)));') &&
+    marketplaceFinance.includes("const availableNotPaidOut = net - paid - pending;"),
+    "pending and submitted marketplace payouts must reserve funds from available balance"],
+  [marketplaceFinance.includes("available_not_paid_out: availableNotPaidOut,"),
+    "platform finance response must publish the reserved available balance"],
 ];
-for (const [pattern, source, message] of payoutBalanceChecks) {
-  if (!pattern.test(source)) fail(message);
+for (const [ok, message] of payoutBalanceChecks) {
+  if (!ok) fail(message);
   else pass(message);
 }
 
