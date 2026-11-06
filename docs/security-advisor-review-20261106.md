@@ -7,16 +7,16 @@ Scope: read-only Supabase Production inspection; no customer data modified.
 ## Executive result
 
 The Security Advisor currently reports:
-- 15 `SECURITY DEFINER` functions executable by `authenticated`.
+- 16 SECURITY DEFINER function signatures executable by authenticated (15 distinct function names; create_kasusaha_package_order has two overloads).
 - 20 tables with RLS enabled and no policies.
-- Anonymous sign-ins enabled.
+- Advisor also reports policies that permit the anon database role on selected tables; this is distinct from the Auth anonymous-sign-in toggle and must be reviewed by policy/table.
 - Leaked-password protection disabled.
 
 The findings were checked against live grants and function definitions before any change. They are not all defects, and blanket revocation would break core Owner/Employee workflows.
 
 ## 1. SECURITY DEFINER functions — reviewed, intentionally callable by authenticated users
 
-A read-only query confirmed for all 15 functions:
+A read-only query confirmed for all 16 function signatures:
 - `anon` does not have EXECUTE.
 - `authenticated` does have EXECUTE.
 - Function definitions contain an `auth.uid()` identity check.
@@ -26,19 +26,20 @@ A read-only query confirmed for all 15 functions:
 Functions:
 1. `create_business_workspace_details(text,text,text,text,text)`
 2. `create_kasusaha_package_order(text,text,text,text)`
-3. `edit_business_attendance_record(uuid,uuid,timestamptz,timestamptz)`
-4. `get_store_product_costs(uuid)`
-5. `join_business_workspace(text)`
-6. `kasusaha_accept_service_fee_terms(uuid)`
-7. `kasusaha_get_business_package_entitlements(uuid)`
-8. `kasusaha_owner_employee_directory(uuid)`
-9. `kasusaha_owner_service_fee_preview(uuid,date)`
-10. `record_business_attendance_check_in(uuid)`
-11. `record_business_attendance_check_out(uuid)`
-12. `record_store_quick_sale(uuid,text,jsonb,uuid)`
-13. `set_business_attendance_hourly_wage(uuid,uuid,uuid,numeric)`
-14. `set_store_product_cost(uuid,numeric)`
-15. `settle_store_open_bill(uuid,numeric)`
+3. `create_kasusaha_package_order(text,text,text,text,text)`
+4. `edit_business_attendance_record(uuid,uuid,timestamptz,timestamptz)`
+5. `get_store_product_costs(uuid)`
+6. `join_business_workspace(text)`
+7. `kasusaha_accept_service_fee_terms(uuid)`
+8. `kasusaha_get_business_package_entitlements(uuid)`
+9. `kasusaha_owner_employee_directory(uuid)`
+10. `kasusaha_owner_service_fee_preview(uuid,date)`
+11. `record_business_attendance_check_in(uuid)`
+12. `record_business_attendance_check_out(uuid)`
+13. `record_store_quick_sale(uuid,text,jsonb,uuid)`
+14. `set_business_attendance_hourly_wage(uuid,uuid,uuid,numeric)`
+15. `set_store_product_cost(uuid,numeric)`
+16. `settle_store_open_bill(uuid,numeric)`
 
 These are application RPCs used by logged-in accounts. Some intentionally permit the restricted anonymous Employee session used by the paid employee-device flow; the database functions then enforce active Employee membership, paid device activation, and verified license/feature entitlements. Do not revoke EXECUTE globally or change these functions to SECURITY INVOKER without a full migration of their private-schema access model and end-to-end regression tests.
 
@@ -70,9 +71,11 @@ Tables:
 
 Keep these tables server-only. If a future frontend feature needs data from them, expose a narrowly scoped RPC or Edge Function with explicit ownership checks rather than granting direct table access.
 
-## 3. Anonymous sign-ins
+## 3. Anonymous access and Employee sessions
 
-Anonymous sign-ins are enabled. This is currently an intentional dependency of the paid Employee invite/device session flow. The frontend and database restrict this session to the permitted Employee cashier/attendance paths and require a paid device activation plus verified business license.
+The application intentionally uses a restricted anonymous Employee session for the invite/device login flow. The frontend and database restrict this session to permitted Employee cashier/attendance paths and require paid device activation plus a verified business license.
+
+The current Advisor output also labels several policies as allowing anonymous access. That finding is about the anon database role and individual RLS policies; it must not be conflated with the Auth setting that permits anonymous account creation. The flagged policies include application tables such as business_members, business_workspaces, store_products, kasusaha_licenses, and marketplace participant reads. Their predicates must be retained only where required by the anonymous Employee/buyer use cases and must be tested with both anonymous and authenticated sessions. Do not broaden these policies or disable the Employee anonymous-session dependency without a complete replacement and regression test.
 
 Do not disable anonymous sign-ins until the Employee login flow is migrated to a non-anonymous authentication design and verified on real devices. Recheck the full Employee login, cashier, attendance, and logout lifecycle after any future change.
 
