@@ -17,7 +17,7 @@ Repositori: `wandi0917/kasusaha-lite`
 Dua migrasi tambahan telah diterapkan langsung melalui Supabase migration API setelah dry-run berurutan dalam transaksi `BEGIN/ROLLBACK`:
 
 - Remote version `20261106113748`, name `20261106100000_fail_closed_store_product_cost_entitlement`; file repo `supabase/migrations/20261106113748_fail_closed_store_product_cost_entitlement.sql`.
-- Remote version `20261106113750`, name `20261106113000_fail_closed_package_entitlement_helper_and_finance_rpcs`; file repo `supabase/migrations/20261106113750_fail_closed_package_entitlement_helper_and_finance_rpcs.sql`.
+- Remote version `20261106115240`, name `20261106113000_fail_closed_package_entitlement_helper_and_finance_rpcs`; file repo `supabase/migrations/20261106113750_fail_closed_package_entitlement_helper_and_finance_rpcs.sql`.
 
 Perubahan ini tidak menghapus atau mengubah data bisnis. Perubahan memperketat fungsi harga modal, helper entitlement, posting jurnal, dan pelunasan piutang/utang agar entitlement yang tidak dapat dipastikan ditolak. Lisensi lama dengan `plan_code` kosong tetap mengikuti aturan kompatibilitas yang sudah ada. Verifikasi setelah penerapan menunjukkan kedua versi tercatat pada remote migration history dan definisi fungsi produksi sudah sesuai.
 
@@ -53,3 +53,7 @@ Dua file migrasi entitlement baru kini menjadi bagian `main` dan cocok dengan re
 ## Pembaruan RLS store_products 6 November 2026
 
 Remote version `20261106115240` memperketat policy SELECT/INSERT/UPDATE/DELETE pada `store_products` agar selalu memerlukan lisensi terverifikasi dan entitlement `basic_stock`, sambil mempertahankan batas Owner/Karyawan dan perangkat berbayar. Semua empat paket aktif saat ini memiliki `basic_stock=true`. Migrasi diterapkan setelah dry-run transaksi rollback; tidak ada baris produk yang diubah.
+
+## Pending referral migration version after latest RLS migration
+
+The referral-capture SQL remains unapplied. Its repository file is now versioned `20261106115500_license_package_checkout_referral_capture.sql`, after remote latest `20261106115240`. The provider-paid-time reconciliation migration remains a draft candidate and must be ordered after referral capture. No SQL was executed by this file rename.
