@@ -59,6 +59,12 @@ const duplicates = [...new Set(ids.filter((id, index) => ids.indexOf(id) !== ind
 if (duplicates.length) fail("duplicate static HTML IDs: " + duplicates.join(", "));
 else pass("no duplicate IDs in static HTML markup");
 
+const navigationTargets = [...markupOnly.matchAll(/(?:buka|openTab)\\(\\s*['"]([^'"]+)['"]/g)].map((m) => m[1]);
+const missingNavigationTargets = [...new Set(navigationTargets.filter((target) => !ids.includes(target)))];
+if (missingNavigationTargets.length) {
+  fail("navigation buttons target missing sections: " + missingNavigationTargets.join(", "));
+} else pass(navigationTargets.length + " navigation targets resolve to existing HTML sections");
+
 if (!html.includes('class="quick-sale-camera-head"') ||
     !html.includes('id="quickSaleBarcodeClose"') ||
     !html.includes('id="quickSaleBarcodeVideo"')) {
