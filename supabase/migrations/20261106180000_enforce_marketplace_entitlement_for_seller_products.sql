@@ -19,6 +19,8 @@ WITH CHECK (
   )
 );
 
+-- Owners may always access their own row for safe deactivation; an unentitled seller
+-- may not keep a listing active or reactivate it.
 DROP POLICY IF EXISTS "Penjual dapat mengubah produk miliknya" ON public.produk;
 CREATE POLICY "Penjual dapat mengubah produk miliknya"
 ON public.produk
@@ -27,26 +29,23 @@ TO authenticated
 USING (
   owner_id = (SELECT auth.uid())
   AND NOT coalesce((((SELECT auth.jwt()) ->> 'is_anonymous')::boolean), false)
-  AND EXISTS (
-    SELECT 1
-    FROM public.business_workspaces w
-    WHERE w.owner_id = (SELECT auth.uid())
-      AND private.kasusaha_business_license_is_verified(w.id)
-      AND private.kasusaha_business_has_feature(w.id, 'marketplace') IS TRUE
-  )
 )
 WITH CHECK (
   owner_id = (SELECT auth.uid())
   AND NOT coalesce((((SELECT auth.jwt()) ->> 'is_anonymous')::boolean), false)
-  AND EXISTS (
-    SELECT 1
-    FROM public.business_workspaces w
-    WHERE w.owner_id = (SELECT auth.uid())
-      AND private.kasusaha_business_license_is_verified(w.id)
-      AND private.kasusaha_business_has_feature(w.id, 'marketplace') IS TRUE
+  AND (
+    aktif IS FALSE
+    OR EXISTS (
+      SELECT 1
+      FROM public.business_workspaces w
+      WHERE w.owner_id = (SELECT auth.uid())
+        AND private.kasusaha_business_license_is_verified(w.id)
+        AND private.kasusaha_business_has_feature(w.id, 'marketplace') IS TRUE
+    )
   )
 );
 
+-- Owners can always remove their own listings, including after expiry.
 DROP POLICY IF EXISTS "Penjual dapat menghapus produk miliknya" ON public.produk;
 CREATE POLICY "Penjual dapat menghapus produk miliknya"
 ON public.produk
@@ -55,11 +54,4 @@ TO authenticated
 USING (
   owner_id = (SELECT auth.uid())
   AND NOT coalesce((((SELECT auth.jwt()) ->> 'is_anonymous')::boolean), false)
-  AND EXISTS (
-    SELECT 1
-    FROM public.business_workspaces w
-    WHERE w.owner_id = (SELECT auth.uid())
-      AND private.kasusaha_business_license_is_verified(w.id)
-      AND private.kasusaha_business_has_feature(w.id, 'marketplace') IS TRUE
-  )
 );
