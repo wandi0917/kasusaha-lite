@@ -176,6 +176,8 @@ BEGIN
   WHERE p.id = p_product_id AND p.business_id = p_business_id
   FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Barang tidak ditemukan pada usaha ini.'; END IF;
+  -- Legacy rows may have NULL stock_quantity; treat them as zero so the RPC never reports success without changing stock.
+  v_product.stock_quantity := coalesce(v_product.stock_quantity, 0);
 
   v_next := CASE
     WHEN p_movement_type = 'in' THEN v_product.stock_quantity::bigint + p_quantity::bigint
