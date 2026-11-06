@@ -5262,17 +5262,23 @@ async function saveAttendanceWage(){
  const wage=Number($('attendanceHourlyWage').value);
  if(!Number.isSafeInteger(wage)||wage<0){status.className='status error';status.textContent='Gaji per jam harus bilangan bulat nol atau lebih.';return;}
  if(btn)btn.disabled=true;
+ let wageConfirmed=false;
  try{
   const {data,error}=await sb.rpc('set_business_attendance_hourly_wage',{
    p_business_id:financeBusiness.id,p_identity_id:null,p_user_id:financeMemberUserId,p_hourly_wage:wage
   });
   if(error)throw error;
-  localStorage.setItem(attendanceWageKey(),String(wage));
+  if(!data?.ok)throw new Error('Server belum mengonfirmasi penyimpanan tarif gaji.');
+  wageConfirmed=true;
+  try{localStorage.setItem(attendanceWageKey(),String(wage));}catch(storageErr){console.warn('Tarif tersimpan di server; cache lokal tidak dapat diperbarui:',storageErr);}
   status.className='status';
   status.textContent='Tarif gaji Owner tersimpan di server dan berlaku untuk absensi berikutnya. '+Number(data?.updated_rows||0)+' catatan absensi sebelumnya diperbarui.';
-  await loadAttendance();
- }catch(e){status.className='status error';status.textContent='Tarif gaji belum tersimpan di server: '+String(e.message||e).slice(0,180);}
- finally{if(btn)btn.disabled=false;}
+  try{await loadAttendance();status.textContent='Tarif gaji tersimpan dan daftar absensi berhasil diperbarui.';}
+  catch(refreshErr){status.className='status error';status.textContent='Tarif gaji SUDAH TERSIMPAN di server, tetapi daftar absensi belum berhasil dimuat ulang. Jangan ulangi penyimpanan. Detail: '+String(refreshErr.message||refreshErr).slice(0,160);}
+ }catch(e){
+  status.className='status error';
+  status.textContent=wageConfirmed?'Tarif gaji sudah dikonfirmasi server, tetapi tampilan belum selesai diperbarui. Jangan ulangi penyimpanan. Detail: '+String(e.message||e).slice(0,160):'Tarif gaji belum tersimpan di server: '+String(e.message||e).slice(0,180);
+ }finally{if(btn)btn.disabled=false;}
 }
 async function editAttendanceRecord(row){
  if(financeMemberRole!=='owner'||!financeBusiness){alert('Hanya Owner yang dapat mengedit absensi.');return;}
@@ -5280,29 +5286,36 @@ async function editAttendanceRecord(row){
  const currentOut=row.check_out_at?new Date(row.check_out_at).toLocaleTimeString('en-GB',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'';
  const inValue=prompt('Edit jam masuk (format HH:MM:SS, WIB). Kosongkan untuk menghapus:',currentIn);if(inValue===null)return;
  const outValue=prompt('Edit jam pulang (format HH:MM:SS, WIB). Kosongkan jika belum pulang:',currentOut);if(outValue===null)return;
- const validTime=v=>v===''||/^([01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$/.test(v);
+ const validTime=v=>v===''||/^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(v);
  if(!validTime(inValue.trim())||!validTime(outValue.trim())){alert('Format waktu tidak valid. Gunakan HH:MM:SS.');return;}
  if(outValue.trim()&&!inValue.trim()){alert('Jam masuk harus diisi jika jam pulang diisi.');return;}
  const toIso=v=>v.trim()?new Date(row.work_date+'T'+v.trim()+'+07:00').toISOString():null;
  const checkIn=inValue.trim()?toIso(inValue):null,checkOut=outValue.trim()?toIso(outValue):null;
  if(checkIn&&checkOut&&new Date(checkOut)<=new Date(checkIn)){alert('Jam pulang harus setelah jam masuk.');return;}
+ let editConfirmed=false;
  try{
-  const {error}=await sb.rpc('edit_business_attendance_record',{
+  const {data,error}=await sb.rpc('edit_business_attendance_record',{
    p_business_id:financeBusiness.id,p_attendance_id:row.id,p_check_in_at:checkIn,p_check_out_at:checkOut
   });
   if(error)throw error;
+  if(!data?.ok)throw new Error('Server belum mengonfirmasi perubahan absensi.');
+  editConfirmed=true;
   const status=$('attendanceStatus');status.className='status';status.textContent='Catatan absensi berhasil diperbarui dan divalidasi server.';
-  await loadAttendance();
- }catch(e){const status=$('attendanceStatus');status.className='status error';status.textContent='Gagal mengedit absensi melalui server: '+String(e.message||e).slice(0,180);}
+  try{await loadAttendance();status.textContent='Catatan absensi tersimpan dan daftar berhasil diperbarui.';}
+  catch(refreshErr){status.className='status error';status.textContent='Catatan absensi SUDAH DIPERBARUI di server, tetapi daftar belum berhasil dimuat ulang. Jangan ulangi edit. Detail: '+String(refreshErr.message||refreshErr).slice(0,160);}
+ }catch(e){
+  const status=$('attendanceStatus');status.className='status error';
+  status.textContent=editConfirmed?'Perubahan absensi sudah dikonfirmasi server, tetapi tampilan belum selesai diperbarui. Jangan ulangi edit. Detail: '+String(e.message||e).slice(0,160):'Gagal mengedit absensi melalui server: '+String(e.message||e).slice(0,180);
+ }
 }
 async function editAttendanceWage(identityId,item){
  if(financeMemberRole!=='owner'||!financeBusiness){alert('Hanya Owner yang dapat menetapkan gaji.');return;}
  const current=Number(item?.wage||0);
  const raw=prompt('Tetapkan gaji per jam untuk '+(item?.employee_name||'akun ini')+' (Rp):',String(current));
  if(raw===null)return;
- const wage=Number(String(raw).replace(/[.\\s]/g,''));
+ const wage=Number(String(raw).replace(/[.\s]/g,''));
  if(!Number.isSafeInteger(wage)||wage<0){alert('Gaji harus bilangan bulat nol atau lebih.');return;}
- const status=$('attendancePayrollStatus');
+ const status=$('attendancePayrollStatus');let wageConfirmed=false;
  try{
   const {data,error}=await sb.rpc('set_business_attendance_hourly_wage',{
    p_business_id:financeBusiness.id,
@@ -5311,10 +5324,13 @@ async function editAttendanceWage(identityId,item){
    p_hourly_wage:wage
   });
   if(error)throw error;
+  if(!data?.ok)throw new Error('Server belum mengonfirmasi perubahan tarif gaji.');
+  wageConfirmed=true;
   status.className='status';
   status.textContent='Tarif gaji tersimpan di server dan berlaku untuk absensi berikutnya. '+Number(data?.updated_rows||0)+' catatan historis diperbarui.';
-  await loadAttendance();
- }catch(e){status.className='status error';status.textContent='Gagal menetapkan gaji melalui server: '+String(e.message||e).slice(0,200);}
+  try{await loadAttendance();status.textContent='Tarif gaji tersimpan dan daftar absensi berhasil diperbarui.';}
+  catch(refreshErr){status.className='status error';status.textContent='Tarif gaji SUDAH TERSIMPAN di server, tetapi daftar belum berhasil dimuat ulang. Jangan ulangi perubahan. Detail: '+String(refreshErr.message||refreshErr).slice(0,160);}
+ }catch(e){status.className='status error';status.textContent=wageConfirmed?'Tarif gaji sudah dikonfirmasi server, tetapi tampilan belum selesai diperbarui. Jangan ulangi perubahan. Detail: '+String(e.message||e).slice(0,160):'Gagal menetapkan gaji melalui server: '+String(e.message||e).slice(0,200);}
 }
 async function loadAttendance(){
  const status=$('attendanceStatus'),ownerBox=$('attendanceOwnerList'),tbody=$('attendanceRows');
@@ -5432,35 +5448,37 @@ async function arahkanSetelahLoginFinance(){
 async function absenMasuk(){
  if(!sb||!financeBusiness||!financeMemberUserId||!financeMemberRole){setFinanceStatus('Login dan hubungkan akun ke usaha terlebih dahulu.',true);return;}
  const btn=$('attendanceCheckIn');if(!btn)return;btn.disabled=true;
+ let attendanceConfirmed=false;
  try{
   if(offlineTransactionMode)throw new Error('Absensi online memerlukan koneksi internet.');
   if(document.body.classList.contains('employee-device-pending'))throw new Error('Akun Karyawan belum diaktifkan Owner.');
   const {data,error}=await sb.rpc('record_business_attendance_check_in',{p_business_id:financeBusiness.id});
   if(error)throw error;
   if(!data?.ok||!data?.id)throw new Error('Server belum mengonfirmasi absensi masuk. Jangan mengulang sebelum memuat ulang data.');
-  await loadAttendance();
-  setFinanceStatus('Absen masuk tercatat di server pada '+attendanceTime(data.check_in_at)+'.');
+  attendanceConfirmed=true;
+  try{await loadAttendance();setFinanceStatus('Absen masuk tercatat di server pada '+attendanceTime(data.check_in_at)+'.');}
+  catch(refreshErr){setFinanceStatus('ABSEN MASUK SUDAH TERCATAT di server, tetapi status absensi belum berhasil dimuat ulang. Jangan absen masuk ulang. Detail: '+String(refreshErr.message||refreshErr).slice(0,160),true);}
  }catch(e){
-  $('attendanceStatus').className='status error';
-  $('attendanceStatus').textContent='Absen masuk gagal: '+String(e.message||e).slice(0,200);
-  btn.disabled=false;
+  if(attendanceConfirmed)setFinanceStatus('Absen masuk sudah dikonfirmasi server, tetapi tampilan belum selesai diperbarui. Jangan mengulang absensi. Detail: '+String(e.message||e).slice(0,160),true);
+  else{$('attendanceStatus').className='status error';$('attendanceStatus').textContent='Absen masuk gagal: '+String(e.message||e).slice(0,200);btn.disabled=false;}
  }
 }
 async function absenPulang(){
  if(!sb||!financeBusiness||!financeMemberUserId||!financeMemberRole)return;
  const btn=$('attendanceCheckOut');if(!btn)return;btn.disabled=true;
+ let attendanceConfirmed=false;
  try{
   if(offlineTransactionMode)throw new Error('Absensi online memerlukan koneksi internet.');
   if(document.body.classList.contains('employee-device-pending'))throw new Error('Akun Karyawan belum diaktifkan Owner.');
   const {data,error}=await sb.rpc('record_business_attendance_check_out',{p_business_id:financeBusiness.id});
   if(error)throw error;
   if(!data?.ok||!data?.id)throw new Error('Server belum mengonfirmasi absensi pulang.');
-  await loadAttendance();
-  setFinanceStatus('Absen pulang tercatat di server pada '+attendanceTime(data.check_out_at)+'.');
+  attendanceConfirmed=true;
+  try{await loadAttendance();setFinanceStatus('Absen pulang tercatat di server pada '+attendanceTime(data.check_out_at)+'.');}
+  catch(refreshErr){setFinanceStatus('ABSEN PULANG SUDAH TERCATAT di server, tetapi status absensi belum berhasil dimuat ulang. Jangan absen pulang ulang. Detail: '+String(refreshErr.message||refreshErr).slice(0,160),true);}
  }catch(e){
-  $('attendanceStatus').className='status error';
-  $('attendanceStatus').textContent='Absen pulang gagal: '+String(e.message||e).slice(0,200);
-  btn.disabled=false;
+  if(attendanceConfirmed)setFinanceStatus('Absen pulang sudah dikonfirmasi server, tetapi tampilan belum selesai diperbarui. Jangan mengulang absensi. Detail: '+String(e.message||e).slice(0,160),true);
+  else{$('attendanceStatus').className='status error';$('attendanceStatus').textContent='Absen pulang gagal: '+String(e.message||e).slice(0,200);btn.disabled=false;}
  }
 }
 // Ikat aksi absensi secara eksplisit agar tombol tetap berfungsi walau inline handler tidak terpasang.
