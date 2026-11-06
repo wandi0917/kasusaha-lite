@@ -11,6 +11,8 @@ const html = fs.readFileSync("index.html", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
 const costSecurityMigration = fs.readFileSync("supabase/migrations/20261103020843_restrict_store_product_cost_column_access.sql", "utf8");
 const employeeSessionMigration = fs.readFileSync("supabase/migrations/20261103062527_allow_paid_employee_invite_sessions_in_transactions.sql", "utf8");
+const failClosedStoreCostMigration = fs.readFileSync("supabase/migrations/20261106113748_fail_closed_store_product_cost_entitlement.sql", "utf8");
+const failClosedFinanceMigration = fs.readFileSync("supabase/migrations/20261106113750_fail_closed_package_entitlement_helper_and_finance_rpcs.sql", "utf8");
 const manifestText = fs.readFileSync("manifest.webmanifest", "utf8");
 
 try {
@@ -114,6 +116,19 @@ if (!/kasusaha_get_business_package_entitlements/.test(html) ||
   fail("package entitlement lookup or UI feature gates are missing");
 } else pass("package entitlements are loaded and UI feature gates are present");
 
+
+const failClosedEntitlementChecks = [
+  [failClosedStoreCostMigration.includes("IS DISTINCT FROM true") &&
+   failClosedStoreCostMigration.includes("private.kasusaha_business_has_feature"), "store product cost RPC must deny missing/NULL full_finance entitlement"],
+  [failClosedFinanceMigration.includes("SELECT coalesce((") &&
+   failClosedFinanceMigration.includes("), false);"), "package entitlement helper must return false when no verified matching entitlement exists"],
+  [failClosedFinanceMigration.includes("kasusaha_business_has_feature(v_business_id,'full_finance') IS DISTINCT FROM true"), "finance journal posting must deny missing/NULL entitlement"],
+  [failClosedFinanceMigration.includes("kasusaha_business_has_feature(v_item.business_id,'full_finance') IS DISTINCT FROM true"), "finance open-item settlement must deny missing/NULL entitlement"],
+];
+for (const [ok, message] of failClosedEntitlementChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
 
 const employeeSessionChecks = [
   [/const allDisabled=\{barcode:false,/, html, "barcode entitlement must fail closed when package lookup fails"],
