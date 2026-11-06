@@ -46,7 +46,7 @@ Status: perlu rekonstruksi/arsip untuk 81 migrasi historis yang belum tersedia d
 - Remote migration history kini berisi 111 versi, berakhir pada `20261106115240`.
 - Dua migrasi entitlement diterapkan sebagai remote version `20261106113748` dan `20261106113750`, dan file SQL dengan nama versi yang sama tersedia di repository.
 - Karena remote history bertambah dua sementara baseline historis belum lengkap, jumlah versi historis tanpa pasangan SQL tetap 81. Ini bukan bukti schema rusak, tetapi tetap menghalangi rekonstruksi project baru yang dapat diulang.
-- Migrasi referral capture yang masih pending dengan versi lokal `20261105170000` lebih tua daripada remote latest; harus diberi versi baru sebelum diterapkan. Migrasi komisi provider-paid-time juga harus mengikuti urutan versi yang sama.
+- Migrasi referral capture yang masih pending telah diberi versi `20261106115500`, diikuti rekonsiliasi komisi provider-paid-time `20261106115600`; keduanya belum diterapkan.
 
 ## Update setelah store_products RLS 6 November 2026
 
