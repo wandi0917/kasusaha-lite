@@ -503,7 +503,7 @@ if (!employeeRevokeBlock.includes("activationRevokeError") ||
 } else pass("employee invite-code revocation persists activation revocation before deactivating membership");
 
 const employeeDeactivateStart = employeeActivation.indexOf('if (action === "owner_deactivate")');
-const employeeDeactivateEnd = employeeActivation.indexOf('const { error: memberUpdateError }', employeeDeactivateStart);
+const employeeDeactivateEnd = employeeActivation.indexOf('return reply({ success: true, active: false', employeeDeactivateStart);
 const employeeDeactivateBlock = employeeDeactivateStart >= 0 && employeeDeactivateEnd > employeeDeactivateStart
   ? employeeActivation.slice(employeeDeactivateStart, employeeDeactivateEnd)
   : "";
