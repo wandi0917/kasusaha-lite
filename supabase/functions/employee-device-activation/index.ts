@@ -46,6 +46,9 @@ Deno.serve(async (req: Request) => {
       return reply({ success: false, code: "PAYMENT_MODE_INVALID", message: "Mode pembayaran belum dikonfigurasi dengan benar." }, 503);
     }
     const production = configuredMode === "true";
+    if (production && norm(Deno.env.get("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED")) !== "true") {
+      return reply({ success: false, code: "PRODUCTION_PAYMENTS_NOT_ENABLED", message: "Aktivasi pembayaran Production belum diaktifkan melalui gerbang cutover." }, 503);
+    }
     const serverKey = production
       ? Deno.env.get("MIDTRANS_SERVER_KEY_PRODUCTION")
       : (Deno.env.get("MIDTRANS_SERVER_KEY_SANDBOX") || Deno.env.get("MIDTRANS_SERVER_KEY"));
