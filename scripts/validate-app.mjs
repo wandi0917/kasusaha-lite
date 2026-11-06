@@ -614,16 +614,17 @@ for (const [ok, message] of paymentIntegrityChecks) {
 }
 
 
+const marketplacePolicyOccurrences = (needle) => marketplaceProductPolicyMigration.split(needle).length - 1;
 const marketplaceProductPolicyChecks = [
   [marketplaceProductPolicyMigration.includes('CREATE POLICY "Penjual dapat menambah produk miliknya"'), "seller product INSERT policy is present"],
   [marketplaceProductPolicyMigration.includes('CREATE POLICY "Penjual dapat mengubah produk miliknya"'), "seller product UPDATE policy is present"],
   [marketplaceProductPolicyMigration.includes('CREATE POLICY "Penjual dapat menghapus produk miliknya"'), "seller product DELETE policy is present"],
-  [(marketplaceProductPolicyMigration.match(/private\\.kasusaha_business_has_feature/g) || []).length >= 4 &&
-   (marketplaceProductPolicyMigration.match(/private\\.kasusaha_business_license_is_verified/g) || []).length >= 4,
+  [marketplacePolicyOccurrences("private.kasusaha_business_has_feature(w.id, 'marketplace') IS TRUE") >= 4 &&
+   marketplacePolicyOccurrences("private.kasusaha_business_license_is_verified(w.id)") >= 4,
    "all seller product write policies require verified license and marketplace entitlement"],
-  [(marketplaceProductPolicyMigration.match(/owner_id = \\(SELECT auth\\.uid\\(\\)\\)/g) || []).length >= 4,
+  [marketplacePolicyOccurrences("owner_id = (SELECT auth.uid())") >= 4,
    "seller product writes remain restricted to the authenticated product owner"],
-  [(marketplaceProductPolicyMigration.match(/is_anonymous/g) || []).length >= 4,
+  [marketplacePolicyOccurrences("is_anonymous") >= 4,
    "anonymous sessions cannot create, update, or delete marketplace seller products"],
 ];
 for (const [ok, message] of marketplaceProductPolicyChecks) {
