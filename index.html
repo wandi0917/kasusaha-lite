@@ -4176,30 +4176,42 @@ async function financeFetchAllRows(queryFactory,pageSize=500,maxRows=100000){
 
 function toggleOwnerServiceFeePanel(show){
  const panel=$('serviceFeeOwnerPanel');if(!panel)return;
- if(show===true&&(financeMemberRole!=='owner'||!financeBusiness||financeBusiness.owner_id!==financeMemberUserId)){setFinanceStatus('Panel biaya layanan hanya dapat dibuka oleh Owner utama usaha.',true);return;}
+ const isOwner=financeMemberRole==='owner'&&financeBusiness&&String(financeBusiness.owner_id||'').toLowerCase()===String(financeMemberUserId||'').toLowerCase();
+ if(show===true&&!isOwner){setFinanceStatus('Panel biaya layanan hanya dapat dibuka oleh Owner utama usaha yang sudah terverifikasi.',true);return;}
  panel.hidden=show===false?true:!panel.hidden;
- if(!panel.hidden){panel.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});renderOwnerServiceFeePanel();}
+ if(!panel.hidden){renderOwnerServiceFeePanel();panel.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}
 }
 async function renderOwnerServiceFeePanel(){
  const panel=$('serviceFeeOwnerPanel'),host=$('serviceFeeOwnerContent');if(!panel||!host)return;
- const isOwner=financeMemberRole==='owner'&&financeBusiness&&financeBusiness.owner_id===financeMemberUserId;
+ const isOwner=financeMemberRole==='owner'&&financeBusiness&&String(financeBusiness.owner_id||'').toLowerCase()===String(financeMemberUserId||'').toLowerCase();
  panel.hidden=!isOwner;if(!isOwner)return;
+ if(!sb){host.textContent='Koneksi server belum tersedia. Periksa koneksi lalu muat ulang menu Transaksi.';return;}
  const trial=financeBusiness.service_fee_trial_started_at;
  if(!trial){
-  host.innerHTML='<p>Informasi pratinjau skema biaya layanan (belum diberlakukan):</p><ul><li>Simulasi masa awal 30 hari bebas biaya dimulai setelah Owner mengaktifkan pratinjau.</li><li>Dalam simulasi, omzet bersih sampai Rp3.000.000 per bulan tidak dikenai biaya.</li><li>Dalam simulasi, hanya bagian omzet bersih di atas Rp3.000.000 yang dihitung dengan tarif rencana 0,1%.</li><li>Lisensi dibeli terpisah sesuai paket. Komisi marketplace 2,5% adalah biaya berbeda.</li><li>Ini bukan persetujuan untuk penagihan di masa depan. Billing, invoice, pemotongan saldo, dan penguncian fitur tetap nonaktif.</li></ul><label style="display:flex;gap:9px;align-items:flex-start;margin:12px 0"><input id="serviceFeeConsentCheck" type="checkbox" style="width:auto;margin-top:3px"><span>Saya memahami bahwa ini hanya pratinjau informasi, bukan persetujuan penagihan, dan ingin memulai periode pratinjau 30 hari untuk usaha ini.</span></label><button id="serviceFeeConsentSubmit" type="button" class="primary" disabled>Mulai pratinjau 30 hari</button><p id="serviceFeeOwnerStatus" class="small" role="status" aria-live="polite">Pratinjau belum dimulai. Tidak ada tagihan atau pemotongan saldo.</p>';
-  const check=$('serviceFeeConsentCheck'),submit=$('serviceFeeConsentSubmit');check?.addEventListener('change',()=>{submit.disabled=!check.checked;});
-  submit?.addEventListener('click',async()=>{
-   if(!check?.checked||financeMemberRole!=='owner'||!financeBusiness||financeBusiness.owner_id!==financeMemberUserId)return;
-   if(!confirm('Ini hanya mencatat awal periode pratinjau 30 hari. Ini bukan persetujuan penagihan; billing dan pemotongan saldo tetap nonaktif. Lanjutkan?'))return;
-   submit.disabled=true;const status=$('serviceFeeOwnerStatus');if(status)status.textContent='Menyimpan awal pratinjau ke server…';
+  host.innerHTML='<p>Informasi pratinjau skema biaya layanan (belum diberlakukan):</p><ul><li>Simulasi masa awal 30 hari bebas biaya dimulai setelah Owner mengaktifkan pratinjau.</li><li>Dalam simulasi, omzet bersih sampai Rp3.000.000 per bulan tidak dikenai biaya.</li><li>Dalam simulasi, hanya bagian omzet bersih di atas Rp3.000.000 yang dihitung dengan tarif rencana 0,1%.</li><li>Lisensi dibeli terpisah sesuai paket. Komisi marketplace 2,5% adalah biaya berbeda.</li><li>Ini bukan persetujuan untuk penagihan di masa depan. Billing, invoice, pemotongan saldo, dan penguncian fitur tetap nonaktif.</li></ul><label style="display:flex;gap:9px;align-items:flex-start;margin:12px 0 16px"><input id="serviceFeeConsentCheck" type="checkbox" style="width:auto;min-width:18px;margin-top:3px"><span>Saya memahami bahwa ini hanya pratinjau informasi, bukan persetujuan penagihan, dan ingin memulai periode pratinjau 30 hari untuk usaha ini.</span></label><button id="serviceFeeConsentSubmit" type="button" class="primary" disabled style="margin:4px 0 10px">Mulai pratinjau 30 hari</button><p id="serviceFeeOwnerStatus" class="small" role="status" aria-live="polite">Pratinjau belum dimulai. Tidak ada tagihan atau pemotongan saldo.</p>';
+  const check=$('serviceFeeConsentCheck'),submit=$('serviceFeeConsentSubmit'),status=$('serviceFeeOwnerStatus');
+  if(!check||!submit||!status){host.textContent='Komponen pratinjau gagal disiapkan. Muat ulang halaman.';return;}
+  let saving=false;
+  check.addEventListener('change',()=>{if(!saving)submit.disabled=!check.checked;});
+  submit.addEventListener('click',async()=>{
+   if(saving)return;
+   const ownerNow=financeMemberRole==='owner'&&financeBusiness&&String(financeBusiness.owner_id||'').toLowerCase()===String(financeMemberUserId||'').toLowerCase();
+   if(!check.checked||!ownerNow){status.textContent='Aksi dibatalkan. Centang pernyataan dan pastikan login menggunakan Owner utama usaha.';return;}
+   saving=true;submit.disabled=true;check.disabled=true;status.textContent='Mengirim permintaan pratinjau ke server…';
    try{
-    const {data,error}=await sb.rpc('kasusaha_accept_service_fee_terms',{p_business_id:financeBusiness.id});if(error)throw error;
-    if(!data||data.success!==true||!data.trial_started_at)throw new Error('Server belum mengembalikan waktu mulai pratinjau.');
-    const {data:updated,error:readError}=await sb.from('business_workspaces').select('id,business_name,invite_code,owner_id,service_fee_consent_at,service_fee_trial_started_at,service_fee_terms_version').eq('id',financeBusiness.id).single();if(readError)throw readError;
-    financeBusiness=updated;await renderOwnerServiceFeePanel();
-    setFinanceStatus('Awal pratinjau tersimpan di server. Periode pratinjau dimulai '+new Date(data.trial_started_at).toLocaleString('id-ID',{timeZone:'Asia/Jakarta'})+'. Penagihan tetap nonaktif.');
-   }catch(e){if(status)status.textContent='Awal pratinjau belum dapat dipastikan tersimpan: '+String(e.message||e).slice(0,220)+'. Muat ulang status sebelum mencoba lagi.';submit.disabled=false;}
-  });return;
+    const businessId=financeBusiness.id;
+    const {data,error}=await sb.rpc('kasusaha_accept_service_fee_terms',{p_business_id:businessId});
+    if(error)throw error;
+    if(!data||data.success!==true||!data.trial_started_at||data.preview_only!==true||data.billing_enabled!==false||data.fee_enabled!==false)throw new Error('Respons server tidak memenuhi pengaman pratinjau.');
+    financeBusiness={...financeBusiness,service_fee_trial_started_at:data.trial_started_at};
+    await renderOwnerServiceFeePanel();
+    setFinanceStatus('Pratinjau informasi 30 hari dimulai '+new Date(data.trial_started_at).toLocaleString('id-ID',{timeZone:'Asia/Jakarta'})+'. Billing tetap nonaktif.');
+   }catch(e){
+    status.textContent='Pratinjau belum berhasil dikonfirmasi oleh server: '+String(e.message||e).slice(0,240)+'. Periksa koneksi dan muat ulang status sebelum mencoba kembali.';
+    saving=false;check.disabled=false;submit.disabled=!check.checked;
+   }
+  });
+  return;
  }
  const started=new Date(trial),ends=new Date(started.getTime()+30*24*60*60*1000);
  host.innerHTML='<p><strong>Status:</strong> Periode pratinjau aktif.</p><p><strong>Pratinjau dimulai:</strong> '+aman(started.toLocaleString('id-ID',{timeZone:'Asia/Jakarta'}))+'</p><p><strong>Pratinjau berakhir:</strong> '+aman(ends.toLocaleString('id-ID',{timeZone:'Asia/Jakarta'}))+'</p><p class="small">Ambang gratis Rp3.000.000 per bulan; tarif 0,1% hanya atas bagian di atas ambang. Pratinjau bukan tagihan. Billing dan pemotongan saldo tetap nonaktif.</p><button id="serviceFeePreviewRefresh" type="button" class="secondary">Muat pratinjau bulan ini</button><div id="serviceFeePreviewResult" class="status" role="status" aria-live="polite">Pratinjau belum dimuat.</div>';
@@ -4207,9 +4219,12 @@ async function renderOwnerServiceFeePanel(){
  refresh?.addEventListener('click',async()=>{
   refresh.disabled=true;if(result)result.textContent='Menghitung pratinjau dari data server…';
   try{
-   const month=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()).slice(0,7)+'-01';
+   const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit'}).formatToParts(new Date());
+   const year=parts.find(x=>x.type==='year')?.value,monthPart=parts.find(x=>x.type==='month')?.value;
+   if(!year||!monthPart)throw new Error('Periode bulan berjalan tidak dapat ditentukan.');
+   const month=year+'-'+monthPart+'-01';
    const {data,error}=await sb.rpc('kasusaha_owner_service_fee_preview',{p_business_id:financeBusiness.id,p_month:month});if(error)throw error;
-   if(!data||data.billing_enabled!==false)throw new Error('Status billing tidak sesuai pengaman. Jangan gunakan hasil ini sebagai tagihan.');
+   if(!data||data.billing_enabled!==false||data.preview_only!==true)throw new Error('Status billing tidak sesuai pengaman. Jangan gunakan hasil ini sebagai tagihan.');
    const idr=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
    result.innerHTML='<strong>Pratinjau '+aman(month.slice(0,7))+'</strong><br>Penjualan tercatat: '+idr(data.gross_recorded_sales)+'<br>Retur tercatat: '+idr(data.recognized_returns)+'<br>Omzet bersih: '+idr(data.net_sales_for_preview)+'<br>Bagian di atas ambang: '+idr(data.billable_amount)+'<br><strong>Estimasi biaya: '+idr(data.estimated_fee)+'</strong><p class="small">Ini hanya pratinjau, bukan tagihan. Billing aktif: tidak.</p>';
   }catch(e){if(result)result.textContent='Pratinjau gagal dimuat: '+String(e.message||e).slice(0,220);}finally{refresh.disabled=false;}
