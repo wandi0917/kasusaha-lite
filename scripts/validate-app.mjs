@@ -305,6 +305,10 @@ const licenseActivation = fs.readFileSync("supabase/functions/activate-kasusaha-
 const biteshipShipment = fs.readFileSync("supabase/functions/biteship-create-shipment/index.ts", "utf8");
 const biteshipWebhook = fs.readFileSync("supabase/functions/biteship-webhook/index.ts", "utf8");
 
+const physicalMarketplaceGate = /production && hasPhysicalProduct && norm\(Deno\.env\.get\("MARKETPLACE_PRODUCTION_PAYMENTS_ENABLED"\)\) !== "true"/.test(createMidtrans);
+if (!physicalMarketplaceGate) fail("physical marketplace Production payments must require a separate explicit enable flag");
+else pass("physical marketplace Production payments are independently gated from digital license checkout");
+
 const midtransCreateGate = createMidtrans.indexOf("if (!productionPaymentsEnabled(production))");
 const midtransCreateRequest = createMidtrans.indexOf('snapBase + "/snap/v1/transactions"');
 if (midtransCreateGate < 0 || midtransCreateRequest < midtransCreateGate) {
