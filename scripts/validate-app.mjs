@@ -126,6 +126,11 @@ for (const [pattern, source, message] of employeeSessionChecks) {
   else pass(message);
 }
 
+const sellerAccountShortcut = html.includes("buka('akun',document.querySelector('nav button[onclick*=\\'akun\\']'))") &&
+  !html.includes("buka('akunPenjual'");
+if (!sellerAccountShortcut) fail("seller account shortcut must navigate to the existing Owner/Seller account page");
+else pass("seller account shortcut navigates to the existing Owner/Seller account page");
+
 const transactionMenuChecks = [
   [/function syncTransactionRoleMenus\(\)/, html, "transaction menus must synchronize with the logged-in role"],
   [/id="shortcutEmployeeSettings" data-transaction-role="owner"/, html, "employee account settings shortcut must be Owner-only"],
