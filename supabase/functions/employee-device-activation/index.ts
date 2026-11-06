@@ -323,8 +323,23 @@ Deno.serve(async (req: Request) => {
       if (updateError) return reply({ success: false, message: "Kode ID gagal dinonaktifkan." }, 500);
       const { data: bindings } = await admin.from("employee_invite_code_users").select("user_id").eq("invite_code_id", codeId).eq("business_id", businessId);
       for (const binding of bindings || []) {
-        await admin.from("business_members").update({ active: false }).eq("business_id", businessId).eq("user_id", binding.user_id).eq("role", "employee");
-        await admin.from("kasusaha_device_activations").update({ status: "revoked", updated_at: new Date().toISOString() }).eq("business_id", businessId).eq("user_id", binding.user_id).eq("role", "employee");
+        // Revoke paid/pending activation state first. markPaid() uses a
+        // pending_payment compare-and-set, so a concurrent payment refresh
+        // cannot reactivate membership after this revocation has started.
+        const { error: activationRevokeError } = await admin.from("kasusaha_device_activations")
+          .update({ status: "revoked", updated_at: new Date().toISOString() })
+          .eq("business_id", businessId).eq("user_id", binding.user_id).eq("role", "employee");
+        if (activationRevokeError) {
+          console.error("Revoke employee activation:", activationRevokeError.message);
+          return reply({ success: false, message: "Aktivasi perangkat belum berhasil dicabut. Muat ulang dan ulangi pencabutan." }, 500);
+        }
+        const { error: memberRevokeError } = await admin.from("business_members")
+          .update({ active: false })
+          .eq("business_id", businessId).eq("user_id", binding.user_id).eq("role", "employee");
+        if (memberRevokeError) {
+          console.error("Deactivate revoked employee membership:", memberRevokeError.message);
+          return reply({ success: false, message: "Kode sudah dicabut, tetapi status akses karyawan perlu diperiksa ulang." }, 500);
+        }
       }
       return reply({ success: true, message: "Kode ID dinonaktifkan dan akses semua sesi yang pernah menggunakannya dicabut." });
     }
@@ -533,10 +548,25 @@ Deno.serve(async (req: Request) => {
       return await response.json().catch(() => null) as Record<string, unknown> | null;
     }
     async function markPaid() {
-      const { error } = await admin.from("kasusaha_device_activations").update({
-        status: "paid", paid_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-      }).eq("id", activation.id).eq("business_id", businessId);
+      // Compare-and-set only from pending_payment. Never overwrite a
+      // concurrent Owner revocation with a late Midtrans status refresh.
+      const paidAt = new Date().toISOString();
+      const { data: paidRow, error } = await admin.from("kasusaha_device_activations").update({
+        status: "paid", paid_at: paidAt, updated_at: paidAt,
+      }).eq("id", activation.id).eq("business_id", businessId)
+        .eq("status", "pending_payment").select("id").maybeSingle();
       if (error) throw error;
+      if (!paidRow) {
+        const { data: current, error: currentError } = await admin.from("kasusaha_device_activations")
+          .select("status").eq("id", activation.id).eq("business_id", businessId).maybeSingle();
+        if (currentError) throw currentError;
+        if (current?.status === "revoked") {
+          return reply({ success: false, active: false, status: "revoked", message: "Owner telah mencabut aktivasi ini. Pembayaran tidak mengaktifkan kembali akses karyawan." }, 409);
+        }
+        if (current?.status !== "paid") {
+          return reply({ success: false, active: false, status: current?.status || "unknown", message: "Status aktivasi berubah. Muat ulang daftar Owner sebelum melanjutkan." }, 409);
+        }
+      }
       if (String(activation.device_id || "").startsWith("ksacct_")) {
         const { error: activateMemberError } = await admin.from("business_members").update({ active: true })
           .eq("business_id", businessId).eq("user_id", activation.user_id).eq("role", "employee");
