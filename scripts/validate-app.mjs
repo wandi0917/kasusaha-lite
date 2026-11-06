@@ -12,6 +12,7 @@ const sw = fs.readFileSync("sw.js", "utf8");
 const costSecurityMigration = fs.readFileSync("supabase/migrations/20261103020843_restrict_store_product_cost_column_access.sql", "utf8");
 const employeeSessionMigration = fs.readFileSync("supabase/migrations/20261103062527_allow_paid_employee_invite_sessions_in_transactions.sql", "utf8");
 const storeProductsEntitlementMigration = fs.readFileSync("supabase/migrations/20261106115240_guard_store_products_by_license_and_entitlement.sql", "utf8");
+const marketplaceProductPolicyMigration = fs.readFileSync("supabase/migrations/20261106180000_enforce_marketplace_entitlement_for_seller_products.sql", "utf8");
 const backupRestoreChecks = html.slice(html.indexOf("function impor(){"), html.indexOf("function hapusSemua()", html.indexOf("function impor(){")));
 const biteshipShipmentSource = fs.readFileSync("supabase/functions/biteship-create-shipment/index.ts", "utf8");
 const marketplaceFinance = fs.readFileSync("supabase/functions/platform-marketplace-finance/index.ts", "utf8");
@@ -64,6 +65,27 @@ const missingNavigationTargets = [...new Set(navigationTargets.filter((target) =
 if (missingNavigationTargets.length) {
   fail("navigation buttons target missing sections: " + missingNavigationTargets.join(", "));
 } else pass(navigationTargets.length + " navigation targets resolve to existing HTML sections");
+
+const formSubmissionChecks = [
+  [/const form = document\.getElementById\('kasusahaSuggestionForm'\)[\s\S]{0,180}form\.addEventListener\('submit'/, html, "suggestion form must have a submit handler"],
+  [/\$\('quickSaleForm'\)\?\.addEventListener\('submit'/, html, "cashier form must have a submit handler"],
+  [/\$\('storeProductForm'\)\?\.addEventListener\('submit'/, html, "product management form must have a submit handler"],
+  [/\$\('stockEntryForm'\)\?\.addEventListener\('submit'/, html, "stock movement form must have a submit handler"],
+  [/\$\('financeForm'\)\?\.addEventListener\('submit'/, html, "finance transaction form must have a submit handler"],
+  [/financeAccountingEl\('financeJournalForm'\)\?\.addEventListener\('submit'/, html, "journal form must have a submit handler"],
+  [/financeAccountingEl\('financePartyForm'\)\?\.addEventListener\('submit'/, html, "finance party form must have a submit handler"],
+  [/financeAccountingEl\('financeOpenItemForm'\)\?\.addEventListener\('submit'/, html, "finance receivable/payable form must have a submit handler"],
+  [/financeAccountingEl\('financeSettlementForm'\)\?\.addEventListener\('submit'/, html, "finance settlement form must have a submit handler"],
+  [/\$\('formKas'\)\.addEventListener\('submit'/, html, "local cash transaction form must have a submit handler"],
+  [/\$\('formProduk'\)\.addEventListener\('submit'/, html, "local product form must have a submit handler"],
+  [/\$\('formCheckout'\)\.addEventListener\('submit'/, html, "marketplace checkout form must have a submit handler"],
+  [/const form=document\.getElementById\('ksPackageCheckoutForm'\)[\s\S]{0,240}form\.addEventListener\('submit'/, html, "license package checkout form must have a submit handler"],
+];
+for (const [pattern, source, message] of formSubmissionChecks) {
+  if (!pattern.test(source)) fail(message);
+  else pass(message);
+}
+
 
 if (!html.includes('class="quick-sale-camera-head"') ||
     !html.includes('id="quickSaleBarcodeClose"') ||
@@ -608,6 +630,43 @@ const paymentIntegrityChecks = [
   [partnerCommissionMigration.includes("v_order.payment_provider IS DISTINCT FROM 'midtrans'"), "license partner commission requires an explicitly Midtrans-paid order"],
 ];
 for (const [ok, message] of paymentIntegrityChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
+
+const marketplacePolicyOccurrences = (needle) => marketplaceProductPolicyMigration.split(needle).length - 1;
+const sellerMarketplaceUiSource = html.slice(html.indexOf("async function pastikanHakMarketplace("), html.indexOf("async function siapkanFotoOnline("));
+const marketplaceUiChecks = [
+  [sellerMarketplaceUiSource.includes("user.is_anonymous===true") &&
+   sellerMarketplaceUiSource.includes("kasusaha_get_business_package_entitlements") &&
+   sellerMarketplaceUiSource.includes("result.features.marketplace!==true"),
+   "seller publishing checks registered account and verified marketplace package entitlement before upload"],
+  [html.includes("await pastikanHakMarketplace(user)") &&
+   html.includes("await pastikanHakMarketplace(sesiData.session.user)"),
+   "both manual and local-product marketplace publishing paths enforce package entitlement"],
+];
+for (const [ok, message] of marketplaceUiChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
+const marketplaceProductPolicyChecks = [
+  [marketplaceProductPolicyMigration.includes('CREATE POLICY "Penjual dapat menambah produk miliknya"'), "seller product INSERT policy is present"],
+  [marketplaceProductPolicyMigration.includes('CREATE POLICY "Penjual dapat mengubah produk miliknya"'), "seller product UPDATE policy is present"],
+  [marketplaceProductPolicyMigration.includes('CREATE POLICY "Penjual dapat menghapus produk miliknya"'), "seller product DELETE policy is present"],
+  [marketplacePolicyOccurrences("private.kasusaha_business_has_feature(w.id, 'marketplace') IS TRUE") >= 2 &&
+   marketplacePolicyOccurrences("private.kasusaha_business_license_is_verified(w.id)") >= 2,
+   "seller product creation and active listing updates require verified marketplace entitlement"],
+  [marketplaceProductPolicyMigration.includes("aktif IS FALSE") &&
+   marketplaceProductPolicyMigration.includes("-- Owners can always remove their own listings"),
+   "unentitled or expired sellers can deactivate or delete their own listings"],
+  [marketplacePolicyOccurrences("owner_id = (SELECT auth.uid())") >= 4,
+   "seller product writes remain restricted to the authenticated product owner"],
+  [marketplacePolicyOccurrences("is_anonymous") >= 4,
+   "anonymous sessions cannot create, update, or delete marketplace seller products"],
+];
+for (const [ok, message] of marketplaceProductPolicyChecks) {
   if (!ok) fail(message);
   else pass(message);
 }
