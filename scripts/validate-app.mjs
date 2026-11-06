@@ -687,4 +687,66 @@ if (/\.from\('store_products'\)\.update\(\{stock_quantity:next/.test(stockEntryB
   fail("stock entry must not directly update store_products.stock_quantity from the client");
 } else pass("stock entry does not directly update store_products.stock_quantity from the client");
 
+const financeFormStart = html.indexOf("$('financeForm')?.addEventListener('submit'");
+const financeFormEnd = html.indexOf("\nlet storeProductRows=[];", financeFormStart);
+const financeFormBlock = financeFormStart >= 0 && financeFormEnd > financeFormStart
+  ? html.slice(financeFormStart, financeFormEnd)
+  : "";
+const financeFormConfirmationChecks = [
+  [/transactionConfirmed=true/, financeFormBlock, "manual finance form must track server-confirmed writes separately from report refresh"],
+  [/catch\(refreshErr\)/, financeFormBlock, "manual finance form must handle report refresh failure after confirmed save"],
+  [/Jangan ulangi pencatatan/, financeFormBlock, "manual finance form must warn against duplicate entry after confirmed save"],
+  [/PENCATATAN BELUM DAPAT DINYATAKAN BERHASIL/, financeFormBlock, "manual finance form must preserve a separate pre-confirmation error path"],
+];
+for (const [pattern, source, message] of financeFormConfirmationChecks) {
+  if (!source || !pattern.test(source)) fail(message);
+  else pass(message);
+}
+
+const attendanceWageStart = html.indexOf("async function saveAttendanceWage(){");
+const attendanceWageEnd = html.indexOf("async function editAttendanceRecord(row)", attendanceWageStart);
+const attendanceWageBlock = attendanceWageStart >= 0 && attendanceWageEnd > attendanceWageStart
+  ? html.slice(attendanceWageStart, attendanceWageEnd)
+  : "";
+const attendanceEditStart = html.indexOf("async function editAttendanceRecord(row)");
+const attendanceEditEnd = html.indexOf("async function editAttendanceWage(identityId,item)", attendanceEditStart);
+const attendanceEditBlock = attendanceEditStart >= 0 && attendanceEditEnd > attendanceEditStart
+  ? html.slice(attendanceEditStart, attendanceEditEnd)
+  : "";
+const attendanceMemberWageStart = html.indexOf("async function editAttendanceWage(identityId,item)");
+const attendanceMemberWageEnd = html.indexOf("async function loadAttendance()", attendanceMemberWageStart);
+const attendanceMemberWageBlock = attendanceMemberWageStart >= 0 && attendanceMemberWageEnd > attendanceMemberWageStart
+  ? html.slice(attendanceMemberWageStart, attendanceMemberWageEnd)
+  : "";
+const checkInStart = html.indexOf("async function absenMasuk(){");
+const checkInEnd = html.indexOf("async function absenPulang()", checkInStart);
+const checkInBlock = checkInStart >= 0 && checkInEnd > checkInStart ? html.slice(checkInStart, checkInEnd) : "";
+const checkOutStart = html.indexOf("async function absenPulang(){");
+const checkOutEnd = html.indexOf("// Ikat aksi absensi secara eksplisit", checkOutStart);
+const checkOutBlock = checkOutStart >= 0 && checkOutEnd > checkOutStart ? html.slice(checkOutStart, checkOutEnd) : "";
+const attendanceConfirmationChecks = [
+  [/wageConfirmed=true/, attendanceWageBlock, "Owner hourly wage save must distinguish server confirmation from refresh failure"],
+  [/data\?\.ok/, attendanceWageBlock, "Owner hourly wage save must validate the server success response"],
+  [/editConfirmed=true/, attendanceEditBlock, "attendance edit must distinguish server confirmation from refresh failure"],
+  [/data\?\.ok/, attendanceEditBlock, "attendance edit must validate the server success response"],
+  [/wageConfirmed=true/, attendanceMemberWageBlock, "employee hourly wage update must distinguish server confirmation from refresh failure"],
+  [/attendanceConfirmed=true/, checkInBlock, "check-in must not report a confirmed attendance as failed after refresh errors"],
+  [/attendanceConfirmed=true/, checkOutBlock, "check-out must not report a confirmed attendance as failed after refresh errors"],
+  [/Jangan absen masuk ulang/, checkInBlock, "confirmed check-in refresh failure must warn against repeating check-in"],
+  [/Jangan absen pulang ulang/, checkOutBlock, "confirmed check-out refresh failure must warn against repeating check-out"],
+];
+for (const [pattern, source, message] of attendanceConfirmationChecks) {
+  if (!source || !pattern.test(source)) fail(message);
+  else pass(message);
+}
+
+const deactivateStart = html.indexOf("async function deactivateStoreProduct(id)");
+const deactivateEnd = html.indexOf("function cancelStoreProductEdit()", deactivateStart);
+const deactivateBlock = deactivateStart >= 0 && deactivateEnd > deactivateStart
+  ? html.slice(deactivateStart, deactivateEnd)
+  : "";
+if (!/\.select\('id'\)\.maybeSingle\(\)/.test(deactivateBlock) || !/if\(!updated\)throw/.test(deactivateBlock)) {
+  fail("product deactivation must verify that a row was actually updated");
+} else pass("product deactivation verifies that a row was actually updated");
+
 if (process.exitCode) process.exit(process.exitCode);
