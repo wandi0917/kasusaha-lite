@@ -40,7 +40,7 @@ Aplikasi produksi tetap berjalan; kondisi ini tidak dengan sendirinya berarti sk
 - Menerapkan migrasi tersebut ke Supabase setelah pengujian aman dalam transaksi `BEGIN/ROLLBACK`.
 - Memverifikasi kolom `server_recorded_at` tersedia, tidak ada nilai kosong, trigger aktif, dan belum ada usaha yang menyetujui atau memulai trial.
 
-Status: perlu rekonstruksi/arsip untuk 72 migrasi historis yang belum tersedia di repositori.
+Status: perlu rekonstruksi/arsip untuk 81 migrasi historis yang belum tersedia di repositori.
 ## Update 6 November 2026 setelah fail-closed entitlement
 
 - Remote migration history kini berisi 110 versi, berakhir pada `20261106113750`.
