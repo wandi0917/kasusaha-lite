@@ -646,4 +646,42 @@ for (const [ok, message] of serviceFeePreviewChecks) {
   else pass(message);
 }
 
+
+const transactionHardeningMigration = fs.readFileSync(
+  "supabase/migrations/20261107120000_transaction_cash_validation_and_stock_movement_ledger.sql",
+  "utf8",
+);
+const stockSubmitStart = html.indexOf("$('stockEntryForm')?.addEventListener('submit'");
+const stockSubmitEnd = html.indexOf("\n\nlet ", stockSubmitStart);
+const stockSubmitBlock = stockSubmitStart >= 0 && stockSubmitEnd > stockSubmitStart
+  ? html.slice(stockSubmitStart, stockSubmitEnd)
+  : "";
+if (!stockSubmitBlock.includes("rpc('adjust_store_product_stock'") ||
+    stockSubmitBlock.includes(".from('store_products').update({stock_quantity")) {
+  fail("Owner stock adjustments must use the server-side atomic stock RPC, not direct browser updates");
+} else pass("Owner stock adjustments use the server-side atomic stock RPC");
+if (!html.includes("p_cash_received:cashReceived") ||
+    !html.includes("cashReceived,lines:lines.map")) {
+  fail("quick cashier must send the received cash amount and bind it to the idempotency fingerprint");
+} else pass("quick cashier sends received cash and binds it to the idempotency fingerprint");
+if (!html.includes("function loadStockMovementHistory()") ||
+    !html.includes("id=\"stockMovementHistoryCard\"") ||
+    !html.includes("from('store_stock_movements')")) {
+  fail("Owner stock movement history UI is incomplete");
+} else pass("Owner stock movement history UI reads the append-only server ledger");
+const stockLedgerChecks = [
+  [transactionHardeningMigration.includes("CREATE TABLE IF NOT EXISTS public.store_stock_movements"), "append-only stock movement ledger table is created additively"],
+  [transactionHardeningMigration.includes("AFTER INSERT OR UPDATE OF stock_quantity ON public.store_products"), "stock creation and quantity changes are audited by a database trigger"],
+  [transactionHardeningMigration.includes("CREATE OR REPLACE FUNCTION public.adjust_store_product_stock") && transactionHardeningMigration.includes("pg_advisory_xact_lock"), "stock adjustments are owner-authorized, locked and idempotent on the server"],
+  [transactionHardeningMigration.includes("p_cash_received IS NULL OR p_cash_received < v_total"), "cashier RPC validates cash received against the authoritative server total"],
+  [transactionHardeningMigration.includes("REVOKE ALL ON FUNCTION public.record_store_quick_sale(uuid,text,jsonb,uuid) FROM PUBLIC, anon, authenticated"), "legacy four-argument cashier RPC is no longer directly executable by authenticated clients"],
+  [transactionHardeningMigration.includes("GRANT EXECUTE ON FUNCTION public.record_store_quick_sale(uuid,text,jsonb,uuid,numeric) TO authenticated, service_role"), "authenticated cashier clients receive only the cash-validating RPC overload"],
+  [transactionHardeningMigration.includes("kasusaha.stock_movement_type', 'sale'"), "cashier sales are classified in stock movement history"],
+  [transactionHardeningMigration.includes("store_stock_adjustment_requests") && transactionHardeningMigration.includes("request_hash"), "stock adjustment retries are protected by server-side idempotency"],
+];
+for (const [ok, message] of stockLedgerChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
 if (process.exitCode) process.exit(process.exitCode);
