@@ -28,16 +28,16 @@ This branch is a **draft candidate only**. Do not deploy to production until the
 
 ## Migration baseline — production snapshot
 
-- Production migration history currently contains 110 applied entries and ends at `20261106113750`.
+- Production migration history currently contains 111 applied entries and ends at `20261106115240`.
 - Production applied the fail-closed entitlement migrations as remote versions `20261106113748` and `20261106113750`; the repository records their exact remote versions in `supabase/migrations/20261106113748_...sql` and `20261106113750_...sql`.
 - The package-referral capture (`20261106115500`) and provider-paid-time commission reconciliation (`20261106115600`) migrations remain pending candidate work; do not apply them until a disposable/staging database and Midtrans Sandbox lifecycle tests pass. The quick-sale entitlement guard (`20261106120000`) also remains pending.
 - The repository does not contain the complete historical SQL baseline represented by the remote migration history. Never bulk-push, reset, or repair migration history until the baseline is reconstructed and reconciled.
-- The two production-applied fail-closed migrations were dry-run in a transaction that was rolled back before application. The remaining candidate migrations were also dry-run previously; this is not a substitute for a disposable staging database.
+- All three production-applied migrations were dry-run in transactions that were rolled back before application. The remaining candidate migrations were also dry-run previously; this is not a substitute for a disposable staging database.
 
 ## Current production boundary
 
 - This PR is not merged. Its preview build does not change the production Pages branch.
-- The two fail-closed entitlement migrations are applied in Production. The remaining referral/commission/quick-sale candidate SQL has only been dry-run in a rolled-back transaction and is not applied to Production.
+- Three production migrations are applied: two fail-closed entitlement migrations and the store_products license/entitlement RLS migration. The remaining referral/commission/quick-sale candidate SQL has only been dry-run in a rolled-back transaction and is not applied to Production.
 - Candidate Edge Function source has not been deployed to the production Supabase project.
 - No real orders, payment events, licenses, or commission rows were created by this audit.
 
@@ -54,7 +54,7 @@ This branch is a **draft candidate only**. Do not deploy to production until the
 - [ ] Authenticated users cannot execute the five-argument RPC through PUBLIC/anon grants.
 - [ ] A buyer with an existing permanent attribution cannot overwrite it by entering a different referral code on a later order.
 - [ ] Concurrent package checkouts for one buyer serialize first-touch referral capture and preserve one permanent attribution.
-- [ ] Apply `20261106114000_license_package_checkout_referral_capture.sql` exactly once after staging/Sandbox validation; preserve first-touch referral attribution safeguards.
+- [ ] Apply `20261106115500_license_package_checkout_referral_capture.sql` exactly once after staging/Sandbox validation; preserve first-touch referral attribution safeguards.
 
 ## Payment timestamp and webhook
 
