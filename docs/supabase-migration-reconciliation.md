@@ -6,9 +6,9 @@ Repositori: `wandi0917/kasusaha-lite`
 
 ## Hasil pemeriksaan
 
-- Supabase mencatat 110 versi migrasi yang telah diterapkan; versi terbaru adalah `20261106113750`.
-- Direktori `supabase/migrations` pada branch `main` berisi 29 file SQL.
-- Semua 29 versi file yang ada sekarang cocok dengan versi migrasi yang tercatat di Supabase.
+- Supabase mencatat 111 versi migrasi yang telah diterapkan; versi terbaru adalah `20261106115240`.
+- Direktori `supabase/migrations` pada branch `main` berisi 30 file SQL.
+- Semua 30 versi file yang ada sekarang cocok dengan versi migrasi yang tercatat di Supabase.
 - Sebanyak 81 versi migrasi yang sudah tercatat di Supabase belum memiliki file SQL pasangannya di repositori.
 - Nama file untuk beberapa migrasi yang tersedia telah diselaraskan dengan versi yang tercatat di Supabase. Ini hanya mengganti nama file, bukan menjalankan ulang SQL.
 
@@ -49,3 +49,7 @@ Dua file migrasi entitlement baru kini menjadi bagian `main` dan cocok dengan re
 
 - Migrasi referral capture belum diterapkan ke Production. File lokalnya telah diberi versi baru `20261106114000_license_package_checkout_referral_capture.sql`, karena versi sebelumnya `20261105170000` lebih tua daripada remote latest `20261106113750`.
 - Migrasi ini tetap kandidat dan hanya boleh diterapkan setelah baseline historis/staging dan pengujian Midtrans Sandbox selesai. Re-version file tidak menjalankan SQL dan tidak mengubah database.
+
+## Pembaruan RLS store_products 6 November 2026
+
+Remote version `20261106115240` memperketat policy SELECT/INSERT/UPDATE/DELETE pada `store_products` agar selalu memerlukan lisensi terverifikasi dan entitlement `basic_stock`, sambil mempertahankan batas Owner/Karyawan dan perangkat berbayar. Semua empat paket aktif saat ini memiliki `basic_stock=true`. Migrasi diterapkan setelah dry-run transaksi rollback; tidak ada baris produk yang diubah.
