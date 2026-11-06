@@ -476,13 +476,15 @@ Deno.serve(async (req: Request) => {
         .eq("role", "employee").maybeSingle();
       if (targetError || !targetMember) return reply({ success: false, message: "Karyawan tidak ditemukan pada usaha Owner ini." }, 404);
       if (action === "owner_deactivate") {
-        const { error: memberUpdateError } = await admin.from("business_members")
-          .update({ active: false }).eq("business_id", businessId).eq("user_id", targetUserId).eq("role", "employee");
-        if (memberUpdateError) return reply({ success: false, message: "Status karyawan belum berhasil dinonaktifkan." }, 500);
+        // Revoke paid/pending activation first so a concurrent late payment
+        // status check cannot reactivate the employee while access is being removed.
         const { error: revokeError } = await admin.from("kasusaha_device_activations")
           .update({ status: "revoked", updated_at: new Date().toISOString() })
           .eq("business_id", businessId).eq("user_id", targetUserId).eq("role", "employee");
-        if (revokeError) return reply({ success: false, message: "Akun dinonaktifkan, tetapi status perangkat belum sepenuhnya diperbarui. Muat ulang daftar." }, 500);
+        if (revokeError) return reply({ success: false, message: "Status aktivasi belum berhasil dicabut. Karyawan belum dinonaktifkan; muat ulang lalu coba lagi." }, 500);
+        const { error: memberUpdateError } = await admin.from("business_members")
+          .update({ active: false }).eq("business_id", businessId).eq("user_id", targetUserId).eq("role", "employee");
+        if (memberUpdateError) return reply({ success: false, message: "Aktivasi sudah dicabut, tetapi status keanggotaan perlu diperiksa ulang." }, 500);
         return reply({ success: true, active: false, message: "Karyawan dinonaktifkan. Akses usaha dan perangkatnya dicabut." });
       }
       const { error: memberUpdateError } = await admin.from("business_members")
