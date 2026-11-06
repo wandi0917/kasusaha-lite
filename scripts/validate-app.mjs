@@ -12,6 +12,7 @@ const sw = fs.readFileSync("sw.js", "utf8");
 const costSecurityMigration = fs.readFileSync("supabase/migrations/20261103020843_restrict_store_product_cost_column_access.sql", "utf8");
 const employeeSessionMigration = fs.readFileSync("supabase/migrations/20261103062527_allow_paid_employee_invite_sessions_in_transactions.sql", "utf8");
 const storeProductsEntitlementMigration = fs.readFileSync("supabase/migrations/20261106115240_guard_store_products_by_license_and_entitlement.sql", "utf8");
+const marketplaceProductPolicyMigration = fs.readFileSync("supabase/migrations/20261106180000_enforce_marketplace_entitlement_for_seller_products.sql", "utf8");
 const backupRestoreChecks = html.slice(html.indexOf("function impor(){"), html.indexOf("function hapusSemua()", html.indexOf("function impor(){")));
 const biteshipShipmentSource = fs.readFileSync("supabase/functions/biteship-create-shipment/index.ts", "utf8");
 const marketplaceFinance = fs.readFileSync("supabase/functions/platform-marketplace-finance/index.ts", "utf8");
@@ -609,6 +610,19 @@ const paymentIntegrityChecks = [
 ];
 for (const [ok, message] of paymentIntegrityChecks) {
   if (!ok) fail(message);
+  else pass(message);
+}
+
+
+const marketplaceProductPolicyChecks = [
+  [/CREATE POLICY "Penjual dapat menambah produk miliknya"[\\s\\S]*?private\\.kasusaha_business_has_feature\\(w\\.id, 'marketplace'\\) IS TRUE/, "seller product INSERT must require an active verified marketplace entitlement"],
+  [/CREATE POLICY "Penjual dapat mengubah produk miliknya"[\\s\\S]*?USING[\\s\\S]*?private\\.kasusaha_business_has_feature\\(w\\.id, 'marketplace'\\) IS TRUE[\\s\\S]*?WITH CHECK[\\s\\S]*?private\\.kasusaha_business_has_feature\\(w\\.id, 'marketplace'\\) IS TRUE/, "seller product UPDATE must enforce marketplace entitlement before and after changes"],
+  [/CREATE POLICY "Penjual dapat menghapus produk miliknya"[\\s\\S]*?private\\.kasusaha_business_has_feature\\(w\\.id, 'marketplace'\\) IS TRUE/, "seller product DELETE must require an active verified marketplace entitlement"],
+  [/owner_id = \\(SELECT auth\\.uid\\(\\)\\)/, "seller product writes must remain restricted to the authenticated product owner"],
+  [/NOT coalesce\\(\\(\\(\\(SELECT auth\\.jwt\\(\\)\\) ->> 'is_anonymous'::boolean\\), false\\)/, "anonymous sessions must not create or modify marketplace seller products"],
+];
+for (const [pattern, message] of marketplaceProductPolicyChecks) {
+  if (!pattern.test(marketplaceProductPolicyMigration)) fail(message);
   else pass(message);
 }
 
