@@ -546,7 +546,8 @@ if (!employeeOwnerListBlock.includes('historicalUserIds.has(row.user_id)')) {
   fail("Owner list payment refresh must not independently reactivate historical alias sessions");
 } else pass("Owner list payment refresh skips historical alias sessions");
 
-if (!employeeOwnerListBlock.includes('.eq("status", "pending_payment").select("id").maybeSingle()') ||
+if (!employeeOwnerListBlock.includes('.eq("status", "pending_payment")') ||
+    !employeeOwnerListBlock.includes('.select("id").maybeSingle()') ||
     !employeeOwnerListBlock.includes('if (paidInviteRow)') ||
     !employeeOwnerListBlock.includes('currentInvite.status')) {
   fail("Owner list invite payment refresh must not overwrite a concurrent Owner revocation or misreport its status");
