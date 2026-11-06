@@ -496,6 +496,15 @@ if (!employeeMarkPaidBlock.includes('.eq("status", "pending_payment")') ||
     !employeeMarkPaidBlock.includes('current?.status === "revoked"')) {
   fail("late Midtrans payment checks must not overwrite a revoked employee activation");
 } else pass("late Midtrans payment checks cannot overwrite a revoked employee activation");
+
+const employeeMemberActivationWrite = employeeMarkPaidBlock.indexOf('.update({ active: true })');
+const employeeFinalActivationCheck = employeeMarkPaidBlock.indexOf('const { data: confirmedActivation');
+const employeeFailClosedWrite = employeeMarkPaidBlock.indexOf('.update({ active: false })', employeeFinalActivationCheck);
+if (employeeMemberActivationWrite < 0 || employeeFinalActivationCheck <= employeeMemberActivationWrite ||
+    employeeFailClosedWrite <= employeeFinalActivationCheck ||
+    !employeeMarkPaidBlock.includes('confirmedActivation?.status !== "paid"')) {
+  fail("late Midtrans checks must revalidate activation after membership update and fail closed after a concurrent revocation");
+} else pass("late Midtrans checks revalidate activation after membership update and fail closed after concurrent revocation");
 if (!employeeRevokeBlock.includes("activationRevokeError") ||
     !employeeRevokeBlock.includes("memberRevokeError") ||
     employeeRevokeBlock.indexOf("activationRevokeError") > employeeRevokeBlock.indexOf("memberRevokeError")) {
