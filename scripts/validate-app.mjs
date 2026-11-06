@@ -667,6 +667,11 @@ if (!stockSubmitBlock.includes("rpc('adjust_store_product_stock'") ||
     stockSubmitBlock.includes(".from('store_products').update({stock_quantity")) {
   fail("Owner stock adjustments must use the server-side atomic stock RPC, not direct browser updates");
 } else pass("Owner stock adjustments use the server-side atomic stock RPC");
+if (!html.includes("result.legacy_cash_unverified===true") ||
+    !html.includes("sistem tidak membuat penjualan atau mengurangi stok lagi") ||
+    !transactionHardeningMigration.includes("'legacy_cash_unverified', true")) {
+  fail("legacy cashier retries must be acknowledged without repeating a committed sale");
+} else pass("legacy cashier retries are acknowledged without duplicate sales or stock deduction");
 if (!html.includes("legacyQuickSaleFingerprint") || !html.includes("pending.fingerprint!==legacyQuickSaleFingerprint")) {
   fail("pending cashier requests created before cash validation must have a safe recovery path");
 } else pass("legacy pending cashier requests retain a safe recovery path");
