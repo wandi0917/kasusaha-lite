@@ -30,7 +30,7 @@ This branch is a **draft candidate only**. Do not deploy to production until the
 
 - Production migration history currently contains 110 applied entries and ends at `20261106113750`.
 - Production applied the fail-closed entitlement migrations as remote versions `20261106113748` and `20261106113750`; the repository records their exact remote versions in `supabase/migrations/20261106113748_...sql` and `20261106113750_...sql`.
-- The package-referral capture (`20261106114000`) and provider-paid-time commission reconciliation (`20261106114100`) migrations remain pending candidate work; do not apply them until a disposable/staging database and Midtrans Sandbox lifecycle tests pass. The quick-sale entitlement guard (`20261106120000`) also remains pending.
+- The package-referral capture (`20261106115500`) and provider-paid-time commission reconciliation (`20261106115600`) migrations remain pending candidate work; do not apply them until a disposable/staging database and Midtrans Sandbox lifecycle tests pass. The quick-sale entitlement guard (`20261106120000`) also remains pending.
 - The repository does not contain the complete historical SQL baseline represented by the remote migration history. Never bulk-push, reset, or repair migration history until the baseline is reconstructed and reconciled.
 - The two production-applied fail-closed migrations were dry-run in a transaction that was rolled back before application. The remaining candidate migrations were also dry-run previously; this is not a substitute for a disposable staging database.
 
