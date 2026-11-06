@@ -493,10 +493,25 @@ Deno.serve(async (req: Request) => {
           if (txResponse?.ok) {
             const tx = await txResponse.json().catch(() => null);
             if (tx && paidStatus(tx, invite.midtrans_order_id)) {
-              const { error: codePaidError } = await admin.from("employee_invite_codes").update({
-                status: "active", paid_at: new Date().toISOString(), updated_at: new Date().toISOString()
-              }).eq("id", invite.id).eq("status", "pending_payment");
-              if (!codePaidError) { invite.status = "active"; invite.paid_at = new Date().toISOString(); }
+              const paidAt = new Date().toISOString();
+              const { data: paidInviteRow, error: codePaidError } = await admin.from("employee_invite_codes").update({
+                status: "active", paid_at: paidAt, updated_at: paidAt
+              }).eq("id", invite.id).eq("business_id", businessId).eq("status", "pending_payment")
+                .select("id").maybeSingle();
+              if (codePaidError) return reply({ success: false, message: "Status pembayaran ID karyawan belum dapat diperbarui." }, 500);
+              if (paidInviteRow) {
+                invite.status = "active";
+                invite.paid_at = paidAt;
+              } else {
+                // A concurrent Owner revocation must remain visible in the response.
+                const { data: currentInvite, error: currentInviteError } = await admin.from("employee_invite_codes")
+                  .select("status,paid_at").eq("id", invite.id).eq("business_id", businessId).maybeSingle();
+                if (currentInviteError) return reply({ success: false, message: "Status ID karyawan terbaru belum dapat diverifikasi." }, 500);
+                if (currentInvite) {
+                  invite.status = currentInvite.status;
+                  invite.paid_at = currentInvite.paid_at;
+                }
+              }
             }
           }
         }
