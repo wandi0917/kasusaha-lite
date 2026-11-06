@@ -45,6 +45,10 @@ function norm(value: unknown): string {
   return String(value ?? "").trim().toLowerCase();
 }
 
+function productionPaymentsEnabled(production: boolean): boolean {
+  return !production || norm(Deno.env.get("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED")) === "true";
+}
+
 function validOrderId(value: unknown): value is string {
   return (
     typeof value === "string" &&
@@ -763,6 +767,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
       payload.callbacks = {
         finish: finishUrl,
       };
+    }
+
+    if (!productionPaymentsEnabled(production)) {
+      return reply({ success: false, code: "PRODUCTION_PAYMENTS_DISABLED", error: "Pembayaran Production belum diaktifkan melalui pengaman server." }, 503);
     }
 
     let response: Response;
