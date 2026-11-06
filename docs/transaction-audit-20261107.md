@@ -23,10 +23,12 @@
 - Mengirim `p_cash_received` ke RPC lima argumen.
 - Menambahkan uang diterima ke fingerprint idempotensi di perangkat.
 - Memasukkan uang diterima dan kembalian ke dialog konfirmasi.
+- Alur pembayaran tagihan tersimpan kini membedakan hasil settlement server dari kegagalan refresh laporan; kegagalan refresh tidak lagi dilaporkan sebagai pembayaran belum terkonfirmasi.
+- Pembayaran tagihan tersimpan memeriksa nominal uang dan kembalian yang dikembalikan server, serta memberi instruksi jangan mengulang pembayaran bila settlement sudah dikonfirmasi.
 - Memverifikasi nilai uang diterima dan kembalian yang dikembalikan server.
 - Jika server sudah mengonfirmasi penjualan tetapi nilai kas/kembalian tidak cocok, kunci idempotensi dipertahankan dan tombol submit dinonaktifkan. Pengguna diberi instruksi untuk tidak mengulang transaksi.
 - Menampilkan nilai uang diterima dan kembalian yang sudah diverifikasi server pada pesan sukses.
-- Menambah regression checks untuk kontrak frontend-RPC dan migration ledger stok.
+- Menambah regression checks untuk kontrak frontend-RPC, pembayaran tagihan tersimpan, dan migration ledger stok.
 
 ## Urutan cutover wajib
 
