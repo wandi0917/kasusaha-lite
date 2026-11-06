@@ -599,6 +599,7 @@ const paymentIntegrityChecks = [
   [paymentWebhook.includes("BITESHIP_PRODUCTION_BOOKING_ENABLED") && paymentWebhook.includes("isLiveBiteshipKey"), "Biteship production booking still requires its separate production approval gate"],
   [partnerCommissionMigration.includes("EXCEPTION WHEN OTHERS") && partnerCommissionMigration.includes("$migration$"), "invalid historical Midtrans timestamps cannot abort the entire commission migration"],
   [partnerCommissionMigration.includes("FOR SHARE;"), "partner status is locked while commission eligibility is evaluated"],
+  [partnerCommissionMigration.includes("v_order.payment_provider IS DISTINCT FROM 'midtrans'"), "license partner commission requires an explicitly Midtrans-paid order"],
 ];
 for (const [ok, message] of paymentIntegrityChecks) {
   if (!ok) fail(message);
