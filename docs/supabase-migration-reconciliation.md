@@ -44,3 +44,8 @@ Status: perlu rekonstruksi/arsip untuk 81 migrasi historis yang belum tersedia d
 ## Pembaruan setelah dua migrasi entitlement
 
 Dua file migrasi entitlement baru kini menjadi bagian `main` dan cocok dengan remote version `20261106113748` dan `20261106113750`. Karena jumlah file lokal dan jumlah migrasi remote sama-sama bertambah dua, selisih migrasi historis tanpa SQL counterpart tetap 81 (bukan 83). Tidak ada data bisnis yang dihapus atau diubah.
+
+## Versi migrasi pending setelah entitlement
+
+- Migrasi referral capture belum diterapkan ke Production. File lokalnya telah diberi versi baru `20261106114000_license_package_checkout_referral_capture.sql`, karena versi sebelumnya `20261105170000` lebih tua daripada remote latest `20261106113750`.
+- Migrasi ini tetap kandidat dan hanya boleh diterapkan setelah baseline historis/staging dan pengujian Midtrans Sandbox selesai. Re-version file tidak menjalankan SQL dan tidak mengubah database.
