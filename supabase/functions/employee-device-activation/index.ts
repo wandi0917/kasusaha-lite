@@ -573,6 +573,18 @@ Deno.serve(async (req: Request) => {
         const { error: activateMemberError } = await admin.from("business_members").update({ active: true })
           .eq("business_id", businessId).eq("user_id", activation.user_id).eq("role", "employee");
         if (activateMemberError) throw activateMemberError;
+
+        // Re-check after the membership write. If Owner revocation raced with
+        // this request, fail closed and restore the inactive membership state.
+        const { data: confirmedActivation, error: confirmActivationError } = await admin.from("kasusaha_device_activations")
+          .select("status").eq("id", activation.id).eq("business_id", businessId).maybeSingle();
+        if (confirmActivationError) throw confirmActivationError;
+        if (confirmedActivation?.status !== "paid") {
+          const { error: failClosedError } = await admin.from("business_members").update({ active: false })
+            .eq("business_id", businessId).eq("user_id", activation.user_id).eq("role", "employee");
+          if (failClosedError) throw failClosedError;
+          return reply({ success: false, active: false, status: confirmedActivation?.status || "unknown", message: "Status aktivasi berubah saat pembayaran diperiksa. Akses tetap dinonaktifkan; muat ulang daftar Owner." }, 409);
+        }
       }
       return reply({ success: true, active: true, status: "paid", amount: 10000, message: "Pembayaran terverifikasi server. Akun/perangkat karyawan sekarang aktif." });
     }
