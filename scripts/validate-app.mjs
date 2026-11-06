@@ -132,7 +132,7 @@ if (!sellerAccountShortcut) fail("seller account shortcut must navigate to the e
 else pass("seller account shortcut navigates to the existing Owner/Seller account page");
 
 const financeAccountingStart = html.indexOf("async function loadFinanceAccounting(){");
-const financeAccountingEnd = html.indexOf("\\nfunction financeAccountingPopulateControls", financeAccountingStart);
+const financeAccountingEnd = html.indexOf("function financeAccountingPopulateControls", financeAccountingStart);
 const financeAccountingBlock = financeAccountingStart >= 0 && financeAccountingEnd > financeAccountingStart
   ? html.slice(financeAccountingStart, financeAccountingEnd)
   : "";
