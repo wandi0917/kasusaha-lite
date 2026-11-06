@@ -26,6 +26,9 @@
 - Alur pembayaran tagihan tersimpan kini membedakan hasil settlement server dari kegagalan refresh laporan; kegagalan refresh tidak lagi dilaporkan sebagai pembayaran belum terkonfirmasi.
 - Pembayaran tagihan tersimpan memeriksa nominal uang dan kembalian yang dikembalikan server, serta memberi instruksi jangan mengulang pembayaran bila settlement sudah dikonfirmasi.
 - Form entri stok Owner menggunakan RPC atomik `adjust_store_product_stock`, request ID idempoten, dan verifikasi kuantitas sebelum/sesudah/delta dari server; pembaruan langsung kolom `stock_quantity` dari form klien dihapus.
+- Form transaksi manual dan absensi membedakan keberhasilan write server dari kegagalan refresh layar/laporan, sehingga tidak salah melaporkan data tersimpan sebagai gagal.
+- Form produk memverifikasi baris yang diperbarui, melewati RPC harga modal jika tidak ada perubahan harga modal (termasuk produk baru dengan modal nol), dan mempertahankan status sukses bila refresh daftar gagal.
+- Nonaktifkan barang memverifikasi bahwa baris benar-benar berubah dan membedakan status server dari kegagalan refresh.
 - Mode koreksi stok dapat menetapkan nilai nol; stok masuk/keluar tetap mensyaratkan jumlah minimal satu.
 - Memverifikasi nilai uang diterima dan kembalian yang dikembalikan server.
 - Jika server sudah mengonfirmasi penjualan tetapi nilai kas/kembalian tidak cocok, kunci idempotensi dipertahankan dan tombol submit dinonaktifkan. Pengguna diberi instruksi untuk tidak mengulang transaksi.
@@ -49,7 +52,7 @@ Tidak ada perubahan schema/database produksi yang dilakukan selama audit ini. Mi
 
 ## Status verifikasi
 
-- 30 pemeriksaan regresi statis terarah untuk penjualan, tagihan tersimpan, dan penyesuaian stok: lulus.
+- 52 pemeriksaan regresi statis terarah untuk kasir, tagihan, stok, transaksi manual, absensi, dan pengelolaan barang: ditambahkan; hasil CI terbaru menunggu setelah commit terakhir.
 - Pemeriksaan schema Supabase read-only: selesai.
 - Pemeriksaan RLS/constraint terkait transaksi: selesai.
 - Pemeriksaan log PostgreSQL terkait transaksi pada jendela 24 jam: tidak menemukan error yang cocok.
