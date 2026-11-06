@@ -318,7 +318,7 @@ const refundReviewChecks = [
   [/payment_review_required: true,[\s\S]{0,260}payment_review_note: reviewNote/, paymentWebhook, "refund and chargeback must set the order payment-review hold"],
   [/\.from\("license_partner_commission_ledger"\)[\s\S]{0,260}status: "held"/, paymentWebhook, "unpaid or approved partner commissions must be held on refund or chargeback"],
   [/Tidak ada pencabutan lisensi atau clawback otomatis/, paymentWebhook, "refund review must not automatically revoke licenses or claw back paid commissions"],
-  [/\.eq\("status", "paid"\)[\s\S]{0,350}REVIEW REFUND\/CHARGEBACK:/, paymentWebhook, "already-paid partner commissions must be annotated for manual review, not clawed back"],
+  [/for \(const row of paidPartnerRows \?\? \[\]\) \{[\s\S]{0,1200}\.update\(\{ notes: paidReviewNote \}\)[\s\S]{0,200}\.eq\("id", row\.id\)[\s\S]{0,200}\.eq\("status", "paid"\)/, paymentWebhook, "already-paid partner commissions must be annotated for manual review, not clawed back"],
 ];
 for (const [pattern, source, message] of refundReviewChecks) {
   if (!pattern.test(source)) fail(message);
