@@ -37,7 +37,7 @@ This branch is a **draft candidate only**. Do not deploy to production until the
 ## Current production boundary
 
 - This PR is not merged. Its preview build does not change the production Pages branch.
-- Four later Production migrations are recorded after the earlier audit: fail-closed cost entitlement (`20261106113748`), package entitlement helper/finance guards (`20261106113750`), store_products license/entitlement RLS (`20261106115240`), quick-sale cost-detail guard (`20261106121913`), and package checkout referral capture (`20261106132433`). The new provider-paid-time partner commission migration (`20261106140000`) remains a candidate and is not applied to Production.
+- Five later Production migrations are recorded after the earlier audit: fail-closed cost entitlement (`20261106113748`), package entitlement helper/finance guards (`20261106113750`), store_products license/entitlement RLS (`20261106115240`), quick-sale cost-detail guard (`20261106121913`), and package checkout referral capture (`20261106132433`). The new provider-paid-time partner commission migration (`20261106140000`) remains a candidate and is not applied to Production.
 - Candidate Edge Function source has not been deployed to the production Supabase project.
 - No real orders, payment events, licenses, or commission rows were created by this audit.
 
