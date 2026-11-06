@@ -13,7 +13,7 @@
 
 1. Frontend sebelumnya sudah memeriksa uang diterima di browser, tetapi pemanggilan RPC hanya mengirim empat argumen: `p_business_id`, `p_table_number`, `p_lines`, dan `p_request_id`. Dengan demikian nominal uang diterima belum diverifikasi oleh server.
 2. Database produksi saat audit hanya memiliki RPC empat argumen. RPC lima argumen dengan `p_cash_received` belum tersedia.
-3. Database produksi belum memiliki tabel `public.store_stock_movements` dan trigger `store_products_stock_movement_audit`.
+3. Database produksi belum memiliki tabel `public.store_stock_movements`, trigger `store_products_stock_movement_audit`, dan RPC `adjust_store_product_stock`.
 4. File migration `20261107120000_transaction_cash_validation_and_stock_movement_ledger.sql` sudah ada di repository, tetapi belum tercatat di riwayat migration project Supabase. Migration tersebut membuat ledger stok, trigger, RPC lima argumen, validasi uang diterima, dan mencabut akses client ke RPC lama empat argumen.
 5. Kebijakan RLS pada transaksi, katalog, anggota usaha, dan absensi membatasi akses berdasarkan keanggotaan aktif, peran, identitas karyawan, lisensi, dan entitlement paket. Constraint database juga membatasi nominal positif, tipe transaksi, deskripsi, dan stok non-negatif.
 6. Pemeriksaan log PostgreSQL 24 jam terakhir tidak menemukan error yang secara eksplisit menyebut `record_store_quick_sale`, `financial_transactions`, atau `business_attendance`. Ini bukan bukti bahwa seluruh alur runtime sudah lulus.
@@ -49,7 +49,7 @@ Tidak ada perubahan schema/database produksi yang dilakukan selama audit ini. Mi
 
 ## Status verifikasi
 
-- Pemeriksaan statis atas 15 kontrak frontend/migration (penjualan, tagihan tersimpan, dan penyesuaian stok): lulus.
+- 30 pemeriksaan regresi statis terarah untuk penjualan, tagihan tersimpan, dan penyesuaian stok: lulus.
 - Pemeriksaan schema Supabase read-only: selesai.
 - Pemeriksaan RLS/constraint terkait transaksi: selesai.
 - Pemeriksaan log PostgreSQL terkait transaksi pada jendela 24 jam: tidak menemukan error yang cocok.
