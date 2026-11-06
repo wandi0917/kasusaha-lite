@@ -647,6 +647,13 @@ for (const [ok, message] of serviceFeePreviewChecks) {
 }
 
 
+const attendanceTimeEditorPattern = String.raw`const validTime=v=>v===''||/^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(v);`;
+if (!html.includes(attendanceTimeEditorPattern)) fail("attendance editor must accept valid HH:MM:SS values");
+else pass("attendance editor accepts valid HH:MM:SS values");
+if (!html.includes(String.raw`replace(/\s+/g,' ')`) || !html.includes(String.raw`replace(/[.\s]/g,'')`)) {
+  fail("employee name and hourly wage input must normalize whitespace correctly");
+} else pass("employee name and hourly wage inputs normalize whitespace correctly");
+
 const transactionHardeningMigration = fs.readFileSync(
   "supabase/migrations/20261107120000_transaction_cash_validation_and_stock_movement_ledger.sql",
   "utf8",
