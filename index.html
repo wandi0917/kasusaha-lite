@@ -4157,7 +4157,16 @@ async function financeChooseSavedBusiness(businessId){
   if(me)throw me;if(!members||members.length!==1)throw new Error('Keanggotaan usaha tidak ditemukan atau tidak unik. Minta Owner memeriksa daftar anggota usaha.');
   const workspaceLicenseOk=await periksaLisensiWorkspace(businessId);
   if(!workspaceLicenseOk){setFinanceStatus('Lisensi usaha belum terverifikasi. Minta Owner utama memeriksa status pembayaran dan aktivasi lisensi KasUsaha Lite. Data usaha tidak diubah.',true);return;}
-  financeSelectedBusinessId=businessId;await loadFinanceWorkspace();setFinanceStatus('Usaha dipilih. Data dimuat sesuai akses akun.');
+  // Jangan memakai promise pemuatan lama: pemuatan awal dapat sedang berjalan dengan pilihan usaha yang belum ditetapkan.
+  // Tunggu sampai selesai, tetapkan pilihan, lalu jalankan pemuatan baru yang terikat pada businessId ini.
+  const pendingLoad=financeWorkspaceLoadPromise;
+  if(pendingLoad){try{await pendingLoad;}catch(_){/* pemuatan baru di bawah akan menampilkan kesalahan terbaru */}}
+  financeSelectedBusinessId=businessId;
+  await loadFinanceWorkspace();
+  if(!financeBusiness||financeBusiness.id!==businessId||financeMemberUserId!==sd.session.user.id){
+   throw new Error('Usaha yang dipilih belum selesai dimuat ke sesi aktif. Tunggu sebentar, lalu pilih usaha tersebut kembali.');
+  }
+  setFinanceStatus('Usaha dipilih dan berhasil dimuat. Data dimuat sesuai akses akun.');
 
  }catch(e){setFinanceStatus('Tidak dapat memilih usaha: '+String(e.message||e).slice(0,180),true);}
 }
