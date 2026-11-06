@@ -536,6 +536,16 @@ const employeeJoinCodeEnd = employeeActivation.indexOf('if (action === "owner_cr
 const employeeJoinCodeBlock = employeeJoinCodeStart >= 0 && employeeJoinCodeEnd > employeeJoinCodeStart ? employeeActivation.slice(employeeJoinCodeStart, employeeJoinCodeEnd) : "";
 if (!employeeJoinCodeBlock.includes('canonicalActivation?.status !== "paid"')) fail("Historical employee aliases must not restore access after the canonical activation was revoked"); else pass("Historical employee aliases cannot restore access after the canonical activation was revoked");
 
+if (!employeeJoinCodeBlock.includes('finalCanonicalActivation?.status !== "paid"') ||
+    !employeeJoinCodeBlock.includes('revokeAliasActivationError') ||
+    !employeeJoinCodeBlock.includes('deactivateAliasMemberError')) {
+  fail("historical alias login must recheck canonical activation after writes and fail closed on concurrent revocation");
+} else pass("historical alias login rechecks canonical activation after writes and fails closed on concurrent revocation");
+
+if (!employeeOwnerListBlock.includes('historicalUserIds.has(row.user_id)')) {
+  fail("Owner list payment refresh must not independently reactivate historical alias sessions");
+} else pass("Owner list payment refresh skips historical alias sessions");
+
 if (!employeeRevokeBlock.includes("bindingsError") || !employeeRevokeBlock.includes("boundUserIds") || !employeeRevokeBlock.includes("invite.user_id")) fail("employee invite revocation must verify all session bindings and include the canonical user"); else pass("employee invite revocation verifies all session bindings and includes the canonical user");
 
 if (process.exitCode) process.exit(process.exitCode);

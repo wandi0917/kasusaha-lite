@@ -268,6 +268,25 @@ Deno.serve(async (req: Request) => {
         }, { onConflict: "business_id,device_id" });
         if (activationError) return reply({ success: false, message: "Status aktivasi ID belum dapat dipulihkan. Hubungi Owner." }, 500);
 
+        // Re-check the canonical account after restoring an alias. Owner revocation
+        // may have raced with this login after the first check above.
+        if (verifiedHistoricalAlias) {
+          const { data: finalCanonicalActivation, error: finalCanonicalActivationError } = await admin.from("kasusaha_device_activations")
+            .select("status").eq("business_id", invite.business_id).eq("user_id", invite.user_id)
+            .eq("device_id", "ksacct_" + String(invite.user_id || "").replace(/-/g, "")).eq("role", "employee").maybeSingle();
+          if (finalCanonicalActivationError || finalCanonicalActivation?.status !== "paid") {
+            const { error: revokeAliasActivationError } = await admin.from("kasusaha_device_activations")
+              .update({ status: "revoked", updated_at: new Date().toISOString() })
+              .eq("business_id", invite.business_id).eq("user_id", authUserId).eq("device_id", accountDeviceId).eq("role", "employee");
+            const { error: deactivateAliasMemberError } = await admin.from("business_members")
+              .update({ active: false }).eq("business_id", invite.business_id).eq("user_id", authUserId).eq("role", "employee");
+            if (revokeAliasActivationError || deactivateAliasMemberError) {
+              return reply({ success: false, message: "Akses sesi baru belum dapat dipastikan aman. Hubungi Owner." }, 500);
+            }
+            return reply({ success: false, message: "Owner telah menonaktifkan akses karyawan. Sesi ini tidak dapat dipulihkan." }, 403);
+          }
+        }
+
         const { data: workspace } = await admin.from("business_workspaces")
           .select("business_name").eq("id", invite.business_id).maybeSingle();
         return reply({ success: true, business_id: invite.business_id, role: "employee", business_name: workspace?.business_name || "usaha Anda", existing: true });
@@ -405,6 +424,9 @@ Deno.serve(async (req: Request) => {
       const authBasicForCheck = "Basic " + btoa(serverKey + ":");
       const recentlyPaid: string[] = [];
       for (const row of activationRows) {
+        // Owner pays and manages the canonical employee account; historical
+        // alias sessions must never be independently reactivated by this refresh.
+        if (historicalUserIds.has(row.user_id)) continue;
         if (row.status !== "pending_payment" || !row.midtrans_order_id) continue;
         const txResponse = await fetch(apiForCheck + "/v2/" + encodeURIComponent(row.midtrans_order_id) + "/status", {
           headers: { Authorization: authBasicForCheck, Accept: "application/json" },
