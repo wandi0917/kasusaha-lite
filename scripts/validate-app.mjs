@@ -491,7 +491,7 @@ if (!paidAtFunctionMatch) {
 }
 
 const partnerCommissionMigration = fs.readFileSync(
-  "supabase/migrations/20261106115600_reconcile_license_partner_commission_by_provider_paid_time.sql",
+  "supabase/migrations/20261106140000_reconcile_license_partner_commission_by_provider_paid_time.sql",
   "utf8",
 );
 const partnerCommissionChecks = [
