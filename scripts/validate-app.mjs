@@ -681,6 +681,9 @@ const stockLedgerChecks = [
   [transactionHardeningMigration.includes("GRANT EXECUTE ON FUNCTION public.record_store_quick_sale(uuid,text,jsonb,uuid,numeric) TO authenticated, service_role"), "authenticated cashier clients receive only the cash-validating RPC overload"],
   [transactionHardeningMigration.includes("kasusaha.stock_movement_type', 'sale'"), "cashier sales are classified in stock movement history"],
   [transactionHardeningMigration.includes("store_stock_adjustment_requests") && transactionHardeningMigration.includes("request_hash"), "stock adjustment retries are protected by server-side idempotency"],
+  [transactionHardeningMigration.includes("'cash_received', p_cash_received") && transactionHardeningMigration.includes("'change_amount', p_cash_received - v_total"), "cashier RPC returns the server-verified received amount and change"],
+  [transactionHardeningMigration.includes("CREATE OR REPLACE FUNCTION public.record_store_quick_sale(p_business_id uuid, p_table_number text, p_lines jsonb, p_request_id uuid DEFAULT") && transactionHardeningMigration.includes("CREATE OR REPLACE FUNCTION public.record_store_quick_sale(p_business_id uuid, p_table_number text, p_lines jsonb, p_request_id uuid, p_cash_received numeric)"), "legacy open-bill settlement and cash-validating cashier RPC overloads are both preserved"],
+  [transactionHardeningMigration.includes("FOR SELECT TO authenticated") && transactionHardeningMigration.includes("store_stock_movements_owner_select") && transactionHardeningMigration.includes("REVOKE ALL ON TABLE public.store_stock_movements FROM PUBLIC, anon, authenticated"), "stock history is owner-scoped and clients cannot write to the ledger directly"],
   [transactionHardeningMigration.includes("p_movement_type IS NULL OR p_movement_type NOT IN"), "stock movement type validation rejects null and unsupported values"],
 ];
 for (const [ok, message] of stockLedgerChecks) {
