@@ -291,6 +291,7 @@ if (!/REVOKE SELECT ON TABLE public\.store_products FROM authenticated/i.test(co
 
 
 
+const employeeActivation = fs.readFileSync("supabase/functions/employee-device-activation/index.ts", "utf8");
 const midtransProductionGateChecks = [
   [paymentCreate, 'if (production && norm(Deno.env.get("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED")) !== "true")'],
   [paymentWebhook, 'if (isProduction && String(Deno.env.get("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED") ?? "").trim().toLowerCase() !== "true")'],
@@ -309,7 +310,7 @@ if (!paymentWebhook.includes(requiredStatusApiIdentityCheck)) {
   fail("Midtrans Status API must provide a transaction_id before a payment event can be trusted");
 } else pass("Midtrans Status API transaction identity is mandatory");
 
-const employeeActivation = fs.readFileSync("supabase/functions/employee-device-activation/index.ts", "utf8");
+
 const licenseActivation = fs.readFileSync("supabase/functions/activate-kasusaha-license/index.ts", "utf8");
 const biteshipShipment = fs.readFileSync("supabase/functions/biteship-create-shipment/index.ts", "utf8");
 const biteshipWebhook = fs.readFileSync("supabase/functions/biteship-webhook/index.ts", "utf8");
