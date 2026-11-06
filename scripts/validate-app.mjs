@@ -11,6 +11,7 @@ const html = fs.readFileSync("index.html", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
 const costSecurityMigration = fs.readFileSync("supabase/migrations/20261103020843_restrict_store_product_cost_column_access.sql", "utf8");
 const employeeSessionMigration = fs.readFileSync("supabase/migrations/20261103062527_allow_paid_employee_invite_sessions_in_transactions.sql", "utf8");
+const storeProductsEntitlementMigration = fs.readFileSync("supabase/migrations/20261106115240_guard_store_products_by_license_and_entitlement.sql", "utf8");
 const backupRestoreChecks = html.slice(html.indexOf("function impor(){"), html.indexOf("function hapusSemua()", html.indexOf("function impor(){")));
 const biteshipShipmentSource = fs.readFileSync("supabase/functions/biteship-create-shipment/index.ts", "utf8");
 const failClosedStoreCostMigration = fs.readFileSync("supabase/migrations/20261106113748_fail_closed_store_product_cost_entitlement.sql", "utf8");
@@ -151,6 +152,21 @@ const backupRestoreAssertions = [
   [backupRestoreChecks.includes("localStorage.setItem(key,next[name])") && !backupRestoreChecks.includes("simpan();"), "backup restore must verify all local writes before reporting success"],
 ];
 for (const [ok, message] of backupRestoreAssertions) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
+const storeProductsEntitlementChecks = [
+  [storeProductsEntitlementMigration.includes("store_products_member_select") &&
+   storeProductsEntitlementMigration.includes("store_products_owner_insert") &&
+   storeProductsEntitlementMigration.includes("store_products_owner_update") &&
+   storeProductsEntitlementMigration.includes("store_products_owner_delete"),
+   "all store_products RLS policies must be covered by the entitlement migration"],
+  [(storeProductsEntitlementMigration.match(/kasusaha_business_license_is_verified/g)||[]).length >= 5 &&
+   (storeProductsEntitlementMigration.match(/kasusaha_business_has_feature/g)||[]).length >= 5,
+   "store_products read/write policies must require verified license and basic_stock entitlement"],
+];
+for (const [ok, message] of storeProductsEntitlementChecks) {
   if (!ok) fail(message);
   else pass(message);
 }
