@@ -10,6 +10,10 @@ function reply(body: Record<string, unknown>, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders });
 }
 function norm(v: unknown) { return String(v ?? "").trim().toLowerCase(); }
+
+function productionPaymentsEnabled(production: boolean): boolean {
+  return !production || norm(Deno.env.get("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED")) === "true";
+}
 function validDevice(v: unknown): v is string {
   return typeof v === "string" && v.length >= 16 && v.length <= 120 && /^[a-zA-Z0-9_-]+$/.test(v);
 }
@@ -293,6 +297,7 @@ Deno.serve(async (req: Request) => {
       const orderId = "KSEMP-" + crypto.randomUUID().replace(/-/g, "").toUpperCase();
       const { snap } = midtransBases(production);
       const authBasic = "Basic " + btoa(serverKey + ":");
+      if (!productionPaymentsEnabled(production)) return reply({ success: false, code: "PRODUCTION_PAYMENTS_DISABLED", message: "Pembayaran Production belum diaktifkan melalui pengaman server." }, 503);
       const snapResponse = await fetch(snap + "/snap/v1/transactions", { method: "POST", headers: { Authorization: authBasic, "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ transaction_details: { order_id: orderId, gross_amount: 10000 }, item_details: [{ id: "KSL-EMPLOYEE-ID", price: 10000, quantity: 1, name: "Aktivasi ID karyawan KasUsaha Lite" }], customer_details: { first_name: employeeName }, callbacks: { finish: "https://kasusaha-lite.pages.dev/?employee_payment=return" } }), signal: AbortSignal.timeout(20000) });
       const snapData = await snapResponse.json().catch(() => ({}));
       if (!snapResponse.ok || !snapData.redirect_url) return reply({ success: false, message: "Midtrans belum dapat membuat pembayaran ID karyawan." }, 502);
@@ -547,7 +552,8 @@ Deno.serve(async (req: Request) => {
       return reply({ success: true, active: false, status: "pending_payment", amount: 10000, payment_url: activation.payment_url, reused_transaction: true });
     }
     const orderId = "KSDEV-" + crypto.randomUUID().replace(/-/g, "").toUpperCase();
-    const snapResponse = await fetch(snap + "/snap/v1/transactions", {
+    if (!productionPaymentsEnabled(production)) return reply({ success: false, code: "PRODUCTION_PAYMENTS_DISABLED", message: "Pembayaran Production belum diaktifkan melalui pengaman server." }, 503);
+      const snapResponse = await fetch(snap + "/snap/v1/transactions", {
       method: "POST",
       headers: { Authorization: authBasic, "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({
