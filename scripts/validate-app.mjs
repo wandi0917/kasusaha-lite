@@ -66,6 +66,27 @@ if (missingNavigationTargets.length) {
   fail("navigation buttons target missing sections: " + missingNavigationTargets.join(", "));
 } else pass(navigationTargets.length + " navigation targets resolve to existing HTML sections");
 
+const formSubmissionChecks = [
+  [/const form = document\.getElementById\('kasusahaSuggestionForm'\)[\s\S]{0,180}form\.addEventListener\('submit'/, html, "suggestion form must have a submit handler"],
+  [/\$\('quickSaleForm'\)\?\.addEventListener\('submit'/, html, "cashier form must have a submit handler"],
+  [/\$\('storeProductForm'\)\?\.addEventListener\('submit'/, html, "product management form must have a submit handler"],
+  [/\$\('stockEntryForm'\)\?\.addEventListener\('submit'/, html, "stock movement form must have a submit handler"],
+  [/\$\('financeForm'\)\?\.addEventListener\('submit'/, html, "finance transaction form must have a submit handler"],
+  [/financeAccountingEl\('financeJournalForm'\)\?\.addEventListener\('submit'/, html, "journal form must have a submit handler"],
+  [/financeAccountingEl\('financePartyForm'\)\?\.addEventListener\('submit'/, html, "finance party form must have a submit handler"],
+  [/financeAccountingEl\('financeOpenItemForm'\)\?\.addEventListener\('submit'/, html, "finance receivable/payable form must have a submit handler"],
+  [/financeAccountingEl\('financeSettlementForm'\)\?\.addEventListener\('submit'/, html, "finance settlement form must have a submit handler"],
+  [/\$\('formKas'\)\.addEventListener\('submit'/, html, "local cash transaction form must have a submit handler"],
+  [/\$\('formProduk'\)\.addEventListener\('submit'/, html, "local product form must have a submit handler"],
+  [/\$\('formCheckout'\)\.addEventListener\('submit'/, html, "marketplace checkout form must have a submit handler"],
+  [/const form=document\.getElementById\('ksPackageCheckoutForm'\)[\s\S]{0,240}form\.addEventListener\('submit'/, html, "license package checkout form must have a submit handler"],
+];
+for (const [pattern, source, message] of formSubmissionChecks) {
+  if (!pattern.test(source)) fail(message);
+  else pass(message);
+}
+
+
 if (!html.includes('class="quick-sale-camera-head"') ||
     !html.includes('id="quickSaleBarcodeClose"') ||
     !html.includes('id="quickSaleBarcodeVideo"')) {
