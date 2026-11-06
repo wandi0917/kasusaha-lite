@@ -4316,6 +4316,7 @@ $('financeForm')?.addEventListener('submit',async function(e){
  const description=$('financeDescription').value.trim(),amount=Number($('financeAmount').value),date=$('financeDate').value,category=$('financeCategory').value,type=financeMemberRole==='employee'?'income':$('financeType').value;
  if(description.length<2||description.length>300||!Number.isSafeInteger(amount)||amount<=0||!date||!category){setFinanceStatus('Keterangan minimal 2 karakter (maksimal 300), tanggal, kategori, dan nominal harus valid. Nominal harus bilangan bulat positif.',true);return;}
  const btn=$('financeSave');btn.disabled=true;
+ let transactionConfirmed=false;
  try{
   const editId=$('financeEditId').value;
   if(editId){
@@ -4326,10 +4327,13 @@ $('financeForm')?.addEventListener('submit',async function(e){
     const {data:confirmed,error:verifyError}=await sb.from('financial_transactions').select('id,transaction_date,transaction_type,amount,description,category').eq('id',editId).eq('business_id',financeBusiness.id).maybeSingle();
     if(verifyError||!confirmed||confirmed.transaction_date!==date||confirmed.transaction_type!==type||Number(confirmed.amount)!==amount||confirmed.description!==description||confirmed.category!==category)throw new Error('Hasil perubahan belum dapat dipastikan. Jangan ulangi edit sebelum memeriksa laporan. '+String(error.message||error).slice(0,160));
    }else if(!updated)throw new Error('Transaksi tidak ditemukan atau tidak dapat diperbarui oleh akun ini.');
+   transactionConfirmed=true;
    batalEditFinanceTransaction();setFinanceStatus('Perubahan transaksi sudah terkonfirmasi di server. Memuat ulang laporan...');
-   await loadFinanceWorkspace();
-   if(!financeRows.some(r=>r.id===editId))setFinanceStatus('Perubahan sudah tersimpan, tetapi laporan belum berhasil dimuat ulang. Tekan Muat Ulang laporan.',true);
-   else setFinanceStatus('Transaksi berhasil diperbarui dan diverifikasi pada laporan.');
+   try{
+    await loadFinanceWorkspace();
+    if(!financeRows.some(r=>r.id===editId))setFinanceStatus('Perubahan sudah tersimpan, tetapi laporan belum berhasil dimuat ulang. Tekan Muat Ulang laporan.',true);
+    else setFinanceStatus('Transaksi berhasil diperbarui dan diverifikasi pada laporan.');
+   }catch(refreshErr){setFinanceStatus('Perubahan transaksi sudah tersimpan dan diverifikasi server, tetapi laporan belum berhasil dimuat ulang. Jangan ulangi edit. Tekan Muat Ulang laporan. Detail: '+String(refreshErr.message||refreshErr).slice(0,160),true);}
   }else{
    const requestKey='kasusaha_manual_finance_pending_v1';
    const payload={business_id:financeBusiness.id,created_by:financeMemberUserId,created_by_role:financeMemberRole,transaction_date:date,transaction_type:type,amount,description,category};
@@ -4353,13 +4357,16 @@ $('financeForm')?.addEventListener('submit',async function(e){
    if(!saved?.id)throw new Error('Server belum mengembalikan bukti transaksi tersimpan. Kunci pengaman tetap dipertahankan.');
    const {data:verified,error:verifyError}=await sb.from('financial_transactions').select('id,legacy_ref').eq('id',saved.id).eq('business_id',financeBusiness.id).maybeSingle();
    if(verifyError||!verified||verified.legacy_ref!==legacyRef)throw new Error('Transaksi mungkin sudah tersimpan, tetapi verifikasi server belum berhasil. Kunci pengaman dipertahankan; periksa laporan sebelum mencoba lagi.');
+   transactionConfirmed=true;
    try{const stored=JSON.parse(localStorage.getItem(requestKey)||'null');if(stored?.legacyRef===legacyRef)localStorage.removeItem(requestKey);}catch(_){}
    this.reset();$('financeDate').value=financeToday();setFinanceStatus('Transaksi sudah tersimpan dan diverifikasi server. Memuat ulang laporan...');
-   await loadFinanceWorkspace();
-   if(!financeRows.some(r=>r.id===saved.id))setFinanceStatus('Transaksi sudah tersimpan dan diverifikasi di server, tetapi laporan belum berhasil dimuat ulang. Tekan Muat Ulang laporan.',true);
-   else setFinanceStatus('Transaksi berhasil disimpan, diverifikasi, dan muncul pada laporan bersama.');
+   try{
+    await loadFinanceWorkspace();
+    if(!financeRows.some(r=>r.id===saved.id))setFinanceStatus('Transaksi sudah tersimpan dan diverifikasi di server, tetapi laporan belum berhasil dimuat ulang. Tekan Muat Ulang laporan.',true);
+    else setFinanceStatus('Transaksi berhasil disimpan, diverifikasi, dan muncul pada laporan bersama.');
+   }catch(refreshErr){setFinanceStatus('Transaksi sudah tersimpan dan diverifikasi server, tetapi laporan belum berhasil dimuat ulang. Jangan ulangi pencatatan. Tekan Muat Ulang laporan. Detail: '+String(refreshErr.message||refreshErr).slice(0,160),true);}
   }
- }catch(err){setFinanceStatus('PENCATATAN BELUM DAPAT DINYATAKAN BERHASIL: '+String(err.message||err).slice(0,280),true);}
+ }catch(err){if(transactionConfirmed)setFinanceStatus('Transaksi sudah dikonfirmasi server, tetapi tampilan belum selesai diperbarui. Jangan ulangi pencatatan. Periksa laporan dan gunakan Muat Ulang. Detail: '+String(err.message||err).slice(0,180),true);else setFinanceStatus('PENCATATAN BELUM DAPAT DINYATAKAN BERHASIL: '+String(err.message||err).slice(0,280),true);}
  finally{btn.disabled=false;}
 });
 let storeProductRows=[];
@@ -5465,7 +5472,7 @@ document.getElementById('attendanceSaveWage')?.addEventListener('click',function
 document.getElementById('attendanceHourlyWage')?.addEventListener('input',function(){this.dataset.userEdited='1';});
 async function deactivateStoreProduct(id){
  if(!confirm('Nonaktifkan barang ini? Riwayat penjualan lama tetap tersimpan.'))return;
- try{const {error}=await sb.from('store_products').update({active:false,updated_at:new Date().toISOString()}).eq('id',id).eq('business_id',financeBusiness.id);if(error)throw error;await loadStoreProducts();const st=$('storeProductStatus');st.className='status';st.textContent='Barang dinonaktifkan. Riwayat penjualan tidak dihapus.';}
+ try{const {data:updated,error}=await sb.from('store_products').update({active:false,updated_at:new Date().toISOString()}).eq('id',id).eq('business_id',financeBusiness.id).select('id').maybeSingle();if(error)throw error;if(!updated)throw new Error('Barang tidak ditemukan atau tidak dapat dinonaktifkan.');await loadStoreProducts();const st=$('storeProductStatus');st.className='status';st.textContent='Barang dinonaktifkan. Riwayat penjualan tidak dihapus.';}
  catch(e){const st=$('storeProductStatus');st.className='status error';st.textContent='Gagal mengubah barang: '+String(e.message||e).slice(0,180);}
 }
 function cancelStoreProductEdit(){
@@ -5491,7 +5498,7 @@ $('storeProductForm')?.addEventListener('submit',async function(e){
   const payload={product_code:code,product_name:name,barcode_value:normalizedBarcode,barcode_type:barcodeType,price,stock_unit:stockUnit,item_type:itemType,active:editId?Boolean(currentItem?.active):true,updated_at:new Date().toISOString()};
   if(!editId)payload.stock_quantity=initialStock;
   let error,productId=editId;
-  if(editId){({error}=await sb.from('store_products').update(payload).eq('id',editId).eq('business_id',financeBusiness.id));}
+  if(editId){const updated=await sb.from('store_products').update(payload).eq('id',editId).eq('business_id',financeBusiness.id).select('id').maybeSingle();error=updated.error;productId=updated.data?.id||null;}
   else{const inserted=await sb.from('store_products').insert({...payload,business_id:financeBusiness.id}).select('id').single();error=inserted.error;productId=inserted.data?.id||null;}
   if(error){if(error.code==='23505')throw new Error('Kode barang atau barcode sudah dipakai oleh barang lain dalam usaha ini. Periksa kembali nilai barcode.');throw error;}
   if(!productId)throw new Error('Barang tersimpan tetapi ID barang tidak terbaca. Muat ulang daftar barang sebelum melanjutkan.');
