@@ -557,7 +557,7 @@ if (!employeeRevokeBlock.includes("bindingsError") || !employeeRevokeBlock.inclu
 
 // Midtrans paid-at parser and webhook integrity regression tests.
 const paidAtFunctionMatch = paymentWebhook.match(
-  /function midtransPaidAt\\(status: JsonObject\\): string \\| null \\{[\\s\\S]*?\\n\\}/,
+  /function midtransPaidAt\(status: JsonObject\): string \| null \{[\s\S]*?\n\}/,
 );
 if (!paidAtFunctionMatch) {
   fail("Midtrans webhook must parse provider-paid timestamps");
