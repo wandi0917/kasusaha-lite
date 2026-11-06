@@ -4191,14 +4191,15 @@ async function renderOwnerServiceFeePanel(){
   submit?.addEventListener('click',async()=>{
    const status=$('serviceFeeOwnerStatus');
    if(!check?.checked){if(status)status.textContent='Centang pernyataan pratinjau terlebih dahulu.';return;}
-   if(financeMemberRole!=='owner'||!financeBusiness||financeBusiness.owner_id!==financeMemberUserId){
-    if(status)status.textContent='Tidak dapat memulai: sesi ini belum terverifikasi sebagai Owner utama usaha. Muat ulang login Owner dan pilih usaha yang benar.';
+   const targetBusinessId=String(financeBusiness?.id||'').trim();
+   if(!targetBusinessId){
+    if(status)status.textContent='Usaha belum dipilih atau sesi sedang dimuat ulang. Pilih usaha Owner, lalu coba kembali.';
     return;
    }
    if(!sb){if(status)status.textContent='Koneksi server belum tersedia. Periksa internet lalu coba kembali.';return;}
-   submit.disabled=true;if(status)status.textContent='Menyimpan persetujuan dan awal pratinjau ke server…';
+      submit.disabled=true;if(status)status.textContent='Menyimpan persetujuan dan awal pratinjau ke server…';
    try{
-    const {data,error}=await sb.rpc('kasusaha_accept_service_fee_terms',{p_business_id:financeBusiness.id});if(error)throw error;
+    const {data,error}=await sb.rpc('kasusaha_accept_service_fee_terms',{p_business_id:targetBusinessId});if(error)throw error;
     if(!data||data.success!==true||!data.trial_started_at||data.billing_enabled===true||data.fee_enabled===true)throw new Error('Respons server tidak memenuhi pengaman pratinjau. Billing tetap tidak boleh diaktifkan.');
     financeBusiness={...financeBusiness,service_fee_trial_started_at:data.trial_started_at,service_fee_consent_at:data.consent_recorded===true?(financeBusiness.service_fee_consent_at||data.trial_started_at):financeBusiness.service_fee_consent_at,service_fee_terms_version:data.terms_version||financeBusiness.service_fee_terms_version};
     await renderOwnerServiceFeePanel();
