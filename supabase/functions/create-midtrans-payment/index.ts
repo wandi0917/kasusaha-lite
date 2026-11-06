@@ -769,6 +769,10 @@ Deno.serve(async (req: Request): Promise<Response> => {
       };
     }
 
+    if (production && hasPhysicalProduct && norm(Deno.env.get("MARKETPLACE_PRODUCTION_PAYMENTS_ENABLED")) !== "true") {
+      return reply({ success: false, code: "MARKETPLACE_PRODUCTION_PAYMENTS_DISABLED", error: "Pembayaran Production untuk pesanan barang fisik belum diaktifkan. Pesanan belum ditagih; silakan hubungi pengelola." }, 503);
+    }
+
     if (!productionPaymentsEnabled(production)) {
       return reply({ success: false, code: "PRODUCTION_PAYMENTS_DISABLED", error: "Pembayaran Production belum diaktifkan melalui pengaman server." }, 503);
     }
