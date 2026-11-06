@@ -204,6 +204,12 @@ Deno.serve(async (req: Request) => {
       if (invite.status === "used") {
         let verifiedHistoricalAlias = false;
         if (invite.user_id !== authUserId) {
+          const canonicalAccountDeviceId = "ksacct_" + String(invite.user_id || "").replace(/-/g, "");
+          const { data: canonicalActivation, error: canonicalActivationError } = await admin.from("kasusaha_device_activations")
+            .select("status").eq("business_id", invite.business_id).eq("user_id", invite.user_id)
+            .eq("device_id", canonicalAccountDeviceId).eq("role", "employee").maybeSingle();
+          if (canonicalActivationError) return reply({ success: false, message: "Status aktivasi akun utama belum dapat diverifikasi." }, 500);
+          if (canonicalActivation?.status !== "paid") return reply({ success: false, message: "Akses ID karyawan sedang dinonaktifkan Owner atau aktivasi akun utama belum aktif." }, 403);
           let { data: aliasMatch, error: aliasError } = await admin.rpc("kasusaha_employee_alias_matches", {
             p_business_id: invite.business_id,
             p_canonical_user_id: invite.user_id,
@@ -321,21 +327,24 @@ Deno.serve(async (req: Request) => {
       if (error || !invite) return reply({ success: false, message: "Kode ID tidak ditemukan." }, 404);
       const { error: updateError } = await admin.from("employee_invite_codes").update({ status: "revoked", updated_at: new Date().toISOString() }).eq("id", codeId).eq("business_id", businessId);
       if (updateError) return reply({ success: false, message: "Kode ID gagal dinonaktifkan." }, 500);
-      const { data: bindings } = await admin.from("employee_invite_code_users").select("user_id").eq("invite_code_id", codeId).eq("business_id", businessId);
-      for (const binding of bindings || []) {
+      const { data: bindings, error: bindingsError } = await admin.from("employee_invite_code_users").select("user_id").eq("invite_code_id", codeId).eq("business_id", businessId);
+      if (bindingsError) return reply({ success: false, message: "Daftar sesi yang memakai ID belum dapat diverifikasi. Ulangi pencabutan." }, 500);
+      const boundUserIds = new Set<string>((bindings || []).map((binding) => binding.user_id).filter(Boolean));
+      if (invite.user_id) boundUserIds.add(invite.user_id);
+      for (const boundUserId of boundUserIds) {
         // Revoke paid/pending activation state first. markPaid() uses a
         // pending_payment compare-and-set, so a concurrent payment refresh
         // cannot reactivate membership after this revocation has started.
         const { error: activationRevokeError } = await admin.from("kasusaha_device_activations")
           .update({ status: "revoked", updated_at: new Date().toISOString() })
-          .eq("business_id", businessId).eq("user_id", binding.user_id).eq("role", "employee");
+          .eq("business_id", businessId).eq("user_id", boundUserId).eq("role", "employee");
         if (activationRevokeError) {
           console.error("Revoke employee activation:", activationRevokeError.message);
           return reply({ success: false, message: "Aktivasi perangkat belum berhasil dicabut. Muat ulang dan ulangi pencabutan." }, 500);
         }
         const { error: memberRevokeError } = await admin.from("business_members")
           .update({ active: false })
-          .eq("business_id", businessId).eq("user_id", binding.user_id).eq("role", "employee");
+          .eq("business_id", businessId).eq("user_id", boundUserId).eq("role", "employee");
         if (memberRevokeError) {
           console.error("Deactivate revoked employee membership:", memberRevokeError.message);
           return reply({ success: false, message: "Kode sudah dicabut, tetapi status akses karyawan perlu diperiksa ulang." }, 500);
@@ -404,16 +413,27 @@ Deno.serve(async (req: Request) => {
         if (!txResponse?.ok) continue;
         const tx = await txResponse.json().catch(() => null) as Record<string, unknown> | null;
         if (tx && paidStatus(tx, row.midtrans_order_id)) {
-          const { error: paidUpdateError } = await admin.from("kasusaha_device_activations").update({
+          const { data: paidRow, error: paidUpdateError } = await admin.from("kasusaha_device_activations").update({
             status: "paid", paid_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-          }).eq("id", row.id).eq("business_id", businessId).eq("status", "pending_payment");
-          if (!paidUpdateError) {
-            recentlyPaid.push(row.user_id);
-            if (String(row.device_id || "").startsWith("ksacct_")) {
-              await admin.from("business_members").update({ active: true })
+          }).eq("id", row.id).eq("business_id", businessId).eq("status", "pending_payment")
+            .select("id").maybeSingle();
+          if (paidUpdateError) return reply({ success: false, message: "Status pembayaran karyawan belum dapat diperbarui." }, 500);
+          if (!paidRow) continue;
+          if (String(row.device_id || "").startsWith("ksacct_")) {
+            const { error: activateMemberError } = await admin.from("business_members").update({ active: true })
+              .eq("business_id", businessId).eq("user_id", row.user_id).eq("role", "employee");
+            if (activateMemberError) return reply({ success: false, message: "Keanggotaan karyawan belum berhasil diaktifkan." }, 500);
+            const { data: confirmedActivation, error: confirmActivationError } = await admin.from("kasusaha_device_activations")
+              .select("status").eq("id", row.id).eq("business_id", businessId).maybeSingle();
+            if (confirmActivationError) return reply({ success: false, message: "Status aktivasi akhir belum dapat diverifikasi." }, 500);
+            if (confirmedActivation?.status !== "paid") {
+              const { error: failClosedError } = await admin.from("business_members").update({ active: false })
                 .eq("business_id", businessId).eq("user_id", row.user_id).eq("role", "employee");
+              if (failClosedError) return reply({ success: false, message: "Akses karyawan perlu diperiksa setelah perubahan status aktivasi." }, 500);
+              continue;
             }
           }
+          recentlyPaid.push(row.user_id);
         }
       }
       const { data: refreshedActivations, error: refreshedError } = await admin.from("kasusaha_device_activations")
@@ -475,23 +495,40 @@ Deno.serve(async (req: Request) => {
         .select("user_id,role,active").eq("business_id", businessId).eq("user_id", targetUserId)
         .eq("role", "employee").maybeSingle();
       if (targetError || !targetMember) return reply({ success: false, message: "Karyawan tidak ditemukan pada usaha Owner ini." }, 404);
+      const identityUserIds = new Set<string>([targetUserId]);
+      const { data: identityDirectory, error: identityDirectoryError } = await userClient.rpc("kasusaha_owner_employee_directory", { p_business_id: businessId });
+      if (identityDirectoryError) return reply({ success: false, message: "Identitas dan sesi karyawan belum dapat diverifikasi." }, 500);
+      const targetIdentityId = (identityDirectory || []).find((entry: { user_id: string }) => entry.user_id === targetUserId)?.identity_id;
+      if (targetIdentityId) {
+        for (const entry of identityDirectory || []) {
+          if (entry.identity_id === targetIdentityId && entry.user_id) identityUserIds.add(entry.user_id);
+        }
+      }
+      const { data: identityInvites, error: identityInvitesError } = await admin.from("employee_invite_codes")
+        .select("id").eq("business_id", businessId).eq("user_id", targetUserId);
+      if (identityInvitesError) return reply({ success: false, message: "Riwayat ID karyawan belum dapat dibaca." }, 500);
+      const identityInviteIds = (identityInvites || []).map((entry) => entry.id);
+      if (identityInviteIds.length) {
+        const { data: identityBindings, error: identityBindingsError } = await admin.from("employee_invite_code_users")
+          .select("user_id").eq("business_id", businessId).in("invite_code_id", identityInviteIds);
+        if (identityBindingsError) return reply({ success: false, message: "Daftar sesi ID karyawan belum dapat dibaca." }, 500);
+        for (const binding of identityBindings || []) if (boundUserId) identityUserIds.add(boundUserId);
+      }
+      const targetUserIds = [...identityUserIds];
       if (action === "owner_deactivate") {
         // Revoke paid/pending activation first so a concurrent late payment
         // status check cannot reactivate the employee while access is being removed.
         const { error: revokeError } = await admin.from("kasusaha_device_activations")
           .update({ status: "revoked", updated_at: new Date().toISOString() })
-          .eq("business_id", businessId).eq("user_id", targetUserId).eq("role", "employee");
-        if (revokeError) return reply({ success: false, message: "Status aktivasi belum berhasil dicabut. Karyawan belum dinonaktifkan; muat ulang lalu coba lagi." }, 500);
+          .eq("business_id", businessId).in("user_id", targetUserIds).eq("role", "employee");
+        if (revokeError) return reply({ success: false, message: "Status aktivasi karyawan dan sesi terkait belum berhasil dicabut. Muat ulang lalu coba lagi." }, 500);
         const { error: memberUpdateError } = await admin.from("business_members")
-          .update({ active: false }).eq("business_id", businessId).eq("user_id", targetUserId).eq("role", "employee");
-        if (memberUpdateError) return reply({ success: false, message: "Aktivasi sudah dicabut, tetapi status keanggotaan perlu diperiksa ulang." }, 500);
-        return reply({ success: true, active: false, message: "Karyawan dinonaktifkan. Akses usaha dan perangkatnya dicabut." });
+          .update({ active: false }).eq("business_id", businessId).in("user_id", targetUserIds).eq("role", "employee");
+        if (memberUpdateError) return reply({ success: false, message: "Aktivasi seluruh sesi sudah dicabut, tetapi status keanggotaan perlu diperiksa ulang." }, 500);
+        return reply({ success: true, active: false, message: "Karyawan dinonaktifkan. Seluruh sesi akun utama dan sesi terkait ikut dicabut." });
       }
-      const { error: memberUpdateError } = await admin.from("business_members")
-        .update({ active: true }).eq("business_id", businessId).eq("user_id", targetUserId).eq("role", "employee");
-      if (memberUpdateError) return reply({ success: false, message: "Status karyawan belum berhasil diaktifkan." }, 500);
       const { data: oldActivations, error: oldActivationError } = await admin.from("kasusaha_device_activations")
-        .select("id,status,paid_at").eq("business_id", businessId).eq("user_id", targetUserId).eq("role", "employee");
+        .select("id,status,paid_at").eq("business_id", businessId).in("user_id", targetUserIds).eq("role", "employee");
       if (oldActivationError) return reply({ success: false, message: "Riwayat aktivasi karyawan belum dapat dibaca." }, 500);
       for (const a of oldActivations || []) {
         const restoredStatus = a.paid_at ? "paid" : "pending_payment";
@@ -499,7 +536,10 @@ Deno.serve(async (req: Request) => {
           .update({ status: restoredStatus, updated_at: new Date().toISOString() }).eq("id", a.id);
         if (restoreError) return reply({ success: false, message: "Status karyawan diaktifkan, tetapi aktivasi perangkat perlu diperiksa." }, 500);
       }
-      return reply({ success: true, active: true, message: "Status karyawan diaktifkan kembali. Perangkat yang pernah dibayar dipulihkan; perangkat baru tetap menunggu pembayaran." });
+      const { error: memberUpdateError } = await admin.from("business_members")
+        .update({ active: true }).eq("business_id", businessId).in("user_id", targetUserIds).eq("role", "employee");
+      if (memberUpdateError) return reply({ success: false, message: "Status karyawan belum berhasil diaktifkan." }, 500);
+      return reply({ success: true, active: true, message: "Status karyawan dan sesi terkait diaktifkan kembali. Perangkat yang pernah dibayar dipulihkan; perangkat baru tetap menunggu pembayaran." });
     }
 
     if (action === "owner_delete_inactive") {
