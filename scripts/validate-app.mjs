@@ -614,7 +614,7 @@ for (const [ok, message] of paymentIntegrityChecks) {
 
 
 const quickSaleSubmitStart = html.indexOf("$('quickSaleForm')?.addEventListener('submit',async function(e){");
-const quickSaleSubmitEnd = html.indexOf("\\nfunction financePeriodBounds(){", quickSaleSubmitStart);
+const quickSaleSubmitEnd = html.indexOf("\nfunction financePeriodBounds(){", quickSaleSubmitStart);
 const quickSaleSubmitBlock = quickSaleSubmitStart >= 0 && quickSaleSubmitEnd > quickSaleSubmitStart
   ? html.slice(quickSaleSubmitStart, quickSaleSubmitEnd)
   : "";
