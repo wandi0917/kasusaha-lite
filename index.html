@@ -5639,20 +5639,45 @@ $('quickSaleSaveDraft')?.addEventListener('click',async function(){
 $('quickSalePayDraft')?.addEventListener('click',async function(){
  if(!activeOpenBillId){quickSaleDraftStatus('Buka tagihan yang akan dibayar terlebih dahulu.',true);return;}
  this.disabled=true;
+ let paymentConfirmed=false;
  try{
   await saveQuickSaleDraft();
   const lines=quickSaleDraftLines(),total=quickSaleDraftTotal(lines),cash=Number($('quickSaleCashReceived').value||0);
+  if(!Number.isSafeInteger(total)||total<=0)throw new Error('Total tagihan tidak valid.');
   if(!Number.isSafeInteger(cash)||cash<total)throw new Error('Uang diterima belum mencukupi total tagihan.');
-  if(!confirm('Konfirmasi pembayaran '+formatStoreRupiah(total)+'? Setelah dikonfirmasi, penjualan masuk laporan dan stok dikurangi satu kali.'))return;
+  const expectedChange=cash-total;
+  if(!confirm('Konfirmasi pembayaran '+formatStoreRupiah(total)+'? Uang diterima '+formatStoreRupiah(cash)+'. Kembalian '+formatStoreRupiah(expectedChange)+'. Setelah dikonfirmasi, penjualan masuk laporan dan stok dikurangi satu kali.'))return;
   const {data,error}=await sb.rpc('settle_store_open_bill',{p_bill_id:activeOpenBillId,p_cash_received:cash});if(error)throw error;
   if(!data?.ok)throw new Error('Server belum mengonfirmasi pembayaran.');
+  paymentConfirmed=true;
   const wasAlreadyPaid=!!data.already_paid;
+  const serverCash=Number(data.payment_cash),serverChange=Number(data.change_amount);
+  const paymentMatches=wasAlreadyPaid||(Number.isSafeInteger(serverCash)&&serverCash===cash&&Number.isSafeInteger(serverChange)&&serverChange===expectedChange);
   const billLabel=$('quickSaleTableNumber').value?'Meja '+$('quickSaleTableNumber').value:($('quickSaleCustomerName').value||'Kasir');
   activeOpenBillId=null;$('quickSaleForm').reset();$('quickSaleCustomerName').value='';$('quickSaleTableNumber').value='';$('quickSaleCashReceived').value='';
   $('quickSaleItems').replaceChildren();addQuickSaleLine();$('quickSaleSaveDraft').textContent='＋ Simpan sebagai tagihan belum dibayar';$('quickSalePayDraft').hidden=true;$('quickSaleSave').hidden=false;
-  await loadQuickSaleOpenBills();await loadFinanceWorkspace();
-  setFinanceStatus(wasAlreadyPaid?'Tagihan '+billLabel+' ternyata sudah dibayar sebelumnya. Sistem tidak membuat penjualan atau pengurangan stok kedua kali.':'Pembayaran '+billLabel+' berhasil dikonfirmasi: '+formatStoreRupiah(total)+'. Penjualan masuk laporan dan stok dikurangi oleh server.');
- }catch(e){quickSaleDraftStatus('Pembayaran belum dikonfirmasi: '+String(e.message||e).slice(0,250),true);}finally{this.disabled=false;}
+  if(wasAlreadyPaid){
+   setFinanceStatus('Tagihan '+billLabel+' ternyata sudah dibayar sebelumnya. Sistem tidak membuat penjualan atau pengurangan stok kedua kali.');
+  }else if(!paymentMatches){
+   setFinanceStatus('PEMBAYARAN SUDAH DIKONFIRMASI SERVER, tetapi nilai uang diterima/kembalian tidak cocok. Jangan ulangi pembayaran. Periksa laporan dan hubungi pengelola sebelum melanjutkan.',true);
+  }else{
+   setFinanceStatus('Pembayaran '+billLabel+' BERHASIL: total '+formatStoreRupiah(total)+', uang diterima '+formatStoreRupiah(serverCash)+', kembalian '+formatStoreRupiah(serverChange)+'. Penjualan dan pengurangan stok sudah dicatat server.');
+  }
+  try{
+   await loadQuickSaleOpenBills();
+   await loadFinanceWorkspace();
+   if(paymentMatches){
+    setFinanceStatus(wasAlreadyPaid?'Tagihan '+billLabel+' sudah dibayar sebelumnya. Tidak ada penjualan atau pengurangan stok ganda.':'Pembayaran '+billLabel+' berhasil diverifikasi: total '+formatStoreRupiah(total)+', uang diterima '+formatStoreRupiah(serverCash)+', kembalian '+formatStoreRupiah(serverChange)+'. Stok dan laporan sudah diperbarui.');
+   }else{
+    setFinanceStatus('PEMBAYARAN SUDAH DIKONFIRMASI SERVER, tetapi nilai uang/kembalian perlu pemeriksaan manual. Jangan ulangi pembayaran. Laporan sudah dimuat ulang.',true);
+   }
+  }catch(refreshErr){
+   setFinanceStatus('Pembayaran sudah dikonfirmasi server'+(paymentMatches?' dan tidak perlu diulang':' tetapi memerlukan pemeriksaan manual')+'. Laporan belum berhasil dimuat ulang. Jangan ulangi pembayaran. Detail: '+String(refreshErr.message||refreshErr).slice(0,180),true);
+  }
+ }catch(e){
+  if(paymentConfirmed)setFinanceStatus('Pembayaran sudah dikonfirmasi server, tetapi tampilan belum selesai diperbarui. Jangan ulangi pembayaran. Periksa daftar tagihan dan laporan. Detail: '+String(e.message||e).slice(0,180),true);
+  else quickSaleDraftStatus('Pembayaran belum dikonfirmasi: '+String(e.message||e).slice(0,250),true);
+ }finally{this.disabled=false;}
 });
 // Entri nama pelanggan / nomor meja tidak boleh membuka tagihan lama secara otomatis.
 // Tagihan lama hanya dibuka melalui tombol "Buka / Edit" pada daftar tagihan belum dibayar.
