@@ -6,19 +6,19 @@ Repositori: `wandi0917/kasusaha-lite`
 
 ## Hasil pemeriksaan
 
-- Supabase mencatat 108 versi migrasi yang telah diterapkan (pemeriksaan ulang 6 November 2026; versi terbaru tetap `20261105160017`).
+- Supabase mencatat 110 versi migrasi yang telah diterapkan (pemeriksaan ulang 6 November 2026; versi terbaru `20261106113750`).
 - Direktori `supabase/migrations` pada branch `main` berisi 27 file SQL.
 - Semua 27 versi file yang ada sekarang cocok dengan versi migrasi yang tercatat di Supabase.
-- Sebanyak 81 versi migrasi yang sudah tercatat di Supabase belum memiliki file SQL pasangannya di branch `main`.
+- Sebanyak 83 versi migrasi historis yang sudah tercatat di Supabase belum memiliki file SQL pasangannya di branch `main`; dua migrasi entitlement terbaru sudah direkam dengan file bernama versi remote yang tepat.
 - Nama file untuk beberapa migrasi yang tersedia telah diselaraskan dengan versi yang tercatat di Supabase. Ini hanya mengganti nama file, bukan menjalankan ulang SQL.
 
 
 ## Pemeriksaan ulang 6 November 2026
 
-- Jumlah riwayat migrasi remote bertambah menjadi 108; versi terakhir tetap `20261105160017`.
+- Jumlah riwayat migrasi remote bertambah menjadi 110; versi terakhir `20261106113750`.
 - Branch `main` masih memiliki 27 file SQL migrasi yang cocok dengan versi remote.
-- Dengan demikian, 81 versi historis belum memiliki pasangan SQL di branch `main`.
-- Lima migrasi kandidat yang hanya ada di cabang audit tidak dihitung sebagai migrasi produksi dan belum diterapkan.
+- Dengan demikian, 83 versi historis belum memiliki pasangan SQL di branch `main`; dua migrasi entitlement terbaru sudah memiliki pasangan file yang cocok.
+- Migrasi fail-closed entitlement telah diterapkan sebagai remote version `20261106113748` dan `20261106113750`; migrasi referral/commission lainnya tetap kandidat dan belum diterapkan.
 - Jangan menutup selisih ini dengan `migration repair`, karena perintah tersebut tidak merekonstruksi isi SQL historis.
 
 ## Dampak
@@ -41,3 +41,9 @@ Aplikasi produksi tetap berjalan; kondisi ini tidak dengan sendirinya berarti sk
 - Memverifikasi kolom `server_recorded_at` tersedia, tidak ada nilai kosong, trigger aktif, dan belum ada usaha yang menyetujui atau memulai trial.
 
 Status: perlu rekonstruksi/arsip untuk 72 migrasi historis yang belum tersedia di repositori.
+## Update 6 November 2026 setelah fail-closed entitlement
+
+- Remote migration history kini berisi 110 versi, berakhir pada `20261106113750`.
+- Dua migrasi entitlement diterapkan sebagai remote version `20261106113748` dan `20261106113750`, dan file SQL dengan nama versi yang sama tersedia di repository.
+- Karena remote history bertambah dua sementara baseline historis belum lengkap, jumlah versi historis tanpa pasangan SQL menjadi 83. Ini bukan bukti schema rusak, tetapi tetap menghalangi rekonstruksi project baru yang dapat diulang.
+- Migrasi referral capture yang masih pending dengan versi lokal `20261105170000` lebih tua daripada remote latest; harus diberi versi baru sebelum diterapkan. Migrasi komisi provider-paid-time juga harus mengikuti urutan versi yang sama.
