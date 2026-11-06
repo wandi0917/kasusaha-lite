@@ -196,6 +196,19 @@ const financeUnlicensedMessage = /errorCode==='P0001'[\s\S]{0,240}Paket aktif da
 if (!financeUnlicensedMessage) fail("unlicensed finance access must show a clear license activation message instead of a raw database exception");
 else pass("unlicensed finance access shows a clear license activation message");
 
+const financeEnsureAccountsStart = html.indexOf("async function financeAccountingEnsureAccounts(){");
+const financeEnsureAccountsEnd = html.indexOf("\nasync function loadFinanceAccounting(){", financeEnsureAccountsStart);
+const financeEnsureAccountsBlock = financeEnsureAccountsStart >= 0 && financeEnsureAccountsEnd > financeEnsureAccountsStart
+  ? html.slice(financeEnsureAccountsStart, financeEnsureAccountsEnd)
+  : "";
+const financeEnsureGuard = financeEnsureAccountsBlock.indexOf("await loadFinancePackageFeatures(financeBusiness.id)");
+const financeEnsureInsert = financeEnsureAccountsBlock.indexOf("sb.from('finance_accounts').insert(payload)");
+if (financeEnsureGuard < 0 ||
+    !financeEnsureAccountsBlock.includes("packageAccess.features.full_finance!==true") ||
+    financeEnsureInsert < financeEnsureGuard) {
+  fail("finance account seeding helper must independently verify full_finance entitlement before inserting default accounts");
+} else pass("finance account seeding helper independently verifies full_finance entitlement before inserting default accounts");
+
 const financeAccountingStart = html.indexOf("async function loadFinanceAccounting(){");
 const financeAccountingEnd = html.indexOf("function financeAccountingPopulateControls", financeAccountingStart);
 const financeAccountingBlock = financeAccountingStart >= 0 && financeAccountingEnd > financeAccountingStart
