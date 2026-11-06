@@ -670,6 +670,12 @@ if (!stockSubmitBlock.includes("rpc('adjust_store_product_stock'") ||
 if (!html.includes("legacyQuickSaleFingerprint") || !html.includes("pending.fingerprint!==legacyQuickSaleFingerprint")) {
   fail("pending cashier requests created before cash validation must have a safe recovery path");
 } else pass("legacy pending cashier requests retain a safe recovery path");
+if (!html.includes("quickSaleCustomerName") || !html.includes("Pelanggan: '+customerName") || !html.includes("rawTableNumber?' • Meja '+rawTableNumber:''")) {
+  fail("quick cashier must preserve optional customer name and table number in the server transaction reference");
+} else pass("quick cashier preserves optional customer name and table number");
+if (!html.includes("Pelanggan: .+?|Kasir") || !html.includes("description.replace(/^(Meja .+?|Pelanggan: .+?|Kasir) — /")) {
+  fail("sales report must group customer-labelled cashier rows with the correct sale");
+} else pass("sales report groups customer-labelled cashier rows");
 if (!html.includes("p_cash_received:cashReceived") ||
     !html.includes("cashReceived,lines:lines.map")) {
   fail("quick cashier must send the received cash amount and bind it to the idempotency fingerprint");
@@ -693,6 +699,7 @@ const stockLedgerChecks = [
   [transactionHardeningMigration.includes("CREATE OR REPLACE FUNCTION public.record_store_quick_sale(p_business_id uuid, p_table_number text, p_lines jsonb, p_request_id uuid DEFAULT") && transactionHardeningMigration.includes("CREATE OR REPLACE FUNCTION public.record_store_quick_sale(p_business_id uuid, p_table_number text, p_lines jsonb, p_request_id uuid, p_cash_received numeric)"), "legacy open-bill settlement and cash-validating cashier RPC overloads are both preserved"],
   [transactionHardeningMigration.includes("FOR SELECT TO authenticated") && transactionHardeningMigration.includes("store_stock_movements_owner_select") && transactionHardeningMigration.includes("REVOKE ALL ON TABLE public.store_stock_movements FROM PUBLIC, anon, authenticated"), "stock history is owner-scoped and clients cannot write to the ledger directly"],
   [transactionHardeningMigration.includes("p_movement_type IS NULL OR p_movement_type NOT IN"), "stock movement type validation rejects null and unsupported values"],
+  [transactionHardeningMigration.includes("CREATE OR REPLACE FUNCTION public.settle_store_open_bill") && transactionHardeningMigration.includes("'Pelanggan: ' || left(regexp_replace(trim(v_bill.customer_name)") && transactionHardeningMigration.includes("' • Meja ' || left(regexp_replace(trim(v_bill.table_number)"), "open-bill settlement preserves both customer and table attribution"],
   [(transactionHardeningMigration.split("$function$;").length - 1) >= 4, "all four migration function definitions are terminated as complete SQL statements"],
 ];
 for (const [ok, message] of stockLedgerChecks) {
