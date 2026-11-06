@@ -80,3 +80,31 @@ Inventaris ini adalah pemeriksaan statis struktur dan binding, bukan bukti bahwa
 - Belum dilakukan uji fisik scanner Bluetooth dan kamera pada perangkat Android.
 - Mode offline hanya menyimpan catatan lokal di perangkat; transaksi lokal tidak otomatis masuk ke laporan bersama. Pemindahan data dilakukan melalui aksi impor dan perlu verifikasi duplikasi sebelum dipakai pada data nyata.
 - PR #95 masih draft. Tiga workflow CI pada commit `f147337df69d36068abd4c6b9c8981eacdbb6168` lulus, tetapi kelulusan CI tidak menggantikan pengujian browser, perangkat, dan cutover Supabase.
+
+
+## Audit database dan keamanan lanjutan — 7 November 2026
+
+### Kebijakan akses yang diverifikasi secara read-only
+
+- `store_products`: SELECT dibatasi anggota aktif; Owner dapat menulis; Karyawan hanya membaca bila perangkat berbayar/aktif. Akses memerlukan lisensi terverifikasi dan fitur `basic_stock`.
+- `financial_transactions`: Owner dapat membaca/mengubah/menghapus sesuai fitur paket; Karyawan hanya membuat dan membaca pemasukan yang dibuat oleh identitasnya, dengan perangkat aktif. Pengeluaran dan laporan keuangan penuh tetap Owner.
+- `business_attendance`: pembacaan dibatasi Owner atau identitas Karyawan yang cocok dan perangkat aktif; RPC absensi memeriksa membership, lisensi, paket, serta identitas kanonis.
+- `finance_accounts`, `finance_journal_entries`, `finance_journal_lines`, `finance_open_items`, dan `finance_parties`: kebijakan yang diperiksa membatasi operasi ke Owner dan fitur `full_finance`; jurnal yang sudah diposting tidak dapat diubah lewat jalur draft biasa.
+
+### RPC SECURITY DEFINER yang diperiksa
+
+- `record_store_quick_sale`: memeriksa sesi, membership aktif, peran, lisensi, entitlement kasir, dan aktivasi perangkat Karyawan; menggunakan advisory lock dan request ID idempoten.
+- `settle_store_open_bill`: memeriksa membership, entitlement, nominal uang diterima, total terhadap rincian, status dan harga produk; mengunci tagihan saat settlement serta mencegah pembayaran kedua.
+- `record_business_attendance_check_in/check_out`: memeriksa membership, lisensi, fitur absensi, aktivasi perangkat Karyawan, dan mencegah absen ganda.
+- `edit_business_attendance_record` dan `set_business_attendance_hourly_wage`: memerlukan Owner terdaftar aktif dan fitur absensi.
+- `get_store_product_costs`: hanya Owner terdaftar aktif dengan lisensi dan fitur keuangan penuh.
+
+Advisor Supabase masih menampilkan peringatan umum untuk fungsi SECURITY DEFINER yang dapat dipanggil role authenticated. Fungsi-fungsi yang disebut di atas memiliki pemeriksaan otorisasi di dalam badan fungsi, tetapi seluruh daftar fungsi tersebut tetap perlu ditinjau satu per satu sebelum penjualan skala luas. Advisor juga menandai proteksi kata sandi bocor belum diaktifkan; ini perlu diaktifkan pada pengaturan Auth sebelum peluncuran komersial.
+
+### Status branch dan integrasi
+
+- PR #95 tetap draft dan belum digabung ke `main`.
+- Branch PR #95 sebelumnya tertinggal dari perbaikan service-fee preview PR #96. Perbaikan frontend PR #96 dan migration RPC-nya sudah dibawa ke branch PR #95 agar penggabungan berikutnya tidak menghapus perbaikan yang sudah ada di `main`.
+- Tiga workflow CI sebelumnya lulus pada commit `5fe9b43cb9dcf06c8b99a4b47316288646a195b3`. Setelah branch diperbarui untuk membawa perbaikan PR #96, workflow untuk commit terbaru belum tersedia/terkonfirmasi; jangan menganggapnya lulus.
+- Database produksi belum menerapkan migration transaksi `20261107120000_transaction_cash_validation_and_stock_movement_ledger.sql`; frontend PR #95 tidak boleh dipasang ke produksi sebelum cutover terkoordinasi.
+- Tidak ada transaksi usaha, stok, absensi, atau data keuangan yang diubah selama audit ini. Pemeriksaan database dilakukan read-only.
