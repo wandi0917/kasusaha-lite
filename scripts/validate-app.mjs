@@ -198,6 +198,21 @@ const sellerAccountShortcut = html.includes("buka('akun',document.querySelector(
 if (!sellerAccountShortcut) fail("seller account shortcut must navigate to the existing Owner/Seller account page");
 else pass("seller account shortcut navigates to the existing Owner/Seller account page");
 
+const financeWorkspaceLoaderStart = html.indexOf("async function loadFinanceWorkspaceInternal(){");
+const financeWorkspaceLoaderEnd = html.indexOf("// Prevent overlapping workspace loads", financeWorkspaceLoaderStart);
+const financeWorkspaceLoader = financeWorkspaceLoaderStart >= 0 && financeWorkspaceLoaderEnd > financeWorkspaceLoaderStart
+  ? html.slice(financeWorkspaceLoaderStart, financeWorkspaceLoaderEnd)
+  : "";
+const financeWorkspaceSessionChecks = [
+  [financeWorkspaceLoader.includes("const session=await getVerifiedAppSession();"), "finance workspace loader must obtain a verified Supabase session"],
+  [financeWorkspaceLoader.includes("session.user.email") && financeWorkspaceLoader.includes("saveOfflineWorkspace(business,member,session.user)"), "finance workspace loader must consistently use its verified session object"],
+  [!/\\bsd\\.session\\b/.test(financeWorkspaceLoader), "finance workspace loader must not reference the undefined sd variable"],
+];
+for (const [ok, message] of financeWorkspaceSessionChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
 const financeUnlicensedMessage = /errorCode==='P0001'[\s\S]{0,240}Paket aktif dan pembayaran terverifikasi tidak ditemukan[\s\S]{0,260}Fitur akuntansi lengkap memerlukan lisensi KasUsaha Lite yang aktif/.test(html);
 if (!financeUnlicensedMessage) fail("unlicensed finance access must show a clear license activation message instead of a raw database exception");
 else pass("unlicensed finance access shows a clear license activation message");
