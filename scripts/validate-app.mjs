@@ -300,6 +300,7 @@ if (!/REVOKE SELECT ON TABLE public\.store_products FROM authenticated/i.test(co
 
 
 const createMidtrans = fs.readFileSync("supabase/functions/create-midtrans-payment/index.ts", "utf8");
+const biteshipCreateShipment = fs.readFileSync("supabase/functions/biteship-create-shipment/index.ts", "utf8");
 const employeeActivation = fs.readFileSync("supabase/functions/employee-device-activation/index.ts", "utf8");
 const licenseActivation = fs.readFileSync("supabase/functions/activate-kasusaha-license/index.ts", "utf8");
 const biteshipShipment = fs.readFileSync("supabase/functions/biteship-create-shipment/index.ts", "utf8");
@@ -336,6 +337,14 @@ for (const [pattern, source, message] of refundReviewChecks) {
   if (!pattern.test(source)) fail(message);
   else pass(message);
 }
+
+if (!/isLiveBiteshipKey && Deno\.env\.get\("BITESHIP_PRODUCTION_BOOKING_ENABLED"\) !== "true"/.test(biteshipCreateShipment)) {
+  fail("live Biteship API keys must require a separate production booking flag");
+} else pass("live Biteship shipment creation requires a separate explicit production flag");
+
+if (!/isTestBiteshipKey[\s\S]{0,220}BITESHIP_PRODUCTION_BOOKING_ENABLED/.test(paymentWebhook)) {
+  fail("Midtrans webhook must not call live Biteship booking without the separate production flag");
+} else pass("Midtrans webhook only triggers live Biteship booking when the production flag is enabled");
 
 const operationalChecks = [
   [/\.upsert\(batch,\s*\{\s*onConflict:\s*['"]business_id,legacy_ref['"],\s*ignoreDuplicates:\s*true\s*\}\)/, html, "offline sync must be idempotent by business and legacy reference"],
