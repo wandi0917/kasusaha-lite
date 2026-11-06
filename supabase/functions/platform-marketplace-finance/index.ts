@@ -259,6 +259,11 @@ Deno.serve(async (req) => {
   const paid = sum(payouts.filter((x) => x.status === "paid"));
   const pending = sum(payouts.filter((x) => ["pending", "submitted"].includes(x.status)));
 
+  // Pencairan pending/submitted sudah mengalokasikan saldo dan tidak boleh
+  // tetap dihitung sebagai dana yang tersedia untuk pencairan berikutnya.
+  // Status failed/cancelled/reversed tidak mengurangi saldo tersedia.
+  const availableNotPaidOut = net - paid - pending;
+
   return out({
     authorized: true,
     role: "platform_owner",
@@ -271,7 +276,7 @@ Deno.serve(async (req) => {
       commission_held_for_review: held,
       total_paid_out: paid,
       pending_payout: pending,
-      available_not_paid_out: net - paid,
+      available_not_paid_out: availableNotPaidOut,
     },
     commissions,
     payouts,
