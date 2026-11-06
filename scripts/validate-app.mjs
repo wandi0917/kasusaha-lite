@@ -749,4 +749,31 @@ if (!/\.select\('id'\)\.maybeSingle\(\)/.test(deactivateBlock) || !/if\(!updated
   fail("product deactivation must verify that a row was actually updated");
 } else pass("product deactivation verifies that a row was actually updated");
 
+const productFormStart = html.indexOf("$('storeProductForm')?.addEventListener('submit'");
+const productFormEnd = html.indexOf("$('stockProductSelect')?.addEventListener", productFormStart);
+const productFormBlock = productFormStart >= 0 && productFormEnd > productFormStart
+  ? html.slice(productFormStart, productFormEnd)
+  : "";
+const productWriteChecks = [
+  [/productConfirmed=true/, productFormBlock, "product form must track server-confirmed product writes separately from refresh"],
+  [/needsCostUpdate=editId\?previousCost!==costPrice:costPrice>0/, productFormBlock, "product form must skip unnecessary cost RPC when no cost change is intended"],
+  [/\.select\('id'\)\.maybeSingle\(\);error=updated\.error;productId=updated\.data\?\.id\|\|null/, productFormBlock, "product edit must verify that an existing row was updated"],
+  [/catch\(refreshErr\)/, productFormBlock, "product form must handle refresh failure separately from a confirmed product save"],
+  [/Jangan simpan ulang barang yang sama/, productFormBlock, "product form must warn against duplicate save after server confirmation"],
+];
+for (const [pattern, source, message] of productWriteChecks) {
+  if (!source || !pattern.test(source)) fail(message);
+  else pass(message);
+}
+
+const deactivateConfirmationChecks = [
+  [/deactivated=true/, deactivateBlock, "product deactivation must track server confirmation separately from refresh"],
+  [/catch\(refreshErr\)/, deactivateBlock, "product deactivation must handle list refresh failure separately"],
+  [/SUDAH DINONAKTIFKAN di server/, deactivateBlock, "product deactivation must not report a confirmed change as failed after refresh errors"],
+];
+for (const [pattern, source, message] of deactivateConfirmationChecks) {
+  if (!source || !pattern.test(source)) fail(message);
+  else pass(message);
+}
+
 if (process.exitCode) process.exit(process.exitCode);
