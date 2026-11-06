@@ -612,4 +612,168 @@ for (const [ok, message] of paymentIntegrityChecks) {
   else pass(message);
 }
 
+
+const quickSaleSubmitStart = html.indexOf("$('quickSaleForm')?.addEventListener('submit',async function(e){");
+const quickSaleSubmitEnd = html.indexOf("\nfunction financePeriodBounds(){", quickSaleSubmitStart);
+const quickSaleSubmitBlock = quickSaleSubmitStart >= 0 && quickSaleSubmitEnd > quickSaleSubmitStart
+  ? html.slice(quickSaleSubmitStart, quickSaleSubmitEnd)
+  : "";
+const transactionCashMigration = fs.readFileSync(
+  "supabase/migrations/20261107120000_transaction_cash_validation_and_stock_movement_ledger.sql",
+  "utf8",
+);
+const transactionCashChecks = [
+  [/p_cash_received:\s*cashReceived/, quickSaleSubmitBlock, "cashier must send the received cash amount to the server-side RPC"],
+  [/cashReceived,lines:lines\.map/, quickSaleSubmitBlock, "cash received must be part of the persisted retry fingerprint"],
+  [/serverCashReceived!==cashReceived/, quickSaleSubmitBlock, "cashier must verify the server-confirmed cash amount"],
+  [/serverChange!==cashReceived-amount/, quickSaleSubmitBlock, "cashier must verify the server-confirmed change amount"],
+  [/quickSaleResponseNeedsReview=true/, quickSaleSubmitBlock, "mismatched successful RPC responses must retain the idempotency key and block resubmission"],
+  [/IF p_cash_received IS NULL OR p_cash_received < v_total OR p_cash_received <> trunc\(p_cash_received\)/, transactionCashMigration, "database RPC must reject missing, insufficient, or fractional cash received"],
+  [/REVOKE ALL ON FUNCTION public\.record_store_quick_sale\(uuid,text,jsonb,uuid\) FROM PUBLIC, anon, authenticated/, transactionCashMigration, "legacy four-argument cashier RPC must not remain callable by client roles"],
+  [/GRANT EXECUTE ON FUNCTION public\.record_store_quick_sale\(uuid,text,jsonb,uuid,numeric\) TO authenticated, service_role/, transactionCashMigration, "cash-validated five-argument cashier RPC must be callable by authenticated members"],
+  [/set_config\('kasusaha\.stock_movement_type', 'sale', true\)/, transactionCashMigration, "cashier stock deductions must be classified as sale movements"],
+  [/CREATE TRIGGER store_products_stock_movement_audit/, transactionCashMigration, "stock changes must be captured by the stock movement audit trigger"],
+];
+for (const [pattern, source, message] of transactionCashChecks) {
+  if (!source || !pattern.test(source)) fail(message);
+  else pass(message);
+}
+
+const quickSalePayDraftStart = html.indexOf("$('quickSalePayDraft')?.addEventListener('click',async function(){");
+const quickSalePayDraftEnd = html.indexOf("// Entri nama pelanggan / nomor meja", quickSalePayDraftStart);
+const quickSalePayDraftBlock = quickSalePayDraftStart >= 0 && quickSalePayDraftEnd > quickSalePayDraftStart
+  ? html.slice(quickSalePayDraftStart, quickSalePayDraftEnd)
+  : "";
+const openBillPaymentChecks = [
+  [/p_cash_received:cash/, quickSalePayDraftBlock, "open-bill settlement must send the actual cash received to the server"],
+  [/paymentConfirmed=true/, quickSalePayDraftBlock, "open-bill UI must remember when server settlement is confirmed"],
+  [/data\.payment_cash/, quickSalePayDraftBlock, "open-bill UI must read the server-confirmed cash received"],
+  [/data\.change_amount/, quickSalePayDraftBlock, "open-bill UI must read the server-confirmed change"],
+  [/paymentMatches=wasAlreadyPaid\|\|/, quickSalePayDraftBlock, "already-paid idempotent responses must be distinguished from new settlements"],
+  [/catch\(refreshErr\)/, quickSalePayDraftBlock, "open-bill refresh failures must be handled separately from settlement failures"],
+  [/Pembayaran sudah dikonfirmasi server/, quickSalePayDraftBlock, "refresh failures after payment must never be reported as an unconfirmed payment"],
+  [/Jangan ulangi pembayaran/, quickSalePayDraftBlock, "confirmed open-bill payments must instruct cashiers not to repeat payment"],
+];
+for (const [pattern, source, message] of openBillPaymentChecks) {
+  if (!source || !pattern.test(source)) fail(message);
+  else pass(message);
+}
+
+const stockEntryStart = html.indexOf("$('stockEntryForm')?.addEventListener('submit',async function(e){");
+const stockEntryEnd = html.indexOf("\nlet activeOpenBillId=null;", stockEntryStart);
+const stockEntryBlock = stockEntryStart >= 0 && stockEntryEnd > stockEntryStart
+  ? html.slice(stockEntryStart, stockEntryEnd)
+  : "";
+const stockMovementChecks = [
+  [/rpc\('adjust_store_product_stock'/, stockEntryBlock, "stock entry must use the atomic stock-adjustment RPC"],
+  [/p_movement_type:type/, stockEntryBlock, "stock entry must send the selected movement type"],
+  [/p_quantity:qty/, stockEntryBlock, "stock entry must send the requested integer quantity"],
+  [/p_request_id:requestId/, stockEntryBlock, "stock entry must use a stable idempotency request ID"],
+  [/kasusaha_stock_adjustment_pending_v1/, stockEntryBlock, "stock entry must persist an unresolved request key"],
+  [/result\.quantity_before/, stockEntryBlock, "stock entry must verify the server's before quantity"],
+  [/result\.quantity_after/, stockEntryBlock, "stock entry must verify the server's after quantity"],
+  [/result\.quantity_delta/, stockEntryBlock, "stock entry must verify the server's stock delta"],
+  [/CREATE OR REPLACE FUNCTION public\.adjust_store_product_stock/, transactionCashMigration, "database migration must define the stock-adjustment RPC"],
+  [/GRANT EXECUTE ON FUNCTION public\.adjust_store_product_stock\(uuid,uuid,text,integer,uuid\) TO authenticated, service_role/, transactionCashMigration, "stock-adjustment RPC must be granted to authenticated users with server-side Owner checks"],
+];
+for (const [pattern, source, message] of stockMovementChecks) {
+  if (!source || !pattern.test(source)) fail(message);
+  else pass(message);
+}
+if (!html.includes("input.min=this.value==='set'?'0':'1'")) {
+  fail("stock correction mode must allow setting the stock quantity to zero");
+} else pass("stock correction mode allows a zero stock quantity");
+if (/\.from\('store_products'\)\.update\(\{stock_quantity:next/.test(stockEntryBlock)) {
+  fail("stock entry must not directly update store_products.stock_quantity from the client");
+} else pass("stock entry does not directly update store_products.stock_quantity from the client");
+
+const financeFormStart = html.indexOf("$('financeForm')?.addEventListener('submit'");
+const financeFormEnd = html.indexOf("\nlet storeProductRows=[];", financeFormStart);
+const financeFormBlock = financeFormStart >= 0 && financeFormEnd > financeFormStart
+  ? html.slice(financeFormStart, financeFormEnd)
+  : "";
+const financeFormConfirmationChecks = [
+  [/transactionConfirmed=true/, financeFormBlock, "manual finance form must track server-confirmed writes separately from report refresh"],
+  [/catch\(refreshErr\)/, financeFormBlock, "manual finance form must handle report refresh failure after confirmed save"],
+  [/Jangan ulangi pencatatan/, financeFormBlock, "manual finance form must warn against duplicate entry after confirmed save"],
+  [/PENCATATAN BELUM DAPAT DINYATAKAN BERHASIL/, financeFormBlock, "manual finance form must preserve a separate pre-confirmation error path"],
+];
+for (const [pattern, source, message] of financeFormConfirmationChecks) {
+  if (!source || !pattern.test(source)) fail(message);
+  else pass(message);
+}
+
+const attendanceWageStart = html.indexOf("async function saveAttendanceWage(){");
+const attendanceWageEnd = html.indexOf("async function editAttendanceRecord(row)", attendanceWageStart);
+const attendanceWageBlock = attendanceWageStart >= 0 && attendanceWageEnd > attendanceWageStart
+  ? html.slice(attendanceWageStart, attendanceWageEnd)
+  : "";
+const attendanceEditStart = html.indexOf("async function editAttendanceRecord(row)");
+const attendanceEditEnd = html.indexOf("async function editAttendanceWage(identityId,item)", attendanceEditStart);
+const attendanceEditBlock = attendanceEditStart >= 0 && attendanceEditEnd > attendanceEditStart
+  ? html.slice(attendanceEditStart, attendanceEditEnd)
+  : "";
+const attendanceMemberWageStart = html.indexOf("async function editAttendanceWage(identityId,item)");
+const attendanceMemberWageEnd = html.indexOf("async function loadAttendance()", attendanceMemberWageStart);
+const attendanceMemberWageBlock = attendanceMemberWageStart >= 0 && attendanceMemberWageEnd > attendanceMemberWageStart
+  ? html.slice(attendanceMemberWageStart, attendanceMemberWageEnd)
+  : "";
+const checkInStart = html.indexOf("async function absenMasuk(){");
+const checkInEnd = html.indexOf("async function absenPulang()", checkInStart);
+const checkInBlock = checkInStart >= 0 && checkInEnd > checkInStart ? html.slice(checkInStart, checkInEnd) : "";
+const checkOutStart = html.indexOf("async function absenPulang(){");
+const checkOutEnd = html.indexOf("// Ikat aksi absensi secara eksplisit", checkOutStart);
+const checkOutBlock = checkOutStart >= 0 && checkOutEnd > checkOutStart ? html.slice(checkOutStart, checkOutEnd) : "";
+const attendanceConfirmationChecks = [
+  [/wageConfirmed=true/, attendanceWageBlock, "Owner hourly wage save must distinguish server confirmation from refresh failure"],
+  [/data\?\.ok/, attendanceWageBlock, "Owner hourly wage save must validate the server success response"],
+  [/editConfirmed=true/, attendanceEditBlock, "attendance edit must distinguish server confirmation from refresh failure"],
+  [/data\?\.ok/, attendanceEditBlock, "attendance edit must validate the server success response"],
+  [/wageConfirmed=true/, attendanceMemberWageBlock, "employee hourly wage update must distinguish server confirmation from refresh failure"],
+  [/attendanceConfirmed=true/, checkInBlock, "check-in must not report a confirmed attendance as failed after refresh errors"],
+  [/attendanceConfirmed=true/, checkOutBlock, "check-out must not report a confirmed attendance as failed after refresh errors"],
+  [/Jangan absen masuk ulang/, checkInBlock, "confirmed check-in refresh failure must warn against repeating check-in"],
+  [/Jangan absen pulang ulang/, checkOutBlock, "confirmed check-out refresh failure must warn against repeating check-out"],
+];
+for (const [pattern, source, message] of attendanceConfirmationChecks) {
+  if (!source || !pattern.test(source)) fail(message);
+  else pass(message);
+}
+
+const deactivateStart = html.indexOf("async function deactivateStoreProduct(id)");
+const deactivateEnd = html.indexOf("function cancelStoreProductEdit()", deactivateStart);
+const deactivateBlock = deactivateStart >= 0 && deactivateEnd > deactivateStart
+  ? html.slice(deactivateStart, deactivateEnd)
+  : "";
+if (!/\.select\('id'\)\.maybeSingle\(\)/.test(deactivateBlock) || !/if\(!updated\)throw/.test(deactivateBlock)) {
+  fail("product deactivation must verify that a row was actually updated");
+} else pass("product deactivation verifies that a row was actually updated");
+
+const productFormStart = html.indexOf("$('storeProductForm')?.addEventListener('submit'");
+const productFormEnd = html.indexOf("$('stockProductSelect')?.addEventListener", productFormStart);
+const productFormBlock = productFormStart >= 0 && productFormEnd > productFormStart
+  ? html.slice(productFormStart, productFormEnd)
+  : "";
+const productWriteChecks = [
+  [/productConfirmed=true/, productFormBlock, "product form must track server-confirmed product writes separately from refresh"],
+  [/needsCostUpdate=editId\?previousCost!==costPrice:costPrice>0/, productFormBlock, "product form must skip unnecessary cost RPC when no cost change is intended"],
+  [/\.select\('id'\)\.maybeSingle\(\);error=updated\.error;productId=updated\.data\?\.id\|\|null/, productFormBlock, "product edit must verify that an existing row was updated"],
+  [/catch\(refreshErr\)/, productFormBlock, "product form must handle refresh failure separately from a confirmed product save"],
+  [/Jangan simpan ulang barang yang sama/, productFormBlock, "product form must warn against duplicate save after server confirmation"],
+];
+for (const [pattern, source, message] of productWriteChecks) {
+  if (!source || !pattern.test(source)) fail(message);
+  else pass(message);
+}
+
+const deactivateConfirmationChecks = [
+  [/deactivated=true/, deactivateBlock, "product deactivation must track server confirmation separately from refresh"],
+  [/catch\(refreshErr\)/, deactivateBlock, "product deactivation must handle list refresh failure separately"],
+  [/SUDAH DINONAKTIFKAN di server/, deactivateBlock, "product deactivation must not report a confirmed change as failed after refresh errors"],
+];
+for (const [pattern, source, message] of deactivateConfirmationChecks) {
+  if (!source || !pattern.test(source)) fail(message);
+  else pass(message);
+}
+
 if (process.exitCode) process.exit(process.exitCode);
