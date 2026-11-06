@@ -499,7 +499,17 @@ if (!employeeMarkPaidBlock.includes('.eq("status", "pending_payment")') ||
 if (!employeeRevokeBlock.includes("activationRevokeError") ||
     !employeeRevokeBlock.includes("memberRevokeError") ||
     employeeRevokeBlock.indexOf("activationRevokeError") > employeeRevokeBlock.indexOf("memberRevokeError")) {
-  fail("employee revocation must persist activation revocation before deactivating membership");
-} else pass("employee revocation persists activation revocation before deactivating membership");
+  fail("employee invite-code revocation must persist activation revocation before deactivating membership");
+} else pass("employee invite-code revocation persists activation revocation before deactivating membership");
+
+const employeeDeactivateStart = employeeActivation.indexOf('if (action === "owner_deactivate")');
+const employeeDeactivateEnd = employeeActivation.indexOf('const { error: memberUpdateError }', employeeDeactivateStart);
+const employeeDeactivateBlock = employeeDeactivateStart >= 0 && employeeDeactivateEnd > employeeDeactivateStart
+  ? employeeActivation.slice(employeeDeactivateStart, employeeDeactivateEnd)
+  : "";
+if (!employeeDeactivateBlock.includes("revokeError") ||
+    employeeDeactivateBlock.indexOf("revokeError") > employeeDeactivateBlock.indexOf("memberUpdateError")) {
+  fail("owner deactivation must revoke employee activations before deactivating membership");
+} else pass("owner deactivation revokes employee activations before deactivating membership");
 
 if (process.exitCode) process.exit(process.exitCode);
