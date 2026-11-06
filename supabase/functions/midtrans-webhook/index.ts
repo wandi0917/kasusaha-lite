@@ -626,13 +626,6 @@ Deno.serve(async (req: Request) => {
     }, 503);
   }
   const isProduction = configuredMode === "true";
-  if (isProduction && String(Deno.env.get("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED") ?? "").trim().toLowerCase() !== "true") {
-    return reply({
-      success: false,
-      code: "PRODUCTION_PAYMENTS_NOT_ENABLED",
-      message: "Pemrosesan pembayaran Production belum diaktifkan melalui gerbang cutover.",
-    }, 503);
-  }
   const serverKey = isProduction
     ? Deno.env.get("MIDTRANS_SERVER_KEY_PRODUCTION")
     : (Deno.env.get("MIDTRANS_SERVER_KEY_SANDBOX") || Deno.env.get("MIDTRANS_SERVER_KEY"));
