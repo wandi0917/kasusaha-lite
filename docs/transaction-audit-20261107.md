@@ -25,10 +25,12 @@
 - Memasukkan uang diterima dan kembalian ke dialog konfirmasi.
 - Alur pembayaran tagihan tersimpan kini membedakan hasil settlement server dari kegagalan refresh laporan; kegagalan refresh tidak lagi dilaporkan sebagai pembayaran belum terkonfirmasi.
 - Pembayaran tagihan tersimpan memeriksa nominal uang dan kembalian yang dikembalikan server, serta memberi instruksi jangan mengulang pembayaran bila settlement sudah dikonfirmasi.
+- Form entri stok Owner menggunakan RPC atomik `adjust_store_product_stock`, request ID idempoten, dan verifikasi kuantitas sebelum/sesudah/delta dari server; pembaruan langsung kolom `stock_quantity` dari form klien dihapus.
+- Mode koreksi stok dapat menetapkan nilai nol; stok masuk/keluar tetap mensyaratkan jumlah minimal satu.
 - Memverifikasi nilai uang diterima dan kembalian yang dikembalikan server.
 - Jika server sudah mengonfirmasi penjualan tetapi nilai kas/kembalian tidak cocok, kunci idempotensi dipertahankan dan tombol submit dinonaktifkan. Pengguna diberi instruksi untuk tidak mengulang transaksi.
 - Menampilkan nilai uang diterima dan kembalian yang sudah diverifikasi server pada pesan sukses.
-- Menambah regression checks untuk kontrak frontend-RPC, pembayaran tagihan tersimpan, dan migration ledger stok.
+- Menambah regression checks untuk kontrak frontend-RPC, pembayaran tagihan tersimpan, dan migration ledger stok/penyesuaian stok.
 
 ## Urutan cutover wajib
 
@@ -47,7 +49,7 @@ Tidak ada perubahan schema/database produksi yang dilakukan selama audit ini. Mi
 
 ## Status verifikasi
 
-- Pemeriksaan statis atas 10 kontrak frontend/migration: lulus.
+- Pemeriksaan statis atas 15 kontrak frontend/migration (penjualan, tagihan tersimpan, dan penyesuaian stok): lulus.
 - Pemeriksaan schema Supabase read-only: selesai.
 - Pemeriksaan RLS/constraint terkait transaksi: selesai.
 - Pemeriksaan log PostgreSQL terkait transaksi pada jendela 24 jam: tidak menemukan error yang cocok.
