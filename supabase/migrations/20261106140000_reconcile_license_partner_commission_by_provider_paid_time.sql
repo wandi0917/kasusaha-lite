@@ -39,7 +39,7 @@ BEGIN
   IF NOT FOUND
      OR v_order.status <> 'paid'
      OR v_order.paid_at IS NULL
-     OR v_order.payment_provider <> 'midtrans'
+     OR v_order.payment_provider IS DISTINCT FROM 'midtrans'
      OR COALESCE(v_order.payment_review_required, false) THEN
     RETURN jsonb_build_object('success', false, 'reason', 'order_not_verified_paid');
   END IF;
@@ -196,7 +196,7 @@ BEGIN
         first_order_id = EXCLUDED.first_order_id,
         attributed_at = EXCLUDED.attributed_at;
 
-  IF v_partner.status <> 'active' THEN
+  IF v_partner.status IS DISTINCT FROM 'active' THEN
     UPDATE public.license_partner_commission_ledger
     SET status = 'held',
         available_at = NULL,
