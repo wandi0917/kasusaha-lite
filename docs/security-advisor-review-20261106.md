@@ -9,7 +9,7 @@ Scope: read-only Supabase Production inspection; no customer data modified.
 The Security Advisor currently reports:
 - 16 SECURITY DEFINER function signatures executable by authenticated (15 distinct function names; create_kasusaha_package_order has two overloads).
 - 20 tables with RLS enabled and no policies.
-- Advisor also reports policies that permit the anon database role on selected tables; this is distinct from the Auth anonymous-sign-in toggle and must be reviewed by policy/table.
+- Advisor also reports RLS policies that can be satisfied by anonymous Auth users (JWT claim is_anonymous=true). These policies target the authenticated database role; they are not grants to the Postgres anon role.
 - Leaked-password protection disabled.
 
 The findings were checked against live grants and function definitions before any change. They are not all defects, and blanket revocation would break core Owner/Employee workflows.
@@ -75,7 +75,7 @@ Keep these tables server-only. If a future frontend feature needs data from them
 
 The application intentionally uses a restricted anonymous Employee session for the invite/device login flow. The frontend and database restrict this session to permitted Employee cashier/attendance paths and require paid device activation plus a verified business license.
 
-The current Advisor output also labels several policies as allowing anonymous access. That finding is about the anon database role and individual RLS policies; it must not be conflated with the Auth setting that permits anonymous account creation. The flagged policies include application tables such as business_members, business_workspaces, store_products, kasusaha_licenses, and marketplace participant reads. Their predicates must be retained only where required by the anonymous Employee/buyer use cases and must be tested with both anonymous and authenticated sessions. Do not broaden these policies or disable the Employee anonymous-session dependency without a complete replacement and regression test.
+The current Advisor output labels several policies as allowing anonymous access. In the live pg_policies definitions, these policies are granted to the authenticated database role and rely on auth.uid() and membership/ownership predicates; an anonymous Auth user also receives the authenticated database role, with JWT claim is_anonymous=true. This is not the same as granting table privileges to the Postgres anon role. Examples include business_members self-read, business_workspaces member-read, business_attendance member-read, store_products member-read (employee additionally requires paid device), financial_transactions employee/owner scopes, verified buyer license reads, and marketplace participant reads. The paid Employee anonymous-session flow intentionally depends on a narrow subset. Do not add broad is_anonymous bypasses or blanket-deny these policies; instead test anonymous Employee, ordinary signed-in Owner, buyer, seller, and unrelated anonymous users separately. In particular, business_members and workspace visibility should be validated against the actual intended employee workflow before tightening.
 
 Do not disable anonymous sign-ins until the Employee login flow is migrated to a non-anonymous authentication design and verified on real devices. Recheck the full Employee login, cashier, attendance, and logout lifecycle after any future change.
 
