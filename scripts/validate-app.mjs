@@ -198,6 +198,21 @@ const sellerAccountShortcut = html.includes("buka('akun',document.querySelector(
 if (!sellerAccountShortcut) fail("seller account shortcut must navigate to the existing Owner/Seller account page");
 else pass("seller account shortcut navigates to the existing Owner/Seller account page");
 
+const financeWorkspaceLoaderStart = html.indexOf("async function loadFinanceWorkspaceInternal(){");
+const financeWorkspaceLoaderEnd = html.indexOf("// Prevent overlapping workspace loads", financeWorkspaceLoaderStart);
+const financeWorkspaceLoader = financeWorkspaceLoaderStart >= 0 && financeWorkspaceLoaderEnd > financeWorkspaceLoaderStart
+  ? html.slice(financeWorkspaceLoaderStart, financeWorkspaceLoaderEnd)
+  : "";
+const financeWorkspaceSessionChecks = [
+  [financeWorkspaceLoader.includes("const session=await getVerifiedAppSession();"), "finance workspace loader must obtain a verified Supabase session"],
+  [financeWorkspaceLoader.includes("session.user.email") && financeWorkspaceLoader.includes("saveOfflineWorkspace(business,member,session.user)"), "finance workspace loader must consistently use its verified session object"],
+  [!/\\bsd\\.session\\b/.test(financeWorkspaceLoader), "finance workspace loader must not reference the undefined sd variable"],
+];
+for (const [ok, message] of financeWorkspaceSessionChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
 const financeUnlicensedMessage = /errorCode==='P0001'[\s\S]{0,240}Paket aktif dan pembayaran terverifikasi tidak ditemukan[\s\S]{0,260}Fitur akuntansi lengkap memerlukan lisensi KasUsaha Lite yang aktif/.test(html);
 if (!financeUnlicensedMessage) fail("unlicensed finance access must show a clear license activation message instead of a raw database exception");
 else pass("unlicensed finance access shows a clear license activation message");
@@ -608,6 +623,25 @@ const paymentIntegrityChecks = [
   [partnerCommissionMigration.includes("v_order.payment_provider IS DISTINCT FROM 'midtrans'"), "license partner commission requires an explicitly Midtrans-paid order"],
 ];
 for (const [ok, message] of paymentIntegrityChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
+
+const serviceFeePanelStart = html.indexOf("function toggleOwnerServiceFeePanel(show){");
+const serviceFeePanelEnd = html.indexOf("\nasync function loadFinanceWorkspaceInternal(){", serviceFeePanelStart);
+const serviceFeePanel = serviceFeePanelStart >= 0 && serviceFeePanelEnd > serviceFeePanelStart
+  ? html.slice(serviceFeePanelStart, serviceFeePanelEnd)
+  : "";
+const serviceFeePreviewChecks = [
+  [serviceFeePanel.includes("kasusaha_accept_service_fee_terms"), "Owner preview activation must call the server-side trial RPC"],
+  [serviceFeePanel.includes("data.preview_only!==true") && serviceFeePanel.includes("data.billing_enabled!==false") && serviceFeePanel.includes("data.fee_enabled!==false"), "Owner preview activation must fail closed unless server confirms preview-only and billing/fee disabled"],
+  [serviceFeePanel.includes("financeBusiness={...financeBusiness,service_fee_trial_started_at:data.trial_started_at}"), "Successful trial RPC response must immediately update the active workspace UI without depending on a second table read"],
+  [!serviceFeePanel.includes("confirm("), "Owner preview activation must not depend on a browser confirmation dialog after explicit checkbox consent"],
+  [serviceFeePanel.includes("formatToParts") && serviceFeePanel.includes("timeZone:'Asia/Jakarta'"), "Monthly preview must derive the month safely in Asia/Jakarta"],
+  [serviceFeePanel.includes("String(financeBusiness.owner_id||'').toLowerCase()") && serviceFeePanel.includes("String(financeMemberUserId||'').toLowerCase()"), "Owner preview UI must compare normalized owner and session identifiers"],
+];
+for (const [ok, message] of serviceFeePreviewChecks) {
   if (!ok) fail(message);
   else pass(message);
 }
