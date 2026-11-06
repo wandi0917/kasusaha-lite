@@ -7613,6 +7613,34 @@ html body>main>#beranda>.usage-guide{
   html body>main>#beranda.tab.active{padding-top:3px!important}
   html body>main>#beranda>.usage-guide{margin-top:2px!important}
 }
+
+/* Finalisasi banner beranda: hilangkan ilustrasi samping grafik/produk,
+   pertahankan hanya banner utama yang diminta. */
+html body>header.ks-brand-header .kasusaha-banner-stage{
+  display:flex!important;
+  justify-content:center!important;
+  align-items:center!important;
+  width:100%!important;
+  max-width:900px!important;
+  margin:0 auto!important;
+}
+html body>header.ks-brand-header .kasusaha-banner-side{
+  display:none!important;
+}
+html body>header.ks-brand-header .kasusaha-banner-image-button{
+  display:block!important;
+  width:100%!important;
+  max-width:680px!important;
+  margin:0 auto!important;
+}
+@media(prefers-reduced-motion:reduce){
+  html body>header.ks-brand-header .kasusaha-banner-stage *,
+  html body>header.ks-brand-header .kasusaha-banner-stage *::before,
+  html body>header.ks-brand-header .kasusaha-banner-stage *::after{
+    animation:none!important;
+    transition:none!important;
+  }
+}
 </style>
 
 </body>
