@@ -17,7 +17,7 @@ Repositori: `wandi0917/kasusaha-lite`
 Dua migrasi tambahan telah diterapkan langsung melalui Supabase migration API setelah dry-run berurutan dalam transaksi `BEGIN/ROLLBACK`:
 
 - Remote version `20261106113748`, name `20261106100000_fail_closed_store_product_cost_entitlement`; file repo `supabase/migrations/20261106113748_fail_closed_store_product_cost_entitlement.sql`.
-- Remote version `20261106115240`, name `20261106113000_fail_closed_package_entitlement_helper_and_finance_rpcs`; file repo `supabase/migrations/20261106113750_fail_closed_package_entitlement_helper_and_finance_rpcs.sql`.
+- Remote version `20261106113750`, name `20261106113000_fail_closed_package_entitlement_helper_and_finance_rpcs`; file repo `supabase/migrations/20261106113750_fail_closed_package_entitlement_helper_and_finance_rpcs.sql`.
 
 Perubahan ini tidak menghapus atau mengubah data bisnis. Perubahan memperketat fungsi harga modal, helper entitlement, posting jurnal, dan pelunasan piutang/utang agar entitlement yang tidak dapat dipastikan ditolak. Lisensi lama dengan `plan_code` kosong tetap mengikuti aturan kompatibilitas yang sudah ada. Verifikasi setelah penerapan menunjukkan kedua versi tercatat pada remote migration history dan definisi fungsi produksi sudah sesuai.
 
@@ -35,7 +35,7 @@ Aplikasi produksi tetap berjalan; kondisi ini tidak dengan sendirinya berarti sk
 
 ## Perbaikan yang sudah dilakukan pada audit ini
 
-- Menyamakan nama file migrasi yang tersedia dengan versi remote untuk 27 file yang ada.
+- Menyamakan nama file migrasi yang tersedia dengan versi remote untuk 30 file yang ada.
 - Menambahkan migrasi server timestamp dengan versi remote `20261105115528`.
 - Menerapkan migrasi tersebut ke Supabase setelah pengujian aman dalam transaksi `BEGIN/ROLLBACK`.
 - Memverifikasi kolom `server_recorded_at` tersedia, tidak ada nilai kosong, trigger aktif, dan belum ada usaha yang menyetujui atau memulai trial.
@@ -47,7 +47,7 @@ Dua file migrasi entitlement baru kini menjadi bagian `main` dan cocok dengan re
 
 ## Versi migrasi pending setelah entitlement
 
-- Migrasi referral capture belum diterapkan ke Production. File lokalnya telah diberi versi baru `20261106114000_license_package_checkout_referral_capture.sql`, karena versi sebelumnya `20261105170000` lebih tua daripada remote latest `20261106113750`.
+- Migrasi referral capture belum diterapkan ke Production. File lokalnya telah diberi versi baru `20261106115500_license_package_checkout_referral_capture.sql`, karena versi sebelumnya `20261105170000` lebih tua daripada remote latest `20261106113750`.
 - Migrasi ini tetap kandidat dan hanya boleh diterapkan setelah baseline historis/staging dan pengujian Midtrans Sandbox selesai. Re-version file tidak menjalankan SQL dan tidak mengubah database.
 
 ## Pembaruan RLS store_products 6 November 2026
@@ -57,3 +57,7 @@ Remote version `20261106115240` memperketat policy SELECT/INSERT/UPDATE/DELETE p
 ## Pending referral migration version after latest RLS migration
 
 The referral-capture SQL remains unapplied. Its repository file is now versioned `20261106115500_license_package_checkout_referral_capture.sql`, after remote latest `20261106115240`. The provider-paid-time reconciliation migration remains a draft candidate and must be ordered after referral capture. No SQL was executed by this file rename.
+
+## Koreksi catatan versi remote
+
+Versi remote `20261106113750` adalah migrasi helper entitlement/finance; versi remote `20261106115240` adalah migrasi policy RLS store_products. Keduanya berbeda dan harus tetap dicatat sesuai nama file masing-masing. Remote history kini 111, main 30 file SQL cocok, dan gap historis tetap 81.
