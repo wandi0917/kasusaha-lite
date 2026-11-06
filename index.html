@@ -1962,6 +1962,13 @@ async function bagikanKasUsahaLite(){
 <div id="ownerStoreCatalog" class="card" hidden>
 <h3>Langkah berikutnya: isikan barang di toko Anda</h3>
 <p class="small">Masukkan daftar barang dan harga saat usaha mulai digunakan. Kode barang sebaiknya singkat dan mudah diketik karyawan, misalnya KOP, TEH, MIE.</p>
+<div class="card" id="stockMovementHistoryCard" hidden>
+ <h3>Riwayat Mutasi Stok</h3>
+ <p class="small">Riwayat 100 perubahan stok terakhir dari stok awal, penjualan kasir, stok masuk/keluar, dan koreksi. Riwayat ini hanya dapat dilihat Owner.</p>
+ <button type="button" class="secondary" onclick="loadStockMovementHistory()">Muat / Perbarui Riwayat Mutasi</button>
+ <div id="stockMovementHistoryStatus" class="status" role="status">Tekan tombol untuk memuat riwayat mutasi stok.</div>
+ <div class="table-wrap"><table class="report-table"><thead><tr><th>Waktu</th><th>Barang</th><th>Jenis</th><th>Perubahan</th><th>Stok sebelum</th><th>Stok sesudah</th><th>Catatan</th></tr></thead><tbody id="stockMovementHistoryRows"><tr><td colspan="7">Belum dimuat.</td></tr></tbody></table></div>
+</div>
 <form id="storeProductForm">
 <input id="storeProductEditId" type="hidden" value="">
 <div id="storeProductFormMode" class="small">Tambah barang baru. Jika kode sudah terdaftar, gunakan tombol Edit pada daftar barang di bawah.</div>
@@ -5212,7 +5219,32 @@ function renderEmployeeProductCatalog(){
  }
  if(status)status.textContent=products.length+' barang jual aktif tersedia. Karyawan hanya dapat melihat katalog; perubahan barang dan stok dilakukan Owner.';
 }
+async function loadStockMovementHistory(){
+ const status=$('stockMovementHistoryStatus'),tbody=$('stockMovementHistoryRows');
+ if(!status||!tbody)return;
+ if(!sb||!financeBusiness||financeMemberRole!=='owner'){status.className='status error';status.textContent='Riwayat mutasi stok hanya tersedia bagi Owner pada usaha yang aktif.';return;}
+ const btn=document.querySelector('#stockMovementHistoryCard button');
+ if(btn)btn.disabled=true;
+ status.className='status';status.textContent='Memuat riwayat mutasi stok dari server...';
+ try{
+  const {data,error}=await sb.from('store_stock_movements').select('id,product_code,product_name,movement_type,quantity_before,quantity_after,quantity_delta,note,created_at').eq('business_id',financeBusiness.id).order('created_at',{ascending:false}).limit(100);
+  if(error)throw error;
+  const labels={initial_stock:'Stok awal',sale:'Penjualan',stock_in:'Stok masuk',stock_out:'Stok keluar',stock_correction:'Koreksi stok',product_edit:'Edit barang'};
+  tbody.replaceChildren();
+  (data||[]).forEach(row=>{
+   const tr=document.createElement('tr');
+   const values=[new Date(row.created_at).toLocaleString('id-ID'),(row.product_code||'—')+' — '+(row.product_name||'Barang dihapus'),labels[row.movement_type]||row.movement_type,(Number(row.quantity_delta)>0?'+':'')+String(row.quantity_delta),String(row.quantity_before),String(row.quantity_after),row.note||'—'];
+   values.forEach((value,index)=>{const td=document.createElement('td');td.textContent=value;if(index===3)td.className='amount';tr.appendChild(td);});
+   tbody.appendChild(tr);
+  });
+  if(!data?.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=7;td.textContent='Belum ada mutasi stok yang tercatat.';tr.appendChild(td);tbody.appendChild(tr);}
+  status.textContent='Riwayat berhasil dimuat: '+(data||[]).length+' catatan terakhir.';
+ }catch(e){status.className='status error';status.textContent='Riwayat mutasi gagal dimuat: '+String(e.message||e).slice(0,200);}
+ finally{if(btn)btn.disabled=false;}
+}
+
 async function loadStoreProducts(){
+  if($('stockMovementHistoryCard'))$('stockMovementHistoryCard').hidden=financeMemberRole!=='owner';
   if(!sb)throw new Error('Koneksi Supabase belum tersedia.');
   if(!financeBusiness||!financeMemberRole)throw new Error('Pilih usaha dan pastikan akun Owner/Karyawan sudah terhubung sebelum memuat barang.');
   storeProductRows=await financeFetchAllRows(()=>sb.from('store_products').select('id,business_id,product_code,product_name,barcode_value,barcode_aliases,barcode_type,price,stock_quantity,stock_unit,item_type,active,created_at,updated_at').eq('business_id',financeBusiness.id).order('product_code',{ascending:true}).order('id'));
@@ -5527,19 +5559,31 @@ $('stockEntryForm')?.addEventListener('submit',async function(e){
  const current=Number(p.stock_quantity||0),next=type==='in'?current+qty:type==='out'?current-qty:qty;
  if(!Number.isSafeInteger(next)||next<0){status.className='status error';status.textContent='Stok keluar melebihi stok yang tersedia.';return;}
  const btn=$('stockMovementSave');btn.disabled=true;
- const updateStamp=new Date().toISOString();
+ const pendingKey='kasusaha_stock_adjust_pending_v1';
+ const fingerprint=JSON.stringify({businessId:financeBusiness.id,productId:p.id,type,quantity:qty});
+ let requestId='';
  try{
-  const {data:updated,error}=await sb.from('store_products').update({stock_quantity:next,updated_at:updateStamp}).eq('id',p.id).eq('business_id',financeBusiness.id).eq('stock_quantity',current).select('id,stock_quantity,updated_at').maybeSingle();
-  if(error){
-   const {data:latest,error:verifyError}=await sb.from('store_products').select('stock_quantity,updated_at').eq('id',p.id).eq('business_id',financeBusiness.id).maybeSingle();
-   if(verifyError||!latest||new Date(latest.updated_at).getTime()!==new Date(updateStamp).getTime()||Number(latest.stock_quantity)!==next)throw new Error('Perubahan stok belum dapat dipastikan. Stok mungkin berubah karena transaksi lain. Muat ulang daftar stok dan periksa sebelum mencoba lagi. '+String(error.message||error).slice(0,120));
-  }else if(!updated){
-   const {data:latest,error:latestError}=await sb.from('store_products').select('stock_quantity').eq('id',p.id).eq('business_id',financeBusiness.id).maybeSingle();
-   if(latestError)throw latestError;
-   throw new Error('Stok barang berubah dari '+current+' menjadi '+Number(latest?.stock_quantity??0)+' sebelum koreksi disimpan. Daftar stok telah berubah; muat ulang lalu ulangi dengan angka terbaru.');
+  let pending=null;
+  try{pending=JSON.parse(localStorage.getItem(pendingKey)||'null');}catch(_){throw new Error('Kunci pengaman perubahan stok tidak dapat dibaca. Jangan kirim ulang sebelum penyimpanan perangkat diperiksa.');}
+  if(pending&&pending.businessId!==financeBusiness.id)throw new Error('Ada perubahan stok tertunda dari usaha lain. Periksa usaha tersebut sebelum melanjutkan.');
+  if(pending&&pending.fingerprint!==fingerprint)throw new Error('Ada perubahan stok yang hasilnya belum dipastikan. Ulangi rincian yang sama terlebih dahulu; jangan membuat perubahan baru.');
+  if(pending&&pending.fingerprint===fingerprint&&typeof pending.requestId==='string')requestId=pending.requestId;
+  else{
+   requestId=crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16);});
+   try{localStorage.setItem(pendingKey,JSON.stringify({businessId:financeBusiness.id,fingerprint,requestId,createdAt:new Date().toISOString()}));}
+   catch(_){throw new Error('Kunci pengaman perubahan stok tidak dapat disimpan. Perubahan tidak dikirim agar tidak berisiko tercatat ganda.');}
   }
-  await loadStoreProducts();this.reset();status.className='status';status.textContent='Perubahan stok '+p.product_name+' terkonfirmasi: '+current+' → '+next+' '+(p.stock_unit||'unit')+'.';
- }catch(err){status.className='status error';status.textContent='Perubahan stok tidak dapat dinyatakan berhasil: '+String(err.message||err).slice(0,230);}
+  const {data,error}=await sb.rpc('adjust_store_product_stock',{p_business_id:financeBusiness.id,p_product_id:p.id,p_movement_type:type,p_quantity:qty,p_request_id:requestId});
+  if(error){
+   if(typeof error.code==='string'&&error.code.length){try{const saved=JSON.parse(localStorage.getItem(pendingKey)||'null');if(saved?.requestId===requestId)localStorage.removeItem(pendingKey);}catch(_){}}
+   throw new Error(String(error.message||error).slice(0,220));
+  }
+  if(!data?.ok)throw new Error('Server belum mengonfirmasi perubahan stok. Kunci permintaan dipertahankan agar tidak menggandakan perubahan.');
+  try{const saved=JSON.parse(localStorage.getItem(pendingKey)||'null');if(saved?.requestId===requestId)localStorage.removeItem(pendingKey);}catch(_){}
+  await loadStoreProducts();this.reset();
+  status.className='status';
+  status.textContent='Perubahan stok '+p.product_name+' terkonfirmasi di server: '+Number(data.quantity_before)+' → '+Number(data.quantity_after)+' '+(p.stock_unit||'unit')+'. Riwayat mutasi tersimpan.';
+ }catch(err){status.className='status error';status.textContent='Perubahan stok belum dapat dinyatakan berhasil: '+String(err.message||err).slice(0,230);}
  finally{btn.disabled=false;}
 });
 
@@ -5701,7 +5745,7 @@ $('quickSaleForm')?.addEventListener('submit',async function(e){
  const confirmText='PERIKSA TAGIHAN SEBELUM DISIMPAN\n\nLokasi: '+locationLabel+'\n\n'+itemLines.join('\n')+'\n\nTOTAL YANG HARUS DIBAYAR: '+formatStoreRupiah(amount)+'\n\nSimpan semua barang sebagai transaksi?';
  if(!window.confirm(confirmText)){setFinanceStatus('Transaksi belum disimpan. Periksa atau ubah rincian tagihan terlebih dahulu.');return;}
  const btn=$('quickSaleSave');btn.disabled=true;
- const quickSalePayload={businessId:financeBusiness.id,tableNumber:tableNumber||null,lines:lines.map(d=>({product_id:d.p.id,quantity:d.qty,unit_price:d.price}))};
+ const quickSalePayload={businessId:financeBusiness.id,tableNumber:tableNumber||null,cashReceived,lines:lines.map(d=>({product_id:d.p.id,quantity:d.qty,unit_price:d.price}))};
  const quickSaleFingerprint=JSON.stringify(quickSalePayload),quickSalePendingKey='kasusaha_quick_sale_pending_v1';
  let quickSaleRequestId='';
  try{
@@ -5720,7 +5764,7 @@ $('quickSaleForm')?.addEventListener('submit',async function(e){
    try{localStorage.setItem(quickSalePendingKey,JSON.stringify({businessId:financeBusiness.id,fingerprint:quickSaleFingerprint,requestId:quickSaleRequestId,createdAt:new Date().toISOString()}));}
    catch(_){throw new Error('Kunci pengaman transaksi tidak dapat disimpan di perangkat. Penjualan tidak dikirim agar tidak berisiko tercatat dua kali.');}
   }
-  const {data:result,error}=await sb.rpc('record_store_quick_sale',{p_business_id:financeBusiness.id,p_table_number:tableNumber||null,p_lines:quickSalePayload.lines,p_request_id:quickSaleRequestId});
+  const {data:result,error}=await sb.rpc('record_store_quick_sale',{p_business_id:financeBusiness.id,p_table_number:tableNumber||null,p_lines:quickSalePayload.lines,p_request_id:quickSaleRequestId,p_cash_received:cashReceived});
   if(error){
    // Respons SQL/PostgREST dengan kode error berarti server menolak dan me-rollback
    // transaksi. Hapus kunci lokal agar pengguna dapat memperbaiki stok/harga/izin
