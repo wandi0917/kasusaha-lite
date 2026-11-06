@@ -291,10 +291,27 @@ if (!/REVOKE SELECT ON TABLE public\.store_products FROM authenticated/i.test(co
 
 
 
+const createMidtrans = fs.readFileSync("supabase/functions/create-midtrans-payment/index.ts", "utf8");
 const employeeActivation = fs.readFileSync("supabase/functions/employee-device-activation/index.ts", "utf8");
 const licenseActivation = fs.readFileSync("supabase/functions/activate-kasusaha-license/index.ts", "utf8");
 const biteshipShipment = fs.readFileSync("supabase/functions/biteship-create-shipment/index.ts", "utf8");
 const biteshipWebhook = fs.readFileSync("supabase/functions/biteship-webhook/index.ts", "utf8");
+
+const midtransCreateGate = createMidtrans.indexOf("if (!productionPaymentsEnabled(production))");
+const midtransCreateRequest = createMidtrans.indexOf('snapBase + "/snap/v1/transactions"');
+if (midtransCreateGate < 0 || midtransCreateRequest < midtransCreateGate) {
+  fail("new Production package/marketplace payments must be gated by MIDTRANS_PRODUCTION_PAYMENTS_ENABLED");
+} else pass("new Production package/marketplace payments require the explicit server-side enable flag");
+
+const employeeSnapGateCount = (employeeActivation.match(/if \(!productionPaymentsEnabled\(production\)\)/g) || []).length;
+const employeeSnapRequestCount = (employeeActivation.match(/\/snap\/v1\/transactions/g) || []).length;
+if (employeeSnapGateCount !== 2 || employeeSnapRequestCount !== 2) {
+  fail("both employee invite and device activation payment creation paths must require the explicit Production enable flag");
+} else pass("employee invite and device activation payment creation are both Production-gated");
+
+if (!/const transactionIdMatches =\s*Boolean\(statusApiTransactionId\)\s*&&\s*\(!notificationTransactionId \|\| notificationTransactionId === statusApiTransactionId\);/.test(paymentWebhook)) {
+  fail("Midtrans webhook must require a transaction_id from Status API and match notification transaction_id when present");
+} else pass("Midtrans webhook requires and cross-checks the Status API transaction_id");
 
 const operationalChecks = [
   [/\.upsert\(batch,\s*\{\s*onConflict:\s*['"]business_id,legacy_ref['"],\s*ignoreDuplicates:\s*true\s*\}\)/, html, "offline sync must be idempotent by business and legacy reference"],
