@@ -853,9 +853,8 @@ Deno.serve(async (req: Request) => {
     midtransStatus.transaction_id ?? "",
   );
   const transactionIdMatches =
-    !notificationTransactionId ||
-    !statusApiTransactionId ||
-    notificationTransactionId === statusApiTransactionId;
+    Boolean(statusApiTransactionId) &&
+    (!notificationTransactionId || notificationTransactionId === statusApiTransactionId);
 
   if (
     !statusApiOrderMatches ||
