@@ -106,7 +106,7 @@ function midtransPaidAt(status: JsonObject): string | null {
 
   for (const raw of candidates) {
     const match = raw.match(
-      /^(\\d{4})-(\\d{2})-(\\d{2})[ Tt](\\d{2}):(\\d{2}):(\\d{2})(\\.\\d+)?(Z|[+-]\\d{2}:?\\d{2})?$/i,
+      /^(\d{4})-(\d{2})-(\d{2})[ Tt](\d{2}):(\d{2}):(\d{2})(\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/i,
     );
     if (!match) continue;
 
@@ -121,7 +121,7 @@ function midtransPaidAt(status: JsonObject): string | null {
         calendarDate.getUTCDate() !== day) continue;
 
     if (timezone && !/^Z$/i.test(timezone)) {
-      const offset = timezone.match(/^[+-](\\d{2}):?(\\d{2})$/);
+      const offset = timezone.match(/^[+-](\d{2}):?(\d{2})$/);
       if (!offset) continue;
       const offsetHours = Number(offset[1]), offsetMinutes = Number(offset[2]);
       if (offsetHours > 14 || offsetMinutes > 59 || (offsetHours === 14 && offsetMinutes !== 0)) continue;
