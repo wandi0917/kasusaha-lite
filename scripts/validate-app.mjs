@@ -639,4 +639,24 @@ for (const [pattern, source, message] of transactionCashChecks) {
   else pass(message);
 }
 
+const quickSalePayDraftStart = html.indexOf("$('quickSalePayDraft')?.addEventListener('click',async function(){");
+const quickSalePayDraftEnd = html.indexOf("// Entri nama pelanggan / nomor meja", quickSalePayDraftStart);
+const quickSalePayDraftBlock = quickSalePayDraftStart >= 0 && quickSalePayDraftEnd > quickSalePayDraftStart
+  ? html.slice(quickSalePayDraftStart, quickSalePayDraftEnd)
+  : "";
+const openBillPaymentChecks = [
+  [/p_cash_received:cash/, quickSalePayDraftBlock, "open-bill settlement must send the actual cash received to the server"],
+  [/paymentConfirmed=true/, quickSalePayDraftBlock, "open-bill UI must remember when server settlement is confirmed"],
+  [/data\.payment_cash/, quickSalePayDraftBlock, "open-bill UI must read the server-confirmed cash received"],
+  [/data\.change_amount/, quickSalePayDraftBlock, "open-bill UI must read the server-confirmed change"],
+  [/paymentMatches=wasAlreadyPaid\|\|/, quickSalePayDraftBlock, "already-paid idempotent responses must be distinguished from new settlements"],
+  [/catch\(refreshErr\)/, quickSalePayDraftBlock, "open-bill refresh failures must be handled separately from settlement failures"],
+  [/Pembayaran sudah dikonfirmasi server/, quickSalePayDraftBlock, "refresh failures after payment must never be reported as an unconfirmed payment"],
+  [/Jangan ulangi pembayaran/, quickSalePayDraftBlock, "confirmed open-bill payments must instruct cashiers not to repeat payment"],
+];
+for (const [pattern, source, message] of openBillPaymentChecks) {
+  if (!source || !pattern.test(source)) fail(message);
+  else pass(message);
+}
+
 if (process.exitCode) process.exit(process.exitCode);
