@@ -482,4 +482,24 @@ if (paymentWebhook.includes("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED")) {
   fail("Midtrans webhook must remain available for authentic in-flight settlement and refund notifications");
 } else pass("Midtrans webhook is not blocked by the new-payment cutover gate");
 
+const employeeMarkPaidStart = employeeActivation.indexOf("async function markPaid()");
+const employeeMarkPaidEnd = employeeActivation.indexOf('if (action === "owner_check")', employeeMarkPaidStart);
+const employeeMarkPaidBlock = employeeMarkPaidStart >= 0 && employeeMarkPaidEnd > employeeMarkPaidStart
+  ? employeeActivation.slice(employeeMarkPaidStart, employeeMarkPaidEnd)
+  : "";
+const employeeRevokeStart = employeeActivation.indexOf('if (action === "owner_revoke_code")');
+const employeeRevokeEnd = employeeActivation.indexOf('if (action === "owner_deactivate")', employeeRevokeStart);
+const employeeRevokeBlock = employeeRevokeStart >= 0 && employeeRevokeEnd > employeeRevokeStart
+  ? employeeActivation.slice(employeeRevokeStart, employeeRevokeEnd)
+  : "";
+if (!employeeMarkPaidBlock.includes('.eq("status", "pending_payment")') ||
+    !employeeMarkPaidBlock.includes('current?.status === "revoked"')) {
+  fail("late Midtrans payment checks must not overwrite a revoked employee activation");
+} else pass("late Midtrans payment checks cannot overwrite a revoked employee activation");
+if (!employeeRevokeBlock.includes("activationRevokeError") ||
+    !employeeRevokeBlock.includes("memberRevokeError") ||
+    employeeRevokeBlock.indexOf("activationRevokeError") > employeeRevokeBlock.indexOf("memberRevokeError")) {
+  fail("employee revocation must persist activation revocation before deactivating membership");
+} else pass("employee revocation persists activation revocation before deactivating membership");
+
 if (process.exitCode) process.exit(process.exitCode);
