@@ -555,4 +555,54 @@ if (!employeeOwnerListBlock.includes('.eq("status", "pending_payment")') ||
 
 if (!employeeRevokeBlock.includes("bindingsError") || !employeeRevokeBlock.includes("boundUserIds") || !employeeRevokeBlock.includes("invite.user_id")) fail("employee invite revocation must verify all session bindings and include the canonical user"); else pass("employee invite revocation verifies all session bindings and includes the canonical user");
 
+// Midtrans paid-at parser and webhook integrity regression tests.
+const paidAtFunctionMatch = paymentWebhook.match(
+  /function midtransPaidAt\\(status: JsonObject\\): string \\| null \\{[\\s\\S]*?\\n\\}/,
+);
+if (!paidAtFunctionMatch) {
+  fail("Midtrans webhook must parse provider-paid timestamps");
+} else {
+  try {
+    const executablePaidAtFunction = paidAtFunctionMatch[0]
+      .replace("(status: JsonObject): string | null", "(status)");
+    const midtransPaidAt = vm.runInNewContext("(" + executablePaidAtFunction + ")");
+    const cases = [
+      [{ settlement_time: "2026-11-06 10:15:30" }, "2026-11-06T03:15:30.000Z"],
+      [{ settlement_time: "   ", transaction_time: "2026-11-06 10:10:00" }, "2026-11-06T03:10:00.000Z"],
+      [{ settlement_time: "bad", transaction_time: "2026-11-06T10:10:00+07:00" }, "2026-11-06T03:10:00.000Z"],
+      [{ settlement_time: "2026-02-30 10:15:30" }, null],
+      [{ settlement_time: "2026-11-06 24:00:00" }, null],
+      [{ settlement_time: "2026-11-06T10:15:30+14:01" }, null],
+      [{ settlement_time: "2026-11-06T10:15:30+07:00" }, "2026-11-06T03:15:30.000Z"],
+      [{}, null],
+    ];
+    for (const [input, expected] of cases) {
+      const actual = midtransPaidAt(input);
+      if (actual !== expected) fail("Midtrans paid-at parser mismatch: expected " + expected + ", received " + actual);
+      else pass("Midtrans paid-at parser case passed");
+    }
+  } catch (error) {
+    fail("Midtrans paid-at parser test could not run: " + error.message);
+  }
+}
+
+const partnerCommissionMigration = fs.readFileSync(
+  "supabase/migrations/20261106140000_reconcile_license_partner_commission_by_provider_paid_time.sql",
+  "utf8",
+);
+const paymentIntegrityChecks = [
+  [paymentWebhook.includes("refund_chargeback_id") && paymentWebhook.includes("bank_confirmed_at"), "refund fingerprints distinguish separate provider refund events"],
+  [paymentWebhook.includes("delete safeStatusPayload.signature_key"), "provider signature hashes are not persisted in payment-event payloads"],
+  [paymentWebhook.includes("paid_at: providerPaidAt") && paymentWebhook.includes("updated_at: new Date().toISOString()"), "paid_at uses provider time while updated_at records processing time"],
+  [paymentWebhook.includes("paidOrder.paid_at !== providerPaidAt"), "already-paid orders reconcile delayed provider timestamps"],
+  [paymentWebhook.includes('rpc("record_license_partner_commission"'), "verified license partner commissions are reconciled after payment verification"],
+  [paymentWebhook.includes("BITESHIP_PRODUCTION_BOOKING_ENABLED") && paymentWebhook.includes("isLiveBiteshipKey"), "Biteship production booking still requires its separate production approval gate"],
+  [partnerCommissionMigration.includes("EXCEPTION WHEN OTHERS") && partnerCommissionMigration.includes("$migration$"), "invalid historical Midtrans timestamps cannot abort the entire commission migration"],
+  [partnerCommissionMigration.includes("FOR SHARE;"), "partner status is locked while commission eligibility is evaluated"],
+];
+for (const [ok, message] of paymentIntegrityChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
 if (process.exitCode) process.exit(process.exitCode);
