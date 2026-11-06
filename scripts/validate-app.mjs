@@ -198,6 +198,21 @@ const sellerAccountShortcut = html.includes("buka('akun',document.querySelector(
 if (!sellerAccountShortcut) fail("seller account shortcut must navigate to the existing Owner/Seller account page");
 else pass("seller account shortcut navigates to the existing Owner/Seller account page");
 
+const financeWorkspaceLoaderStart = html.indexOf("async function loadFinanceWorkspaceInternal(){");
+const financeWorkspaceLoaderEnd = html.indexOf("// Prevent overlapping workspace loads", financeWorkspaceLoaderStart);
+const financeWorkspaceLoader = financeWorkspaceLoaderStart >= 0 && financeWorkspaceLoaderEnd > financeWorkspaceLoaderStart
+  ? html.slice(financeWorkspaceLoaderStart, financeWorkspaceLoaderEnd)
+  : "";
+const financeWorkspaceSessionChecks = [
+  [financeWorkspaceLoader.includes("const session=await getVerifiedAppSession();"), "finance workspace loader must obtain a verified Supabase session"],
+  [financeWorkspaceLoader.includes("session.user.email") && financeWorkspaceLoader.includes("saveOfflineWorkspace(business,member,session.user)"), "finance workspace loader must consistently use its verified session object"],
+  [!/\\bsd\\.session\\b/.test(financeWorkspaceLoader), "finance workspace loader must not reference the undefined sd variable"],
+];
+for (const [ok, message] of financeWorkspaceSessionChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
 const financeUnlicensedMessage = /errorCode==='P0001'[\s\S]{0,240}Paket aktif dan pembayaran terverifikasi tidak ditemukan[\s\S]{0,260}Fitur akuntansi lengkap memerlukan lisensi KasUsaha Lite yang aktif/.test(html);
 if (!financeUnlicensedMessage) fail("unlicensed finance access must show a clear license activation message instead of a raw database exception");
 else pass("unlicensed finance access shows a clear license activation message");
@@ -608,6 +623,91 @@ const paymentIntegrityChecks = [
   [partnerCommissionMigration.includes("v_order.payment_provider IS DISTINCT FROM 'midtrans'"), "license partner commission requires an explicitly Midtrans-paid order"],
 ];
 for (const [ok, message] of paymentIntegrityChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
+
+const serviceFeePanelStart = html.indexOf("function toggleOwnerServiceFeePanel(show){");
+const serviceFeePanelEnd = html.indexOf("\nasync function loadFinanceWorkspaceInternal(){", serviceFeePanelStart);
+const serviceFeePanel = serviceFeePanelStart >= 0 && serviceFeePanelEnd > serviceFeePanelStart
+  ? html.slice(serviceFeePanelStart, serviceFeePanelEnd)
+  : "";
+const serviceFeePreviewChecks = [
+  [serviceFeePanel.includes("kasusaha_accept_service_fee_terms"), "Owner preview activation must call the server-side trial RPC"],
+  [serviceFeePanel.includes("data.preview_only!==true") && serviceFeePanel.includes("data.billing_enabled!==false") && serviceFeePanel.includes("data.fee_enabled!==false"), "Owner preview activation must fail closed unless server confirms preview-only and billing/fee disabled"],
+  [serviceFeePanel.includes("financeBusiness={...financeBusiness,service_fee_trial_started_at:data.trial_started_at}"), "Successful trial RPC response must immediately update the active workspace UI without depending on a second table read"],
+  [!serviceFeePanel.includes("confirm("), "Owner preview activation must not depend on a browser confirmation dialog after explicit checkbox consent"],
+  [serviceFeePanel.includes("formatToParts") && serviceFeePanel.includes("timeZone:'Asia/Jakarta'"), "Monthly preview must derive the month safely in Asia/Jakarta"],
+  [serviceFeePanel.includes("String(financeBusiness.owner_id||'').toLowerCase()") && serviceFeePanel.includes("String(financeMemberUserId||'').toLowerCase()"), "Owner preview UI must compare normalized owner and session identifiers"],
+];
+for (const [ok, message] of serviceFeePreviewChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
+
+const attendanceTimeEditorPattern = String.raw`const validTime=v=>v===''||/^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(v);`;
+if (!html.includes(attendanceTimeEditorPattern)) fail("attendance editor must accept valid HH:MM:SS values");
+else pass("attendance editor accepts valid HH:MM:SS values");
+if (!html.includes(String.raw`replace(/\s+/g,' ')`) || !html.includes(String.raw`replace(/[.\s]/g,'')`)) {
+  fail("employee name and hourly wage input must normalize whitespace correctly");
+} else pass("employee name and hourly wage inputs normalize whitespace correctly");
+
+const transactionHardeningMigration = fs.readFileSync(
+  "supabase/migrations/20261107120000_transaction_cash_validation_and_stock_movement_ledger.sql",
+  "utf8",
+);
+const stockSubmitStart = html.indexOf("$('stockEntryForm')?.addEventListener('submit'");
+const stockSubmitEnd = html.indexOf("\n\nlet ", stockSubmitStart);
+const stockSubmitBlock = stockSubmitStart >= 0 && stockSubmitEnd > stockSubmitStart
+  ? html.slice(stockSubmitStart, stockSubmitEnd)
+  : "";
+if (!stockSubmitBlock.includes("rpc('adjust_store_product_stock'") ||
+    stockSubmitBlock.includes(".from('store_products').update({stock_quantity")) {
+  fail("Owner stock adjustments must use the server-side atomic stock RPC, not direct browser updates");
+} else pass("Owner stock adjustments use the server-side atomic stock RPC");
+if (!html.includes("result.legacy_cash_unverified===true") ||
+    !html.includes("Sistem tidak membuat penjualan atau mengurangi stok lagi") ||
+    !transactionHardeningMigration.includes("'legacy_cash_unverified', true")) {
+  fail("legacy cashier retries must be acknowledged without repeating a committed sale");
+} else pass("legacy cashier retries are acknowledged without duplicate sales or stock deduction");
+if (!html.includes("legacyQuickSaleFingerprint") || !html.includes("pending.fingerprint!==legacyQuickSaleFingerprint")) {
+  fail("pending cashier requests created before cash validation must have a safe recovery path");
+} else pass("legacy pending cashier requests retain a safe recovery path");
+if (!html.includes("quickSaleCustomerName") || !html.includes("Pelanggan: '+customerName") || !html.includes("rawTableNumber?' • Meja '+rawTableNumber:''")) {
+  fail("quick cashier must preserve optional customer name and table number in the server transaction reference");
+} else pass("quick cashier preserves optional customer name and table number");
+if (!html.includes("Pelanggan: .+?|Kasir") || !html.includes("description.replace(/^(Meja .+?|Pelanggan: .+?|Kasir) — /")) {
+  fail("sales report must group customer-labelled cashier rows with the correct sale");
+} else pass("sales report groups customer-labelled cashier rows");
+if (!html.includes("p_cash_received:cashReceived") ||
+    !html.includes("cashReceived,lines:lines.map")) {
+  fail("quick cashier must send the received cash amount and bind it to the idempotency fingerprint");
+} else pass("quick cashier sends received cash and binds it to the idempotency fingerprint");
+if (!html.includes("function loadStockMovementHistory()") ||
+    !html.includes("id=\"stockMovementHistoryCard\"") ||
+    !html.includes("from('store_stock_movements')")) {
+  fail("Owner stock movement history UI is incomplete");
+} else pass("Owner stock movement history UI reads the append-only server ledger");
+const stockLedgerChecks = [
+  [transactionHardeningMigration.includes("CREATE TABLE IF NOT EXISTS public.store_stock_movements"), "append-only stock movement ledger table is created additively"],
+  [transactionHardeningMigration.includes("AFTER INSERT OR UPDATE OF stock_quantity ON public.store_products"), "stock creation and quantity changes are audited by a database trigger"],
+  [transactionHardeningMigration.includes("CREATE OR REPLACE FUNCTION public.adjust_store_product_stock") && transactionHardeningMigration.includes("pg_advisory_xact_lock"), "stock adjustments are owner-authorized, locked and idempotent on the server"],
+  [transactionHardeningMigration.includes("v_product.stock_quantity := coalesce(v_product.stock_quantity, 0)"), "stock adjustments treat legacy NULL stock as zero rather than silently returning success"],
+  [transactionHardeningMigration.includes("p_cash_received IS NULL OR p_cash_received < v_total"), "cashier RPC validates cash received against the authoritative server total"],
+  [transactionHardeningMigration.includes("REVOKE ALL ON FUNCTION public.record_store_quick_sale(uuid,text,jsonb,uuid) FROM PUBLIC, anon, authenticated"), "legacy four-argument cashier RPC is no longer directly executable by authenticated clients"],
+  [transactionHardeningMigration.includes("GRANT EXECUTE ON FUNCTION public.record_store_quick_sale(uuid,text,jsonb,uuid,numeric) TO authenticated, service_role"), "authenticated cashier clients receive only the cash-validating RPC overload"],
+  [transactionHardeningMigration.includes("kasusaha.stock_movement_type', 'sale'"), "cashier sales are classified in stock movement history"],
+  [transactionHardeningMigration.includes("store_stock_adjustment_requests") && transactionHardeningMigration.includes("request_hash"), "stock adjustment retries are protected by server-side idempotency"],
+  [transactionHardeningMigration.includes("'cash_received', p_cash_received") && transactionHardeningMigration.includes("'change_amount', p_cash_received - v_total"), "cashier RPC returns the server-verified received amount and change"],
+  [transactionHardeningMigration.includes("CREATE OR REPLACE FUNCTION public.record_store_quick_sale(p_business_id uuid, p_table_number text, p_lines jsonb, p_request_id uuid DEFAULT") && transactionHardeningMigration.includes("CREATE OR REPLACE FUNCTION public.record_store_quick_sale(p_business_id uuid, p_table_number text, p_lines jsonb, p_request_id uuid, p_cash_received numeric)"), "legacy open-bill settlement and cash-validating cashier RPC overloads are both preserved"],
+  [transactionHardeningMigration.includes("FOR SELECT TO authenticated") && transactionHardeningMigration.includes("store_stock_movements_owner_select") && transactionHardeningMigration.includes("REVOKE ALL ON TABLE public.store_stock_movements FROM PUBLIC, anon, authenticated"), "stock history is owner-scoped and clients cannot write to the ledger directly"],
+  [transactionHardeningMigration.includes("p_movement_type IS NULL OR p_movement_type NOT IN"), "stock movement type validation rejects null and unsupported values"],
+  [transactionHardeningMigration.includes("CREATE OR REPLACE FUNCTION public.settle_store_open_bill") && transactionHardeningMigration.includes("'Pelanggan: ' || left(regexp_replace(trim(v_bill.customer_name)") && transactionHardeningMigration.includes("' • Meja ' || left(regexp_replace(trim(v_bill.table_number)"), "open-bill settlement preserves both customer and table attribution"],
+  [(transactionHardeningMigration.split("$function$;").length - 1) >= 4, "all four migration function definitions are terminated as complete SQL statements"],
+];
+for (const [ok, message] of stockLedgerChecks) {
   if (!ok) fail(message);
   else pass(message);
 }

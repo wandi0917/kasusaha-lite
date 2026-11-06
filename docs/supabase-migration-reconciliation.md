@@ -71,3 +71,19 @@ Versi remote `20261106113750` adalah migrasi helper entitlement/finance; versi r
 - Edge Function Midtrans diperkuat melalui source deployment terpisah; perubahan Edge Function tidak menambah versi migrasi database.
 - Migrasi referral capture `20261106115500` tetap belum diterapkan.
 - Jangan menjalankan `supabase db push`, `db reset --remote`, atau mengubah riwayat remote sampai 80 SQL historis dapat dipulihkan atau baseline skema yang terkontrol disiapkan dan diuji.
+
+
+## Pending migration audit Transaksi — 7 November 2026
+
+File `supabase/migrations/20261107120000_transaction_cash_validation_and_stock_movement_ledger.sql` menambahkan validasi uang diterima pada RPC kasir dan ledger mutasi stok. File ini **belum diterapkan ke Supabase Production**.
+
+- Remote migration terbaru yang terverifikasi sebelum migrasi ini adalah `20261106150331`.
+- Dry-run penuh dilakukan di dalam transaksi `BEGIN/ROLLBACK`. Pembuatan tabel, kedua overload RPC kasir, RPC koreksi stok, dan privilege berhasil diperiksa di dalam transaksi.
+- Pemeriksaan setelah rollback memastikan tabel `store_stock_movements` dan RPC baru tidak tertinggal di Production.
+- Hak akses dalam dry-run: authenticated tidak dapat menjalankan RPC kasir lama 4 argumen; dapat menjalankan RPC kasir baru 5 argumen dan RPC stok; dapat membaca ledger sesuai RLS tetapi tidak dapat INSERT langsung.
+- Dry-run hanya memverifikasi sintaks dan privilege. Belum menggantikan pengujian konkurensi dan alur browser Owner/Karyawan pada staging.
+- Jangan jalankan `supabase db push` atau reset. Rekonsiliasi baseline/riwayat historis dan uji staging tetap wajib sebelum penerapan.
+- Ledger mulai mencatat perubahan sejak migrasi diterapkan; tidak ada backfill mutasi stok historis.
+
+- Pembaruan lanjutan pada audit Transaksi: RPC `settle_store_open_bill` kini mempertahankan nama pelanggan sekaligus nomor meja pada referensi penjualan; laporan penjualan mengelompokkan label `Pelanggan: ... • Meja ...` sebagai satu tagihan. Perubahan ini juga masih hanya diuji dalam dry-run rollback, belum diterapkan ke Production.
+- RPC penyesuaian stok menormalkan `stock_quantity IS NULL` menjadi nol sebelum perhitungan agar tidak pernah mengembalikan sukses tanpa perubahan stok.

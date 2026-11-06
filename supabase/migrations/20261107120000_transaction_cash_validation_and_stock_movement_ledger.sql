@@ -176,6 +176,8 @@ BEGIN
   WHERE p.id = p_product_id AND p.business_id = p_business_id
   FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Barang tidak ditemukan pada usaha ini.'; END IF;
+  -- Legacy rows may have NULL stock_quantity; treat them as zero so the RPC never reports success without changing stock.
+  v_product.stock_quantity := coalesce(v_product.stock_quantity, 0);
 
   v_next := CASE
     WHEN p_movement_type = 'in' THEN v_product.stock_quantity::bigint + p_quantity::bigint
@@ -403,18 +405,22 @@ BEGIN
   FROM private.store_quick_sale_requests r
   WHERE r.business_id = p_business_id AND r.request_id = v_request_id FOR UPDATE;
   IF FOUND THEN
-    IF NOT (v_existing_result ? 'cash_received') THEN
-      RAISE EXCEPTION 'Transaksi dengan ID ini pernah diproses oleh versi kasir sebelumnya. Periksa laporan sebelum membuat transaksi baru.';
-    END IF;
-    IF (v_existing_result->>'cash_received')::numeric IS DISTINCT FROM p_cash_received THEN
-      RAISE EXCEPTION 'Transaksi ini sudah diproses dengan nominal uang diterima yang berbeda. Periksa laporan sebelum mengulang.';
-    END IF;
     IF v_existing_hash <> v_request_hash THEN
       RAISE EXCEPTION 'ID permintaan penjualan ini sudah dipakai untuk rincian berbeda. Muat ulang kasir dan periksa laporan sebelum membuat transaksi baru.';
     END IF;
     IF NOT EXISTS (SELECT 1 FROM private.store_quick_sale_requests r
       WHERE r.business_id = p_business_id AND r.request_id = v_request_id AND r.user_id = v_uid) THEN
       RAISE EXCEPTION 'ID permintaan penjualan tidak cocok dengan akun yang login.';
+    END IF;
+    -- A request from the legacy client was already committed without a cash_received field.
+    -- Return its stored result without re-selling or decrementing stock a second time.
+    IF NOT (v_existing_result ? 'cash_received') THEN
+      RETURN v_existing_result || jsonb_build_object(
+        'replayed', true, 'already_processed', true, 'legacy_cash_unverified', true
+      );
+    END IF;
+    IF (v_existing_result->>'cash_received')::numeric IS DISTINCT FROM p_cash_received THEN
+      RAISE EXCEPTION 'Transaksi ini sudah diproses dengan nominal uang diterima yang berbeda. Periksa laporan sebelum mengulang.';
     END IF;
     RETURN v_existing_result || jsonb_build_object('replayed', true);
   END IF;
@@ -490,5 +496,50 @@ REVOKE ALL ON FUNCTION public.record_store_quick_sale(uuid,text,jsonb,uuid) FROM
 GRANT EXECUTE ON FUNCTION public.record_store_quick_sale(uuid,text,jsonb,uuid) TO service_role;
 REVOKE ALL ON FUNCTION public.record_store_quick_sale(uuid,text,jsonb,uuid,numeric) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.record_store_quick_sale(uuid,text,jsonb,uuid,numeric) TO authenticated, service_role;
+
+
+-- Preserve both customer and table attribution when an open cashier bill is settled.
+CREATE OR REPLACE FUNCTION public.settle_store_open_bill(p_bill_id uuid, p_cash_received numeric)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare
+ v_uid uuid := (select auth.uid());
+ v_bill public.store_open_bills%rowtype;
+ v_role text;
+ v_result jsonb;
+ v_location text;
+ v_expected numeric;
+begin
+ if v_uid is null then raise exception 'Silakan login terlebih dahulu.'; end if;
+ select b.* into v_bill from public.store_open_bills b where b.id=p_bill_id for update;
+ if not found then raise exception 'Tagihan tidak ditemukan.'; end if;
+ select m.role into v_role from public.business_members m where m.business_id=v_bill.business_id and m.user_id=v_uid and m.active=true and m.role in ('owner','employee') limit 1;
+ if v_role is null then raise exception 'Akun tidak memiliki akses aktif ke usaha ini.'; end if;
+ if v_role='employee' and not private.kasusaha_employee_device_is_paid(v_bill.business_id) then raise exception 'Perangkat Karyawan belum diaktifkan Owner.'; end if;
+ if not private.kasusaha_business_license_is_verified(v_bill.business_id) or not private.kasusaha_business_has_feature(v_bill.business_id,'cashier') then raise exception 'Lisensi atau paket belum mengizinkan fitur kasir.'; end if;
+ if v_bill.status='paid' then return jsonb_build_object('ok',true,'already_paid',true,'total_amount',v_bill.total_amount,'bill_id',v_bill.id); end if;
+ if v_bill.status<>'open' then raise exception 'Tagihan tidak lagi terbuka.'; end if;
+ if p_cash_received is null or p_cash_received<v_bill.total_amount or p_cash_received<>trunc(p_cash_received) then raise exception 'Uang diterima belum mencukupi total tagihan.'; end if;
+ select coalesce(sum((x->>'quantity')::numeric*(x->>'unit_price')::numeric),0) into v_expected from jsonb_array_elements(v_bill.lines) x;
+ if v_expected<>v_bill.total_amount then raise exception 'Total tagihan tidak cocok dengan rincian barang. Buka dan simpan ulang tagihan.'; end if;
+ if exists(select 1 from jsonb_array_elements(v_bill.lines) x left join public.store_products p on p.id=(x->>'product_id')::uuid and p.business_id=v_bill.business_id where p.id is null or p.active is not true or p.item_type='ingredient' or p.price<>(x->>'unit_price')::numeric) then
+  raise exception 'Harga/status produk berubah sejak tagihan dibuat. Buka dan perbarui tagihan sebelum pembayaran.';
+ end if;
+ v_location := CASE
+   WHEN nullif(trim(v_bill.customer_name),'') IS NOT NULL THEN
+     'Pelanggan: ' || left(regexp_replace(trim(v_bill.customer_name), '[<>]', '', 'g'), CASE WHEN nullif(trim(v_bill.table_number),'') IS NOT NULL THEN 60 ELSE 80 END)
+     || CASE WHEN nullif(trim(v_bill.table_number),'') IS NOT NULL THEN ' • Meja ' || left(regexp_replace(trim(v_bill.table_number), '[<>]', '', 'g'), 20) ELSE '' END
+   WHEN nullif(trim(v_bill.table_number),'') IS NOT NULL THEN left(regexp_replace(trim(v_bill.table_number), '[<>]', '', 'g'), 20)
+   ELSE NULL
+ END;
+ v_result:=public.record_store_quick_sale(v_bill.business_id,v_location,v_bill.lines,v_bill.sale_request_id);
+ update public.store_open_bills set status='paid',payment_cash=p_cash_received,change_amount=p_cash_received-v_bill.total_amount,paid_at=now(),paid_by=v_uid,updated_at=now(),version=version+1 where id=v_bill.id and status='open';
+ if not found then raise exception 'Status tagihan berubah saat pembayaran diproses.'; end if;
+ return v_result||jsonb_build_object('bill_id',v_bill.id,'payment_cash',p_cash_received,'change_amount',p_cash_received-v_bill.total_amount,'paid_at',now());
+end;
+$function$;
 
 COMMIT;
