@@ -683,6 +683,7 @@ const stockLedgerChecks = [
   [transactionHardeningMigration.includes("CREATE TABLE IF NOT EXISTS public.store_stock_movements"), "append-only stock movement ledger table is created additively"],
   [transactionHardeningMigration.includes("AFTER INSERT OR UPDATE OF stock_quantity ON public.store_products"), "stock creation and quantity changes are audited by a database trigger"],
   [transactionHardeningMigration.includes("CREATE OR REPLACE FUNCTION public.adjust_store_product_stock") && transactionHardeningMigration.includes("pg_advisory_xact_lock"), "stock adjustments are owner-authorized, locked and idempotent on the server"],
+  [transactionHardeningMigration.includes("v_product.stock_quantity := coalesce(v_product.stock_quantity, 0)"), "stock adjustments treat legacy NULL stock as zero rather than silently returning success"],
   [transactionHardeningMigration.includes("p_cash_received IS NULL OR p_cash_received < v_total"), "cashier RPC validates cash received against the authoritative server total"],
   [transactionHardeningMigration.includes("REVOKE ALL ON FUNCTION public.record_store_quick_sale(uuid,text,jsonb,uuid) FROM PUBLIC, anon, authenticated"), "legacy four-argument cashier RPC is no longer directly executable by authenticated clients"],
   [transactionHardeningMigration.includes("GRANT EXECUTE ON FUNCTION public.record_store_quick_sale(uuid,text,jsonb,uuid,numeric) TO authenticated, service_role"), "authenticated cashier clients receive only the cash-validating RPC overload"],
