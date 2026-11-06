@@ -619,9 +619,12 @@ const marketplaceProductPolicyChecks = [
   [marketplaceProductPolicyMigration.includes('CREATE POLICY "Penjual dapat menambah produk miliknya"'), "seller product INSERT policy is present"],
   [marketplaceProductPolicyMigration.includes('CREATE POLICY "Penjual dapat mengubah produk miliknya"'), "seller product UPDATE policy is present"],
   [marketplaceProductPolicyMigration.includes('CREATE POLICY "Penjual dapat menghapus produk miliknya"'), "seller product DELETE policy is present"],
-  [marketplacePolicyOccurrences("private.kasusaha_business_has_feature(w.id, 'marketplace') IS TRUE") >= 4 &&
-   marketplacePolicyOccurrences("private.kasusaha_business_license_is_verified(w.id)") >= 4,
-   "all seller product write policies require verified license and marketplace entitlement"],
+  [marketplacePolicyOccurrences("private.kasusaha_business_has_feature(w.id, 'marketplace') IS TRUE") >= 2 &&
+   marketplacePolicyOccurrences("private.kasusaha_business_license_is_verified(w.id)") >= 2,
+   "seller product creation and active listing updates require verified marketplace entitlement"],
+  [marketplaceProductPolicyMigration.includes("aktif IS FALSE") &&
+   marketplaceProductPolicyMigration.includes("-- Owners can always remove their own listings"),
+   "unentitled or expired sellers can deactivate or delete their own listings"],
   [marketplacePolicyOccurrences("owner_id = (SELECT auth.uid())") >= 4,
    "seller product writes remain restricted to the authenticated product owner"],
   [marketplacePolicyOccurrences("is_anonymous") >= 4,
