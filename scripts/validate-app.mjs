@@ -546,6 +546,12 @@ if (!employeeOwnerListBlock.includes('historicalUserIds.has(row.user_id)')) {
   fail("Owner list payment refresh must not independently reactivate historical alias sessions");
 } else pass("Owner list payment refresh skips historical alias sessions");
 
+if (!employeeOwnerListBlock.includes('.eq("status", "pending_payment").select("id").maybeSingle()') ||
+    !employeeOwnerListBlock.includes('if (paidInviteRow)') ||
+    !employeeOwnerListBlock.includes('currentInvite.status')) {
+  fail("Owner list invite payment refresh must not overwrite a concurrent Owner revocation or misreport its status");
+} else pass("Owner list invite payment refresh preserves concurrent Owner revocation status");
+
 if (!employeeRevokeBlock.includes("bindingsError") || !employeeRevokeBlock.includes("boundUserIds") || !employeeRevokeBlock.includes("invite.user_id")) fail("employee invite revocation must verify all session bindings and include the canonical user"); else pass("employee invite revocation verifies all session bindings and includes the canonical user");
 
 if (process.exitCode) process.exit(process.exitCode);
