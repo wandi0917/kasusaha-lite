@@ -146,7 +146,7 @@ for (const [ok, message] of biteshipAmbiguousBookingChecks) {
   else pass(message);
 }
 
-const backupDisclosure = /Cadangan JSON ini hanya berisi data lokal[\\s\\S]{0,300}Data transaksi server, katalog online, akun, lisensi, dan pembayaran di Supabase tidak termasuk/.test(html);
+const backupDisclosure = /Cadangan JSON ini hanya berisi data lokal[\s\S]{0,300}Data transaksi server, katalog online, akun, lisensi, dan pembayaran di Supabase tidak termasuk/.test(html);
 if (!backupDisclosure) fail("backup UI must clearly disclose that JSON export excludes server-side data");
 else pass("backup UI clearly discloses local-only scope and server data exclusions");
 
