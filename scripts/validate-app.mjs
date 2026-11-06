@@ -291,6 +291,24 @@ if (!/REVOKE SELECT ON TABLE public\.store_products FROM authenticated/i.test(co
 
 
 
+const midtransProductionGateChecks = [
+  [paymentCreate, 'if (production && norm(Deno.env.get("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED")) !== "true")'],
+  [paymentWebhook, 'if (isProduction && String(Deno.env.get("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED") ?? "").trim().toLowerCase() !== "true")'],
+  [employeeActivation, 'if (production && norm(Deno.env.get("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED")) !== "true")'],
+];
+for (const [source, gateSnippet] of midtransProductionGateChecks) {
+  if (!source.includes(gateSnippet) || !source.includes("PRODUCTION_PAYMENTS_NOT_ENABLED")) {
+    fail("all Midtrans Production entry points must require the explicit production cutover gate");
+  } else pass("Midtrans Production entry point requires explicit production cutover gate");
+}
+
+const requiredStatusApiIdentityCheck = `const transactionIdMatches =
+    Boolean(statusApiTransactionId) &&
+    (!notificationTransactionId || notificationTransactionId === statusApiTransactionId);`;
+if (!paymentWebhook.includes(requiredStatusApiIdentityCheck)) {
+  fail("Midtrans Status API must provide a transaction_id before a payment event can be trusted");
+} else pass("Midtrans Status API transaction identity is mandatory");
+
 const employeeActivation = fs.readFileSync("supabase/functions/employee-device-activation/index.ts", "utf8");
 const licenseActivation = fs.readFileSync("supabase/functions/activate-kasusaha-license/index.ts", "utf8");
 const biteshipShipment = fs.readFileSync("supabase/functions/biteship-create-shipment/index.ts", "utf8");
@@ -390,6 +408,97 @@ for (const [block, label] of [
   if (!block.includes("getVerifiedAppSession()") || block.includes("sb.auth.getSession()")) {
     fail(label + " must refresh and verify the authenticated session before protected requests");
   } else pass(label + " refreshes and verifies the session before protected requests");
+}
+
+// Exercise the exact Midtrans provider-time parser used by the webhook.
+// Extracting the function keeps this regression test dependency-free in CI.
+const paidAtFunctionMatch = paymentWebhook.match(
+  /function midtransPaidAt\(status: JsonObject\): string \| null \{[\s\S]*?\n\}/,
+);
+if (!paidAtFunctionMatch) {
+  fail("Midtrans webhook must expose the provider-paid timestamp parser");
+} else {
+  try {
+    const executablePaidAtFunction = paidAtFunctionMatch[0]
+      .replace("(status: JsonObject): string | null", "(status)");
+    const midtransPaidAt = vm.runInNewContext("(" + executablePaidAtFunction + ")");
+    const paidAtCases = [
+      [
+        "settlement timestamp is interpreted as WIB",
+        { settlement_time: "2026-11-06 10:15:30", transaction_time: "2026-11-06 10:10:00" },
+        "2026-11-06T03:15:30.000Z",
+      ],
+      [
+        "empty settlement timestamp falls back to transaction timestamp",
+        { settlement_time: "   ", transaction_time: "2026-11-06 10:10:00" },
+        "2026-11-06T03:10:00.000Z",
+      ],
+      [
+        "missing settlement timestamp falls back to transaction timestamp",
+        { transaction_time: "2026-11-06T10:10:00+07:00" },
+        "2026-11-06T03:10:00.000Z",
+      ],
+      [
+        "provider timestamp with explicit UTC offset is preserved",
+        { settlement_time: "2026-11-06T03:15:30Z" },
+        "2026-11-06T03:15:30.000Z",
+      ],
+      [
+        "missing provider timestamps are rejected",
+        {},
+        null,
+      ],
+      [
+        "malformed provider timestamps are rejected",
+        { settlement_time: "not-a-date", transaction_time: "also-not-a-date" },
+        null,
+      ],
+      [
+        "impossible calendar dates are rejected",
+        { settlement_time: "2026-02-30 10:15:30" },
+        null,
+      ],
+      [
+        "out-of-range clock times are rejected",
+        { settlement_time: "2026-11-06 24:00:00" },
+        null,
+      ],
+      [
+        "out-of-range timezone offsets are rejected",
+        { settlement_time: "2026-11-06T10:15:30+25:00" },
+        null,
+      ],
+      [
+        "valid fractional seconds are preserved",
+        { settlement_time: "2026-11-06T10:15:30.125+07:00" },
+        "2026-11-06T03:15:30.125Z",
+      ],
+    ];
+    for (const [label, input, expected] of paidAtCases) {
+      const actual = midtransPaidAt(input);
+      if (actual !== expected) fail(label + ": expected " + expected + ", received " + actual);
+      else pass("Midtrans paid-at parser: " + label);
+    }
+  } catch (error) {
+    fail("Midtrans paid-at parser regression tests could not execute: " + error.message);
+  }
+}
+
+const partnerCommissionMigration = fs.readFileSync(
+  "supabase/migrations/20261106115600_reconcile_license_partner_commission_by_provider_paid_time.sql",
+  "utf8",
+);
+const partnerCommissionChecks = [
+  [/first_purchase_rate/, partnerCommissionMigration, "license partner first-purchase rate must come from partner configuration"],
+  [/renewal_rate/, partnerCommissionMigration, "license partner renewal rate must come from partner configuration"],
+  [/v_amount <= 0/, partnerCommissionMigration, "zero-value partner commissions must not create ledger rows"],
+  [/pg_advisory_xact_lock/, partnerCommissionMigration, "partner commission reconciliation must serialize per buyer"],
+  [/v_existing\.status = 'paid'/, partnerCommissionMigration, "already-paid partner commissions must be protected from automatic financial changes"],
+  [/GRANT EXECUTE ON FUNCTION public\.record_license_partner_commission\(uuid, uuid\)\s+TO service_role/i, partnerCommissionMigration, "license partner commission RPC must be service-role only"],
+];
+for (const [pattern, source, message] of partnerCommissionChecks) {
+  if (!pattern.test(source)) fail(message);
+  else pass(message);
 }
 
 if (process.exitCode) process.exit(process.exitCode);
