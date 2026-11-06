@@ -623,15 +623,15 @@ const transactionCashMigration = fs.readFileSync(
   "utf8",
 );
 const transactionCashChecks = [
-  [/p_cash_received:\\s*cashReceived/, quickSaleSubmitBlock, "cashier must send the received cash amount to the server-side RPC"],
-  [/cashReceived,lines:lines\\.map/, quickSaleSubmitBlock, "cash received must be part of the persisted retry fingerprint"],
+  [/p_cash_received:\s*cashReceived/, quickSaleSubmitBlock, "cashier must send the received cash amount to the server-side RPC"],
+  [/cashReceived,lines:lines\.map/, quickSaleSubmitBlock, "cash received must be part of the persisted retry fingerprint"],
   [/serverCashReceived!==cashReceived/, quickSaleSubmitBlock, "cashier must verify the server-confirmed cash amount"],
   [/serverChange!==cashReceived-amount/, quickSaleSubmitBlock, "cashier must verify the server-confirmed change amount"],
   [/quickSaleResponseNeedsReview=true/, quickSaleSubmitBlock, "mismatched successful RPC responses must retain the idempotency key and block resubmission"],
-  [/IF p_cash_received IS NULL OR p_cash_received < v_total OR p_cash_received <> trunc\\(p_cash_received\\)/, transactionCashMigration, "database RPC must reject missing, insufficient, or fractional cash received"],
-  [/REVOKE ALL ON FUNCTION public\\.record_store_quick_sale\\(uuid,text,jsonb,uuid\\) FROM PUBLIC, anon, authenticated/, transactionCashMigration, "legacy four-argument cashier RPC must not remain callable by client roles"],
-  [/GRANT EXECUTE ON FUNCTION public\\.record_store_quick_sale\\(uuid,text,jsonb,uuid,numeric\\) TO authenticated, service_role/, transactionCashMigration, "cash-validated five-argument cashier RPC must be callable by authenticated members"],
-  [/set_config\\('kasusaha\\.stock_movement_type', 'sale', true\\)/, transactionCashMigration, "cashier stock deductions must be classified as sale movements"],
+  [/IF p_cash_received IS NULL OR p_cash_received < v_total OR p_cash_received <> trunc\(p_cash_received\)/, transactionCashMigration, "database RPC must reject missing, insufficient, or fractional cash received"],
+  [/REVOKE ALL ON FUNCTION public\.record_store_quick_sale\(uuid,text,jsonb,uuid\) FROM PUBLIC, anon, authenticated/, transactionCashMigration, "legacy four-argument cashier RPC must not remain callable by client roles"],
+  [/GRANT EXECUTE ON FUNCTION public\.record_store_quick_sale\(uuid,text,jsonb,uuid,numeric\) TO authenticated, service_role/, transactionCashMigration, "cash-validated five-argument cashier RPC must be callable by authenticated members"],
+  [/set_config\('kasusaha\.stock_movement_type', 'sale', true\)/, transactionCashMigration, "cashier stock deductions must be classified as sale movements"],
   [/CREATE TRIGGER store_products_stock_movement_audit/, transactionCashMigration, "stock changes must be captured by the stock movement audit trigger"],
 ];
 for (const [pattern, source, message] of transactionCashChecks) {
