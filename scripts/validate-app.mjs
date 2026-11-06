@@ -522,9 +522,9 @@ if (!employeeDeactivateBlock.includes("revokeError") ||
 } else pass("owner deactivation revokes employee activations before deactivating membership");
 
 const employeeOwnerListStart = employeeActivation.indexOf('if (action === "owner_list")');
-const employeeOwnerListEnd = employeeActivation.indexOf('if (action === "owner_revoke_code")', employeeOwnerListStart);
+const employeeOwnerListEnd = employeeActivation.indexOf('if (action === "owner_deactivate" || action === "owner_reactivate")', employeeOwnerListStart);
 const employeeOwnerListBlock = employeeOwnerListStart >= 0 && employeeOwnerListEnd > employeeOwnerListStart ? employeeActivation.slice(employeeOwnerListStart, employeeOwnerListEnd) : "";
-if (!employeeOwnerListBlock.includes('.eq("status", "pending_payment").select("id").maybeSingle()') || !employeeOwnerListBlock.includes('confirmedActivation?.status !== "paid"') || !employeeOwnerListBlock.includes('.update({ active: false })')) fail("Owner list Midtrans refresh must use compare-and-set and fail closed after a concurrent revocation"); else pass("Owner list Midtrans refresh uses compare-and-set and fails closed after concurrent revocation");
+if (!employeeOwnerListBlock.includes('.eq("status", "pending_payment")') || !employeeOwnerListBlock.includes('.select("id").maybeSingle()') || !employeeOwnerListBlock.includes('confirmedActivation?.status !== "paid"') || !employeeOwnerListBlock.includes('.update({ active: false })')) fail("Owner list Midtrans refresh must use compare-and-set and fail closed after a concurrent revocation"); else pass("Owner list Midtrans refresh uses compare-and-set and fails closed after concurrent revocation");
 
 const employeeOwnerIdentityStart = employeeActivation.indexOf('if (action === "owner_deactivate" || action === "owner_reactivate")');
 const employeeOwnerIdentityEnd = employeeActivation.indexOf('if (action === "owner_delete_inactive")', employeeOwnerIdentityStart);
