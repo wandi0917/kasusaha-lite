@@ -264,7 +264,6 @@ test('tombol Periksa Status Aktivasi menjalankan pemeriksaan ulang ke server', a
 test('panduan login Owner mengikuti kondisi barang yang tersedia', async ({ page }) => {
   await page.evaluate(async () => {
     document.querySelector('#transaksi')?.classList.add('active');
-    sb = {};
     financeBusiness = { id: 'e2e-owner-business', owner_id: 'e2e-owner' };
     financeMemberRole = 'owner';
     financeMemberUserId = 'e2e-owner';
