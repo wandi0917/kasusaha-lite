@@ -234,3 +234,18 @@ test('Kasir menyediakan cetak tagihan dan struk lunas dengan layout printer ther
   expect(receipt.unpaid).toContain('TAGIHAN — BELUM DIBAYAR');
   expect(receipt.unpaid).not.toContain('LUNAS / SUDAH DIBAYAR');
 });
+test('tombol Periksa Status Aktivasi menjalankan pemeriksaan ulang ke server', async ({ page }) => {
+  await page.evaluate(() => {
+    document.querySelector('#employeeDevicePaywall').hidden = false;
+    window.__employeeStatusChecks = 0;
+    window.ensureEmployeeDeviceActivation = async () => {
+      window.__employeeStatusChecks += 1;
+      document.querySelector('#employeeDeviceStatus').textContent = 'Status server: masih menunggu aktivasi.';
+      return false;
+    };
+  });
+  await page.locator('#employeeDeviceCheckButton').click();
+  await expect.poll(() => page.evaluate(() => window.__employeeStatusChecks)).toBe(1);
+  await expect(page.locator('#employeeDeviceStatus')).toContainText('Status server');
+  await expect(page.locator('#employeeDeviceCheckButton')).toBeEnabled();
+});
