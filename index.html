@@ -2000,7 +2000,7 @@ async function bagikanKasUsahaLite(){
 <div class="card" id="reportCategoryChooser" hidden><h3>Pilih Menu dan Kategori Laporan</h3><p class="small">Pilih kategori untuk menampilkan laporan yang diperlukan. Setiap tabel memiliki judul tersendiri.</p><label for="reportCategorySelect">Menu laporan</label><select id="reportCategorySelect"><option value="">— Pilih kategori laporan —</option><option value="sales">Laporan Penjualan</option><option value="stock">Laporan Stok Barang</option><option value="finance">Laporan Keuangan Lengkap (Owner)</option><option value="accounting">Akuntansi Lengkap: Laba Rugi, Neraca, Arus Kas &amp; Buku Besar (Owner)</option><option value="income">Laporan Pemasukan (Karyawan)</option><option value="daily">Laporan Keuangan Harian (Lokal)</option><option value="history">Riwayat Transaksi (Lokal)</option></select></div>
 
 <div id="financeSetupForms">
-<div class="card" id="financeFirstBusinessGuide"><h4>Langkah pertama: buat data usaha</h4><p>Akun Anda sudah login. Untuk mulai memakai fitur utama KasUsaha Lite, buka menu <strong>Transaksi</strong>, lengkapi data usaha di bawah, lalu tekan <strong>Simpan Usaha</strong>. Setelah tersimpan, menu kasir, absensi, dan laporan usaha akan terbuka.</p></div>
+<div class="card" id="financeFirstBusinessGuide"><h4>Langkah pertama: buat data usaha</h4><p>Akun Anda sudah login. Formulir pengaturan usaha sudah terbuka di halaman ini. Lengkapi data usaha di bawah, lalu tekan <strong>Simpan Usaha</strong>. Setelah tersimpan, sistem akan memeriksa absensi dan langsung membuka pekerjaan berikutnya.</p></div>
 <div id="financeSavedBusinesses" class="card" hidden><h4>Usaha yang sudah terdaftar</h4><p class="small">Klik nama usaha untuk memakai usaha yang sudah terhubung dengan akun ini.</p><div id="financeSavedBusinessList" class="grid"></div></div>
 <label for="financeBusinessName">Nama usaha <span class="required">*</span></label>
 <input id="financeBusinessName" maxlength="120" required placeholder="Contoh: Kedai Kopi Seroja">
@@ -4179,7 +4179,18 @@ function syncTransactionRoleMenus(){
  });
 }
 function updateFinanceActivePerson(){syncTransactionRoleMenus();const name=financeCurrentUserName||'Belum login';const role=financeMemberRole?' ('+financeRoleLabel(financeMemberRole)+')':'';const business=financeBusiness?.business_name?' — Usaha: '+financeBusiness.business_name:'';const label='Petugas: '+name+role+business;['financeEntryActivePerson','financeReportActivePerson','attendanceActivePerson'].forEach(id=>{const el=$(id);if(el)el.textContent=label;});}
-function setFinanceStatus(message,isError=false){const el=$('financeStatus');if(el){el.className=isError?'status error':'status';el.textContent=message;}}
+function setFinanceStatus(message,isError=false,nextTarget=''){
+ const el=$('financeStatus');if(!el)return;
+ el.className=isError?'status error':'status';el.textContent=message;
+ $('financeStatusAction')?.remove();
+ const actions={transaksi:'Buka menu Transaksi',akun:'Buka Login Owner / Penjual',akunPembeli:'Buka Akun Pembeli',loginKaryawan:'Buka Login Karyawan',pasar:'Buka Pasar Online',paketKasUsaha:'Buka Paket & Harga',pesananSaya:'Buka Pesanan Saya'};
+ if(!Object.prototype.hasOwnProperty.call(actions,nextTarget))return;
+ const button=document.createElement('button');
+ button.id='financeStatusAction';button.type='button';button.className='primary wide';
+ button.textContent=actions[nextTarget];button.setAttribute('aria-label',actions[nextTarget]+' sekarang');
+ button.addEventListener('click',()=>window.buka?.(nextTarget,document.querySelector('nav[aria-label="Navigasi utama"] button[onclick*="'+nextTarget+'"]')));
+ el.after(button);
+}
 function setTransactionBusinessSetupMode(active,showSetup=true){
  const setup=$('financeSetupForms');
  const guide=$('transactionGuide');
@@ -4217,7 +4228,7 @@ async function financeCreateBusiness(){
   const guide=$('financeFirstBusinessGuide');if(guide)guide.hidden=true;
   if(financeBusiness&&financeMemberRole==='owner'){
    setFinanceStatus((data.business_name||name)+' berhasil disimpan. Berikutnya sistem memeriksa absensi hari ini, lalu mengarahkan Anda ke pengisian barang atau Kasir Cepat.');
-   try{await arahkanSetelahLoginFinance();}catch(routeError){setFinanceStatus('Usaha berhasil disimpan. Pengalihan langkah berikutnya belum selesai: '+String(routeError.message||routeError).slice(0,140)+'. Buka Transaksi untuk melanjutkan.',true);}
+   try{await arahkanSetelahLoginFinance();}catch(routeError){setFinanceStatus('Usaha berhasil disimpan. Pengalihan langkah berikutnya belum selesai: '+String(routeError.message||routeError).slice(0,140)+'. Tekan tombol untuk membuka Transaksi.',true,'transaksi');}
   }else{
    setFinanceStatus((data.business_name||name)+' berhasil disimpan, tetapi usaha belum terpilih sebagai Owner. Pilih usaha yang benar sebelum melanjutkan.',true);
   }
@@ -4243,7 +4254,7 @@ async function financeChooseSavedBusiness(businessId){
   }
   setFinanceStatus('Usaha dipilih dan berhasil dimuat. Memeriksa absensi dan menyiapkan menu berikutnya...');
   const routed=await arahkanSetelahLoginFinance();
-  if(!routed)setFinanceStatus('Usaha sudah dipilih dan terverifikasi. Buka Transaksi untuk melanjutkan; pengalihan otomatis belum dapat diselesaikan.',true);
+  if(!routed)setFinanceStatus('Usaha sudah dipilih dan terverifikasi. Pengalihan otomatis belum dapat diselesaikan. Tekan tombol untuk membuka Transaksi.',true,'transaksi');
 
  }catch(e){setFinanceStatus('Tidak dapat memilih usaha: '+String(e.message||e).slice(0,180),true);}
 }
@@ -5744,7 +5755,7 @@ async function arahkanKePekerjaanBerikutnya(){
  const transactionButton=document.querySelector('nav button[onclick*="transaksi"]');
  await buka('transaksi',transactionButton);
  try{await loadStoreProducts();}catch(e){
-  tampilkanPanduanLangkahKerja('Absensi sudah tercatat. Daftar barang belum dapat dimuat: '+String(e.message||e).slice(0,150)+'. Periksa koneksi atau hubungi Owner.',true);
+  tampilkanPanduanLangkahKerja('Absensi sudah tercatat. Daftar barang belum dapat dimuat. Buka Daftar Barang untuk mencoba memuat katalog kembali atau hubungi Owner.',true,'katalog');
   return false;
  }
  const activeProducts=storeProductRows.filter(row=>row.active===true);
@@ -5826,7 +5837,7 @@ async function absenMasuk(){
   if(!data?.ok||!data?.id)throw new Error('Server belum mengonfirmasi absensi masuk. Jangan mengulang sebelum memuat ulang data.');
   await loadAttendance();
   setFinanceStatus('Absen masuk tercatat di server pada '+attendanceTime(data.check_in_at)+'. Menyiapkan pekerjaan berikutnya...');
-  try{await arahkanKePekerjaanBerikutnya();}catch(nextError){tampilkanPanduanLangkahKerja('Absensi berhasil tersimpan. Buka menu Transaksi dan ikuti langkah berikutnya. '+String(nextError.message||nextError).slice(0,120),true);}
+  try{await arahkanKePekerjaanBerikutnya();}catch(nextError){tampilkanPanduanLangkahKerja('Absensi berhasil tersimpan, tetapi langkah kerja berikutnya belum terbuka. Kembali ke Absensi untuk memeriksa status dan mencoba lagi. '+String(nextError.message||nextError).slice(0,120),true,'absensi');}
  }catch(e){
   $('attendanceStatus').className='status error';
   $('attendanceStatus').textContent='Absen masuk gagal: '+String(e.message||e).slice(0,200);
@@ -5947,7 +5958,7 @@ $('storeProductForm')?.addEventListener('submit',async function(e){
     await bukaPanelTransaksi('kasir');
     tampilkanPanduanLangkahKerja('Barang pertama berhasil disimpan dan daftar barang sudah dimuat. LANGKAH BERIKUTNYA — Kasir Cepat terbuka. Pilih barang, masukkan jumlah, periksa total dan uang diterima, lalu simpan penjualan setelah semuanya benar.',false,'kasir');
    }catch(routeError){
-    tampilkanPanduanLangkahKerja('Barang pertama berhasil disimpan. Kasir belum terbuka otomatis: '+String(routeError.message||routeError).slice(0,140)+'. Pilih menu Kasir Cepat untuk melanjutkan.',true);
+    tampilkanPanduanLangkahKerja('Barang pertama berhasil disimpan. Kasir belum terbuka otomatis: '+String(routeError.message||routeError).slice(0,140)+'. Gunakan tombol untuk membuka Kasir Cepat.',true,'kasir');
    }
   }
  }catch(e){$('storeProductStatus').className='status error';if(productConfirmed){try{cancelStoreProductEdit();}catch(_){}$('storeProductStatus').textContent='Barang sudah tersimpan dan dikonfirmasi server, tetapi tampilan/daftar belum selesai diperbarui. Jangan simpan ulang barang yang sama. Muat ulang daftar barang. Detail: '+String(e.message||e).slice(0,160);}else $('storeProductStatus').textContent='Gagal menyimpan barang: '+String(e.message||e).slice(0,220);}
@@ -6006,7 +6017,7 @@ $('stockEntryForm')?.addEventListener('submit',async function(e){
   try{
    await loadStoreProducts();
    status.textContent='Perubahan stok '+p.product_name+' BERHASIL diverifikasi: '+before+' → '+after+' '+(p.stock_unit||'unit')+'. Riwayat pergerakan stok sudah diperbarui. Menyiapkan langkah berikutnya...';
-   try{await arahkanSetelahLoginFinance();}catch(routeError){tampilkanPanduanLangkahKerja('Perubahan stok sudah tersimpan dan diverifikasi. Buka Kasir Cepat untuk melanjutkan. '+String(routeError.message||routeError).slice(0,120),true);}
+   try{await arahkanSetelahLoginFinance();}catch(routeError){tampilkanPanduanLangkahKerja('Perubahan stok sudah tersimpan dan diverifikasi. Gunakan tombol untuk membuka Kasir Cepat. '+String(routeError.message||routeError).slice(0,120),true,'kasir');}
   }catch(refreshErr){
    status.className='status error';status.textContent='Perubahan stok sudah tersimpan di server ('+before+' → '+after+'), tetapi daftar barang belum berhasil dimuat ulang. Jangan ulangi perubahan. Detail: '+String(refreshErr.message||refreshErr).slice(0,160);
   }
