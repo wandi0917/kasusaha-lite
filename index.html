@@ -5812,7 +5812,7 @@ function tampilkanPanduanLangkahKerja(message,isError=false,nextTarget=''){
  }
  notice.scrollIntoView({behavior:'smooth',block:'center'});
 }
-async function arahkanKePekerjaanBerikutnya(){
+async async function arahkanKePekerjaanBerikutnya(){
  if(!financeBusiness||!financeMemberUserId||!['owner','employee'].includes(financeMemberRole))return false;
  const transactionButton=document.querySelector('nav button[onclick*="transaksi"]');
  await buka('transaksi',transactionButton);
