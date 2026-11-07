@@ -668,4 +668,20 @@ for (const [ok, message] of guidedOwnerEmployeeFlowChecks) {
   else pass(message);
 }
 
+const businessTypeChecks = [
+  [html.includes('value="pharmacy"') && html.includes('value="drugstore"') && html.includes('value="pharmaceutical_retail"'), "business type selector includes pharmacy, drugstore, and pharmaceutical retail"],
+  [html.includes('value="optical"') && html.includes('value="medical_equipment"'), "business type selector includes optical and medical equipment shops"],
+  [html.includes('id="businessTypeModulePreview"'), "business type setup shows a contextual module preview"],
+  [html.includes("window.applyKasUsahaBusinessModule=apply"), "business module navigation adapter is available"],
+  [html.includes("return LEGACY[raw]||'other'"), "legacy business labels normalize safely to module identifiers"],
+  [html.includes("select('id,business_name,invite_code,owner_id,business_type,service_fee_consent_at"), "workspace loader reads the persisted business_type field"],
+  [html.includes("applyKasUsahaBusinessModule(business.business_type)"), "workspace load applies the selected business type to transaction navigation"],
+  [html.includes("Operasional obat resep, batch, kedaluwarsa, izin edar"), "pharmacy module clearly discloses unimplemented regulated workflows"],
+  [html.includes("Jangan gunakan aplikasi ini sebagai rekam medis, sistem klinis"), "clinic type is not represented as a clinical records system"],
+];
+for (const [ok, message] of businessTypeChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
 if (process.exitCode) process.exit(process.exitCode);
