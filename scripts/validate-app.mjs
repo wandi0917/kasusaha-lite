@@ -764,4 +764,18 @@ const costEntitlementUiCheck = html.includes("const previousCost=Number(currentI
 if (costEntitlementUiCheck) pass("product save skips the full-finance cost RPC when a new or unchanged cost is zero");
 else fail("product save must not call the full-finance cost RPC unnecessarily for zero/unchanged cost");
 
+
+const cashierResultIntegrityChecks = [
+  [html.includes("let quickSaleResponseNeedsReview=false;") && html.includes("quickSaleResponseNeedsReview=true;"), "cashier must block resubmission when a successful server response needs manual reconciliation"],
+  [html.includes("String(result.request_id)!==String(quickSaleRequestId)"), "cashier must reconcile the server request ID before clearing its idempotency key"],
+  [html.includes("serverTotal!==amount") && html.includes("serverCashReceived!==cashReceived") && html.includes("serverChange!==cashReceived-amount"), "cashier must verify server total, received cash, and change against the submitted sale"],
+  [html.includes("Number(result.lines_count)!==lines.length"), "cashier must verify server-confirmed line count"],
+  [html.includes("finally{btn.disabled=quickSaleResponseNeedsReview;}"), "cashier submit must remain blocked when a successful response needs manual review"],
+  [html.includes("String(data.bill_id)===String(activeOpenBillId)") && html.includes("serverTotal===total"), "open-bill settlement must match the exact bill ID and server total"],
+];
+for (const [ok, message] of cashierResultIntegrityChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 if (process.exitCode) process.exit(process.exitCode);
