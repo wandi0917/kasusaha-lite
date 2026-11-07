@@ -2841,7 +2841,7 @@ function tampilLaporanHarianUsaha(){
  const a=$('laporanHarianBeranda'),b=$('laporanHarianTransaksi');if(a)a.innerHTML=html;if(b)b.innerHTML=html;
 }
 function tampilTransaksi(){const q=($('cariTransaksi').value||'').toLowerCase();const data=saldoBerjalan(transaksiLokalTerlihat()).filter(x=>String(x.t.keterangan||'').toLowerCase().includes(q)).reverse();const tbody=$('riwayat');tbody.innerHTML=data.length?data.map(x=>barisLaporan(x.t,x.saldo,true)).join(''):'<tr><td colspan="8">Belum ada transaksi.</td></tr>';}
-function tanggalISO(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function tanggalISO(d){return financeDateISO(d instanceof Date?d:new Date(d));}
 async function buatPratinjauLaporan(){
  // Segarkan sesi dan data bersama sebelum menentukan sumber laporan.
  // Jika pengguna sudah login tetapi akunnya belum terhubung ke usaha, jangan diam-diam mencetak laporan lokal kosong.
