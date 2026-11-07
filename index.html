@@ -4232,7 +4232,12 @@ async function financeCreateBusiness(){
   }else{
    setFinanceStatus((data.business_name||name)+' berhasil disimpan, tetapi usaha belum terpilih sebagai Owner. Pilih usaha yang benar sebelum melanjutkan.',true);
   }
- }catch(e){setFinanceStatus('Usaha belum berhasil disimpan: '+String(e.message||e).slice(0,220),true);}finally{btn.disabled=false;}
+ }catch(e){
+  const message=String(e.message||e);
+  if(message.includes('Lisensi KasUsaha Lite aktif dengan pembayaran terverifikasi diperlukan')){
+   setFinanceStatus('Untuk membuat ruang usaha, pilih dan aktifkan paket KasUsaha Lite terlebih dahulu. Setelah lisensi terverifikasi, kembali ke formulir usaha ini.',true,'paketKasUsaha');
+  }else setFinanceStatus('Usaha belum berhasil disimpan: '+message.slice(0,220),true);
+ }finally{btn.disabled=false;}
 }
 
 async function financeChooseSavedBusiness(businessId){
@@ -4256,7 +4261,11 @@ async function financeChooseSavedBusiness(businessId){
   const routed=await arahkanSetelahLoginFinance();
   if(!routed)setFinanceStatus('Usaha sudah dipilih dan terverifikasi. Pengalihan otomatis belum dapat diselesaikan. Tekan tombol untuk membuka Transaksi.',true,'transaksi');
 
- }catch(e){setFinanceStatus('Tidak dapat memilih usaha: '+String(e.message||e).slice(0,180),true);}
+ }catch(e){
+  const message=String(e.message||e);
+  if(message.toLowerCase().includes('lisensi'))setFinanceStatus('Lisensi usaha belum terverifikasi. Periksa dan aktifkan paket KasUsaha Lite, lalu pilih usaha kembali.',true,'paketKasUsaha');
+  else setFinanceStatus('Tidak dapat memilih usaha: '+message.slice(0,180),true);
+ }
 }
 async function financeFetchAllRows(queryFactory,pageSize=500,maxRows=100000){
  if(typeof queryFactory!=='function')throw new Error('Pembentuk kueri data tidak valid.');
