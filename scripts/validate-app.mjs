@@ -40,7 +40,7 @@ const quickSaleNotesChecks = [
 
 const cashierItemNotesSettlementChecks = [
   [cashierItemNotesSettlementMigration.includes("record_store_quick_sale") && (cashierItemNotesSettlementMigration.match(/CREATE OR REPLACE FUNCTION public\\.record_store_quick_sale/g)||[]).length===2, "paid-bill note migration must preserve both cashier RPC overloads"],
-  [(cashierItemNotesSettlementMigration.match(/\\| Catatan: /g)||[]).length===2, "paid cashier sales must append each optional line note to the matching financial transaction"],
+  [(cashierItemNotesSettlementMigration.match(/\\| Catatan: /g)||[]).length===4, "paid cashier sales must append each optional line note to the matching financial transaction"],
   [cashierItemNotesSettlementMigration.includes("left(trim(v_line->>'note'), 300)"), "paid cashier note length must remain capped at 300 characters server-side"],
   [cashierItemNotesSettlementMigration.includes("SECURITY DEFINER") && cashierItemNotesSettlementMigration.includes("SET search_path TO ''"), "cashier note migration must preserve hardened RPC execution context"],
   [html.includes("note:String(row.querySelector('.quick-sale-item-note')?.value||'').trim().slice(0,300)"), "unpaid bill save must retain the per-item note before settlement"],
