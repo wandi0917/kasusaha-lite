@@ -33,6 +33,14 @@ GRANT UPDATE (
 -- stock_quantity remains insertable for initial stock (audited by trigger),
 -- but cannot be changed directly; changes go through adjust_store_product_stock.
 
+-- Keep transaction attribution and idempotency metadata immutable to clients.
+-- The Owner UI only edits these five business fields; server_recorded_at is
+-- separately protected by its immutable timestamp trigger.
+REVOKE UPDATE ON TABLE public.financial_transactions FROM authenticated;
+GRANT UPDATE (
+  transaction_date, transaction_type, amount, description, category
+) ON TABLE public.financial_transactions TO authenticated;
+
 -- Owners must still be able to list their own inactive products so the
 -- "Tampilkan lagi" action can work after a product is hidden.
 DROP POLICY IF EXISTS "Penjual dapat melihat produk miliknya" ON public.produk;
