@@ -5713,13 +5713,30 @@ async function loadAttendance(){
   if($('attendanceSaveWage')){$('attendanceSaveWage').hidden=financeMemberRole!=='owner';$('attendanceSaveWage').disabled=financeMemberRole!=='owner';}
  }catch(e){status.className='status error';status.textContent='Absensi belum dapat dimuat: '+String(e.message||e).slice(0,200);$('attendanceCheckIn').disabled=true;$('attendanceCheckOut').disabled=true;}
 }
-function tampilkanPanduanLangkahKerja(message,isError=false){
+function tampilkanPanduanLangkahKerja(message,isError=false,nextTarget=''){
  const start=$('transactionGuide');if(!start)return;
  let notice=$('financeLoginWorkNotice');
- if(!notice){notice=document.createElement('p');notice.id='financeLoginWorkNotice';notice.className='status';notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');}
+ if(!notice){notice=document.createElement('div');notice.id='financeLoginWorkNotice';notice.className='status';notice.setAttribute('role','status');notice.setAttribute('aria-live','polite');}
  notice.className=isError?'status error':'status';
  notice.textContent=message;
  start.after(notice);
+ let action=$('financeLoginWorkAction');
+ if(action)action.remove();
+ const actions={absensi:'Buka formulir Absen Masuk',kasir:'Buka Kasir Cepat',stok:'Buka formulir Tambah Barang',katalog:'Buka Daftar Barang',laporan:'Buka Laporan'};
+ if(Object.prototype.hasOwnProperty.call(actions,nextTarget)){
+  action=document.createElement('button');
+  action.id='financeLoginWorkAction';
+  action.type='button';
+  action.className='primary wide';
+  action.textContent=actions[nextTarget];
+  action.setAttribute('aria-label',actions[nextTarget]+' sekarang');
+  action.addEventListener('click',async()=>{
+   action.disabled=true;
+   try{await bukaPanelTransaksi(nextTarget);}
+   finally{action.disabled=false;}
+  });
+  notice.after(action);
+ }
  notice.scrollIntoView({behavior:'smooth',block:'center'});
 }
 async function arahkanKePekerjaanBerikutnya(){
@@ -5743,7 +5760,7 @@ async function arahkanKePekerjaanBerikutnya(){
   message='LANGKAH BERIKUTNYA — Kasir Cepat siap digunakan. Pilih barang, masukkan jumlah, periksa total, masukkan uang diterima, lalu simpan penjualan. Pastikan pembayaran dan kembalian benar sebelum menyimpan.';
  }
  await bukaPanelTransaksi(destination);
- tampilkanPanduanLangkahKerja(message,destination==='katalog');
+ tampilkanPanduanLangkahKerja(message,destination==='katalog',destination);
  return true;
 }
 async function arahkanSetelahLoginFinance(){
@@ -5761,7 +5778,7 @@ async function arahkanSetelahLoginFinance(){
    await bukaPanelTransaksi('absensi');
    const status=$('attendanceStatus');
    if(status){status.className='status warn';status.textContent='Silakan absen untuk mulai bekerja sebelum membuka pekerjaan usaha.';}
-   tampilkanPanduanLangkahKerja('LANGKAH 1 — Lakukan Absen Masuk terlebih dahulu. Setelah server mencatat absensi, KasUsaha Lite akan otomatis membuka pekerjaan berikutnya sesuai peran Anda.');
+   tampilkanPanduanLangkahKerja('LANGKAH 1 — Lakukan Absen Masuk terlebih dahulu. Setelah server mencatat absensi, KasUsaha Lite akan otomatis membuka pekerjaan berikutnya sesuai peran Anda.','', 'absensi');
    $('attendanceCheckIn')?.scrollIntoView({behavior:'smooth',block:'center'});
    return true;
   }
@@ -5774,7 +5791,7 @@ async function arahkanSetelahLoginFinance(){
   await bukaPanelTransaksi('absensi');
   const status=$('attendanceStatus');
   if(status){status.className='status';status.textContent='Absen masuk dan absen pulang hari ini sudah tercatat. Anda telah menyelesaikan absensi hari ini.';}
-  tampilkanPanduanLangkahKerja('Absensi hari ini sudah selesai. Periksa rekap kerja bila diperlukan. Jangan melakukan transaksi baru jika giliran kerja sudah berakhir.');
+  tampilkanPanduanLangkahKerja('Absensi hari ini sudah selesai. Periksa rekap kerja bila diperlukan. Jangan melakukan transaksi baru jika giliran kerja sudah berakhir.',false,'absensi');
   return true;
  }catch(e){
   console.error('Pengalihan halaman setelah login gagal:',e);
@@ -5795,7 +5812,7 @@ async function arahkanKeLaporanSetelahSimpan(category){
  await muatDanTampilkanLaporan();
  const target=selectedCategory==='stock'?'stockReportTableCard':'financeReportCard';
  $(target)?.scrollIntoView({behavior:'smooth',block:'start'});
- tampilkanPanduanLangkahKerja('Data berhasil disimpan dan laporan '+(selectedCategory==='income'?'pemasukan':selectedCategory==='finance'?'keuangan':'penjualan')+' sudah dibuka. Periksa hasilnya sebelum melanjutkan pekerjaan berikutnya.');
+ tampilkanPanduanLangkahKerja('Data berhasil disimpan dan laporan '+(selectedCategory==='income'?'pemasukan':selectedCategory==='finance'?'keuangan':'penjualan')+' sudah dibuka. Periksa hasilnya sebelum melanjutkan pekerjaan berikutnya.',false,'laporan');
  return true;
 }
 async function absenMasuk(){
@@ -5928,7 +5945,7 @@ $('storeProductForm')?.addEventListener('submit',async function(e){
   if(advanceToCashier&&itemType==='product'){
    try{
     await bukaPanelTransaksi('kasir');
-    tampilkanPanduanLangkahKerja('Barang pertama berhasil disimpan dan daftar barang sudah dimuat. LANGKAH BERIKUTNYA — Kasir Cepat terbuka. Pilih barang, masukkan jumlah, periksa total dan uang diterima, lalu simpan penjualan setelah semuanya benar.');
+    tampilkanPanduanLangkahKerja('Barang pertama berhasil disimpan dan daftar barang sudah dimuat. LANGKAH BERIKUTNYA — Kasir Cepat terbuka. Pilih barang, masukkan jumlah, periksa total dan uang diterima, lalu simpan penjualan setelah semuanya benar.',false,'kasir');
    }catch(routeError){
     tampilkanPanduanLangkahKerja('Barang pertama berhasil disimpan. Kasir belum terbuka otomatis: '+String(routeError.message||routeError).slice(0,140)+'. Pilih menu Kasir Cepat untuk melanjutkan.',true);
    }
