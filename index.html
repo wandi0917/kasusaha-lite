@@ -2738,12 +2738,20 @@ async function buka(id,tombol,opsi={}){
             }else{
               document.body.classList.remove('employee-verified');document.body.classList.add('owner-verified');id=tujuanId;tombol=tujuanTombol;
             }
+          }else if(tujuanId==='transaksi'&&activeMembers.length===0){
+            // Akun Owner baru harus dapat mencapai Pengaturan Usaha sebelum memiliki lisensi.
+            // Uji coba 31 hari baru dapat dimulai setelah business_id berhasil dibuat.
+            // Panel transaksi tetap mengunci Kasir, Stok, Absensi, dan Laporan sampai
+            // workspace, keanggotaan, dan status uji coba diverifikasi oleh server.
+            document.body.classList.remove('owner-verified','employee-verified');
+            document.body.classList.add('workspace-selection-pending');
+            id=tujuanId;tombol=tujuanTombol;
           }else if(tujuanId==='transaksi'&&activeMembers.length>1){
             // Buka pemilih usaha saja; fitur tetap terkunci sampai salah satu usaha dipilih.
             document.body.classList.remove('owner-verified','employee-verified');document.body.classList.add('workspace-selection-pending');id=tujuanId;tombol=tujuanTombol;
           }else{
             if(licenseAccessState!=='active')await periksaAktivasiLisensi();
-            if(licenseAccessState==='active'){if(tujuanId==='transaksi'&&activeMembers.length===0)document.body.classList.add('workspace-selection-pending');id=tujuanId;tombol=tujuanTombol;}
+            if(licenseAccessState==='active'){id=tujuanId;tombol=tujuanTombol;}
             else{id='akunPembeli';tombol=document.querySelector('nav button[onclick*="akunPembeli"]');setStatusAktivasi('Akun sudah login, tetapi lisensi aktif belum terverifikasi oleh server. Verifikasi lisensi untuk membuka fitur.',false);}
           }
         }
