@@ -645,4 +645,12 @@ if (quickSaleCashIdempotencyStart < 0 || quickSaleCashIdempotencyEnd <= quickSal
   fail("cashier idempotency fingerprint must include the received-cash amount so uncertain retries cannot be mistaken for a different payment");
 } else pass("cashier idempotency fingerprint includes the received-cash amount");
 \nif (process.exitCode) process.exit(process.exitCode);\n
+const quickSaleUserIdInFingerprint = html.includes("const quickSalePayload={businessId:financeBusiness.id,userId:financeMemberUserId,tableNumber:serverLocation,customerName,cashReceived,lines:");
+if (!quickSaleUserIdInFingerprint) fail("cashier pending request fingerprint must be scoped to the authenticated user");
+else pass("cashier pending request fingerprint is scoped to the authenticated user");
+
+const stockAdjustmentUserIdInFingerprint = html.includes("const fingerprint=JSON.stringify({businessId:financeBusiness.id,userId:financeMemberUserId,productId:p.id,type,quantity:qty});");
+if (!stockAdjustmentUserIdInFingerprint) fail("stock adjustment pending request fingerprint must be scoped to the authenticated Owner");
+else pass("stock adjustment pending request fingerprint is scoped to the authenticated Owner");
+
 if (process.exitCode) process.exit(process.exitCode);
