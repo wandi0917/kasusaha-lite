@@ -27,6 +27,7 @@ const biteshipShipmentSource = fs.readFileSync("supabase/functions/biteship-crea
 const marketplaceFinance = fs.readFileSync("supabase/functions/platform-marketplace-finance/index.ts", "utf8");
 const failClosedStoreCostMigration = fs.readFileSync("supabase/migrations/20261106113748_fail_closed_store_product_cost_entitlement.sql", "utf8");
 const failClosedFinanceMigration = fs.readFileSync("supabase/migrations/20261106113750_fail_closed_package_entitlement_helper_and_finance_rpcs.sql", "utf8");
+const idempotentFinanceSettlementMigration = fs.readFileSync("supabase/migrations/20261107171000_idempotent_finance_open_item_settlement.sql", "utf8");
 const manifestText = fs.readFileSync("manifest.webmanifest", "utf8");
 
 const quickSaleNotesChecks = [
@@ -905,6 +906,23 @@ const pwaReleaseRefreshChecks = [
   [/const CACHE_NAME = CACHE_PREFIX \+ 'v64';/.test(sw), "PWA service worker cache version must advance to refresh installed app shells"],
 ];
 for (const [ok, message] of pwaReleaseRefreshChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
+
+const financeSettlementIdempotencyChecks = [
+  [idempotentFinanceSettlementMigration.includes("p_request_id uuid") && idempotentFinanceSettlementMigration.includes("v_source_id := 'settle-' || v_item.id::text || '-' || p_request_id::text"), "finance settlement must derive a stable journal source ID from item and request IDs"],
+  [idempotentFinanceSettlementMigration.includes("IF FOUND THEN") && idempotentFinanceSettlementMigration.includes("'replayed',true"), "repeated finance settlement requests must return the prior journal without increasing settled amount again"],
+  [idempotentFinanceSettlementMigration.includes("v_existing_debit IS DISTINCT FROM p_amount") && idempotentFinanceSettlementMigration.includes("v_existing_credit IS DISTINCT FROM p_amount"), "replayed settlement must verify the original debit and credit amounts"],
+  [idempotentFinanceSettlementMigration.includes("REVOKE ALL ON FUNCTION public.settle_finance_open_item(uuid,numeric,date) FROM PUBLIC, anon, authenticated"), "legacy non-idempotent public settlement RPC must be disabled for clients"],
+  [idempotentFinanceSettlementMigration.includes("GRANT EXECUTE ON FUNCTION public.settle_finance_open_item(uuid,numeric,date,uuid) TO authenticated"), "only the request-ID settlement RPC must remain available to authenticated users"],
+  [idempotentFinanceSettlementMigration.includes("SECURITY DEFINER") && idempotentFinanceSettlementMigration.includes("SET search_path TO ''"), "idempotent settlement function must retain hardened execution context"],
+  [html.includes("kasusaha_finance_settlement_pending_v1") && html.includes("p_request_id:requestId"), "finance settlement UI must persist and send the same request ID after uncertain responses"],
+  [html.includes("pending.fingerprint!==fingerprint") && html.includes("Jangan membuat pelunasan baru dahulu"), "finance settlement UI must block a different payment while an earlier result is uncertain"],
+  [html.includes("result.data.replayed?'Pelunasan ini sudah tercatat sebelumnya"), "finance settlement UI must distinguish safe replay from a new payment"],
+];
+for (const [ok, message] of financeSettlementIdempotencyChecks) {
   if (ok) pass(message);
   else fail(message);
 }
