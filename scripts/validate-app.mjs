@@ -654,4 +654,18 @@ const stockAdjustmentUserIdInFingerprint = html.includes("const fingerprint=JSON
 if (!stockAdjustmentUserIdInFingerprint) fail("stock adjustment pending request fingerprint must be scoped to the authenticated Owner");
 else pass("stock adjustment pending request fingerprint is scoped to the authenticated Owner");
 
+
+const guidedOwnerEmployeeFlowChecks = [
+  [html.includes("Menyiapkan langkah pertama akun Owner") && html.includes("LANGKAH 1 — Lengkapi nama dan jenis usaha"), "Owner login without a selected workspace is routed to the business setup or chooser"],
+  [html.includes("async function arahkanKePekerjaanBerikutnya()") && html.includes("financeMemberRole==='owner'&&activeProducts.length===0") && html.includes("financeMemberRole==='employee'&&activeProducts.length===0"), "Next-step routing distinguishes Owner inventory setup from Employee read-only catalog"],
+  [html.includes("LANGKAH 1 — Lakukan Absen Masuk terlebih dahulu") && html.includes("tampilkanPanduanLangkahKerja"), "Login workflow displays a live instruction for the required next action"],
+  [html.includes("try{await arahkanKePekerjaanBerikutnya();}catch(nextError)") && html.includes("Absensi berhasil tersimpan"), "Successful attendance persists even if next-step navigation encounters an error"],
+  [html.includes("await arahkanSetelahLoginFinance();") && html.includes("Pilih usaha yang benar terlebih dahulu"), "Owner business creation and multi-workspace selection continue through the guided workflow"],
+  [html.includes("setAttribute('aria-live','polite')") && html.includes("setAttribute('role','status')"), "Guided workflow instructions are announced accessibly to assistive technology"],
+];
+for (const [ok, message] of guidedOwnerEmployeeFlowChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
 if (process.exitCode) process.exit(process.exitCode);
