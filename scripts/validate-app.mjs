@@ -15,6 +15,7 @@ const marketplaceWorkspaceMigration = fs.readFileSync("supabase/migrations/20261
 const stockLedgerMigration = fs.readFileSync("supabase/migrations/20261107104118_transaction_cash_validation_and_stock_movement_ledger_20261107.sql", "utf8");
 const openBillAttributionMigration = fs.readFileSync("supabase/migrations/20261107142427_preserve_customer_and_table_labels_for_open_bill_settlement.sql", "utf8");
 const cashierItemNotesSettlementMigration = fs.readFileSync("supabase/migrations/20261107144500_preserve_cashier_item_notes_after_payment.sql", "utf8");
+const cashierItemNotesLengthMigration = fs.readFileSync("supabase/migrations/20261107170500_cap_paid_sale_note_description_length.sql", "utf8");
 
 const productShippingPrivacySql = fs.readFileSync("supabase/migrations/20261107141421_protect_public_product_shipping_and_write_paths.sql", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
@@ -47,6 +48,17 @@ const cashierItemNotesSettlementChecks = [
   [html.includes("noteField.value=String(line.note||'').slice(0,300)"), "opening an unpaid bill must restore the per-item note for edits and payment"],
 ];
 for (const [ok, message] of cashierItemNotesSettlementChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
+const cashierItemNotesLengthChecks = [
+  [(cashierItemNotesLengthMigration.match(/CREATE OR REPLACE FUNCTION public\\.record_store_quick_sale/g)||[]).length===2, "description-length migration must preserve both cashier RPC overloads"],
+  [(cashierItemNotesLengthMigration.match(/left\\(v_description, 300 - char_length\\(v_note\\)\\)/g)||[]).length===2, "paid sale descriptions must always fit the 300-character database constraint"],
+  [(cashierItemNotesLengthMigration.match(/left\\(trim\\(v_line->>'note'\\), 288\\)/g)||[]).length===2, "paid item notes must retain up to 288 characters after the label"],
+  [(cashierItemNotesLengthMigration.match(/v_note text;/g)||[]).length===2, "each cashier RPC overload must build the bounded note independently"],
+];
+for (const [ok, message] of cashierItemNotesLengthChecks) {
   if (ok) pass(message);
   else fail(message);
 }
