@@ -189,6 +189,15 @@ for (const [ok, message] of recoveryNavigationChecks) {
   else fail(message);
 }
 
+const serviceFeePreviewNavigationChecks = [
+  [html.includes("const nextStepOpened=await arahkanKePekerjaanBerikutnya()"), "a successful monthly service-fee preview must automatically route the Owner to the next operational step"],
+  [html.includes("Pratinjau berhasil dimuat. Pengalihan otomatis tertahan"), "a blocked post-preview route must explain the failure and provide a recovery action"],
+];
+for (const [ok, message] of serviceFeePreviewNavigationChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 const navigationConcurrencyChecks = [
   [appNavigationScript.includes("let __kasUsahaNavigationQueue=Promise.resolve()"), "navigation requests must be serialized while session and license checks are pending"],
   [appNavigationScript.includes("const __kasUsahaNavigateCore=buka"), "navigation queue must preserve the original guarded navigation handler"],
