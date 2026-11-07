@@ -2024,7 +2024,7 @@ async function bagikanKasUsahaLite(){
 <p class="small">Laporan bersama disimpan di Supabase, sehingga owner dan karyawan dapat mengaksesnya dari perangkat berbeda. Login memakai akun yang sama dengan Akun Pembeli/Penjual. Catatan lokal lama tetap disimpan dan tidak otomatis digabung.</p>
 <div id="financeStatus" class="status" role="status">Memeriksa akun dan usaha...</div>
 </div>
-<div class="card report-category-view" id="stockReportCard" hidden><h3>Ringkasan Stok</h3><div class="grid"><div class="finance-metric">Jenis barang aktif<strong id="stockReportKinds">0</strong></div><div class="finance-metric">Jumlah stok (angka gabungan)<strong id="stockReportUnits">0</strong></div><div class="finance-metric">Barang stok menipis (≤ 5)<strong id="stockReportLow">0</strong></div></div></div><div class="card report-category-view" id="stockReportTableCard" hidden><h3>Tabel Laporan Stok Barang</h3><p class="small">Tabel ini khusus untuk stok barang dan bahan baku, terpisah dari tabel laporan penjualan pada menu Transaksi.</p><div class="table-wrap"><table class="report-table"><thead><tr><th>Kode</th><th>Nama barang / bahan baku</th><th>Jenis</th><th>Stok saat ini</th><th>Harga modal / satuan</th><th>Nilai persediaan (modal)</th><th>Status stok</th></tr></thead><tbody id="stockReportRows"><tr><td colspan="7">Memuat stok...</td></tr></tbody></table></div><p class="small">Nilai persediaan dihitung dari stok saat ini × harga modal. Jika data modal belum dapat dibaca, nilai ditandai tidak tersedia; sistem tidak menganggap modal nol.</p></div>
+<div class="card report-category-view" id="stockReportCard" hidden><h3>Ringkasan Stok</h3><div class="grid"><div class="finance-metric">Jenis barang aktif<strong id="stockReportKinds">0</strong></div><div class="finance-metric">Jumlah stok (angka gabungan)<strong id="stockReportUnits">0</strong></div><div class="finance-metric">Barang stok menipis (≤ 5)<strong id="stockReportLow">0</strong></div></div></div><div class="card report-category-view" id="stockReportTableCard" hidden><h3>Tabel Laporan Stok Barang</h3><p class="small">Tabel ini khusus untuk stok barang dan bahan baku, terpisah dari tabel laporan penjualan pada menu Transaksi.</p><div class="table-wrap"><table class="report-table"><thead><tr><th>Kode</th><th>Nama barang / bahan baku</th><th>Jenis</th><th>Stok saat ini</th><th>Harga modal / satuan</th><th>Nilai persediaan (modal)</th><th>Status stok</th></tr></thead><tbody id="stockReportRows"><tr><td colspan="7">Memuat stok...</td></tr></tbody></table></div><p class="small">Nilai persediaan dihitung dari stok saat ini × harga modal. Jika data modal belum dapat dibaca, nilai ditandai tidak tersedia; sistem tidak menganggap modal nol.</p><h4>Riwayat Pergerakan Stok</h4><p class="small">Mencatat stok awal, penjualan, stok masuk, stok keluar, koreksi, dan perubahan stok produk. Maksimal 200 catatan terbaru ditampilkan.</p><div class="row-actions"><button type="button" class="secondary" onclick="loadStoreStockMovements()">Muat ulang riwayat stok</button></div><p id="stockMovementStatus" class="status" role="status">Riwayat pergerakan stok akan dimuat saat laporan dibuka.</p><div class="table-wrap"><table class="report-table"><thead><tr><th>Waktu (WIB)</th><th>Kode / Barang</th><th>Jenis perubahan</th><th>Stok sebelum → sesudah</th><th>Perubahan</th><th>Catatan</th></tr></thead><tbody id="stockMovementRows"><tr><td colspan="6">Buka laporan stok untuk memuat riwayat.</td></tr></tbody></table></div></div>
 <div class="card report-category-view" id="financeReportCard" hidden>
 <h3 id="financeReportTitle">Laporan Keuangan Lengkap (Owner)</h3>
 <p id="financeReportActivePerson" class="status" aria-live="polite">Petugas: menunggu login.</p>
@@ -5155,6 +5155,7 @@ async function pilihLaporanTransaksi(category){
     break;
    case 'stock':
     await loadStoreProducts();
+    await loadStoreStockMovements();
     break;
    case 'accounting':
     await loadFinanceAccounting();
@@ -5195,7 +5196,7 @@ async function printSelectedReport(){
  const source=$(panelId),target=$('areaLaporanCetak');
  if(!source||!target){alert('Panel laporan yang dipilih tidak ditemukan.');return;}
  if(category==='sales'||category==='finance'||category==='income')renderFinanceReport();
- if(category==='stock'){try{await loadStoreProducts();}catch(e){alert('Data stok gagal dimuat: '+String(e.message||e).slice(0,180));return;}}
+ if(category==='stock'){try{await loadStoreProducts();await loadStoreStockMovements();}catch(e){alert('Data stok gagal dimuat: '+String(e.message||e).slice(0,180));return;}}
  const clone=source.cloneNode(true);
  clone.hidden=false;clone.removeAttribute('hidden');clone.style.display='block';clone.style.visibility='visible';
  clone.querySelectorAll('.report-print-action,button,input,select,textarea,.row-actions').forEach(el=>el.remove());
@@ -5269,6 +5270,39 @@ async function loadStoreProducts(){
   if($('stockEntryCard'))$('stockEntryCard').hidden=financeMemberRole!=='owner';
   updateQuickSalePreview();
   if(costLookupWarning)setFinanceStatus(costLookupWarning,true);
+}
+async function loadStoreStockMovements(){
+ const status=$('stockMovementStatus'),tbody=$('stockMovementRows');
+ if(!status||!tbody)return;
+ if(!sb||!financeBusiness||financeMemberRole!=='owner'){
+  status.className='status error';status.textContent='Riwayat pergerakan stok hanya tersedia bagi Owner usaha yang terhubung.';
+  return;
+ }
+ status.className='status';status.textContent='Memuat riwayat pergerakan stok dari server...';
+ try{
+  const {data,error}=await sb.from('store_stock_movements')
+   .select('id,created_at,product_code,product_name,movement_type,quantity_before,quantity_after,quantity_delta,note')
+   .eq('business_id',financeBusiness.id).order('created_at',{ascending:false}).limit(200);
+  if(error)throw error;
+  tbody.replaceChildren();
+  if(!data?.length){
+   const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=6;td.textContent='Belum ada riwayat pergerakan stok. Riwayat mulai tercatat setelah migrasi ledger stok aktif dan terjadi perubahan stok.';tr.appendChild(td);tbody.appendChild(tr);
+  }else{
+   const labels={initial_stock:'Stok awal',sale:'Penjualan kasir',stock_in:'Stok masuk',stock_out:'Stok keluar',stock_correction:'Koreksi stok',product_edit:'Perubahan saat edit barang'};
+   data.forEach(row=>{
+    const tr=document.createElement('tr');
+    const date=new Date(row.created_at),dateText=Number.isFinite(date.getTime())?date.toLocaleString('id-ID',{timeZone:'Asia/Jakarta',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'—';
+    const delta=Number(row.quantity_delta||0),values=[dateText,String(row.product_code||'—')+' — '+String(row.product_name||'Barang dihapus'),labels[row.movement_type]||row.movement_type,Number(row.quantity_before)+' → '+Number(row.quantity_after),(delta>0?'+':'')+delta,String(row.note||'—')];
+    values.forEach(value=>{const td=document.createElement('td');td.textContent=String(value);tr.appendChild(td);});
+    tbody.appendChild(tr);
+   });
+  }
+  status.className='status';status.textContent=(data?.length||0)+' riwayat perubahan stok terbaru dimuat dari server.';
+ }catch(error){
+  status.className='status error';
+  status.textContent='Riwayat stok belum dapat dimuat: '+String(error.message||error).slice(0,220)+'. Pastikan migrasi pencatatan pergerakan stok sudah diterapkan.';
+  tbody.replaceChildren();const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=6;td.textContent='Riwayat belum tersedia.';tr.appendChild(td);tbody.appendChild(tr);
+ }
 }
 function attendanceToday(){
  const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
