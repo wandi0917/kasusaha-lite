@@ -139,6 +139,17 @@ const globalNavigationChecks = [
   [ /data-id="\s*'\s*\+\s*aman\(r\.id\)\s*\+\s*'"\s+onclick="mulaiEditFinanceTransaction\(this\.dataset\.id\)"/.test(html), "finance report edit action must use a safely bound row ID" ],
   [ /data-id="\s*'\s*\+\s*aman\(r\.id\)\s*\+\s*'"\s+onclick="hapusFinanceTransaction\(this\.dataset\.id\)"/.test(html), "finance report delete action must use a safely bound row ID" ],
 ];
+const navigationConcurrencyChecks = [
+  [appNavigationScript.includes("let __kasUsahaNavigationQueue=Promise.resolve()"), "navigation requests must be serialized while session and license checks are pending"],
+  [appNavigationScript.includes("const __kasUsahaNavigateCore=buka"), "navigation queue must preserve the original guarded navigation handler"],
+  [appNavigationScript.includes("__kasUsahaNavigationQueue=task.catch(error=>"), "a failed navigation must not permanently block later menu navigation"],
+  [html.includes('id="kasusaha-navigation-usability"') && html.includes("scroll-margin-top:84px"), "selected panels must remain visible below the sticky navigation bar"],
+];
+for (const [ok, message] of navigationConcurrencyChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 for (const [ok, message] of globalNavigationChecks) {
   if (!ok) fail(message);
   else pass(message);
