@@ -15,6 +15,13 @@ create table if not exists private.kasusaha_free_trials (
   constraint kasusaha_free_trials_valid_period check (expires_at > started_at)
 );
 
+-- Keep the one-time Owner trial marker if its business workspace is deleted.
+alter table private.kasusaha_free_trials alter column business_id drop not null;
+alter table private.kasusaha_free_trials drop constraint if exists kasusaha_free_trials_business_id_fkey;
+alter table private.kasusaha_free_trials
+  add constraint kasusaha_free_trials_business_id_fkey
+  foreign key (business_id) references public.business_workspaces(id) on delete set null;
+
 alter table private.kasusaha_free_trials enable row level security;
 revoke all on table private.kasusaha_free_trials from public, anon, authenticated;
 comment on table private.kasusaha_free_trials is
