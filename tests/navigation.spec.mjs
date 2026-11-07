@@ -240,14 +240,22 @@ test('tombol Periksa Status Aktivasi menjalankan pemeriksaan ulang ke server', a
   await page.evaluate(() => {
     document.querySelector('#employeeDevicePaywall').hidden = false;
     window.__employeeStatusChecks = 0;
+    window.__employeeWorkspaceLoads = 0;
+    window.__employeeActivationReady = false;
     window.ensureEmployeeDeviceActivation = async () => {
       window.__employeeStatusChecks += 1;
-      document.querySelector('#employeeDeviceStatus').textContent = 'Status server: masih menunggu aktivasi.';
-      return false;
+      document.querySelector('#employeeDeviceStatus').textContent = window.__employeeActivationReady ? 'Status server: aktivasi sudah aktif.' : 'Status server: masih menunggu aktivasi.';
+      return window.__employeeActivationReady;
     };
+    window.loadFinanceWorkspace = async () => { window.__employeeWorkspaceLoads += 1; };
   });
   await page.locator('#employeeDeviceCheckButton').click();
   await expect.poll(() => page.evaluate(() => window.__employeeStatusChecks)).toBe(1);
   await expect(page.locator('#employeeDeviceStatus')).toContainText('Status server');
   await expect(page.locator('#employeeDeviceCheckButton')).toBeEnabled();
+  expect(await page.evaluate(() => window.__employeeWorkspaceLoads)).toBe(0);
+  await page.evaluate(() => { window.__employeeActivationReady = true; });
+  await page.locator('#employeeDeviceCheckButton').click();
+  await expect.poll(() => page.evaluate(() => window.__employeeWorkspaceLoads)).toBe(1);
+  await expect.poll(() => page.evaluate(() => window.__employeeStatusChecks)).toBe(2);
 });
