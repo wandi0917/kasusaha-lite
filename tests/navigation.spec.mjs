@@ -298,3 +298,27 @@ test('panduan login Owner mengikuti kondisi barang yang tersedia', async ({ page
   expect(result.withProductsText).toContain('Kasir Cepat');
   expect(result.withProductsTarget).toBe('Buka Kasir Cepat');
 });
+
+test('navigasi Karyawan ke katalog tetap dinyatakan berhasil setelah daftar barang terbuka', async ({ page }) => {
+  await page.evaluate(async () => {
+    document.querySelector('#transaksi')?.classList.add('active');
+    financeBusiness = { id: 'e2e-employee-business', owner_id: 'e2e-owner' };
+    financeMemberRole = 'employee';
+    financeMemberUserId = 'e2e-employee';
+    offlineTransactionMode = false;
+    periksaLisensiWorkspace = async () => true;
+    loadStoreProducts = async () => {
+      storeProductRows = [];
+      const catalog = document.querySelector('#employeeProductCatalog');
+      if (catalog) catalog.innerHTML = '<p>Daftar barang uji tersedia.</p>';
+    };
+    window.__employeeCatalogRouteResult = await bukaPanelTransaksi('katalog');
+    window.__employeeCatalogVisible = !document.querySelector('#employeeProductCatalog')?.hidden;
+  });
+
+  const result = await page.evaluate(() => ({
+    opened: window.__employeeCatalogRouteResult,
+    visible: window.__employeeCatalogVisible,
+  }));
+  expect(result).toEqual({ opened: true, visible: true });
+});
