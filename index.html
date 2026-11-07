@@ -5204,7 +5204,7 @@ financeAccountingEl('financeSettlementForm')?.addEventListener('submit',async fu
   const result=await sb.rpc('settle_finance_open_item',{p_item_id:itemId,p_amount:amount,p_date:date,p_request_id:requestId});
   if(result.error){
    const code=String(result.error.code||'');
-   if(/^P\\d{4}$/.test(code)||/^23/.test(code)){
+   if(/^P\d{4}$/.test(code)||/^23/.test(code)){
     try{const saved=JSON.parse(localStorage.getItem(pendingKey)||'null');if(saved?.requestId===requestId)localStorage.removeItem(pendingKey);}catch(_){}
    }
    throw result.error;
