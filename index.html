@@ -3835,6 +3835,21 @@ async function ensureEmployeeDeviceActivation(){
   return false;
  }
 }
+const employeeDeviceCheckButton=$('employeeDeviceCheckButton');
+if(employeeDeviceCheckButton){
+ employeeDeviceCheckButton.addEventListener('click',async()=>{
+  if(employeeDeviceCheckButton.disabled)return;
+  employeeDeviceCheckButton.disabled=true;
+  employeeDeviceCheckButton.textContent='Memeriksa status...';
+  employeeDeviceStatus('Memeriksa ulang status aktivasi langsung dari server. Fitur tetap terkunci selama pemeriksaan.',false);
+  try{
+   await ensureEmployeeDeviceActivation();
+  }finally{
+   employeeDeviceCheckButton.disabled=false;
+   employeeDeviceCheckButton.textContent='Periksa Status Aktivasi';
+  }
+ });
+}
 async function loadOwnerDeviceActivations(businessIdOverride){
  const host=$('ownerEmployeeActivationRows');
  if(!host)return;
