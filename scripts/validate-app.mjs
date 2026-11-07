@@ -8,6 +8,10 @@ const fail = (message) => {
 const pass = (message) => console.log("PASS:", message);
 
 const html = fs.readFileSync("index.html", "utf8");
+
+const stockLedgerMigration = fs.readFileSync("supabase/migrations/20261107120000_transaction_cash_validation_and_stock_movement_ledger.sql", "utf8");
+const openBillAttributionMigration = fs.readFileSync("supabase/migrations/20261107150000_preserve_customer_and_table_labels_for_open_bill_settlement.sql", "utf8");
+
 const productShippingPrivacySql = fs.readFileSync("supabase/migrations/20261107143000_protect_public_product_shipping_and_write_paths.sql", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
 const costSecurityMigration = fs.readFileSync("supabase/migrations/20261103020843_restrict_store_product_cost_column_access.sql", "utf8");
@@ -774,6 +778,28 @@ const cashierResultIntegrityChecks = [
   [html.includes("String(data.bill_id)===String(activeOpenBillId)") && html.includes("serverTotal===total"), "open-bill settlement must match the exact bill ID and server total"],
 ];
 for (const [ok, message] of cashierResultIntegrityChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
+
+const stockMovementHistoryChecks = [
+  [html.includes('id="stockMovementHistoryCard"') && html.includes('id="stockMovementHistoryRows"'), "Owner catalog includes a stock movement history panel"],
+  [html.includes("async function loadStockMovementHistory()") && html.includes(".from('store_stock_movements').select("), "stock history is loaded from the server-side movement ledger"],
+  [html.includes("financeMemberRole!=='owner'") && html.includes("stockMovementHistoryCard'))$('stockMovementHistoryCard').hidden=financeMemberRole!=='owner'"), "stock movement history is Owner-only in the UI"],
+  [stockLedgerMigration.includes("store_stock_movements_owner_select") && stockLedgerMigration.includes("m.role = 'owner'"), "stock movement history database policy is restricted to Owner"],
+  [stockLedgerMigration.includes("REVOKE INSERT ON TABLE public.store_stock_movements") || stockLedgerMigration.includes("REVOKE ALL ON TABLE public.store_stock_movements"), "clients cannot directly insert stock movement history"],
+];
+for (const [ok, message] of stockMovementHistoryChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+const openBillAttributionChecks = [
+  [openBillAttributionMigration.includes("CREATE OR REPLACE FUNCTION public.settle_store_open_bill"), "open-bill settlement attribution update replaces only the existing server RPC"],
+  [openBillAttributionMigration.includes("pg_catalog.concat_ws") && openBillAttributionMigration.includes("'Meja '") && openBillAttributionMigration.includes("'Pelanggan: '"), "open-bill settlement preserves both customer name and table number"],
+  [openBillAttributionMigration.includes("'Kasir'"), "open-bill settlement retains a safe default location label"],
+];
+for (const [ok, message] of openBillAttributionChecks) {
   if (ok) pass(message);
   else fail(message);
 }
