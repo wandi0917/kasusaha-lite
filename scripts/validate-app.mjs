@@ -639,7 +639,6 @@ for (const [ok, message] of paymentIntegrityChecks) {
   else pass(message);
 }
 
-if (process.exitCode) process.exit(process.exitCode);
 
 const openBillPrivilegesMigration = fs.readFileSync(
   "supabase/migrations/20261107130000_restore_open_bill_scoped_write_privileges.sql",
@@ -655,3 +654,5 @@ for (const [ok, message] of openBillPrivilegeChecks) {
   if (!ok) fail(message);
   else pass(message);
 }
+
+if (process.exitCode) process.exit(process.exitCode);
