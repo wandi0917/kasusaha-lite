@@ -8,14 +8,14 @@ const fail = (message) => {
 const pass = (message) => console.log("PASS:", message);
 
 const html = fs.readFileSync("index.html", "utf8");
-const publicMarketplaceEntitlementFix = fs.readFileSync("supabase/migrations/20261107180000_fix_public_marketplace_entitlement_evaluation.sql", "utf8");
-const publicMarketplaceVisibilityMigration = fs.readFileSync("supabase/migrations/20261107170000_hide_unentitled_marketplace_listings.sql", "utf8");
-const marketplaceWorkspaceMigration = fs.readFileSync("supabase/migrations/20261107160000_bind_marketplace_products_to_verified_business_entitlement.sql", "utf8");
+const publicMarketplaceEntitlementFix = fs.readFileSync("supabase/migrations/20261107143852_fix_public_marketplace_entitlement_evaluation.sql", "utf8");
+const publicMarketplaceVisibilityMigration = fs.readFileSync("supabase/migrations/20261107143320_hide_unentitled_marketplace_listings.sql", "utf8");
+const marketplaceWorkspaceMigration = fs.readFileSync("supabase/migrations/20261107142954_bind_marketplace_products_to_verified_business_entitlement.sql", "utf8");
 
-const stockLedgerMigration = fs.readFileSync("supabase/migrations/20261107120000_transaction_cash_validation_and_stock_movement_ledger.sql", "utf8");
-const openBillAttributionMigration = fs.readFileSync("supabase/migrations/20261107150000_preserve_customer_and_table_labels_for_open_bill_settlement.sql", "utf8");
+const stockLedgerMigration = fs.readFileSync("supabase/migrations/20261107104118_transaction_cash_validation_and_stock_movement_ledger_20261107.sql", "utf8");
+const openBillAttributionMigration = fs.readFileSync("supabase/migrations/20261107142427_preserve_customer_and_table_labels_for_open_bill_settlement.sql", "utf8");
 
-const productShippingPrivacySql = fs.readFileSync("supabase/migrations/20261107143000_protect_public_product_shipping_and_write_paths.sql", "utf8");
+const productShippingPrivacySql = fs.readFileSync("supabase/migrations/20261107141421_protect_public_product_shipping_and_write_paths.sql", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
 const costSecurityMigration = fs.readFileSync("supabase/migrations/20261103020843_restrict_store_product_cost_column_access.sql", "utf8");
 const employeeSessionMigration = fs.readFileSync("supabase/migrations/20261103062527_allow_paid_employee_invite_sessions_in_transactions.sql", "utf8");
