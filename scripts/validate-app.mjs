@@ -151,6 +151,19 @@ for (const [ok, message] of actionableGuidanceChecks) {
   else fail(message);
 }
 
+const recoveryNavigationChecks = [
+  [html.includes("function setFinanceStatus(message,isError=false,nextTarget='')"), "recovery status helper must accept an explicit navigation destination"],
+  [html.includes("id='financeStatusAction'") && html.includes("window.buka?.(nextTarget"), "recovery status messages must render a real direct-navigation button"],
+  [html.includes("true,'transaksi');"), "workspace setup recovery must provide a direct Transaksi action"],
+  [html.includes("true,'kasir');"), "cashier recovery guidance must provide a direct Kasir Cepat action"],
+  [html.includes("true,'katalog');"), "catalog loading recovery guidance must provide a direct Daftar Barang action"],
+  [html.includes("Formulir pengaturan usaha sudah terbuka di halaman ini."), "first workspace instructions must not tell users to search for the already-open form"],
+];
+for (const [ok, message] of recoveryNavigationChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 const navigationConcurrencyChecks = [
   [appNavigationScript.includes("let __kasUsahaNavigationQueue=Promise.resolve()"), "navigation requests must be serialized while session and license checks are pending"],
   [appNavigationScript.includes("const __kasUsahaNavigateCore=buka"), "navigation queue must preserve the original guarded navigation handler"],
