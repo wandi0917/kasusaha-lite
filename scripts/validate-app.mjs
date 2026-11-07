@@ -799,6 +799,10 @@ for (const [ok, message] of stockCorrectionZeroChecks) {
 const confirmedOperationChecks = [
   [html.includes("let transactionConfirmed=false;") && html.includes("transactionConfirmed=true;") && html.includes("Jangan ulangi pencatatan."), "manual finance save/edit must retain confirmed-server state when report refresh fails"],
   [html.includes("let productConfirmed=false;") && html.includes("productConfirmed=true;") && html.includes("Jangan simpan ulang barang yang sama."), "product save must not be reported as failed or retried after server confirmation"],
+  [html.includes("kasusaha_product_save_pending_v1") && html.includes("productFingerprint"), "product save must retain the same local fingerprint across uncertain retries"],
+  [html.includes("const matches=!!existing&&existing.product_code===code") && html.includes("lookupError"), "product save must verify the authoritative product row before reporting an ambiguous request as failed"],
+  [html.includes("pending.fingerprint!==productFingerprint") && html.includes("jangan membuat atau mengubah barang lain"), "product save must block a different product while a previous save result is uncertain"],
+
   [html.includes("let stockConfirmed=false,stockNeedsManualReview=false;") && html.includes("String(result.product_id)!==String(p.id)") && html.includes("String(result.request_id)!==String(requestId)"), "stock adjustment must verify server product and idempotency request identity"],
   [html.includes("quantity_before") && html.includes("quantity_after") && html.includes("quantity_delta") && html.includes("after!==expectedAfter"), "stock adjustment must reconcile before/after/delta values before clearing the pending request"],
   [html.includes("finally{btn.disabled=stockNeedsManualReview;}"), "stock adjustment button must remain disabled when server result needs manual review"],
