@@ -5,7 +5,7 @@
 create table if not exists private.kasusaha_free_trials (
   id uuid primary key default gen_random_uuid(),
   owner_id uuid not null references auth.users(id) on delete cascade,
-  business_id uuid not null references public.business_workspaces(id) on delete cascade,
+  business_id uuid references public.business_workspaces(id) on delete set null,
   plan_code text not null default 'lite' check (plan_code = 'lite'),
   started_at timestamptz not null,
   expires_at timestamptz not null,
@@ -80,8 +80,8 @@ begin
     return jsonb_build_object(
       'success', true,
       'status', case when v_trial.expires_at > now() then 'active' else 'expired' end,
-      'is_trial', v_trial.business_id = p_business_id and v_trial.expires_at > now(),
-      'same_business', v_trial.business_id = p_business_id,
+      'is_trial', v_trial.business_id is not distinct from p_business_id and v_trial.expires_at > now(),
+      'same_business', v_trial.business_id is not distinct from p_business_id,
       'business_id', v_trial.business_id, 'plan_code', v_trial.plan_code,
       'started_at', v_trial.started_at, 'expires_at', v_trial.expires_at,
       'days_remaining', greatest(0, ceil(extract(epoch from (v_trial.expires_at - now())) / 86400.0)::integer)
@@ -162,7 +162,7 @@ begin
     return jsonb_build_object('success', true, 'is_trial', false, 'status', 'not_started');
   end if;
 
-  if v_trial.business_id <> p_business_id then
+  if v_trial.business_id is distinct from p_business_id then
     return jsonb_build_object(
       'success', true, 'is_trial', false, 'status', 'already_used',
       'expires_at', v_trial.expires_at
