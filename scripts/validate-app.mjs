@@ -38,6 +38,7 @@ const manifestText = fs.readFileSync("manifest.webmanifest", "utf8");
 const liteTrialChecks = [
   [html.includes("async function mulaiUjiCobaKasUsaha") && html.includes("kasusaha_start_free_trial"), "Owner onboarding must request the server-side one-time Lite trial"],
   [html.includes("kasusaha_get_business_trial_status") && html.includes("kasusahaTrialStatus"), "the application must display the authoritative server-side trial status"],
+  [html.includes("kasusahaTrialAction") && html.includes("Buka Paket & Harga"), "expired or already-used trials must offer direct navigation to package purchase"],
   [html.includes("seluruh fitur paket Lite") && html.includes("uji coba gratis 31 hari"), "first-time business setup must explain the full Lite trial"],
   [liteTrialMigration.includes("interval '31 days'"), "the trial duration must be calculated by the database as 31 days"],
   [liteTrialMigration.includes("unique (owner_id)") && liteTrialMigration.includes("kasusaha_free_trials_owner_unique"), "each Owner may receive only one trial"],
@@ -978,8 +979,8 @@ for (const [ok, message] of publicMarketplaceAnonymousEvaluationChecks) {
 
 
 const pwaReleaseRefreshChecks = [
-  [/meta name="kasusaha-build" content="2026-11-08-lite-trial-31-days-2"/.test(html), "production build marker must identify the hardened release"],
-  [/const CACHE_NAME = CACHE_PREFIX \+ 'v66';/.test(sw), "PWA service worker cache version must advance to refresh installed app shells"],
+  [/meta name="kasusaha-build" content="2026-11-08-lite-trial-31-days-3"/.test(html), "production build marker must identify the hardened release"],
+  [/const CACHE_NAME = CACHE_PREFIX \+ 'v67';/.test(sw), "PWA service worker cache version must advance to refresh installed app shells"],
 ];
 for (const [ok, message] of pwaReleaseRefreshChecks) {
   if (ok) pass(message);
