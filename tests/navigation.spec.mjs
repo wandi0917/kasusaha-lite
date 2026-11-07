@@ -328,7 +328,7 @@ test('navigasi Karyawan ke katalog tetap dinyatakan berhasil setelah daftar bara
 });
 
 
-test('Muat pratinjau bulan ini otomatis membuka langkah Owner berikutnya', async ({ page }) => {
+test('Muat pratinjau bulan ini memanggil pengarah otomatis setelah server mengembalikan pratinjau valid', async ({ page }) => {
   await page.evaluate(async () => {
     const ownerId = 'e2e-owner-preview';
     const businessId = 'e2e-preview-business';
@@ -341,9 +341,6 @@ test('Muat pratinjau bulan ini otomatis membuka langkah Owner berikutnya', async
     financeMemberRole = 'owner';
     financeMemberUserId = ownerId;
     financeSelectedBusinessId = businessId;
-    offlineTransactionMode = false;
-    periksaLisensiWorkspace = async () => true;
-    loadStoreProducts = async () => { storeProductRows = []; };
     sb.auth.getSession = async () => ({
       data: { session: { user: { id: ownerId } } },
       error: null,
@@ -362,15 +359,6 @@ test('Muat pratinjau bulan ini otomatis membuka langkah Owner berikutnya', async
       return query;
     };
     sb.rpc = async (name) => {
-      if (name === 'kasusaha_start_free_trial') {
-        return { data: { success: true, status: 'already_active' }, error: null };
-      }
-      if (name === 'kasusaha_is_business_license_verified') {
-        return { data: true, error: null };
-      }
-      if (name === 'kasusaha_get_business_trial_status') {
-        return { data: { status: 'paid' }, error: null };
-      }
       if (name === 'kasusaha_owner_service_fee_preview') {
         return {
           data: {
@@ -387,22 +375,26 @@ test('Muat pratinjau bulan ini otomatis membuka langkah Owner berikutnya', async
       }
       return { data: null, error: new Error('RPC tidak diharapkan: ' + name) };
     };
+    window.__nextOwnerRouteCalls = 0;
+    window.arahkanKePekerjaanBerikutnya = async () => {
+      window.__nextOwnerRouteCalls += 1;
+      document.querySelector('#financeEntryCard').hidden = false;
+      document.querySelector('#ownerStoreCatalog').hidden = false;
+      window.tampilkanPanduanLangkahKerja('Langkah berikutnya siap.', false, 'stok');
+      return true;
+    };
     await renderOwnerServiceFeePanel();
-    // Tampilkan panel Owner pada fixture terisolasi; pada aplikasi normal panel
-    // ini hanya terlihat setelah status Owner dan workspace berhasil dimuat.
     document.querySelector('#serviceFeeOwnerPanel').hidden = false;
   });
 
   await expect(page.locator('#serviceFeePreviewRefresh')).toBeAttached();
-  // Trigger the real registered handler directly: this isolated fixture keeps
-  // the protected Transaksi tab visually gated, as it is before Owner login.
   await page.locator('#serviceFeePreviewRefresh').evaluate(button => button.click());
   await expect(page.locator('#serviceFeePreviewResult')).toContainText('Menyiapkan menu berikutnya');
+  await expect.poll(() => page.evaluate(() => window.__nextOwnerRouteCalls)).toBe(1);
   await expect(page.locator('#financeEntryCard')).toBeVisible();
   await expect(page.locator('#ownerStoreCatalog')).toBeVisible();
   await expect(page.locator('#financeLoginWorkAction')).toHaveText('Buka formulir Tambah Barang');
 });
-
 
 test('menu Produk Saya dan Cadangan mengarahkan pengguna tanpa sesi ke Akun Pembeli', async ({ page }) => {
   const nav = page.locator('nav[aria-label="Navigasi utama"]');
