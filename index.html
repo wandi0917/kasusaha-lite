@@ -2661,7 +2661,7 @@ async function renderKasUsahaTrialStatus(businessId){
  }
  if(data.status==='already_used'){
   el.hidden=false;el.className='status error';
-  el.textContent='Uji coba gratis 31 hari sudah digunakan pada usaha lain oleh Owner ini. Uji coba tidak dapat dipindahkan atau dimulai ulang. Aktifkan lisensi melalui menu Paket & Harga untuk usaha ini.';
+  el.textContent=financeMemberRole==='employee'?'Uji coba atau lisensi usaha belum aktif. Hubungi Owner untuk mengaktifkan akses.':'Uji coba gratis 31 hari sudah digunakan pada usaha lain oleh Owner ini. Uji coba tidak dapat dipindahkan atau dimulai ulang. Aktifkan lisensi melalui menu Paket & Harga untuk usaha ini.';
   return data;
  }
  const expiry=data.expires_at?new Date(data.expires_at):null;
