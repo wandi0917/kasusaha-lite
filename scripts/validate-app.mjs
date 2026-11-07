@@ -799,6 +799,7 @@ for (const [ok, message] of guidedOwnerEmployeeFlowChecks) {
 }
 
 const loginAutoNavigationChecks = [
+  [html.includes("else if(tujuanId==='transaksi'&&activeMembers.length===0)") && html.includes("Akun Owner baru harus dapat mencapai Pengaturan Usaha sebelum memiliki lisensi") && html.includes("document.body.classList.add('workspace-selection-pending')"), "a logged-in new Owner with no workspace can reach business setup before a trial license exists"],
   [html.includes("await arahkanSetelahLoginFinance();") && html.includes("event==='INITIAL_SESSION'||event==='SIGNED_IN'"), "successful Owner/Employee login must automatically continue to attendance or the next work step"],
   [html.includes("Navigasi otomatis setelah login belum selesai") && html.includes("Buka menu Transaksi"), "failed automatic navigation must show a direct recovery path"],
 ];
