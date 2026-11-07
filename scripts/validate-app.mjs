@@ -8,6 +8,7 @@ const fail = (message) => {
 const pass = (message) => console.log("PASS:", message);
 
 const html = fs.readFileSync("index.html", "utf8");
+const publicMarketplaceVisibilityMigration = fs.readFileSync("supabase/migrations/20261107170000_hide_unentitled_marketplace_listings.sql", "utf8");
 const marketplaceWorkspaceMigration = fs.readFileSync("supabase/migrations/20261107160000_bind_marketplace_products_to_verified_business_entitlement.sql", "utf8");
 
 const stockLedgerMigration = fs.readFileSync("supabase/migrations/20261107120000_transaction_cash_validation_and_stock_movement_ledger.sql", "utf8");
@@ -820,6 +821,21 @@ const marketplaceWorkspaceChecks = [
   [html.includes("if(next){const entitlement=await pastikanHakMarketplace(session.user,p.business_id||null)"), "reactivating a hidden listing must re-check the exact workspace entitlement"],
 ];
 for (const [ok, message] of marketplaceWorkspaceChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
+
+const publicMarketplaceVisibilityChecks = [
+  [publicMarketplaceVisibilityMigration.includes("RETURNS boolean") && publicMarketplaceVisibilityMigration.includes("SECURITY DEFINER") && publicMarketplaceVisibilityMigration.includes("SET search_path = ''"), "public listing visibility helper must be read-only boolean SECURITY DEFINER with an empty search_path"],
+  [publicMarketplaceVisibilityMigration.includes("w.id = p.business_id") && publicMarketplaceVisibilityMigration.includes("w.owner_id = p.owner_id"), "public listing visibility must bind to the exact workspace and product owner"],
+  [publicMarketplaceVisibilityMigration.includes("kasusaha_business_license_is_verified(w.id)") && publicMarketplaceVisibilityMigration.includes("kasusaha_business_has_feature(w.id, 'marketplace') IS TRUE"), "public listing visibility must require a currently verified marketplace entitlement"],
+  [publicMarketplaceVisibilityMigration.includes("GRANT EXECUTE ON FUNCTION public.kasusaha_marketplace_product_is_public(bigint)") && publicMarketplaceVisibilityMigration.includes("TO anon, authenticated"), "anonymous catalog access may call only the boolean listing-eligibility helper"],
+  [publicMarketplaceVisibilityMigration.includes("USING (public.kasusaha_marketplace_product_is_public(id))"), "public product SELECT policy must use the server-side entitlement check"],
+  [!publicMarketplaceVisibilityMigration.includes("UPDATE public.produk") && !publicMarketplaceVisibilityMigration.includes("DELETE FROM public.produk"), "visibility migration must not modify or delete existing product rows"],
+  [!publicMarketplaceVisibilityMigration.includes('DROP POLICY IF EXISTS "Penjual dapat melihat produk miliknya"'), "Owner private SELECT policy must remain intact for legacy listing management"],
+];
+for (const [ok, message] of publicMarketplaceVisibilityChecks) {
   if (ok) pass(message);
   else fail(message);
 }
