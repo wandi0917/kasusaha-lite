@@ -474,8 +474,8 @@ for (const [ok, message] of payoutBalanceChecks) {
 const operationalChecks = [
   [/\.upsert\(batch,\s*\{\s*onConflict:\s*['"]business_id,legacy_ref['"],\s*ignoreDuplicates:\s*true\s*\}\)/, html, "offline sync must be idempotent by business and legacy reference"],
   [/window\.addEventListener\(['"]offline['"],\s*\(\)\s*=>\s*\{[\s\S]{0,300}activateOfflineTransactionMode\(\)/, html, "active transaction tab must show an offline-mode warning when the connection drops"],
-  [/select\(['"]id,legacy_ref,transaction_date,transaction_type,amount,description,category,created_by,created_by_role['"]\)[\s\S]{0,260}\.in\(['"]legacy_ref['"],\s*refs\)/, html, "offline sync must read back and verify uploaded references"],
-  [/select\(['"]id,legacy_ref,transaction_date,transaction_type,amount,description,category,created_by,created_by_role['"]\)/, html, "offline sync must compare saved row content, not only the legacy reference"],
+  [html.includes("select('id,legacy_ref,transaction_date,transaction_type,amount,description,category,client_recorded_at,created_by,created_by_role')") && html.includes(".in('legacy_ref',refs)"), "offline sync must read back and verify uploaded references"],
+  [html.includes("client_recorded_at,created_by,created_by_role") && html.includes("String(saved.description)!==String(row.description)") && html.includes("String(saved.created_by_role)!==String(row.created_by_role)"), "offline sync must compare saved row content, not only the legacy reference"],
   [/const mismatched=batch\.find\(row=>\{[\s\S]{0,900}Number\(saved\.amount\)!==Number\(row\.amount\)/, html, "offline sync must keep conflicting local data pending instead of silently marking it synced"],
   [/offline_user_id===sessionUserId&&t\.offline_business_id===businessId&&t\.offline_role==='employee'/, html, "employee offline sync must be restricted to the current employee and business"],
   [/p_request_id:\s*quickSaleRequestId/, html, "cashier must send a stable idempotency request ID"],
@@ -991,7 +991,7 @@ const separateCashierNoteChecks = [
   [separateCashierNoteMigration.includes("char_length(customer_note) <= 300"), "customer notes must retain the 300-character limit without extending the description constraint"],
   [separateCashierNoteMigration.includes("GRANT SELECT (customer_note)") && !separateCashierNoteMigration.includes("GRANT INSERT (customer_note)"), "customers notes must be readable by authenticated members but not directly writable by clients"],
   [(separateCashierNoteMigration.match(/customer_note\)/g)||[]).length>=2 && (separateCashierNoteMigration.match(/nullif\(left\(trim\(coalesce\(v_line->>'note'/g)||[]).length===2, "both cashier RPC overloads must store the per-item note separately on the matching sale row"],
-  [html.includes("amount,description,customer_note,category,created_at"), "shared transaction report query must load paid item notes"],
+  [html.includes("amount,description,customer_note,client_recorded_at,category,created_at"), "shared transaction report query must load paid item notes and offline device timestamps"],
   [html.includes("r.customer_note?' | Catatan: '+String(r.customer_note):''"), "sales report must display the saved note alongside its exact product line"],
 ];
 for (const [ok, message] of separateCashierNoteChecks) {
