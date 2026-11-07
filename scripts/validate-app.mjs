@@ -30,6 +30,16 @@ const failClosedFinanceMigration = fs.readFileSync("supabase/migrations/20261106
 const idempotentFinanceSettlementMigration = fs.readFileSync("supabase/migrations/20261107171000_idempotent_finance_open_item_settlement.sql", "utf8");
 const manifestText = fs.readFileSync("manifest.webmanifest", "utf8");
 
+const paidCashierItemNoteChecks = [
+  [html.includes("lines:lines.map(d=>({product_id:d.p.id,quantity:d.qty,unit_price:d.price,note:d.note}))"), "direct paid cashier sales must send each item note to the server RPC"],
+  [html.includes("d.note?' ; catatan pelanggan: '+d.note:''"), "cashier confirmation must display the note attached to each item before payment is saved"],
+  [html.includes("quickSaleFingerprint=JSON.stringify(quickSalePayload)"), "cashier idempotency fingerprint must include the item notes sent to the server"],
+];
+for (const [ok, message] of paidCashierItemNoteChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 const quickSaleNotesChecks = [
   [html.includes('class="quick-sale-item-note"') && html.includes('Catatan barang / permintaan pelanggan'), "each cashier item must expose an optional customer note field"],
   [html.includes("note:String(row.querySelector('.quick-sale-item-note')?.value||'').trim().slice(0,300)"), "cashier line notes must be trimmed and limited to 300 characters"],
