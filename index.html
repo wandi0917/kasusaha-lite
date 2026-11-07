@@ -7023,19 +7023,17 @@ sb.auth.onAuthStateChange((event,session)=>{
     toast.hidden = false;
   };
   if (close) close.addEventListener('click', () => { toast.hidden = true; });
-  window.bukaKotakSaran = (button) => {
+  window.bukaKotakSaran = async (button) => {
     const nav = document.querySelector('nav[aria-label="Navigasi utama"]');
     const berandaButton = nav ? Array.from(nav.querySelectorAll('button')).find((item) => item.textContent.trim().startsWith('Beranda')) : null;
-    if (typeof window.buka === 'function') window.buka('beranda', berandaButton);
+    if (typeof window.buka === 'function') await window.buka('beranda', berandaButton, {scroll:false});
     const target = document.getElementById('ksSuggestionTitle');
-    window.setTimeout(() => {
-      const form = document.getElementById('kasusahaSuggestionForm');
-      if (target) target.scrollIntoView({behavior:'smooth', block:'start'});
-      if (form) {
-        const message = document.getElementById('ksSuggestionMessage');
-        if (message) message.focus({preventScroll:true});
-      }
-    }, 120);
+    const form = document.getElementById('kasusahaSuggestionForm');
+    if (target) target.scrollIntoView({behavior:'smooth', block:'start'});
+    if (form) {
+      const message = document.getElementById('ksSuggestionMessage');
+      if (message) message.focus({preventScroll:true});
+    }
   };
 })();
 </script>
