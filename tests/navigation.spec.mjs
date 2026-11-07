@@ -388,3 +388,19 @@ test('Muat pratinjau bulan ini otomatis membuka langkah Owner berikutnya', async
   await expect(page.locator('#ownerStoreCatalog')).toBeVisible();
   await expect(page.locator('#financeLoginWorkAction')).toHaveText('Buka formulir Tambah Barang');
 });
+
+
+test('menu Produk Saya dan Cadangan membuka panel tujuan yang benar', async ({ page }) => {
+  const nav = page.locator('nav[aria-label="Navigasi utama"]');
+  const cases = [
+    { button: 'button[onclick*="buka(\'produk\'"]', panel: '#produk' },
+    { button: 'button[onclick*="buka(\'cadangan\'"]', panel: '#cadangan' },
+  ];
+  for (const item of cases) {
+    const button = nav.locator(item.button);
+    await expect(button).toBeVisible();
+    await button.click();
+    await expect(page.locator(item.panel)).toHaveClass(/active/);
+    await expect(button).toHaveClass(/active/);
+  }
+});
