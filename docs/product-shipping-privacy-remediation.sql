@@ -3,25 +3,31 @@
 -- Supabase migration after review and staging verification.
 -- Existing product rows and Biteship service_role access are preserved.
 
-REVOKE SELECT (
-  alamat_asal_pengiriman,
-  kode_pos_asal_pengiriman,
-  telepon_pengirim,
-  nama_kontak_pengirim,
-  latitude_asal_pengiriman,
-  longitude_asal_pengiriman
-) ON TABLE public.produk FROM anon, authenticated;
+-- Remove the broad table-level grants first; column-level REVOKE alone
+-- cannot override a table-level SELECT/UPDATE grant.
+REVOKE SELECT ON TABLE public.produk FROM anon, authenticated;
+GRANT SELECT (
+  id, nama_produk, deskripsi, kategori, harga, stok,
+  nama_penjual, kota, foto_url, created_at, aktif
+) ON TABLE public.produk TO anon, authenticated;
+-- Seller dashboards filter by owner_id; do not expose this UUID to anon.
+GRANT SELECT (owner_id) ON TABLE public.produk TO authenticated;
 
-REVOKE SELECT (owner_id) ON TABLE public.produk FROM anon;
+REVOKE UPDATE ON TABLE public.produk FROM authenticated;
+-- The current seller UI only edits these public catalog fields directly.
+GRANT UPDATE (harga, stok, aktif) ON TABLE public.produk TO authenticated;
 
-REVOKE UPDATE (
-  alamat_asal_pengiriman,
-  kode_pos_asal_pengiriman,
-  telepon_pengirim,
-  nama_kontak_pengirim,
-  latitude_asal_pengiriman,
-  longitude_asal_pengiriman
-) ON TABLE public.produk FROM authenticated;
+-- Owners must still be able to list their own inactive products so the
+-- "Tampilkan lagi" action can work after a product is hidden.
+DROP POLICY IF EXISTS "Penjual dapat melihat produk miliknya" ON public.produk;
+CREATE POLICY "Penjual dapat melihat produk miliknya"
+ON public.produk
+FOR SELECT
+TO authenticated
+USING (
+  owner_id = (SELECT auth.uid())
+  AND NOT COALESCE((((SELECT auth.jwt()) ->> 'is_anonymous')::boolean), false)
+);
 
 CREATE OR REPLACE FUNCTION public.kasusaha_get_my_product_shipping_profiles()
 RETURNS TABLE (
