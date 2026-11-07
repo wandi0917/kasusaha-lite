@@ -669,3 +669,21 @@ for (const [ok, message] of guidedOwnerEmployeeFlowChecks) {
 }
 
 if (process.exitCode) process.exit(process.exitCode);
+
+
+const businessTypeChecks = [
+  [/id="financeBusinessType"[\\s\\S]{0,2200}value="pharmacy"[\\s\\S]{0,300}value="drugstore"[\\s\\S]{0,300}value="pharmaceutical_retail"/, html, "business type selector must include pharmacy, drugstore, and pharmaceutical retail"],
+  [/value="optical"/, html, "business type selector must include optical shops"],
+  [/value="medical_equipment"/, html, "business type selector must include medical equipment shops"],
+  [/id="businessTypeModulePreview"/, html, "business type setup must show a contextual module preview"],
+  [/window\\.applyKasUsahaBusinessModule=apply/, html, "business module navigation adapter must be available"],
+  [/function normalize\\(value\\)[\\s\\S]{0,260}return LEGACY\\[raw\\]\\|\\|'other'/, html, "legacy business labels must normalize safely to module identifiers"],
+  [/select\\('id,business_name,invite_code,owner_id,business_type,service_fee_consent_at/, html, "workspace loader must read the persisted business_type field"],
+  [/applyKasUsahaBusinessModule\\(business\\.business_type\\)/, html, "workspace load must apply the selected business type to transaction navigation"],
+  [/Operasional obat resep, batch, kedaluwarsa, izin edar/, html, "pharmacy module must clearly disclose unimplemented regulated workflows"],
+  [/bukan rekam medis, sistem klinis/, html, "clinic type must not be represented as a clinical records system"],
+];
+for (const [pattern, source, message] of businessTypeChecks) {
+  if (!pattern.test(source)) fail(message);
+  else pass(message);
+}
