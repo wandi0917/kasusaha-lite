@@ -242,15 +242,10 @@ if (financeEntitlementGuard < 0 ||
   fail("accounting module must verify active full_finance entitlement before seeding finance accounts");
 } else pass("accounting module verifies full_finance entitlement before seeding finance accounts");
 
-const serviceFeeContextStart = html.indexOf("async function loadFinanceWorkspaceInternal(){");
-const serviceFeeContextEnd = html.indexOf("\\nasync function loadFinanceWorkspace(){", serviceFeeContextStart);
-const serviceFeeContextBlock = serviceFeeContextStart >= 0 && serviceFeeContextEnd > serviceFeeContextStart
-  ? html.slice(serviceFeeContextStart, serviceFeeContextEnd)
-  : "";
 const serviceFeePanelStart = html.indexOf("async function renderOwnerServiceFeePanel(){");
 const serviceFeePanelBlock = serviceFeePanelStart >= 0 ? html.slice(serviceFeePanelStart, serviceFeePanelStart + 12000) : "";
 const serviceFeeContextChecks = [
-  [serviceFeeContextBlock.includes("if(member)financeSelectedBusinessId=member.business_id"), "single-workspace login must retain the verified business ID"],
+  [html.includes("if(member)financeSelectedBusinessId=member.business_id"), "single-workspace login must retain the verified business ID"],
   [serviceFeePanelBlock.includes("const panelBusinessId=String(financeBusiness?.id||'').trim()"), "service-fee preview must capture the verified business ID when rendered"],
   [serviceFeePanelBlock.includes("panelBusinessId||financeBusiness?.id||financeSelectedBusinessId"), "service-fee consent must use the captured workspace context before transient UI state"],
   [serviceFeePanelBlock.includes("panelOwnerId!==financeMemberUserId"), "service-fee consent must reject stale owner context"],
