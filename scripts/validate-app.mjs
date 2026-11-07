@@ -639,4 +639,23 @@ for (const [ok, message] of paymentIntegrityChecks) {
   else pass(message);
 }
 
+
+const productShippingPrivacySql = fs.readFileSync("docs/product-shipping-privacy-remediation.sql", "utf8");
+const productShippingPrivacyChecks = [
+  [html.includes("sb.rpc('kasusaha_get_my_product_shipping_profiles')"), "seller shipping profile reads must use the owner-scoped RPC"],
+  [html.includes("sb.rpc('kasusaha_update_my_product_shipping_profile'"), "seller shipping profile edits must use the owner-scoped RPC"],
+  [html.includes("sb.rpc('kasusaha_update_my_product_shipping_profiles'"), "bulk shipping profile edits must use the owner-scoped RPC"],
+  [!/\.from\(['"]produk['"]\)\.select\([^)]*(?:alamat_asal_pengiriman|kode_pos_asal_pengiriman|telepon_pengirim|nama_kontak_pengirim|latitude_asal_pengiriman|longitude_asal_pengiriman)/.test(html), "frontend must not directly SELECT private shipping-origin columns from public products"],
+  [!/\.from\(['"]produk['"]\)\.update\(\{[^}]*?(?:alamat_asal_pengiriman|kode_pos_asal_pengiriman|telepon_pengirim|nama_kontak_pengirim|latitude_asal_pengiriman|longitude_asal_pengiriman)/.test(html), "frontend must not directly UPDATE private shipping-origin columns"],
+  [productShippingPrivacySql.includes("FROM anon, authenticated") && productShippingPrivacySql.includes("REVOKE SELECT ("), "shipping-origin column SELECT privileges must be revoked from public client roles"],
+  [productShippingPrivacySql.includes("REVOKE UPDATE (") && productShippingPrivacySql.includes("FROM authenticated"), "shipping-origin column UPDATE privileges must be revoked from authenticated clients"],
+  [productShippingPrivacySql.includes("p.owner_id = v_uid") && productShippingPrivacySql.includes("auth.uid()"), "shipping profile RPCs must scope every read/write to the authenticated product owner"],
+  [productShippingPrivacySql.includes("REVOKE ALL ON FUNCTION") && productShippingPrivacySql.includes("GRANT EXECUTE ON FUNCTION"), "shipping profile SECURITY DEFINER RPCs must have explicit least-privilege EXECUTE grants"],
+  [html.includes("nama_kontak_pengirim:namaKontakPengirim") && html.includes("telepon_pengirim:teleponPengirim"), "new product creation must retain its existing seller-owned shipping-profile insert flow"],
+];
+for (const [ok, message] of productShippingPrivacyChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
 if (process.exitCode) process.exit(process.exitCode);
