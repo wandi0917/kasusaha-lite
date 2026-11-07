@@ -744,4 +744,20 @@ for (const [ok, message] of stockCorrectionZeroChecks) {
   else pass(message);
 }
 
+
+const confirmedOperationChecks = [
+  [html.includes("let transactionConfirmed=false;") && html.includes("transactionConfirmed=true;") && html.includes("Jangan ulangi pencatatan."), "manual finance save/edit must retain confirmed-server state when report refresh fails"],
+  [html.includes("let productConfirmed=false;") && html.includes("productConfirmed=true;") && html.includes("Jangan simpan ulang barang yang sama."), "product save must not be reported as failed or retried after server confirmation"],
+  [html.includes("let stockConfirmed=false,stockNeedsManualReview=false;") && html.includes("String(result.product_id)!==String(p.id)") && html.includes("String(result.request_id)!==String(requestId)"), "stock adjustment must verify server product and idempotency request identity"],
+  [html.includes("quantity_before") && html.includes("quantity_after") && html.includes("quantity_delta") && html.includes("after!==expectedAfter"), "stock adjustment must reconcile before/after/delta values before clearing the pending request"],
+  [html.includes("finally{btn.disabled=stockNeedsManualReview;}"), "stock adjustment button must remain disabled when server result needs manual review"],
+  [html.includes("let paymentConfirmed=false;") && html.includes("paymentConfirmed=true;") && html.includes("Jangan ulangi pembayaran."), "open-bill settlement must distinguish confirmed payment from failed UI refresh"],
+  [html.includes("serverCash===cash") && html.includes("serverChange===expectedChange") && html.includes("serverTotal===total"), "open-bill settlement must reconcile server total, cash received, and change"],
+  [html.includes("stockMovementType')?.dispatchEvent(new Event('change'))"), "stock quantity minimum must initialize from the default movement type"],
+];
+for (const [ok, message] of confirmedOperationChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 if (process.exitCode) process.exit(process.exitCode);
