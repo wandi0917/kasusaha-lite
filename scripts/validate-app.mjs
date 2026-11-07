@@ -1017,6 +1017,17 @@ for (const [ok, message] of pwaReleaseRefreshChecks) {
   else fail(message);
 }
 
+const openBillPaymentNavigationChecks = [
+  [html.includes("if(paymentMatches&&!wasAlreadyPaid)") && html.includes("arahkanKeLaporanSetelahSimpan(financeMemberRole==='employee'?'income':'sales')"), "a newly verified open-bill payment must automatically open the role-appropriate report"],
+  [html.includes("Pembayaran sudah tersimpan dan terverifikasi. Laporan belum terbuka otomatis") && html.includes("true,'laporan'"), "failed report navigation after payment must provide a safe retry action without repeating payment"],
+  [html.includes("if(paymentMatches&&!wasAlreadyPaid)") && html.includes("wasAlreadyPaid"), "a previously paid bill must not trigger a second report/payment flow"],
+  [html.includes("PEMBAYARAN SUDAH DIKONFIRMASI SERVER") && html.includes("Jangan ulangi pembayaran"), "a payment snapshot mismatch must warn the user not to repeat a server-confirmed payment"],
+];
+for (const [ok, message] of openBillPaymentNavigationChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 const cashierReceiptPrintChecks = [
   [html.includes('id="quickSalePrintBill"') && html.includes('cetakTagihanKasir()'), "Quick Sale must expose a pre-payment bill print action"],
   [html.includes('id="quickSalePrintLastReceipt"') && html.includes('cetakStrukPembayaranTerakhir()'), "Quick Sale must expose a paid receipt print action"],
