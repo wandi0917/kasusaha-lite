@@ -19,6 +19,7 @@ const cashierItemNotesLengthMigration = fs.readFileSync("supabase/migrations/202
 const idempotentOpenBillMigration = fs.readFileSync("supabase/migrations/20261107171500_idempotent_open_bill_creation.sql", "utf8");
 const separateCashierNoteMigration = fs.readFileSync("supabase/migrations/20261107172000_store_cashier_customer_note_separately.sql", "utf8");
 const financePartyIdempotencyMigration = fs.readFileSync("supabase/migrations/20261108000100_idempotent_finance_party_creation.sql", "utf8");
+const offlineTimestampMigration = fs.readFileSync("supabase/migrations/20261108000200_preserve_offline_client_recorded_at.sql", "utf8");
 
 const productShippingPrivacySql = fs.readFileSync("supabase/migrations/20261107141421_protect_public_product_shipping_and_write_paths.sql", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
@@ -473,8 +474,8 @@ for (const [ok, message] of payoutBalanceChecks) {
 const operationalChecks = [
   [/\.upsert\(batch,\s*\{\s*onConflict:\s*['"]business_id,legacy_ref['"],\s*ignoreDuplicates:\s*true\s*\}\)/, html, "offline sync must be idempotent by business and legacy reference"],
   [/window\.addEventListener\(['"]offline['"],\s*\(\)\s*=>\s*\{[\s\S]{0,300}activateOfflineTransactionMode\(\)/, html, "active transaction tab must show an offline-mode warning when the connection drops"],
-  [/select\(['"]id,legacy_ref,transaction_date,transaction_type,amount,description,category,created_by,created_by_role['"]\)[\s\S]{0,260}\.in\(['"]legacy_ref['"],\s*refs\)/, html, "offline sync must read back and verify uploaded references"],
-  [/select\(['"]id,legacy_ref,transaction_date,transaction_type,amount,description,category,created_by,created_by_role['"]\)/, html, "offline sync must compare saved row content, not only the legacy reference"],
+  [/client_recorded_at,created_by,created_by_role/, html, "offline sync must read back and verify uploaded references"],
+  [/client_recorded_at,created_by,created_by_role/, html, "offline sync must compare saved row content, not only the legacy reference"],
   [/const mismatched=batch\.find\(row=>\{[\s\S]{0,900}Number\(saved\.amount\)!==Number\(row\.amount\)/, html, "offline sync must keep conflicting local data pending instead of silently marking it synced"],
   [/offline_user_id===sessionUserId&&t\.offline_business_id===businessId&&t\.offline_role==='employee'/, html, "employee offline sync must be restricted to the current employee and business"],
   [/p_request_id:\s*quickSaleRequestId/, html, "cashier must send a stable idempotency request ID"],
@@ -960,6 +961,20 @@ for (const [ok, message] of openBillCreationIdempotencyChecks) {
 }
 
 
+const offlineTimestampIntegrityChecks = [
+  [offlineTimestampMigration.includes("ADD COLUMN IF NOT EXISTS client_recorded_at timestamptz"), "offline sync must have a separate nullable device timestamp column"],
+  [offlineTimestampMigration.includes("GRANT INSERT (client_recorded_at)") && offlineTimestampMigration.includes("GRANT SELECT (client_recorded_at)") && offlineTimestampMigration.includes("REVOKE UPDATE (client_recorded_at)"), "device timestamp must be insertable/readable but immutable after creation"],
+  [!offlineTimestampMigration.includes("GRANT INSERT (created_at)") && !offlineTimestampMigration.includes("GRANT UPDATE (server_recorded_at)"), "offline sync must not gain write access to authoritative server timestamps"],
+  [html.includes("row.client_recorded_at=d.toISOString()") && !html.includes("row.created_at=d.toISOString()"), "offline importer must preserve device time without attempting forbidden created_at writes"],
+  [html.includes("client_recorded_at,category,created_at") && html.includes("new Date(r.client_recorded_at||r.created_at)"), "finance reports must display device time for offline imports and server time for normal transactions"],
+  [html.includes("client_recorded_at,created_by,created_by_role") && html.includes("new Date(saved.client_recorded_at||'').getTime()"), "offline sync must verify the persisted device timestamp before marking local records synced"],
+  [offlineTimestampMigration.includes("server_recorded_at remains authoritative"), "offline device time must be explicitly excluded from billing authority"],
+];
+for (const [ok, message] of offlineTimestampIntegrityChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 const financePartyIdempotencyChecks = [
   [html.includes("kasusaha_finance_party_pending_v1") && html.includes("client_request_id:requestId"), "finance party creation must persist and send a stable request ID"],
   [html.includes("pending.fingerprint!==fingerprint") && html.includes("sebelum membuat data pihak lain"), "finance party creation must block different details while a previous result is uncertain"],
@@ -976,7 +991,7 @@ const separateCashierNoteChecks = [
   [separateCashierNoteMigration.includes("char_length(customer_note) <= 300"), "customer notes must retain the 300-character limit without extending the description constraint"],
   [separateCashierNoteMigration.includes("GRANT SELECT (customer_note)") && !separateCashierNoteMigration.includes("GRANT INSERT (customer_note)"), "customers notes must be readable by authenticated members but not directly writable by clients"],
   [(separateCashierNoteMigration.match(/customer_note\)/g)||[]).length>=2 && (separateCashierNoteMigration.match(/nullif\(left\(trim\(coalesce\(v_line->>'note'/g)||[]).length===2, "both cashier RPC overloads must store the per-item note separately on the matching sale row"],
-  [html.includes("amount,description,customer_note,category,created_at"), "shared transaction report query must load paid item notes"],
+  [html.includes("amount,description,customer_note,client_recorded_at,category,created_at"), "shared transaction report query must load paid item notes and offline device timestamps"],
   [html.includes("r.customer_note?' | Catatan: '+String(r.customer_note):''"), "sales report must display the saved note alongside its exact product line"],
 ];
 for (const [ok, message] of separateCashierNoteChecks) {
