@@ -63,6 +63,7 @@ test('petunjuk langkah kerja menyediakan tombol yang membuka modul tujuan secara
     document.querySelector('#transaksi')?.classList.add('active');
     for (let node = document.querySelector('#transactionGuide'); node; node = node.parentElement) {
       node.hidden = false;
+      if (node.classList?.contains('tab')) node.style.display = 'block';
     }
     window.__guidedNavigationTarget = null;
     window.bukaPanelTransaksi = async (target) => {
