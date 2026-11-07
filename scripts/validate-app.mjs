@@ -139,6 +139,18 @@ const globalNavigationChecks = [
   [ /data-id="\s*'\s*\+\s*aman\(r\.id\)\s*\+\s*'"\s+onclick="mulaiEditFinanceTransaction\(this\.dataset\.id\)"/.test(html), "finance report edit action must use a safely bound row ID" ],
   [ /data-id="\s*'\s*\+\s*aman\(r\.id\)\s*\+\s*'"\s+onclick="hapusFinanceTransaction\(this\.dataset\.id\)"/.test(html), "finance report delete action must use a safely bound row ID" ],
 ];
+const actionableGuidanceChecks = [
+  [html.includes("id='financeLoginWorkAction'") && html.includes("action.addEventListener('click',async()=>") , "guided workflow instructions must render a real action button, not text-only directions"],
+  [html.includes("actions={absensi:'Buka formulir Absen Masuk',kasir:'Buka Kasir Cepat',stok:'Buka formulir Tambah Barang',katalog:'Buka Daftar Barang',laporan:'Buka Laporan'}"), "guided action buttons must name the exact destination form or module"],
+  [html.includes("await bukaPanelTransaksi(nextTarget)"), "guided action buttons must navigate directly to the requested transaction module"],
+  [html.includes("tampilkanPanduanLangkahKerja(message,destination==='katalog',destination)"), "post-attendance next-step guidance must open the exact next destination"],
+  [html.includes("tampilkanPanduanLangkahKerja('LANGKAH 1 — Lakukan Absen Masuk terlebih dahulu.") && html.includes("'absensi');"), "first-login attendance guidance must provide a direct Absen Masuk action"],
+];
+for (const [ok, message] of actionableGuidanceChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 const navigationConcurrencyChecks = [
   [appNavigationScript.includes("let __kasUsahaNavigationQueue=Promise.resolve()"), "navigation requests must be serialized while session and license checks are pending"],
   [appNavigationScript.includes("const __kasUsahaNavigateCore=buka"), "navigation queue must preserve the original guarded navigation handler"],
