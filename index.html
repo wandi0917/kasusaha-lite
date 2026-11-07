@@ -4184,7 +4184,9 @@ async function financeChooseSavedBusiness(businessId){
   if(!financeBusiness||financeBusiness.id!==businessId||financeMemberUserId!==sd.session.user.id){
    throw new Error('Usaha yang dipilih belum selesai dimuat ke sesi aktif. Tunggu sebentar, lalu pilih usaha tersebut kembali.');
   }
-  setFinanceStatus('Usaha dipilih dan berhasil dimuat. Data dimuat sesuai akses akun.');
+  setFinanceStatus('Usaha dipilih dan berhasil dimuat. Memeriksa absensi dan menyiapkan menu berikutnya...');
+  const routed=await arahkanSetelahLoginFinance();
+  if(!routed)setFinanceStatus('Usaha sudah dipilih dan terverifikasi. Buka Transaksi untuk melanjutkan; pengalihan otomatis belum dapat diselesaikan.',true);
 
  }catch(e){setFinanceStatus('Tidak dapat memilih usaha: '+String(e.message||e).slice(0,180),true);}
 }
@@ -5688,6 +5690,8 @@ $('storeProductForm')?.addEventListener('submit',async function(e){
  const editId=$('storeProductEditId').value.trim(),code=$('storeProductCode').value.trim().toUpperCase(),name=$('storeProductName').value.trim(),price=Number($('storeProductPrice').value),costPrice=Number($('storeProductCostPrice')?.value||0),initialStock=Number($('storeProductInitialStock')?.value);
  if(!code||!name||!Number.isSafeInteger(price)||price<=0||!Number.isSafeInteger(costPrice)||costPrice<0||!Number.isSafeInteger(initialStock)||initialStock<0){$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Isi kode, nama, harga positif, dan stok berupa bilangan bulat nol atau lebih.';return;}
  const btn=$('storeProductSave');btn.disabled=true;
+ const guidedNotice=$('financeLoginWorkNotice');
+ const advanceToCashier=!editId&&storeProductRows.filter(p=>p.active===true).length===0&&/Tambahkan barang di menu Barang & Stok/.test(guidedNotice?.textContent||'');
  try{
   const itemType=$('storeProductSaleStatus')?.value||'product',stockUnit=String($('storeProductStockUnit')?.value||'unit').trim().toLowerCase(),barcodeType=$('storeProductBarcodeType')?.value||'custom',barcodeValue=String($('storeProductBarcodeValue')?.value||'').trim();
   if(!stockUnit||stockUnit.length>24){$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Isi satuan stok, maksimal 24 karakter.';return;}
@@ -5705,6 +5709,14 @@ $('storeProductForm')?.addEventListener('submit',async function(e){
   const {error:costError}=await sb.rpc('set_store_product_cost',{p_product_id:productId,p_cost_price:costPrice});
   if(costError){await loadStoreProducts();cancelStoreProductEdit();$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Barang '+code+' tersimpan, tetapi harga modal gagal disimpan: '+String(costError.message||costError).slice(0,150)+'. Gunakan Edit barang untuk mencoba menyimpan harga modal lagi.';return;}
   await loadStoreProducts();cancelStoreProductEdit();$('storeProductStatus').className='status';$('storeProductStatus').textContent=(editId?'Perubahan barang ':'Barang baru ')+code+' — '+name+' berhasil '+(editId?'diperbarui.':'disimpan dengan stok awal '+initialStock+' '+stockUnit+'.')+' Jenis: '+(itemType==='product'?'produk jual.':'bahan baku/persediaan.');
+  if(advanceToCashier&&itemType==='product'){
+   try{
+    await bukaPanelTransaksi('kasir');
+    tampilkanPanduanLangkahKerja('Barang pertama berhasil disimpan dan daftar barang sudah dimuat. LANGKAH BERIKUTNYA — Kasir Cepat terbuka. Pilih barang, masukkan jumlah, periksa total dan uang diterima, lalu simpan penjualan setelah semuanya benar.');
+   }catch(routeError){
+    tampilkanPanduanLangkahKerja('Barang pertama berhasil disimpan. Kasir belum terbuka otomatis: '+String(routeError.message||routeError).slice(0,140)+'. Pilih menu Kasir Cepat untuk melanjutkan.',true);
+   }
+  }
  }catch(e){$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Gagal menyimpan barang: '+String(e.message||e).slice(0,200);}
  finally{btn.disabled=false;}
 });
