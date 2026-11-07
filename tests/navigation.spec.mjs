@@ -88,3 +88,37 @@ test('petunjuk langkah kerja menyediakan tombol yang membuka modul tujuan secara
   await page.evaluate(() => window.tampilkanPanduanLangkahKerja('Selesai tanpa tindakan lanjutan.'));
   await expect(page.locator('#financeLoginWorkAction')).toHaveCount(0);
 });
+
+
+test('pesan pemulihan Owner menyediakan tombol langsung ke menu Transaksi', async ({ page }) => {
+  await page.evaluate(() => {
+    window.__financeStatusTarget = null;
+    window.buka = async (target) => {
+      window.__financeStatusTarget = target;
+    };
+    window.setFinanceStatus('Usaha tersimpan. Buka Transaksi untuk melanjutkan.', true, 'transaksi');
+  });
+
+  const action = page.locator('#financeStatusAction');
+  await expect(action).toBeAttached();
+  await expect(action).toHaveText('Buka menu Transaksi');
+  await action.evaluate((button) => button.click());
+  await expect.poll(() => page.evaluate(() => window.__financeStatusTarget)).toBe('transaksi');
+});
+
+
+test('gagal membuat usaha karena lisensi mengarahkan Owner langsung ke Paket dan Harga', async ({ page }) => {
+  await page.evaluate(() => {
+    window.__financeStatusTarget = null;
+    window.buka = async (target) => {
+      window.__financeStatusTarget = target;
+    };
+    window.setFinanceStatus('Aktifkan paket KasUsaha Lite terlebih dahulu.', true, 'paketKasUsaha');
+  });
+
+  const action = page.locator('#financeStatusAction');
+  await expect(action).toBeAttached();
+  await expect(action).toHaveText('Buka Paket & Harga');
+  await action.evaluate((button) => button.click());
+  await expect.poll(() => page.evaluate(() => window.__financeStatusTarget)).toBe('paketKasUsaha');
+});

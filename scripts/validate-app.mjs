@@ -151,6 +151,22 @@ for (const [ok, message] of actionableGuidanceChecks) {
   else fail(message);
 }
 
+const recoveryNavigationChecks = [
+  [html.includes("function setFinanceStatus(message,isError=false,nextTarget='')"), "recovery status helper must accept an explicit navigation destination"],
+  [html.includes("id='financeStatusAction'") && html.includes("window.buka?.(nextTarget"), "recovery status messages must render a real direct-navigation button"],
+  [html.includes("true,'transaksi');"), "workspace setup recovery must provide a direct Transaksi action"],
+  [html.includes("true,'kasir');"), "cashier recovery guidance must provide a direct Kasir Cepat action"],
+  [html.includes("true,'katalog');"), "catalog loading recovery guidance must provide a direct Daftar Barang action"],
+  [html.includes("Buka Paket & Harga") && html.includes("paketKasUsaha"), "missing-license recovery must navigate directly to Packages and Pricing"],
+  [html.includes("Untuk membuat ruang usaha, pilih dan aktifkan paket KasUsaha Lite terlebih dahulu."), "workspace creation without a paid license must explain the exact next step"],
+
+  [html.includes("Formulir pengaturan usaha sudah terbuka di halaman ini."), "first workspace instructions must not tell users to search for the already-open form"],
+];
+for (const [ok, message] of recoveryNavigationChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 const navigationConcurrencyChecks = [
   [appNavigationScript.includes("let __kasUsahaNavigationQueue=Promise.resolve()"), "navigation requests must be serialized while session and license checks are pending"],
   [appNavigationScript.includes("const __kasUsahaNavigateCore=buka"), "navigation queue must preserve the original guarded navigation handler"],
@@ -764,7 +780,7 @@ const automaticNextNavigationChecks = [
   [html.includes("const routed=await arahkanSetelahLoginFinance();") && html.includes("Memeriksa absensi dan menyiapkan menu berikutnya"), "selecting a verified saved workspace automatically continues to the attendance/work workflow"],
   [html.includes("const advanceToCashier=!editId&&storeProductRows.filter(p=>p.active===true).length===0") && html.includes("await bukaPanelTransaksi('kasir');"), "saving the first guided Owner product automatically opens Cashier"],
   [html.includes("if(advanceToCashier&&itemType==='product')") && html.includes("Barang pertama berhasil disimpan"), "first-product auto-navigation is limited to a new sellable product in the guided setup flow"],
-  [html.includes("Kasir belum terbuka otomatis") && html.includes("Pilih menu Kasir Cepat untuk melanjutkan"), "failed auto-navigation reports a safe manual fallback without misreporting product save failure"],
+  [html.includes("Kasir belum terbuka otomatis") && html.includes("true,'kasir');"), "failed auto-navigation reports a safe direct-action fallback without misreporting product save failure"],
 ];
 for (const [ok, message] of automaticNextNavigationChecks) {
   if (!ok) fail(message);
