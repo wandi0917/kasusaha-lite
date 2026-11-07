@@ -4809,6 +4809,7 @@ function addQuickSaleLine(){
  row.querySelector('.quick-sale-product').addEventListener('input',()=>updateQuickSalePreview(true));
  row.querySelector('.quick-sale-qty').addEventListener('input',()=>updateQuickSalePreview(false));
  row.querySelector('.quick-sale-price').addEventListener('input',()=>updateQuickSalePreview(false));
+ row.querySelector('.quick-sale-item-note').addEventListener('input',()=>updateQuickSalePreview(false));
  row.querySelector('.quick-sale-remove').addEventListener('click',()=>{if(quickSaleItemRows().length<=1){const input=row.querySelector('.quick-sale-product');input.value='';delete input.dataset.productId;row.querySelector('.quick-sale-qty').value='1';row.querySelector('.quick-sale-price').value='';row.querySelector('.quick-sale-cost').value='';row.querySelector('.quick-sale-item-note').value='';row.querySelector('.quick-sale-cancel-scan').hidden=true;}else row.remove();updateQuickSalePreview(false);});
  row.querySelector('.quick-sale-cancel-scan').addEventListener('click',()=>{
   if(quickSaleItemRows().length<=1){const input=row.querySelector('.quick-sale-product');input.value='';delete input.dataset.productId;row.querySelector('.quick-sale-qty').value='1';row.querySelector('.quick-sale-qty').style.cssText='';row.querySelector('.quick-sale-qty').placeholder='';row.querySelector('.quick-sale-price').value='';row.querySelector('.quick-sale-cost').value='';row.querySelector('.quick-sale-item-note').value='';}
