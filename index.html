@@ -6013,7 +6013,50 @@ async function saveQuickSaleDraft(){
   if(existing.status!=='open')throw new Error('Tagihan tidak lagi terbuka.');
   const {data:updated,error}=await sb.from('store_open_bills').update({table_number:tableNumber,customer_name:customerName,lines,total_amount:total,updated_at:new Date().toISOString(),version:Number(existing.version||1)+1}).eq('id',activeOpenBillId).eq('business_id',financeBusiness.id).eq('status','open').eq('version',Number(existing.version||1)).select('id').maybeSingle();if(error)throw error;if(!updated)throw new Error('Tagihan baru saja diubah oleh kasir lain. Muat ulang tagihan sebelum menyimpan perubahan.');
  }else{
-  const {data,error}=await sb.from('store_open_bills').insert(payload).select('id').single();if(error)throw error;activeOpenBillId=data.id;
+  const pendingKey='kasusaha_open_bill_create_pending_v1';
+  const fingerprint=JSON.stringify({businessId:financeBusiness.id,userId:financeMemberUserId,role:financeMemberRole,tableNumber,customerName,lines,total});
+  let pending=null;
+  try{pending=JSON.parse(localStorage.getItem(pendingKey)||'null');}catch(_){throw new Error('Kunci pengaman tagihan tidak dapat dibaca. Periksa daftar tagihan sebelum mencoba lagi.');}
+  if(pending&&(pending.businessId!==financeBusiness.id||pending.fingerprint!==fingerprint)){
+   throw new Error('Ada pembuatan tagihan sebelumnya yang hasilnya belum dipastikan. Periksa daftar tagihan dan ulangi dengan rincian yang SAMA sebelum membuat tagihan lain.');
+  }
+  const requestId=pending?.requestId||((crypto.randomUUID&&crypto.randomUUID())||('xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,ch=>{const n=Math.random()*16|0;return(ch==='x'?n:(n&3|8)).toString(16);})));
+  if(!pending){
+   try{localStorage.setItem(pendingKey,JSON.stringify({businessId:financeBusiness.id,fingerprint,requestId,createdAt:new Date().toISOString()}));}
+   catch(_){throw new Error('Kunci pengaman tagihan tidak dapat disimpan. Tagihan tidak dikirim agar tidak berisiko tercatat ganda.');}
+  }
+  const insertPayload={...payload,client_request_id:requestId};
+  const inserted=await sb.from('store_open_bills').insert(insertPayload).select('id').single();
+  if(!inserted.error){
+   activeOpenBillId=inserted.data.id;
+   try{const saved=JSON.parse(localStorage.getItem(pendingKey)||'null');if(saved?.requestId===requestId)localStorage.removeItem(pendingKey);}catch(_){}
+  }else{
+   const {data:existing,error:lookupError}=await sb.from('store_open_bills')
+    .select('id,client_request_id,created_by,created_by_role,table_number,customer_name,lines,total_amount,status')
+    .eq('business_id',financeBusiness.id).eq('client_request_id',requestId).maybeSingle();
+   if(lookupError)throw new Error('Status penyimpanan tagihan belum dapat dipastikan. Kunci pengaman dipertahankan; ulangi rincian yang sama setelah memeriksa daftar tagihan. '+String(lookupError.message||lookupError).slice(0,150));
+   if(existing){
+    const sameLines=Array.isArray(existing.lines)&&existing.lines.length===lines.length&&existing.lines.every((line,i)=>
+     String(line.product_id)===String(lines[i].product_id)&&String(line.product_code||'')===String(lines[i].product_code||'')&&
+     String(line.product_name||'')===String(lines[i].product_name||'')&&Number(line.quantity)===Number(lines[i].quantity)&&
+     Number(line.unit_price)===Number(lines[i].unit_price)&&String(line.note||'')===String(lines[i].note||''));
+    const same=existing.created_by===financeMemberUserId&&existing.created_by_role===financeMemberRole&&
+     existing.table_number===tableNumber&&existing.customer_name===customerName&&
+     Number(existing.total_amount)===total&&sameLines;
+    if(!same)throw new Error('ID tagihan sudah ditemukan di server tetapi rincian tidak cocok. Jangan membuat tagihan baru; minta pemeriksaan Owner/pengelola.');
+    if(existing.status!=='open'){
+     try{const saved=JSON.parse(localStorage.getItem(pendingKey)||'null');if(saved?.requestId===requestId)localStorage.removeItem(pendingKey);}catch(_){}
+     throw new Error(existing.status==='paid'?'Tagihan dengan ID permintaan ini sudah dibayar. Periksa laporan; jangan membuat tagihan baru.':'Tagihan dengan ID permintaan ini sudah dibatalkan. Periksa daftar tagihan sebelum membuat permintaan baru.');
+    }
+    activeOpenBillId=existing.id;
+    try{const saved=JSON.parse(localStorage.getItem(pendingKey)||'null');if(saved?.requestId===requestId)localStorage.removeItem(pendingKey);}catch(_){}
+   }else if(typeof inserted.error.code==='string'&&inserted.error.code){
+    try{const saved=JSON.parse(localStorage.getItem(pendingKey)||'null');if(saved?.requestId===requestId)localStorage.removeItem(pendingKey);}catch(_){}
+    throw inserted.error;
+   }else{
+    throw new Error('Respons penyimpanan tagihan terputus dan server belum dapat memastikan hasilnya. Kunci pengaman dipertahankan; ulangi tagihan dengan rincian yang SAMA agar tidak tercatat ganda.');
+   }
+  }
  }
  $('quickSaleSaveDraft').textContent='Simpan perubahan tagihan';$('quickSalePayDraft').hidden=false;$('quickSaleSave').hidden=true;
  await loadQuickSaleOpenBills();quickSaleDraftStatus('Tagihan tersimpan. Total '+formatStoreRupiah(total)+'. Belum masuk laporan dan stok belum dikurangi.');
