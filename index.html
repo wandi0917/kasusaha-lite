@@ -5074,7 +5074,7 @@ async function bukaPanelTransaksi(tujuan){
          const employeeCatalog=$('employeeProductCatalog');
          if(employeeCatalog){employeeCatalog.hidden=false;employeeCatalog.scrollIntoView({behavior:'smooth',block:'start'});}
          setFinanceStatus('Daftar barang dan barcode berhasil dimuat. Karyawan dapat melihat harga jual dan stok, tetapi tidak dapat mengubahnya.');
-         return false;
+         return true;
         }
         if(tujuan==='kasir'){
           const currentHasProducts=quickSaleItemRows().some(row=>String(row.querySelector('.quick-sale-product')?.value||'').trim());
