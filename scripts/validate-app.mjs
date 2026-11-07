@@ -668,6 +668,17 @@ for (const [ok, message] of guidedOwnerEmployeeFlowChecks) {
   else pass(message);
 }
 
+const automaticNextNavigationChecks = [
+  [html.includes("const routed=await arahkanSetelahLoginFinance();") && html.includes("Memeriksa absensi dan menyiapkan menu berikutnya"), "selecting a verified saved workspace automatically continues to the attendance/work workflow"],
+  [html.includes("const advanceToCashier=!editId&&storeProductRows.filter(p=>p.active===true).length===0") && html.includes("await bukaPanelTransaksi('kasir');"), "saving the first guided Owner product automatically opens Cashier"],
+  [html.includes("if(advanceToCashier&&itemType==='product')") && html.includes("Barang pertama berhasil disimpan"), "first-product auto-navigation is limited to a new sellable product in the guided setup flow"],
+  [html.includes("Kasir belum terbuka otomatis") && html.includes("Pilih menu Kasir Cepat untuk melanjutkan"), "failed auto-navigation reports a safe manual fallback without misreporting product save failure"],
+];
+for (const [ok, message] of automaticNextNavigationChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
 const businessTypeChecks = [
   [html.includes('value="pharmacy"') && html.includes('value="drugstore"') && html.includes('value="pharmaceutical_retail"'), "business type selector includes pharmacy, drugstore, and pharmaceutical retail"],
   [html.includes('value="optical"') && html.includes('value="medical_equipment"'), "business type selector includes optical and medical equipment shops"],
