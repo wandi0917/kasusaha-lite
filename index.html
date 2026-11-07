@@ -1989,7 +1989,22 @@ async function bagikanKasUsahaLite(){
 <label for="financeBusinessName">Nama usaha <span class="required">*</span></label>
 <input id="financeBusinessName" maxlength="120" required placeholder="Contoh: Kedai Kopi Seroja">
 <label for="financeBusinessType">Jenis usaha <span class="required">*</span></label>
-<select id="financeBusinessType" required><option value="">Pilih jenis usaha</option><option>Warung / Sembako</option><option>Restoran / Kedai / Kafe</option><option>Toko Retail</option><option>Jasa</option><option>Produksi / Manufaktur</option><option>Usaha Online</option><option>Salon / Kecantikan</option><option>Bengkel</option><option>Pertanian / Perikanan</option><option>Lainnya</option></select>
+<select id="financeBusinessType" required>
+<option value="">Pilih jenis usaha</option>
+<optgroup label="Perdagangan dan ritel">
+<option value="grocery">Warung / Sembako</option><option value="retail">Toko Retail / Minimarket / Grosir</option><option value="pharmacy">Apotek</option><option value="drugstore">Toko Obat</option><option value="pharmaceutical_retail">Toko Farmasi</option><option value="fashion">Pakaian / Sepatu / Tas</option><option value="electronics">Elektronik / HP / Komputer</option><option value="automotive_parts">Suku Cadang Otomotif</option>
+</optgroup>
+<optgroup label="Kesehatan">
+<option value="optical">Optik</option><option value="medical_equipment">Toko Alat Kesehatan</option><option value="clinic">Klinik (administrasi usaha)</option>
+</optgroup>
+<optgroup label="Makanan, minuman dan produksi">
+<option value="food_beverage">Restoran / Kedai / Kafe</option><option value="manufacturing">Produksi / Manufaktur</option>
+</optgroup>
+<optgroup label="Jasa dan lainnya">
+<option value="service">Jasa</option><option value="laundry">Laundry</option><option value="beauty">Salon / Kecantikan / Kosmetik</option><option value="workshop">Bengkel</option><option value="agriculture">Pertanian / Perikanan / Peternakan</option><option value="online_store">Usaha Online</option><option value="other">Usaha Lainnya</option>
+</optgroup>
+</select>
+<div id="businessTypeModulePreview" class="status" role="status" aria-live="polite" hidden></div>
 <label for="financeBusinessPhone">Nomor telepon usaha (opsional)</label>
 <input id="financeBusinessPhone" maxlength="40" inputmode="tel" placeholder="Contoh: 081234567890">
 <label for="financeBusinessAddress">Alamat usaha (opsional)</label>
@@ -4232,7 +4247,7 @@ async function renderOwnerServiceFeePanel(){
     if(status)status.textContent='Sesi Owner terverifikasi. Menyimpan persetujuan pratinjau ke server…';
     const {data,error}=await sb.rpc('kasusaha_accept_service_fee_terms',{p_business_id:targetBusinessId});if(error)throw error;
     if(!data||data.success!==true||!data.trial_started_at||data.billing_enabled===true||data.fee_enabled===true)throw new Error('Respons server tidak memenuhi pengaman pratinjau. Billing tetap tidak boleh diaktifkan.');
-    const {data:confirmedWorkspace,error:confirmedWorkspaceError}=await sb.from('business_workspaces').select('id,business_name,invite_code,owner_id,service_fee_consent_at,service_fee_trial_started_at,service_fee_terms_version').eq('id',targetBusinessId).single();
+    const {data:confirmedWorkspace,error:confirmedWorkspaceError}=await sb.from('business_workspaces').select('id,business_name,invite_code,owner_id,business_type,service_fee_consent_at,service_fee_trial_started_at,service_fee_terms_version').eq('id',targetBusinessId).single();
     if(confirmedWorkspaceError)throw confirmedWorkspaceError;
     if(confirmedWorkspace.owner_id!==liveUserId)throw new Error('Kepemilikan usaha berubah saat proses berlangsung. Persetujuan tidak dapat dilanjutkan.');
     financeBusiness=confirmedWorkspace;
@@ -4309,7 +4324,7 @@ async function loadFinanceWorkspaceInternal(){
    document.body.classList.remove('employee-verified','owner-verified');document.body.classList.add('workspace-selection-pending');financeBusiness=null;financeMemberRole=null;financeEmployeeDirectory=new Map();financeRows=[];
    setup.hidden=false;info.hidden=true;entry.hidden=true;report.hidden=true;if($('attendanceCard'))$('attendanceCard').hidden=true;if($('reportCategoryChooser'))$('reportCategoryChooser').hidden=true;applyReportCategory('');
    const saved=$('financeSavedBusinesses'),list=$('financeSavedBusinessList');saved.hidden=false;list.innerHTML='';
-   for(const m of memberList){const {data:b,error:be}=await sb.from('business_workspaces').select('id,business_name,invite_code,owner_id').eq('id',m.business_id).maybeSingle();if(be)continue;if(!b)continue;
+   for(const m of memberList){const {data:b,error:be}=await sb.from('business_workspaces').select('id,business_name,invite_code,owner_id,business_type').eq('id',m.business_id).maybeSingle();if(be)continue;if(!b)continue;
     const btn=document.createElement('button');btn.type='button';btn.className='secondary wide';btn.textContent=b.business_name+' — '+financeRoleLabel(m.role);btn.addEventListener('click',()=>financeChooseSavedBusiness(b.id));list.appendChild(btn);
    }
    setFinanceStatus('Akun ini terhubung ke beberapa usaha. Klik nama usaha yang ingin digunakan.');return;
@@ -4335,7 +4350,7 @@ async function loadFinanceWorkspaceInternal(){
    financeEmployeeIdentityUserIds=Array.isArray(identityIds)?identityIds.filter(id=>typeof id==='string'):[];
    if(!financeEmployeeIdentityUserIds.includes(financeMemberUserId))throw new Error('Identitas riwayat karyawan belum dapat diverifikasi. Hubungi Owner.');
   }
-  financeBusiness=business;financeMemberRole=member.role;financeEmployeeDirectory=new Map();renderOwnerServiceFeePanel();try{await loadFinancePackageFeatures(business.id);}catch(packageError){console.error('Hak fitur paket belum dapat dimuat:',packageError);financePackageFeatures=null;applyFinancePackageFeatures(null);}
+  financeBusiness=business;financeMemberRole=member.role;financeEmployeeDirectory=new Map();if(typeof applyKasUsahaBusinessModule==='function')applyKasUsahaBusinessModule(business.business_type);renderOwnerServiceFeePanel();try{await loadFinancePackageFeatures(business.id);}catch(packageError){console.error('Hak fitur paket belum dapat dimuat:',packageError);financePackageFeatures=null;applyFinancePackageFeatures(null);}
   if(member.role==='owner'){
    try{
     const {data:directoryRows,error:directoryError}=await sb.rpc('kasusaha_owner_employee_directory',{p_business_id:business.id});
@@ -7855,6 +7870,81 @@ html body>header.ks-brand-header .kasusaha-banner-image-button{
   }
 }
 </style>
+
+
+<script id="kasusaha-business-modules">
+(function(){
+ 'use strict';
+ const MODULES={
+  grocery:{label:'Warung / Sembako',title:'Kasir Warung',description:'Fokus pada penjualan cepat, barcode, stok satuan, pembelian, dan laporan.',product:'Barang & Stok'},
+  retail:{label:'Toko Retail / Minimarket / Grosir',title:'Kasir Retail',description:'Fokus pada katalog barang, barcode, harga jual, stok, dan laporan penjualan.',product:'Barang & Stok'},
+  pharmacy:{label:'Apotek',title:'Kasir Apotek',description:'Gunakan katalog produk dan stok umum untuk tahap awal. Operasional obat resep, batch, kedaluwarsa, izin edar, serta verifikasi tenaga kefarmasian memerlukan modul khusus yang belum boleh dianggap aktif sebelum diuji.',product:'Katalog Obat & Stok'},
+  drugstore:{label:'Toko Obat',title:'Kasir Toko Obat',description:'Gunakan pencatatan barang dan stok umum. Klasifikasi obat, pembatasan penjualan, batch dan kedaluwarsa wajib diverifikasi sebelum operasional.',product:'Katalog Obat & Stok'},
+  pharmaceutical_retail:{label:'Toko Farmasi',title:'Kasir Toko Farmasi',description:'Gunakan katalog dan stok umum. Pengendalian obat, izin edar, batch, kedaluwarsa, dan pembatasan penjualan memerlukan pengembangan serta validasi khusus.',product:'Katalog Farmasi & Stok'},
+  optical:{label:'Optik',title:'Kasir Optik',description:'Gunakan katalog produk dan transaksi umum untuk frame/lensa. Resep atau parameter mata dan status pengerjaan khusus belum menjadi rekam medis dalam rilis ini.',product:'Frame, Lensa & Stok'},
+  medical_equipment:{label:'Toko Alat Kesehatan',title:'Kasir Alat Kesehatan',description:'Fokus pada katalog alat, merek/model, nomor seri atau garansi bila diperlukan, stok, dan laporan. Validasi izin produk tetap tanggung jawab usaha.',product:'Alat Kesehatan & Stok'},
+  clinic:{label:'Klinik (administrasi usaha)',title:'Administrasi Klinik',description:'Fitur yang tersedia hanya administrasi transaksi umum. Jangan gunakan aplikasi ini sebagai rekam medis, sistem klinis, atau pengganti sistem klinik berizin.',product:'Produk & Persediaan'},
+  food_beverage:{label:'Restoran / Kedai / Kafe',title:'Kasir Makanan & Minuman',description:'Fokus pada penjualan, bahan baku, stok, tagihan meja, dan laporan.',product:'Menu & Bahan Baku'},
+  fashion:{label:'Pakaian / Sepatu / Tas',title:'Kasir Fashion',description:'Fokus pada katalog produk, barcode, stok, dan laporan. Variasi ukuran/warna khusus masih perlu modul tersendiri.',product:'Produk Fashion & Stok'},
+  beauty:{label:'Salon / Kecantikan / Kosmetik',title:'Kasir Kecantikan',description:'Fokus pada transaksi produk/jasa, stok, dan laporan.',product:'Produk & Layanan'},
+  service:{label:'Jasa',title:'Kasir Jasa',description:'Fokus pada pencatatan layanan, pemasukan, pengeluaran, dan laporan.',product:'Layanan & Transaksi'},
+  laundry:{label:'Laundry',title:'Kasir Laundry',description:'Fokus pada transaksi jasa dan laporan. Pelacakan status cucian khusus belum tersedia dalam modul awal.',product:'Layanan Laundry'},
+  workshop:{label:'Bengkel',title:'Kasir Bengkel',description:'Fokus pada transaksi jasa, suku cadang, stok, dan laporan.',product:'Suku Cadang & Stok'},
+  electronics:{label:'Elektronik / HP / Komputer',title:'Kasir Elektronik',description:'Fokus pada katalog, stok, barcode, dan laporan. Nomor seri/garansi khusus masih perlu modul tersendiri.',product:'Elektronik & Stok'},
+  manufacturing:{label:'Produksi / Manufaktur',title:'Administrasi Produksi',description:'Fitur inti transaksi dan stok tersedia; perhitungan resep produksi/BOM dan biaya produksi khusus belum aktif.',product:'Produk & Bahan'},
+  agriculture:{label:'Pertanian / Perikanan / Peternakan',title:'Kasir Pertanian',description:'Fokus pada transaksi, stok, satuan, dan laporan. Batch atau pelacakan biologis khusus belum aktif.',product:'Produk & Persediaan'},
+  automotive_parts:{label:'Suku Cadang Otomotif',title:'Kasir Suku Cadang',description:'Fokus pada katalog suku cadang, barcode, stok, dan laporan.',product:'Suku Cadang & Stok'},
+  online_store:{label:'Usaha Online',title:'Kasir Usaha Online',description:'Fokus pada katalog, pesanan, transaksi, stok, dan laporan.',product:'Produk & Pesanan'},
+  other:{label:'Usaha Lainnya',title:'Kasir Usaha',description:'Gunakan fitur inti KasUsaha Lite untuk transaksi, produk, stok, absensi, dan laporan.',product:'Produk & Stok'}
+ };
+ const LEGACY={
+  'Warung / Sembako':'grocery','Restoran / Kedai / Kafe':'food_beverage','Toko Retail':'retail',
+  'Jasa':'service','Produksi / Manufaktur':'manufacturing','Usaha Online':'online_store',
+  'Salon / Kecantikan':'beauty','Bengkel':'workshop','Pertanian / Perikanan':'agriculture',
+  'Lainnya':'other'
+ };
+ function normalize(value){
+  const raw=String(value||'').trim();
+  if(MODULES[raw])return raw;
+  return LEGACY[raw]||'other';
+ }
+ function apply(type){
+  const key=normalize(type),cfg=MODULES[key];
+  const setupSelect=document.getElementById('financeBusinessType');
+  const preview=document.getElementById('businessTypeModulePreview');
+  if(setupSelect&&preview){
+   const selected=setupSelect.value;
+   const selectedCfg=MODULES[normalize(selected)];
+   if(selected){preview.hidden=false;preview.textContent='Menu yang disiapkan: '+selectedCfg.title+'. '+selectedCfg.description;}
+   else preview.hidden=true;
+  }
+  const guide=document.getElementById('transactionGuide');
+  if(guide){
+   const strong=guide.querySelector('strong');
+   if(strong)strong.textContent='Mulai dari sini — '+cfg.label;
+   const copy=guide.querySelector('div');
+   if(copy)copy.textContent=cfg.description+' Menu inti Kasir, Stok, Absensi, Catat Transaksi, dan Laporan tetap tersedia sesuai hak akses dan paket.';
+  }
+  const card=document.getElementById('transactionShortcuts');
+  if(card){
+   const cashier=card.querySelector('.transaction-menu summary strong');
+   const stock=card.querySelectorAll('.transaction-menu summary strong')[3];
+   if(cashier)cashier.textContent=cfg.title;
+   if(stock)stock.textContent=cfg.product;
+  }
+  const info=document.getElementById('financeWorkspaceInfo');
+  if(info&&window.financeBusiness)info.setAttribute('data-business-type',key);
+ }
+ window.applyKasUsahaBusinessModule=apply;
+ document.addEventListener('DOMContentLoaded',function(){
+  const select=document.getElementById('financeBusinessType');
+  if(select){
+   select.addEventListener('change',function(){apply(select.value);});
+   apply(select.value);
+  }
+ });
+})();
+</script>
 
 </body>
 </html>
