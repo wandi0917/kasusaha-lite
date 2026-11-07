@@ -42,6 +42,7 @@ const liteTrialChecks = [
   [html.includes("seluruh fitur paket Lite") && html.includes("uji coba gratis 31 hari"), "first-time business setup must explain the full Lite trial"],
   [liteTrialMigration.includes("interval '31 days'"), "the trial duration must be calculated by the database as 31 days"],
   [liteTrialMigration.includes("unique (owner_id)") && liteTrialMigration.includes("kasusaha_free_trials_owner_unique"), "each Owner may receive only one trial"],
+  [liteTrialMigration.includes("on delete set null") && liteTrialMigration.includes("alter column business_id drop not null"), "deleting a workspace must not reset an Owner trial"],
   [liteTrialMigration.includes("private.kasusaha_business_license_is_verified") && liteTrialMigration.includes("trial.expires_at > now()"), "server entitlement checks must expire trial access automatically"],
   [liteTrialMigration.includes("lite_plan.features") && liteTrialMigration.includes("'lite'"), "trial feature flags must be sourced from the active Lite package"],
   [liteTrialMigration.includes("revoke all on table private.kasusaha_free_trials from public, anon, authenticated"), "trial records must not be exposed to client roles"],
