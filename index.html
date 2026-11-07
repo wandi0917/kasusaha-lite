@@ -5182,13 +5182,44 @@ financeAccountingEl('financeOpenItemForm')?.addEventListener('submit',async func
  finally{if(button)button.disabled=false;}
 });
 financeAccountingEl('financeSettlementForm')?.addEventListener('submit',async function(ev){
- ev.preventDefault();if(financeMemberRole!=='owner')return;
+ ev.preventDefault();if(financeMemberRole!=='owner'||!financeBusiness||!financeMemberUserId)return;
+ const form=this,button=form.querySelector('button[type="submit"]');
  const itemId=financeAccountingEl('financeSettlementItem').value,amount=Number(financeAccountingEl('financeSettlementAmount').value),date=financeAccountingEl('financeSettlementDate').value;
  if(!itemId||!Number.isSafeInteger(amount)||amount<=0||!date)return financeAccountingSetStatus('financeSettlementStatus','Pilih tagihan, tanggal, dan nominal pembayaran yang benar.',true);
+ if(button)button.disabled=true;
+ const pendingKey='kasusaha_finance_settlement_pending_v1';
+ const fingerprint=JSON.stringify({businessId:financeBusiness.id,userId:financeMemberUserId,itemId,amount,date});
+ let requestId='',settlementConfirmed=false;
  try{
-  const result=await sb.rpc('settle_finance_open_item',{p_item_id:itemId,p_amount:amount,p_date:date});if(result.error)throw result.error;
-  this.reset();await loadFinanceAccounting();financeAccountingSetStatus('financeSettlementStatus','Pembayaran berhasil dicatat. Saldo tagihan telah diperbarui secara atomik.');
- }catch(err){financeAccountingSetStatus('financeSettlementStatus','Gagal mencatat pembayaran: '+String(err.message||err).slice(0,200),true);}
+  let pending=null;
+  try{pending=JSON.parse(localStorage.getItem(pendingKey)||'null');}catch(_){throw new Error('Kunci pengaman pelunasan tidak dapat dibaca. Periksa daftar tagihan dan jurnal sebelum mencoba lagi.');}
+  if(pending&&(pending.businessId!==financeBusiness.id||pending.fingerprint!==fingerprint)){
+   throw new Error('Ada pelunasan sebelumnya yang hasilnya belum dipastikan. Periksa jurnal dan ulangi dengan tagihan, nominal, serta tanggal yang SAMA. Jangan membuat pelunasan baru dahulu.');
+  }
+  requestId=pending?.requestId||((crypto.randomUUID&&crypto.randomUUID())||('xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,ch=>{const n=Math.random()*16|0;return(ch==='x'?n:(n&3|8)).toString(16);})));
+  if(!pending){
+   try{localStorage.setItem(pendingKey,JSON.stringify({businessId:financeBusiness.id,fingerprint,requestId,createdAt:new Date().toISOString()}));}
+   catch(_){throw new Error('Kunci pengaman pelunasan tidak dapat disimpan. Pembayaran tidak dikirim agar tidak berisiko tercatat ganda.');}
+  }
+  const result=await sb.rpc('settle_finance_open_item',{p_item_id:itemId,p_amount:amount,p_date:date,p_request_id:requestId});
+  if(result.error){
+   const code=String(result.error.code||'');
+   if(/^P\\d{4}$/.test(code)||/^23/.test(code)){
+    try{const saved=JSON.parse(localStorage.getItem(pendingKey)||'null');if(saved?.requestId===requestId)localStorage.removeItem(pendingKey);}catch(_){}
+   }
+   throw result.error;
+  }
+  if(!result.data?.ok)throw new Error('Server belum mengonfirmasi pelunasan. Kunci pengaman dipertahankan agar pengulangan tidak menggandakan jurnal.');
+  settlementConfirmed=true;
+  try{const saved=JSON.parse(localStorage.getItem(pendingKey)||'null');if(saved?.requestId===requestId)localStorage.removeItem(pendingKey);}catch(_){}
+  form.reset();
+  financeAccountingSetStatus('financeSettlementStatus',result.data.replayed?'Pelunasan ini sudah tercatat sebelumnya. Sistem memastikan tidak membuat jurnal atau menambah saldo pelunasan dua kali.':'Pelunasan berhasil dikonfirmasi server. Jurnal dan saldo tagihan diperbarui secara atomik.');
+  try{await loadFinanceAccounting();}
+  catch(refreshError){financeAccountingSetStatus('financeSettlementStatus','Pelunasan SUDAH TERSIMPAN di server, tetapi daftar tagihan belum berhasil dimuat ulang. Jangan ulangi pembayaran. '+String(refreshError.message||refreshError).slice(0,150),true);}
+ }catch(err){
+  if(settlementConfirmed)financeAccountingSetStatus('financeSettlementStatus','Pelunasan sudah dikonfirmasi server. Jangan ulangi pembayaran. '+String(err.message||err).slice(0,160),true);
+  else financeAccountingSetStatus('financeSettlementStatus','Pelunasan belum dapat dikonfirmasi: '+String(err.message||err).slice(0,220),true);
+ }finally{if(button)button.disabled=false;}
 });
 function applyReportCategory(category){
  const selector=$('reportCategorySelect'),isOwner=financeMemberRole==='owner',isEmployee=financeMemberRole==='employee';
