@@ -640,3 +640,18 @@ for (const [ok, message] of paymentIntegrityChecks) {
 }
 
 if (process.exitCode) process.exit(process.exitCode);
+
+const openBillPrivilegesMigration = fs.readFileSync(
+  "supabase/migrations/20261107130000_restore_open_bill_scoped_write_privileges.sql",
+  "utf8",
+);
+const openBillPrivilegeChecks = [
+  [openBillPrivilegesMigration.includes("GRANT INSERT (") && openBillPrivilegesMigration.includes("business_id,") && openBillPrivilegesMigration.includes("created_by_role,") && openBillPrivilegesMigration.includes("lines,") && openBillPrivilegesMigration.includes("total_amount"), "open-bill creation receives only the required authenticated insert columns"],
+  [openBillPrivilegesMigration.includes("GRANT UPDATE (") && openBillPrivilegesMigration.includes("version,") && openBillPrivilegesMigration.includes("status"), "open-bill editing and cancellation receive only the required authenticated update columns"],
+  [openBillPrivilegesMigration.includes("REVOKE UPDATE (") && openBillPrivilegesMigration.includes("payment_cash,") && openBillPrivilegesMigration.includes("change_amount,") && openBillPrivilegesMigration.includes("paid_at,") && openBillPrivilegesMigration.includes("paid_by,"), "cash settlement fields remain server-controlled"],
+  [!(/GRANT\\s+(?:INSERT|UPDATE)\\s+ON\\s+TABLE\\s+public\\.store_open_bills\\s+TO\\s+authenticated/i).test(openBillPrivilegesMigration), "open-bill migration does not grant unrestricted table-level writes"],
+];
+for (const [ok, message] of openBillPrivilegeChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
