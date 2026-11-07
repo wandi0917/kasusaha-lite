@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [fix/navigation-serialization-20261108]
+    branches: [fix/playwright-test-current-pr-20261108]
 
 jobs:
   navigation-e2e:
@@ -23,7 +23,18 @@ jobs:
           npm install --no-save @playwright/test
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
-      - name: Test desktop and mobile navigation
+      - name: Start local server from the checked-out commit
+        run: |
+          python3 -m http.server 4173 --directory . > /tmp/kasusaha-http.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/kasusaha-http.log
+          exit 1
+      - name: Test desktop and mobile navigation against this commit
         env:
-          KASUSAHA_BASE_URL: https://fix-navigation-serialization.kasusaha-lite.pages.dev
+          KASUSAHA_BASE_URL: http://127.0.0.1:4173
         run: npx playwright test
