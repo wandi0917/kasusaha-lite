@@ -679,6 +679,17 @@ for (const [ok, message] of automaticNextNavigationChecks) {
   else pass(message);
 }
 
+const completeNextNavigationChecks = [
+  [html.includes("async function arahkanKeLaporanSetelahSimpan(category)") && html.includes("applyReportCategory(selectedCategory)") && html.includes("await muatDanTampilkanLaporan();"), "successful saved workflows open and load the appropriate next report"],
+  [html.includes("await arahkanKeLaporanSetelahSimpan(financeMemberRole==='employee'?'income':'sales');"), "cashier sales automatically continue to the role-appropriate sales/income report"],
+  [html.includes("await arahkanKeLaporanSetelahSimpan(financeMemberRole==='employee'?'income':'finance');"), "manual finance entries automatically continue to the role-appropriate report"],
+  [html.includes("try{await arahkanSetelahLoginFinance();}catch(routeError)") && html.includes("Perubahan stok sudah tersimpan dan diverifikasi"), "successful stock adjustment continues through attendance verification to the next work menu"],
+];
+for (const [ok, message] of completeNextNavigationChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
 const businessTypeChecks = [
   [html.includes('value="pharmacy"') && html.includes('value="drugstore"') && html.includes('value="pharmaceutical_retail"'), "business type selector includes pharmacy, drugstore, and pharmaceutical retail"],
   [html.includes('value="optical"') && html.includes('value="medical_equipment"'), "business type selector includes optical and medical equipment shops"],
