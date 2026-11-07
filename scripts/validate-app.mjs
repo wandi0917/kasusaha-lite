@@ -22,6 +22,7 @@ const financePartyIdempotencyMigration = fs.readFileSync("supabase/migrations/20
 const offlineTimestampMigration = fs.readFileSync("supabase/migrations/20261108000200_preserve_offline_client_recorded_at.sql", "utf8");
 const liteTrialMigration = fs.readFileSync("supabase/migrations/20261108000000_kasusaha_lite_31_day_trial_entitlements.sql", "utf8");
 const fullAppTrialMigration = fs.readFileSync("supabase/migrations/20261108000300_kasusaha_31_day_full_app_trial_features.sql", "utf8");
+const marketplaceTrialMigration = fs.readFileSync("supabase/migrations/20261108000400_kasusaha_marketplace_public_listing_trial_access.sql", "utf8");
 
 const productShippingPrivacySql = fs.readFileSync("supabase/migrations/20261107141421_protect_public_product_shipping_and_write_paths.sql", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
@@ -47,6 +48,7 @@ const liteTrialChecks = [
   [liteTrialMigration.includes("private.kasusaha_business_license_is_verified") && liteTrialMigration.includes("trial.expires_at > now()"), "server entitlement checks must expire trial access automatically"],
   [fullAppTrialMigration.includes("'advanced_reports', true") && fullAppTrialMigration.includes("'priority_support', true"), "31-day trial must unlock all application feature flags including advanced reports"],
   [fullAppTrialMigration.includes("kasusaha_business_has_feature") && fullAppTrialMigration.includes("kasusaha_get_business_package_entitlements"), "server feature checks and returned entitlements must both grant the complete trial feature set"],
+  [marketplaceTrialMigration.includes("kasusaha_marketplace_product_is_public") && marketplaceTrialMigration.includes("kasusaha_business_license_is_verified(w.id)"), "public marketplace product visibility must recognize the active 31-day trial"],
   [liteTrialMigration.includes("revoke all on table private.kasusaha_free_trials from public, anon, authenticated"), "trial records must not be exposed to client roles"],
 ];
 for (const [ok, message] of liteTrialChecks) {
