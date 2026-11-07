@@ -58,6 +58,12 @@ test('petunjuk langkah kerja menyediakan tombol yang membuka modul tujuan secara
   ];
 
   await page.evaluate(() => {
+    // The production helper is rendered inside the Transaksi tab. Expose that
+    // tab in the isolated test without bypassing or changing production logic.
+    document.querySelector('#transaksi')?.classList.add('active');
+    for (let node = document.querySelector('#transactionGuide'); node; node = node.parentElement) {
+      node.hidden = false;
+    }
     window.__guidedNavigationTarget = null;
     window.bukaPanelTransaksi = async (target) => {
       window.__guidedNavigationTarget = target;
