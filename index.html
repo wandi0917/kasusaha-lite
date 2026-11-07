@@ -5730,8 +5730,11 @@ $('storeProductForm')?.addEventListener('submit',async function(e){
   if(error){if(error.code==='23505')throw new Error('Kode barang atau barcode sudah dipakai oleh barang lain dalam usaha ini. Periksa kembali nilai barcode.');throw error;}
   if(!productId)throw new Error('Barang tersimpan tetapi ID barang tidak terbaca. Muat ulang daftar barang sebelum melanjutkan.');
   productConfirmed=true;
-  const {error:costError}=await sb.rpc('set_store_product_cost',{p_product_id:productId,p_cost_price:costPrice});
-  if(costError){await loadStoreProducts();cancelStoreProductEdit();$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Barang '+code+' tersimpan, tetapi harga modal gagal disimpan: '+String(costError.message||costError).slice(0,150)+'. Gunakan Edit barang untuk mencoba menyimpan harga modal lagi.';return;}
+  const previousCost=Number(currentItem?.cost_price||0),needsCostUpdate=editId?previousCost!==costPrice:costPrice>0;
+  if(needsCostUpdate){
+   const {error:costError}=await sb.rpc('set_store_product_cost',{p_product_id:productId,p_cost_price:costPrice});
+   if(costError){try{await loadStoreProducts();}catch(refreshErr){console.warn('Barang tersimpan; daftar barang belum dimuat ulang:',refreshErr);}cancelStoreProductEdit();$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Barang '+code+' tersimpan di server, tetapi harga modal gagal disimpan: '+String(costError.message||costError).slice(0,150)+'. Gunakan Edit barang setelah paket/akses harga modal tersedia.';return;}
+  }
   await loadStoreProducts();cancelStoreProductEdit();$('storeProductStatus').className='status';$('storeProductStatus').textContent=(editId?'Perubahan barang ':'Barang baru ')+code+' — '+name+' berhasil '+(editId?'diperbarui.':'disimpan dengan stok awal '+initialStock+' '+stockUnit+'.')+' Jenis: '+(itemType==='product'?'produk jual.':'bahan baku/persediaan.');
   if(advanceToCashier&&itemType==='product'){
    try{
