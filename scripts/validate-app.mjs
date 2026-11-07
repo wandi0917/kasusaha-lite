@@ -8,6 +8,7 @@ const fail = (message) => {
 const pass = (message) => console.log("PASS:", message);
 
 const html = fs.readFileSync("index.html", "utf8");
+const productShippingPrivacySql = fs.readFileSync("supabase/migrations/20261107143000_protect_public_product_shipping_and_write_paths.sql", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
 const costSecurityMigration = fs.readFileSync("supabase/migrations/20261103020843_restrict_store_product_cost_column_access.sql", "utf8");
 const employeeSessionMigration = fs.readFileSync("supabase/migrations/20261103062527_allow_paid_employee_invite_sessions_in_transactions.sql", "utf8");
@@ -706,7 +707,31 @@ for (const [ok, message] of businessTypeChecks) {
   else pass(message);
 }
 
-if (process.exitCode) process.exit(process.exitCode);
+
+const productShippingPrivacyChecks = [
+  [html.includes("sb.rpc('kasusaha_get_my_product_shipping_profiles')"), "seller shipping profile reads must use the owner-scoped RPC"],
+  [html.includes("sb.rpc('kasusaha_update_my_product_shipping_profile'"), "seller shipping profile edits must use the owner-scoped RPC"],
+  [html.includes("sb.rpc('kasusaha_update_my_product_shipping_profiles'"), "bulk shipping profile edits must use the owner-scoped RPC"],
+  [!/\.from\(['"]produk['"]\)\.select\([^)]*(?:alamat_asal_pengiriman|kode_pos_asal_pengiriman|telepon_pengirim|nama_kontak_pengirim|latitude_asal_pengiriman|longitude_asal_pengiriman)/.test(html), "frontend must not directly SELECT private shipping-origin columns from public products"],
+  [!/\.from\(['"]produk['"]\)\.update\(\{[^}]*?(?:alamat_asal_pengiriman|kode_pos_asal_pengiriman|telepon_pengirim|nama_kontak_pengirim|latitude_asal_pengiriman|longitude_asal_pengiriman)/.test(html), "frontend must not directly UPDATE private shipping-origin columns"],
+  [productShippingPrivacySql.includes("REVOKE SELECT ON TABLE public.produk FROM anon, authenticated") && productShippingPrivacySql.includes("GRANT SELECT ("), "broad product SELECT must be replaced with safe column-only grants"],
+  [productShippingPrivacySql.includes("berat_gram, panjang_cm, lebar_cm, tinggi_cm"), "public catalog retains non-sensitive shipping dimensions needed by logistics"],
+  [productShippingPrivacySql.includes("GRANT SELECT (owner_id) ON TABLE public.produk TO authenticated"), "only signed-in sellers may filter by their own product owner ID"],
+  [productShippingPrivacySql.includes("REVOKE UPDATE ON TABLE public.produk FROM authenticated") && productShippingPrivacySql.includes("GRANT UPDATE (harga, stok, aktif)"), "product updates must be restricted to the current safe catalog columns"],
+  [productShippingPrivacySql.includes("CREATE POLICY \"Penjual dapat melihat produk miliknya\"") && productShippingPrivacySql.includes("NOT COALESCE"), "Owner must retain authenticated-only visibility of their own inactive products"],
+  [productShippingPrivacySql.includes("REVOKE UPDATE ON TABLE public.store_products FROM authenticated") && !/GRANT UPDATE \([\s\S]*?cost_price[\s\S]*?\) ON TABLE public\.store_products/.test(productShippingPrivacySql), "direct cost-price UPDATE must be revoked so the full_finance RPC is the only write path"],
+  [productShippingPrivacySql.includes("REVOKE INSERT ON TABLE public.store_products FROM authenticated") && !/GRANT INSERT \([\s\S]*?cost_price[\s\S]*?\) ON TABLE public\.store_products/.test(productShippingPrivacySql), "direct cost-price INSERT must be revoked so new costs are written through the full_finance RPC"],
+  [html.includes("sb.rpc('adjust_store_product_stock'") && html.includes("sb.rpc('set_store_product_cost'"), "stock and cost changes must continue through their validated server RPCs"],
+  [productShippingPrivacySql.includes("REVOKE UPDATE ON TABLE public.financial_transactions FROM authenticated") && !/(?:business_id|created_by|created_by_role|created_at|legacy_ref|server_recorded_at|id)/.test((productShippingPrivacySql.split("GRANT UPDATE (")[3] || "").split(") ON TABLE public.financial_transactions")[0]), "financial transaction attribution and idempotency metadata must remain immutable to clients"],
+  [productShippingPrivacySql.includes("REVOKE INSERT ON TABLE public.financial_transactions FROM authenticated"), "financial transaction creation must use an explicit allowlist of insertable fields"],
+  [html.includes("const payload={transaction_date:date,transaction_type:type,amount,description,category};"), "transaction editing must remain limited to the five user-editable business fields"],
+  [productShippingPrivacySql.includes("p.owner_id = v_uid") && productShippingPrivacySql.includes("auth.uid()"), "shipping profile RPCs must scope every read/write to the authenticated product owner"],
+  [productShippingPrivacySql.includes("REVOKE ALL ON FUNCTION") && productShippingPrivacySql.includes("GRANT EXECUTE ON FUNCTION"), "shipping profile SECURITY DEFINER RPCs must have explicit least-privilege EXECUTE grants"],
+];
+for (const [ok, message] of productShippingPrivacyChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
 
 
 const stockCorrectionZeroChecks = [
@@ -718,3 +743,5 @@ for (const [ok, message] of stockCorrectionZeroChecks) {
   if (!ok) fail(message);
   else pass(message);
 }
+
+if (process.exitCode) process.exit(process.exitCode);

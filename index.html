@@ -4016,7 +4016,7 @@ async function muatProdukAsalPengiriman(){
   const {data:sd,error:se}=await sb.auth.getSession();if(se)throw se;
   if(!sd.session){box.textContent='Login dengan akun pemilik produk terlebih dahulu.';return;}
   box.textContent='Memuat produk milik akun ini...';
-  const {data,error}=await sb.from('produk').select('id,nama_produk,nama_penjual,kota,alamat_asal_pengiriman,kode_pos_asal_pengiriman,nama_kontak_pengirim,telepon_pengirim,latitude_asal_pengiriman,longitude_asal_pengiriman,aktif').eq('owner_id',sd.session.user.id).order('id',{ascending:false}).limit(100);
+  const {data,error}=await sb.rpc('kasusaha_get_my_product_shipping_profiles');
   if(error)throw error;box.replaceChildren();
   const physical=(data||[]).filter(p=>String(p.nama_produk||'').trim().toLowerCase()!=='kasusaha lite');
   if(!physical.length){box.textContent='Belum ada produk fisik aktif milik akun ini.';return;}
@@ -4038,8 +4038,8 @@ async function muatProdukAsalPengiriman(){
      const lat=Number(pos.coords.latitude),lng=Number(pos.coords.longitude);
      if(!Number.isFinite(lat)||lat < -90||lat > 90||!Number.isFinite(lng)||lng < -180||lng > 180){geoStatus.textContent='Koordinat tidak valid.';geo.disabled=false;return;}
      try{
-      const {data:updated,error:ue}=await sb.from('produk').update({latitude_asal_pengiriman:lat,longitude_asal_pengiriman:lng}).eq('id',p.id).eq('owner_id',sd.session.user.id).select('id').maybeSingle();
-      if(ue)throw ue;if(!updated)throw new Error('Koordinat tidak tersimpan. Periksa izin UPDATE/RLS.');
+      const {data:updated,error:ue}=await sb.rpc('kasusaha_update_my_product_shipping_profile',{p_product_id:p.id,p_latitude:lat,p_longitude:lng});
+      if(ue)throw ue;if(!updated?.success)throw new Error('Koordinat tidak tersimpan. Periksa kepemilikan produk dan izin server.');
       p.latitude_asal_pengiriman=lat;p.longitude_asal_pengiriman=lng;
       geoStatus.textContent='Koordinat lokasi tersimpan: '+lat.toFixed(5)+', '+lng.toFixed(5)+'.';
      }catch(err){geoStatus.textContent='Gagal menyimpan koordinat: '+String(err.message||err).slice(0,160);}
@@ -4053,8 +4053,8 @@ async function muatProdukAsalPengiriman(){
     if(!nama||!telepon||!alamat||!/^\d{5}$/.test(kode)){status.textContent='Lengkapi nama kontak, telepon, alamat dan kode pos 5 digit.';status.className='status error';return;}
     save.disabled=true;status.className='status';status.textContent='Menyimpan alamat...';
     try{
-     const {data:updated,error:ue}=await sb.from('produk').update({nama_kontak_pengirim:nama,telepon_pengirim:telepon,alamat_asal_pengiriman:alamat,kode_pos_asal_pengiriman:kode}).eq('id',p.id).eq('owner_id',sd.session.user.id).select('id').maybeSingle();
-     if(ue)throw ue;if(!updated)throw new Error('Produk tidak diperbarui. Pastikan akun ini pemilik produk dan kebijakan UPDATE Supabase mengizinkan.');
+     const {data:updated,error:ue}=await sb.rpc('kasusaha_update_my_product_shipping_profile',{p_product_id:p.id,p_contact:nama,p_phone:telepon,p_address:alamat,p_postal_code:kode});
+     if(ue)throw ue;if(!updated?.success)throw new Error('Produk tidak diperbarui. Pastikan akun ini pemilik produk dan sesi Owner masih aktif.');
      status.className='status';status.textContent='Alamat asal pengiriman tersimpan untuk produk ini.';
     }catch(err){status.className='status error';status.textContent='Gagal menyimpan: '+String(err.message||err).slice(0,200);}
     finally{save.disabled=false;}
@@ -6348,14 +6348,10 @@ async function simpanPengaturanAsalPengiriman(){
  if(!confirm('Data ini akan diterapkan ke semua produk fisik milik akun yang sedang login. Pastikan alamat dan kode pos benar-benar lokasi pengambilan barang. Lanjutkan?'))return;
  btn.disabled=true;setStatus('Menyimpan data asal pengiriman ke produk fisik...');
  try{
-  const userId=sessionData.session.user.id;
-  const {data:rows,error:readError}=await sb.from('produk').select('id,nama_produk').eq('owner_id',userId).neq('nama_produk','KasUsaha Lite');
-  if(readError)throw readError;
-  if(!Array.isArray(rows)||!rows.length)throw new Error('Tidak ada produk fisik milik akun ini.');
-  const {data:updated,error:updateError}=await sb.from('produk').update({nama_kontak_pengirim:contact,telepon_pengirim:phone,alamat_asal_pengiriman:address,kode_pos_asal_pengiriman:postal}).eq('owner_id',userId).eq('aktif',true).neq('nama_produk','KasUsaha Lite').select('id');
+  const {data:updated,error:updateError}=await sb.rpc('kasusaha_update_my_product_shipping_profiles',{p_contact:contact,p_phone:phone,p_address:address,p_postal_code:postal});
   if(updateError)throw updateError;
-  if(!Array.isArray(updated)||!updated.length)throw new Error('Tidak ada produk yang diperbarui. Periksa izin UPDATE/RLS tabel produk.');
-  setStatus('Berhasil menyimpan data asal pengiriman untuk '+updated.length+' produk fisik. Selanjutnya coba cek ongkir dari Keranjang.');
+  if(!updated||updated.success!==true||Number(updated.updated_count)<1)throw new Error('Tidak ada produk fisik aktif yang diperbarui. Periksa data produk dan sesi Owner.');
+  setStatus('Berhasil menyimpan data asal pengiriman untuk '+Number(updated.updated_count)+' produk fisik. Selanjutnya coba cek ongkir dari Keranjang.');
  }catch(e){console.error('Gagal menyimpan asal pengiriman:',e);setStatus('Gagal menyimpan: '+String(e.message||e).slice(0,220),true);}
  finally{btn.disabled=false;}
 }
