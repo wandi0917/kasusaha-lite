@@ -182,7 +182,7 @@ const recoveryNavigationChecks = [
   [html.includes("Buka Paket & Harga") && html.includes("paketKasUsaha"), "missing-license recovery must navigate directly to Packages and Pricing"],
   [html.includes("Uji coba gratis 31 hari sudah digunakan atau lisensi diperlukan.") && html.includes("paketKasUsaha"), "expired or previously used trial must direct Owner to Packages and Pricing"],
 
-  [html.includes("Formulir pengaturan usaha sudah terbuka di halaman ini."), "first workspace instructions must not tell users to search for the already-open form"],
+  [html.includes("Formulir pengaturan usaha sudah terbuka") || html.includes("Isi nama usaha dan pilih jenis usaha"), "first workspace instructions must clearly point users to the already-open form"],
 ];
 for (const [ok, message] of recoveryNavigationChecks) {
   if (ok) pass(message);
