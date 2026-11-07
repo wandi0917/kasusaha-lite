@@ -5900,7 +5900,14 @@ async function arahkanSetelahLoginFinance(){
  if(financeMemberRole==='owner'){
   try{
    const routed=await arahkanKePekerjaanBerikutnya();
-   if(routed)tampilkanPanduanLangkahKerja('Usaha siap disiapkan. Tambahkan barang yang dijual; setelah tersimpan, Kasir akan terbuka otomatis.',false,'stok');
+   if(routed){
+    const hasActiveProducts=storeProductRows.some(row=>row.active===true&&row.item_type==='product');
+    if(hasActiveProducts){
+     tampilkanPanduanLangkahKerja('Usaha siap digunakan. Barang jual sudah tersedia. Silakan lanjutkan transaksi melalui Kasir Cepat.',false,'kasir');
+    }else{
+     tampilkanPanduanLangkahKerja('Usaha siap disiapkan. Tambahkan barang yang dijual pada menu Barang & Stok; setelah barang tersimpan, Kasir akan terbuka otomatis.',false,'stok');
+    }
+   }
    return routed;
   }catch(e){
    console.error('Pengalihan Owner ke langkah usaha gagal:',e);
