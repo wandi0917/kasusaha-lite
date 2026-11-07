@@ -14,6 +14,7 @@ const marketplaceWorkspaceMigration = fs.readFileSync("supabase/migrations/20261
 
 const stockLedgerMigration = fs.readFileSync("supabase/migrations/20261107104118_transaction_cash_validation_and_stock_movement_ledger_20261107.sql", "utf8");
 const openBillAttributionMigration = fs.readFileSync("supabase/migrations/20261107142427_preserve_customer_and_table_labels_for_open_bill_settlement.sql", "utf8");
+const cashierItemNotesSettlementMigration = fs.readFileSync("supabase/migrations/20261107144500_preserve_cashier_item_notes_after_payment.sql", "utf8");
 
 const productShippingPrivacySql = fs.readFileSync("supabase/migrations/20261107141421_protect_public_product_shipping_and_write_paths.sql", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
@@ -36,6 +37,20 @@ const quickSaleNotesChecks = [
   [html.includes("const note=document.createElement('td');note.textContent=d.note||'—'"), "cashier bill preview must show item notes as text, not executable HTML"],
   [html.includes("quick-sale-item-note').addEventListener('input',()=>updateQuickSalePreview(false))"), "editing an item note must immediately refresh the bill preview"],
 ];
+
+const cashierItemNotesSettlementChecks = [
+  [cashierItemNotesSettlementMigration.includes("record_store_quick_sale") && (cashierItemNotesSettlementMigration.match(/CREATE OR REPLACE FUNCTION public\\.record_store_quick_sale/g)||[]).length===2, "paid-bill note migration must preserve both cashier RPC overloads"],
+  [(cashierItemNotesSettlementMigration.match(/\\| Catatan: /g)||[]).length===4, "paid cashier sales must append each optional line note to the matching financial transaction"],
+  [cashierItemNotesSettlementMigration.includes("left(trim(v_line->>'note'), 300)"), "paid cashier note length must remain capped at 300 characters server-side"],
+  [cashierItemNotesSettlementMigration.includes("SECURITY DEFINER") && cashierItemNotesSettlementMigration.includes("SET search_path TO ''"), "cashier note migration must preserve hardened RPC execution context"],
+  [html.includes("note:String(row.querySelector('.quick-sale-item-note')?.value||'').trim().slice(0,300)"), "unpaid bill save must retain the per-item note before settlement"],
+  [html.includes("noteField.value=String(line.note||'').slice(0,300)"), "opening an unpaid bill must restore the per-item note for edits and payment"],
+];
+for (const [ok, message] of cashierItemNotesSettlementChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 for (const [ok, message] of quickSaleNotesChecks) {
   if (!ok) fail(message);
   else pass(message);
