@@ -5838,6 +5838,19 @@ async function arahkanKePekerjaanBerikutnya(){
 }
 async function arahkanSetelahLoginFinance(){
  if(!sb||!financeBusiness||!financeMemberUserId||!['owner','employee'].includes(financeMemberRole)||document.body.classList.contains('employee-device-pending'))return false;
+ // Owner tidak perlu melakukan absensi untuk mulai menyiapkan usaha.
+ // Setelah usaha dan uji coba terverifikasi, arahkan langsung ke langkah operasional berikutnya.
+ if(financeMemberRole==='owner'){
+  try{
+   const routed=await arahkanKePekerjaanBerikutnya();
+   if(routed)tampilkanPanduanLangkahKerja('Usaha siap disiapkan. Tambahkan barang yang dijual; setelah tersimpan, Kasir akan terbuka otomatis.',false,'stok');
+   return routed;
+  }catch(e){
+   console.error('Pengalihan Owner ke langkah usaha gagal:',e);
+   setFinanceStatus('Usaha sudah tersimpan, tetapi langkah berikutnya belum terbuka. Tekan tombol Coba Lagi untuk melanjutkan.',true);
+   return false;
+  }
+ }
  try{
   const today=attendanceToday();
   let attendanceQuery=sb.from('business_attendance').select('check_in_at,check_out_at,created_at').eq('business_id',financeBusiness.id).eq('work_date',today);
