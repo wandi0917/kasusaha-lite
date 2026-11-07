@@ -4963,11 +4963,24 @@ async function financeAccountingCreateJournal(data){
   const savedLines=await sb.from('finance_journal_lines').select('account_id,party_id,debit,credit').eq('business_id',financeBusiness.id).eq('entry_id',existing.data.id);
   if(savedLines.error)throw savedLines.error;
   const rows=savedLines.data||[];
-  const debitLine=rows.find(x=>x.account_id===data.debitAccount&&Number(x.debit)===value&&Number(x.credit)===0&&String(x.party_id||'')===String(data.partyId||''));
-  const creditLine=rows.find(x=>x.account_id===data.creditAccount&&Number(x.credit)===value&&Number(x.debit)===0&&String(x.party_id||'')===String(data.partyId||''));
-  if(rows.length!==2||!debitLine||!creditLine)throw new Error('Kunci jurnal sudah digunakan, tetapi isi jurnal server berbeda atau belum lengkap. Periksa buku jurnal sebelum mencoba lagi.');
-  if(existing.data.status==='posted')return existing.data.id;
+  if(existing.data.status==='posted'){
+   const debitLine=rows.find(x=>x.account_id===data.debitAccount&&Number(x.debit)===value&&Number(x.credit)===0&&String(x.party_id||'')===String(data.partyId||''));
+   const creditLine=rows.find(x=>x.account_id===data.creditAccount&&Number(x.credit)===value&&Number(x.debit)===0&&String(x.party_id||'')===String(data.partyId||''));
+   if(rows.length!==2||!debitLine||!creditLine)throw new Error('Kunci jurnal sudah digunakan, tetapi isi jurnal server berbeda. Periksa buku jurnal.');
+   return existing.data.id;
+  }
   if(existing.data.status!=='draft')throw new Error('Jurnal dengan kunci ini sudah dibatalkan. Buat jurnal baru setelah memeriksa buku jurnal.');
+  if(rows.length===0){
+   const recoveredLines=await sb.from('finance_journal_lines').insert([
+    {business_id:financeBusiness.id,entry_id:existing.data.id,account_id:data.debitAccount,party_id:data.partyId||null,debit:value,credit:0,description:data.description},
+    {business_id:financeBusiness.id,entry_id:existing.data.id,account_id:data.creditAccount,party_id:data.partyId||null,debit:0,credit:value,description:data.description}
+   ]);
+   if(recoveredLines.error)throw recoveredLines.error;
+  }else{
+   const debitLine=rows.find(x=>x.account_id===data.debitAccount&&Number(x.debit)===value&&Number(x.credit)===0&&String(x.party_id||'')===String(data.partyId||''));
+   const creditLine=rows.find(x=>x.account_id===data.creditAccount&&Number(x.credit)===value&&Number(x.debit)===0&&String(x.party_id||'')===String(data.partyId||''));
+   if(rows.length!==2||!debitLine||!creditLine)throw new Error('Kunci jurnal sudah digunakan, tetapi isi jurnal server berbeda atau belum lengkap. Periksa buku jurnal.');
+  }
   const postedExisting=await sb.rpc('post_finance_journal_entry',{p_entry_id:existing.data.id});if(postedExisting.error)throw postedExisting.error;
   return existing.data.id;
  }
@@ -5064,6 +5077,7 @@ financeAccountingEl('financeJournalForm')?.addEventListener('submit',async funct
  const key='kasusaha_manual_journal_pending_v1',fingerprint=JSON.stringify({businessId:financeBusiness?.id||'',debit,credit,amount,date,description});let pending=null;
  if(button)button.disabled=true;
  try{
+  if(!financeBusiness||!date||description.length<2||description.length>300||!Number.isSafeInteger(amount)||amount<=0||!debit||!credit||debit===credit)throw new Error('Periksa tanggal, keterangan, dua akun yang berbeda, dan nominal jurnal bilangan bulat positif sebelum menyimpan.');
   try{pending=JSON.parse(localStorage.getItem(key)||'null');}catch(_){throw new Error('Kunci pengaman jurnal tidak dapat dibaca. Periksa buku jurnal sebelum mencoba lagi.');}
   if(pending&&(pending.businessId!==financeBusiness?.id||pending.fingerprint!==fingerprint))throw new Error('Ada jurnal sebelumnya yang hasilnya belum dipastikan. Periksa buku jurnal dan ulangi rincian yang sama sebelum membuat jurnal baru.');
   let sourceId=pending?.sourceId;
