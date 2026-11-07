@@ -1481,6 +1481,15 @@ body>main img{max-width:100%}
   *,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
 }
 </style>
+<style id="kasusaha-navigation-usability">
+/* Navigasi: tombol tidak menyusut dan panel tidak tertutup oleh menu sticky. */
+nav[aria-label="Navigasi utama"] button{flex:0 0 auto}
+main .tab{scroll-margin-top:84px}
+@media(max-width:650px){
+ nav[aria-label="Navigasi utama"]{scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+ main .tab{scroll-margin-top:78px}
+}
+</style>
 </head>
 <body>
 <header class="ks-brand-header">
@@ -2792,6 +2801,28 @@ async function buka(id,tombol,opsi={}){
   if(id==='pesananSaya')muatPesananSaya();if(id==='pesananMasuk')muatPesananMasuk();
  }
  // Ekspos fungsi navigasi untuk seluruh tombol dan pemanggil dari komponen lain.
+ 
+ // Serialisasi semua perpindahan halaman. Klik menu yang beruntun tidak boleh
+ // saling menimpa ketika pemeriksaan sesi/lisensi masih berjalan.
+ let __kasUsahaNavigationQueue=Promise.resolve();
+ const __kasUsahaNavigateCore=buka;
+window.__kasUsahaNavigateInternal=(id,tombol,opsi={})=>__kasUsahaNavigateCore(id,tombol,opsi);
+ buka=function(id,tombol,opsi={}){
+   const execute=()=>__kasUsahaNavigateCore(id,tombol,opsi);
+   const task=__kasUsahaNavigationQueue.then(execute,execute);
+   __kasUsahaNavigationQueue=task.catch(error=>{
+     console.error('Navigasi KasUsaha Lite gagal:',error);
+     const status=document.getElementById('statusAktivasi');
+     if(status){
+       status.textContent='Halaman belum dapat dibuka. Periksa koneksi dan status login, lalu coba kembali.';
+       status.classList.add('error');
+     }
+   });
+   return task.catch(error=>{
+     console.error('Permintaan navigasi tidak berhasil:',error);
+     return false;
+   });
+ };
  window.buka=buka;
  function aman(teks){return String(teks==null?'':teks).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function formatWaktuTransaksi(t){const nilai=t.waktu||t.createdAt||t.timestamp;const d=nilai?new Date(nilai):null;if(d&&Number.isFinite(d.getTime()))return d.toLocaleString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).replace(/\./g,':');return t.tanggal||'Waktu transaksi lama tidak tersedia';}
@@ -4369,7 +4400,7 @@ async function loadFinanceWorkspaceInternal(){
   financeMemberRole=member.role;
   if(member.role==='employee'){
    const deviceActive=await ensureEmployeeDeviceActivation();
-   if(!deviceActive){financeBusiness=business;financeRows=[];setup.hidden=true;info.hidden=true;entry.hidden=true;report.hidden=true;setTransactionBusinessSetupMode(true,false);if($('attendanceCard'))$('attendanceCard').hidden=true;if($('attendancePayrollCard'))$('attendancePayrollCard').hidden=true;const loginButton=document.querySelector('nav button[onclick*="loginKaryawan"]');await buka('loginKaryawan',loginButton);return;}
+   if(!deviceActive){financeBusiness=business;financeRows=[];setup.hidden=true;info.hidden=true;entry.hidden=true;report.hidden=true;setTransactionBusinessSetupMode(true,false);if($('attendanceCard'))$('attendanceCard').hidden=true;if($('attendancePayrollCard'))$('attendancePayrollCard').hidden=true;const loginButton=document.querySelector('nav button[onclick*="loginKaryawan"]');await window.__kasUsahaNavigateInternal('loginKaryawan',loginButton);return;}
   }else{document.body.classList.remove('employee-device-pending');const devicePanel=$('employeeDevicePaywall');if(devicePanel)devicePanel.hidden=true;}
   financeEmployeeIdentityUserIds=[financeMemberUserId];
   if(member.role==='employee'){
@@ -6993,19 +7024,17 @@ sb.auth.onAuthStateChange((event,session)=>{
     toast.hidden = false;
   };
   if (close) close.addEventListener('click', () => { toast.hidden = true; });
-  window.bukaKotakSaran = (button) => {
+  window.bukaKotakSaran = async (button) => {
     const nav = document.querySelector('nav[aria-label="Navigasi utama"]');
     const berandaButton = nav ? Array.from(nav.querySelectorAll('button')).find((item) => item.textContent.trim().startsWith('Beranda')) : null;
-    if (typeof window.buka === 'function') window.buka('beranda', berandaButton);
+    if (typeof window.buka === 'function') await window.buka('beranda', berandaButton, {scroll:false});
     const target = document.getElementById('ksSuggestionTitle');
-    window.setTimeout(() => {
-      const form = document.getElementById('kasusahaSuggestionForm');
-      if (target) target.scrollIntoView({behavior:'smooth', block:'start'});
-      if (form) {
-        const message = document.getElementById('ksSuggestionMessage');
-        if (message) message.focus({preventScroll:true});
-      }
-    }, 120);
+    const form = document.getElementById('kasusahaSuggestionForm');
+    if (target) target.scrollIntoView({behavior:'smooth', block:'start'});
+    if (form) {
+      const message = document.getElementById('ksSuggestionMessage');
+      if (message) message.focus({preventScroll:true});
+    }
   };
 })();
 </script>
