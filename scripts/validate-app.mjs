@@ -21,6 +21,7 @@ const separateCashierNoteMigration = fs.readFileSync("supabase/migrations/202611
 const financePartyIdempotencyMigration = fs.readFileSync("supabase/migrations/20261108000100_idempotent_finance_party_creation.sql", "utf8");
 const offlineTimestampMigration = fs.readFileSync("supabase/migrations/20261108000200_preserve_offline_client_recorded_at.sql", "utf8");
 const liteTrialMigration = fs.readFileSync("supabase/migrations/20261108000000_kasusaha_lite_31_day_trial_entitlements.sql", "utf8");
+const fullAppTrialMigration = fs.readFileSync("supabase/migrations/20261108000300_kasusaha_31_day_full_app_trial_features.sql", "utf8");
 
 const productShippingPrivacySql = fs.readFileSync("supabase/migrations/20261107141421_protect_public_product_shipping_and_write_paths.sql", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
@@ -44,7 +45,8 @@ const liteTrialChecks = [
   [liteTrialMigration.includes("unique (owner_id)") && liteTrialMigration.includes("kasusaha_free_trials_owner_unique"), "each Owner may receive only one trial"],
   [liteTrialMigration.includes("on delete set null") && liteTrialMigration.includes("alter column business_id drop not null"), "deleting a workspace must not reset an Owner trial"],
   [liteTrialMigration.includes("private.kasusaha_business_license_is_verified") && liteTrialMigration.includes("trial.expires_at > now()"), "server entitlement checks must expire trial access automatically"],
-  [liteTrialMigration.includes("lite_plan.features") && liteTrialMigration.includes("'lite'"), "trial feature flags must be sourced from the active Lite package"],
+  [fullAppTrialMigration.includes("'advanced_reports', true") && fullAppTrialMigration.includes("'priority_support', true"), "31-day trial must unlock all application feature flags including advanced reports"],
+  [fullAppTrialMigration.includes("kasusaha_business_has_feature") && fullAppTrialMigration.includes("kasusaha_get_business_package_entitlements"), "server feature checks and returned entitlements must both grant the complete trial feature set"],
   [liteTrialMigration.includes("revoke all on table private.kasusaha_free_trials from public, anon, authenticated"), "trial records must not be exposed to client roles"],
 ];
 for (const [ok, message] of liteTrialChecks) {
@@ -793,6 +795,12 @@ for (const [ok, message] of guidedOwnerEmployeeFlowChecks) {
   if (!ok) fail(message);
   else pass(message);
 }
+
+const loginAutoNavigationChecks = [
+  [html.includes("await arahkanSetelahLoginFinance();") && html.includes("event==='INITIAL_SESSION'||event==='SIGNED_IN'"), "successful Owner/Employee login must automatically continue to attendance or the next work step"],
+  [html.includes("Navigasi otomatis setelah login belum selesai") && html.includes("Buka menu Transaksi"), "failed automatic navigation must show a direct recovery path"],
+];
+for (const [ok, message] of loginAutoNavigationChecks) { if (ok) pass(message); else fail(message); }
 
 const automaticNextNavigationChecks = [
   [html.includes("const routed=await arahkanSetelahLoginFinance();") && html.includes("Memeriksa absensi dan menyiapkan menu berikutnya"), "selecting a verified saved workspace automatically continues to the attendance/work workflow"],
