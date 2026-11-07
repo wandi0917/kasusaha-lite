@@ -32,6 +32,16 @@ const failClosedFinanceMigration = fs.readFileSync("supabase/migrations/20261106
 const idempotentFinanceSettlementMigration = fs.readFileSync("supabase/migrations/20261107171000_idempotent_finance_open_item_settlement.sql", "utf8");
 const manifestText = fs.readFileSync("manifest.webmanifest", "utf8");
 
+const paidCashierItemNoteChecks = [
+  [html.includes("lines:lines.map(d=>({product_id:d.p.id,quantity:d.qty,unit_price:d.price,note:d.note}))"), "direct paid cashier sales must send each item note to the server RPC"],
+  [html.includes("d.note?' ; catatan pelanggan: '+d.note:''"), "cashier confirmation must display the note attached to each item before payment is saved"],
+  [html.includes("quickSaleFingerprint=JSON.stringify(quickSalePayload)"), "cashier idempotency fingerprint must include the item notes sent to the server"],
+];
+for (const [ok, message] of paidCashierItemNoteChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 const quickSaleNotesChecks = [
   [html.includes('class="quick-sale-item-note"') && html.includes('Catatan barang / permintaan pelanggan'), "each cashier item must expose an optional customer note field"],
   [html.includes("note:String(row.querySelector('.quick-sale-item-note')?.value||'').trim().slice(0,300)"), "cashier line notes must be trimmed and limited to 300 characters"],
@@ -43,8 +53,8 @@ const quickSaleNotesChecks = [
 ];
 
 const cashierItemNotesSettlementChecks = [
-  [cashierItemNotesSettlementMigration.includes("record_store_quick_sale") && (cashierItemNotesSettlementMigration.match(/CREATE OR REPLACE FUNCTION public\\.record_store_quick_sale/g)||[]).length===2, "paid-bill note migration must preserve both cashier RPC overloads"],
-  [(cashierItemNotesSettlementMigration.match(/\\| Catatan: /g)||[]).length===4, "paid cashier sales must append each optional line note to the matching financial transaction"],
+  [cashierItemNotesSettlementMigration.split("CREATE OR REPLACE FUNCTION public.record_store_quick_sale").length - 1 === 2, "paid-bill note migration must preserve both cashier RPC overloads"],
+  [cashierItemNotesSettlementMigration.split("| Catatan: ").length - 1 === 4, "paid cashier sales must append each optional line note to the matching financial transaction"],
   [cashierItemNotesSettlementMigration.includes("left(trim(v_line->>'note'), 300)"), "paid cashier note length must remain capped at 300 characters server-side"],
   [cashierItemNotesSettlementMigration.includes("SECURITY DEFINER") && cashierItemNotesSettlementMigration.includes("SET search_path TO ''"), "cashier note migration must preserve hardened RPC execution context"],
   [html.includes("note:String(row.querySelector('.quick-sale-item-note')?.value||'').trim().slice(0,300)"), "unpaid bill save must retain the per-item note before settlement"],
@@ -56,9 +66,9 @@ for (const [ok, message] of cashierItemNotesSettlementChecks) {
 }
 
 const cashierItemNotesLengthChecks = [
-  [(cashierItemNotesLengthMigration.match(/CREATE OR REPLACE FUNCTION public\\.record_store_quick_sale/g)||[]).length===2, "description-length migration must preserve both cashier RPC overloads"],
-  [(cashierItemNotesLengthMigration.match(/left\\(v_description, 300 - char_length\\(v_note\\)\\)/g)||[]).length===2, "paid sale descriptions must always fit the 300-character database constraint"],
-  [(cashierItemNotesLengthMigration.match(/left\\(trim\\(v_line->>'note'\\), 288\\)/g)||[]).length===2, "paid item notes must retain up to 288 characters after the label"],
+  [cashierItemNotesLengthMigration.split("CREATE OR REPLACE FUNCTION public.record_store_quick_sale").length - 1 === 2, "description-length migration must preserve both cashier RPC overloads"],
+  [cashierItemNotesLengthMigration.split("left(v_description, 300 - char_length(v_note))").length - 1 === 2, "paid sale descriptions must always fit the 300-character database constraint"],
+  [cashierItemNotesLengthMigration.split("left(trim(v_line->>'note'), 288)").length - 1 === 2, "paid item notes must retain up to 288 characters after the label"],
   [(cashierItemNotesLengthMigration.match(/v_note text;/g)||[]).length===2, "each cashier RPC overload must build the bounded note independently"],
 ];
 for (const [ok, message] of cashierItemNotesLengthChecks) {
@@ -803,7 +813,7 @@ const confirmedOperationChecks = [
   [html.includes("let productConfirmed=false;") && html.includes("productConfirmed=true;") && html.includes("Jangan simpan ulang barang yang sama."), "product save must not be reported as failed or retried after server confirmation"],
   [html.includes("kasusaha_product_save_pending_v1") && html.includes("productFingerprint"), "product save must retain the same local fingerprint across uncertain retries"],
   [html.includes("const matches=!!existing&&existing.product_code===code") && html.includes("lookupError"), "product save must verify the authoritative product row before reporting an ambiguous request as failed"],
-  [html.includes("pending.fingerprint!==productFingerprint") && html.includes("jangan membuat atau mengubah barang lain"), "product save must block a different product while a previous save result is uncertain"],
+  [html.includes("productRequestPending.fingerprint!==productFingerprint") && html.includes("sebelum membuat atau mengubah barang lain"), "product save must block a different product while a previous save result is uncertain"],
 
   [html.includes("let stockConfirmed=false,stockNeedsManualReview=false;") && html.includes("String(result.product_id)!==String(p.id)") && html.includes("String(result.request_id)!==String(requestId)"), "stock adjustment must verify server product and idempotency request identity"],
   [html.includes("quantity_before") && html.includes("quantity_after") && html.includes("quantity_delta") && html.includes("after!==expectedAfter"), "stock adjustment must reconcile before/after/delta values before clearing the pending request"],
@@ -940,7 +950,7 @@ const openBillCreationIdempotencyChecks = [
   [idempotentOpenBillMigration.includes("GRANT INSERT (client_request_id)") && idempotentOpenBillMigration.includes("GRANT SELECT (client_request_id)"), "authenticated cashiers must be able to store and verify their own request ID under existing RLS"],
   [html.includes("kasusaha_open_bill_create_pending_v1") && html.includes("client_request_id:requestId"), "new unpaid bills must persist and reuse the same request ID across retries"],
   [html.includes("eq('client_request_id',requestId)") && html.includes("const sameLines=Array.isArray(existing.lines)"), "ambiguous open-bill creation must verify the matching server row and every line before recovery"],
-  [html.includes("pending.fingerprint!==fingerprint") && html.includes("jangan membuat tagihan lain"), "open-bill creation must block different details while a previous request is uncertain"],
+  [html.includes("pending.fingerprint!==fingerprint") && html.includes("sebelum membuat tagihan lain"), "open-bill creation must block different details while a previous request is uncertain"],
   [html.includes("existing.status==='paid'?'Tagihan dengan ID permintaan ini sudah dibayar"), "recovered paid bills must never be recreated as new unpaid bills"],
 ];
 for (const [ok, message] of openBillCreationIdempotencyChecks) {
