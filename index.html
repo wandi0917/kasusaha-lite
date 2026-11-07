@@ -4970,7 +4970,7 @@ async function bukaPanelTransaksi(tujuan){
   if(tujuan==='katalog'&&!isEmployee){setFinanceStatus('Menu Daftar Barang Karyawan hanya tersedia untuk akun Karyawan.',true);return false;}
   if(tujuan==='laporan'){
    const sel=$('reportCategorySelect');if(sel){sel.value=isEmployee?'income':'';applyReportCategory(sel.value);}
-   const report=$('reportCategoryChooser');if(report){report.hidden=false;report.removeAttribute('hidden');report.style.display='block';report.scrollIntoView({behavior:'smooth',block:'start'});if(isEmployee)await muatDanTampilkanLaporan();return false;}
+   const report=$('reportCategoryChooser');if(report){report.hidden=false;report.removeAttribute('hidden');report.style.display='block';report.scrollIntoView({behavior:'smooth',block:'start'});if(isEmployee)await muatDanTampilkanLaporan();return true;}
   }
   if(tujuan==='catat'){
    if(offlineTransactionMode){
