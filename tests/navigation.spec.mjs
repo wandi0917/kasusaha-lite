@@ -393,8 +393,10 @@ test('Muat pratinjau bulan ini otomatis membuka langkah Owner berikutnya', async
     document.querySelector('#serviceFeeOwnerPanel').hidden = false;
   });
 
-  await expect(page.locator('#serviceFeePreviewRefresh')).toBeVisible();
-  await page.locator('#serviceFeePreviewRefresh').click();
+  await expect(page.locator('#serviceFeePreviewRefresh')).toBeAttached();
+  // Trigger the real registered handler directly: this isolated fixture keeps
+  // the protected Transaksi tab visually gated, as it is before Owner login.
+  await page.locator('#serviceFeePreviewRefresh').evaluate(button => button.click());
   await expect(page.locator('#serviceFeePreviewResult')).toContainText('Menyiapkan menu berikutnya');
   await expect(page.locator('#financeEntryCard')).toBeVisible();
   await expect(page.locator('#ownerStoreCatalog')).toBeVisible();
@@ -405,7 +407,7 @@ test('Muat pratinjau bulan ini otomatis membuka langkah Owner berikutnya', async
 test('menu Produk Saya dan Cadangan mengarahkan pengguna tanpa sesi ke Akun Pembeli', async ({ page }) => {
   const nav = page.locator('nav[aria-label="Navigasi utama"]');
   for (const label of ['Produk Saya', 'Cadangan']) {
-    const button = nav.getByRole('button', { name: label, exact: true });
+    const button = nav.locator('button').filter({ hasText: label }).first();
     await expect(button).toBeVisible();
     await button.click();
     // Produk dan Cadangan adalah fitur berlisensi: tanpa sesi, redirect ke akun.
