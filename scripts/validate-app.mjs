@@ -182,7 +182,7 @@ const recoveryNavigationChecks = [
   [html.includes("Buka Paket & Harga") && html.includes("paketKasUsaha"), "missing-license recovery must navigate directly to Packages and Pricing"],
   [html.includes("Uji coba gratis 31 hari sudah digunakan atau lisensi diperlukan.") && html.includes("paketKasUsaha"), "expired or previously used trial must direct Owner to Packages and Pricing"],
 
-  [html.includes("Formulir pengaturan usaha sudah terbuka di halaman ini."), "first workspace instructions must not tell users to search for the already-open form"],
+  [html.includes("Formulir pengaturan usaha sudah terbuka") || html.includes("Isi nama usaha dan pilih jenis usaha"), "first workspace instructions must clearly point users to the already-open form"],
 ];
 for (const [ok, message] of recoveryNavigationChecks) {
   if (ok) pass(message);
@@ -806,7 +806,7 @@ for (const [ok, message] of loginAutoNavigationChecks) { if (ok) pass(message); 
 
 const automaticNextNavigationChecks = [
   [html.includes("const routed=await arahkanSetelahLoginFinance();") && html.includes("Memeriksa absensi dan menyiapkan menu berikutnya"), "selecting a verified saved workspace automatically continues to the attendance/work workflow"],
-  [html.includes("const advanceToCashier=!editId&&storeProductRows.filter(p=>p.active===true).length===0") && html.includes("await bukaPanelTransaksi('kasir');"), "saving the first guided Owner product automatically opens Cashier"],
+  [html.includes("const advanceToCashier=!editId&&$('storeProductSaleStatus')?.value==='product'") && html.includes("await bukaPanelTransaksi('kasir');"), "saving the first guided saleable product automatically opens Cashier even when ingredients already exist"],
   [html.includes("if(advanceToCashier&&itemType==='product')") && html.includes("Barang pertama berhasil disimpan"), "first-product auto-navigation is limited to a new sellable product in the guided setup flow"],
   [html.includes("Kasir belum terbuka otomatis") && html.includes("true,'kasir');"), "failed auto-navigation reports a safe direct-action fallback without misreporting product save failure"],
 ];
@@ -990,7 +990,7 @@ for (const [ok, message] of publicMarketplaceAnonymousEvaluationChecks) {
 
 
 const pwaReleaseRefreshChecks = [
-  [/meta name="kasusaha-build" content="2026-11-08-full-app-trial-auto-navigation-4"/.test(html), "production build marker must identify the hardened release"],
+  [/meta name="kasusaha-build" content="2026-11-08-simple-guided-workflow-5"/.test(html), "production build marker must identify the hardened release"],
   [/const CACHE_NAME = CACHE_PREFIX \+ 'v68';/.test(sw), "PWA service worker cache version must advance to refresh installed app shells"],
 ];
 for (const [ok, message] of pwaReleaseRefreshChecks) {
