@@ -641,6 +641,7 @@ for (const [ok, message] of paymentIntegrityChecks) {
 
 
 const productShippingPrivacySql = fs.readFileSync("docs/product-shipping-privacy-remediation.sql", "utf8");
+const storeProductsUpdateGrant = (productShippingPrivacySql.split("GRANT UPDATE (")[2] || "").split(") ON TABLE public.store_products")[0];
 const productShippingPrivacyChecks = [
   [html.includes("sb.rpc('kasusaha_get_my_product_shipping_profiles')"), "seller shipping profile reads must use the owner-scoped RPC"],
   [html.includes("sb.rpc('kasusaha_update_my_product_shipping_profile'"), "seller shipping profile edits must use the owner-scoped RPC"],
@@ -652,7 +653,7 @@ const productShippingPrivacyChecks = [
   [productShippingPrivacySql.includes("CREATE POLICY \"Penjual dapat melihat produk miliknya\"") && productShippingPrivacySql.includes("NOT COALESCE"), "Owner must retain authenticated-only visibility of their own inactive products"],
   [productShippingPrivacySql.includes("REVOKE UPDATE ON TABLE public.store_products FROM authenticated") && !/GRANT UPDATE \([\s\S]*?cost_price[\s\S]*?\) ON TABLE public\.store_products/.test(productShippingPrivacySql), "direct cost-price UPDATE must be revoked so the full_finance RPC is the only write path"],
   [productShippingPrivacySql.includes("REVOKE INSERT ON TABLE public.store_products FROM authenticated") && !/GRANT INSERT \([\s\S]*?cost_price[\s\S]*?\) ON TABLE public\.store_products/.test(productShippingPrivacySql), "direct cost-price INSERT must be revoked so new costs are written through the full_finance RPC"],
-  [!/(?:cost_price|stock_quantity|business_id)/.test((productShippingPrivacySql.match(/GRANT UPDATE \(([\s\S]*?)\) ON TABLE public\\.store_products TO authenticated;/) || [])[1] || ""), "direct stock, cost, and business reassignment updates must be blocked on store_products"],
+  [!/(?:cost_price|stock_quantity|business_id)/.test(storeProductsUpdateGrant), "direct stock, cost, and business reassignment updates must be blocked on store_products"],
   [html.includes("sb.rpc('adjust_store_product_stock'") && html.includes("sb.rpc('set_store_product_cost'"), "stock and cost changes must continue through their validated server RPCs"],
   [html.includes("sb.rpc('set_store_product_cost'") && !/\.from\(['"]store_products['"]\)\.update\(\{[^}]*cost_price/.test(html), "frontend must continue saving cost price through the entitlement-checked RPC"],
   [productShippingPrivacySql.includes("p.owner_id = v_uid") && productShippingPrivacySql.includes("auth.uid()"), "shipping profile RPCs must scope every read/write to the authenticated product owner"],
