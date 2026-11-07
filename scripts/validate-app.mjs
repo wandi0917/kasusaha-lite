@@ -643,6 +643,7 @@ for (const [ok, message] of paymentIntegrityChecks) {
 const productShippingPrivacySql = fs.readFileSync("docs/product-shipping-privacy-remediation.sql", "utf8");
 const storeProductsUpdateGrant = (productShippingPrivacySql.split("GRANT UPDATE (")[2] || "").split(") ON TABLE public.store_products")[0];
 const financialTransactionsUpdateGrant = (productShippingPrivacySql.split("GRANT UPDATE (")[3] || "").split(") ON TABLE public.financial_transactions")[0];
+const financialTransactionsInsertGrant = (productShippingPrivacySql.split("GRANT INSERT (")[2] || "").split(") ON TABLE public.financial_transactions")[0];
 const productShippingPrivacyChecks = [
   [html.includes("sb.rpc('kasusaha_get_my_product_shipping_profiles')"), "seller shipping profile reads must use the owner-scoped RPC"],
   [html.includes("sb.rpc('kasusaha_update_my_product_shipping_profile'"), "seller shipping profile edits must use the owner-scoped RPC"],
@@ -657,6 +658,7 @@ const productShippingPrivacyChecks = [
   [!/(?:cost_price|stock_quantity|business_id)/.test(storeProductsUpdateGrant), "direct stock, cost, and business reassignment updates must be blocked on store_products"],
   [html.includes("sb.rpc('adjust_store_product_stock'") && html.includes("sb.rpc('set_store_product_cost'"), "stock and cost changes must continue through their validated server RPCs"],
   [productShippingPrivacySql.includes("REVOKE UPDATE ON TABLE public.financial_transactions FROM authenticated") && !/(?:business_id|created_by|created_by_role|created_at|legacy_ref|server_recorded_at|id)/.test(financialTransactionsUpdateGrant), "financial transaction attribution and idempotency metadata must remain immutable to clients"],
+  [productShippingPrivacySql.includes("REVOKE INSERT ON TABLE public.financial_transactions FROM authenticated") && !/(?:created_at|server_recorded_at|id)/.test(financialTransactionsInsertGrant), "financial transaction creation must not allow client-supplied server timestamps or IDs"],
   [html.includes("const payload={transaction_date:date,transaction_type:type,amount,description,category};"), "transaction editing must remain limited to the five user-editable business fields"],
   [html.includes("sb.rpc('set_store_product_cost'") && !/\.from\(['"]store_products['"]\)\.update\(\{[^}]*cost_price/.test(html), "frontend must continue saving cost price through the entitlement-checked RPC"],
   [productShippingPrivacySql.includes("p.owner_id = v_uid") && productShippingPrivacySql.includes("auth.uid()"), "shipping profile RPCs must scope every read/write to the authenticated product owner"],
