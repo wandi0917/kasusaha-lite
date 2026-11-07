@@ -36,6 +36,12 @@ GRANT UPDATE (
 -- Keep transaction attribution and idempotency metadata immutable to clients.
 -- The Owner UI only edits these five business fields; server_recorded_at is
 -- separately protected by its immutable timestamp trigger.
+REVOKE INSERT ON TABLE public.financial_transactions FROM authenticated;
+GRANT INSERT (
+  business_id, created_by, created_by_role, transaction_date,
+  transaction_type, amount, description, category, legacy_ref
+) ON TABLE public.financial_transactions TO authenticated;
+
 REVOKE UPDATE ON TABLE public.financial_transactions FROM authenticated;
 GRANT UPDATE (
   transaction_date, transaction_type, amount, description, category
