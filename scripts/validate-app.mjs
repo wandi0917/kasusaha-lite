@@ -875,7 +875,7 @@ for (const [ok, message] of publicMarketplaceAnonymousEvaluationChecks) {
 
 const pwaReleaseRefreshChecks = [
   [/meta name="kasusaha-build" content="2026-11-07-production-hardening-1"/.test(html), "production build marker must identify the hardened release"],
-  [/const CACHE_NAME = CACHE_PREFIX \+ 'v63';/.test(sw), "PWA service worker cache version must advance to refresh installed app shells"],
+  [/const CACHE_NAME = CACHE_PREFIX \+ 'v64';/.test(sw), "PWA service worker cache version must advance to refresh installed app shells"],
 ];
 for (const [ok, message] of pwaReleaseRefreshChecks) {
   if (ok) pass(message);
