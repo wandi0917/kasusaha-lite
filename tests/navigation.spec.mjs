@@ -326,3 +326,65 @@ test('navigasi Karyawan ke katalog tetap dinyatakan berhasil setelah daftar bara
   }));
   expect(result).toEqual({ opened: true, visible: true });
 });
+
+
+test('Muat pratinjau bulan ini otomatis membuka langkah Owner berikutnya', async ({ page }) => {
+  await page.evaluate(async () => {
+    const ownerId = 'e2e-owner-preview';
+    const businessId = 'e2e-preview-business';
+    document.querySelector('#transaksi')?.classList.add('active');
+    financeBusiness = {
+      id: businessId,
+      owner_id: ownerId,
+      service_fee_trial_started_at: '2026-11-01T00:00:00.000Z',
+    };
+    financeMemberRole = 'owner';
+    financeMemberUserId = ownerId;
+    financeSelectedBusinessId = businessId;
+    offlineTransactionMode = false;
+    periksaLisensiWorkspace = async () => true;
+    loadStoreProducts = async () => { storeProductRows = []; };
+    sb.auth.getSession = async () => ({
+      data: { session: { user: { id: ownerId } } },
+      error: null,
+    });
+    sb.from = (table) => {
+      const query = {
+        select() { return this; },
+        eq() { return this; },
+        maybeSingle: async () => ({
+          data: table === 'business_members'
+            ? { business_id: businessId, user_id: ownerId, role: 'owner', active: true }
+            : { id: businessId, owner_id: ownerId },
+          error: null,
+        }),
+      };
+      return query;
+    };
+    sb.rpc = async (name) => {
+      if (name !== 'kasusaha_owner_service_fee_preview') {
+        return { data: null, error: new Error('RPC tidak diharapkan: ' + name) };
+      }
+      return {
+        data: {
+          billing_enabled: false,
+          preview_only: true,
+          gross_recorded_sales: 1250000,
+          recognized_returns: 0,
+          net_sales_for_preview: 1250000,
+          billable_amount: 0,
+          estimated_fee: 0,
+        },
+        error: null,
+      };
+    };
+    await renderOwnerServiceFeePanel();
+  });
+
+  await expect(page.locator('#serviceFeePreviewRefresh')).toBeVisible();
+  await page.locator('#serviceFeePreviewRefresh').click();
+  await expect(page.locator('#serviceFeePreviewResult')).toContainText('Menyiapkan menu berikutnya');
+  await expect(page.locator('#financeEntryCard')).toBeVisible();
+  await expect(page.locator('#ownerStoreCatalog')).toBeVisible();
+  await expect(page.locator('#financeLoginWorkAction')).toHaveText('Buka formulir Tambah Barang');
+});
