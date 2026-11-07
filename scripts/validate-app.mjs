@@ -144,6 +144,7 @@ const navigationConcurrencyChecks = [
   [appNavigationScript.includes("const __kasUsahaNavigateCore=buka"), "navigation queue must preserve the original guarded navigation handler"],
   [appNavigationScript.includes("__kasUsahaNavigationQueue=task.catch(error=>"), "a failed navigation must not permanently block later menu navigation"],
   [html.includes('id="kasusaha-navigation-usability"') && html.includes("scroll-margin-top:84px"), "selected panels must remain visible below the sticky navigation bar"],
+  [html.includes("window.bukaKotakSaran = async (button) =>") && html.includes("await window.buka('beranda', berandaButton, {scroll:false})"), "suggestion form navigation must wait for Beranda before scrolling to the form"],
 ];
 for (const [ok, message] of navigationConcurrencyChecks) {
   if (ok) pass(message);
