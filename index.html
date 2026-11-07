@@ -3946,7 +3946,7 @@ $('resendOwnerConfirmation').addEventListener('click',()=>kirimUlangKonfirmasi($
  pesanAkun('Login berhasil. Menyiapkan langkah pertama akun Owner...');
  await buka('transaksi',document.querySelector('nav button[onclick*="transaksi"]'));
  const setup=$('financeSetupForms'),picker=$('financeSavedBusinesses');
- if(setup&&!setup.hidden){const guide=$('financeFirstBusinessGuide');if(guide)guide.hidden=false;guide?.scrollIntoView({behavior:'smooth',block:'start'});$('financeBusinessName')?.focus({preventScroll:true});setFinanceStatus('LANGKAH 1 — Usaha belum dibuat atau belum terhubung. Lengkapi Pengaturan Usaha dengan nama dan jenis usaha, lalu tekan Simpan Usaha. Jangan membuat usaha baru jika usaha lama muncul pada daftar pilihan.');}
+ if(setup){setup.hidden=false;const guide=$('financeFirstBusinessGuide');if(guide){guide.hidden=false;guide.scrollIntoView({behavior:'smooth',block:'start'});}const name=$('financeBusinessName');if(name)name.focus({preventScroll:true});setFinanceStatus('LANGKAH 1 — Lengkapi nama dan jenis usaha. Usaha belum dibuat atau belum terhubung. Isi Pengaturan Usaha lalu tekan Simpan Usaha. Jika usaha lama tersedia, pilih usaha itu dan jangan membuat duplikat.');}
  else if(picker&&!picker.hidden){picker.scrollIntoView({behavior:'smooth',block:'center'});setFinanceStatus('Pilih usaha yang benar terlebih dahulu. Setelah dipilih, KasUsaha Lite akan mengarahkan Anda ke pekerjaan berikutnya.');}
  else{setFinanceStatus('Login berhasil, tetapi hubungan akun dengan usaha belum dapat dipastikan. Periksa status di bagian atas Transaksi.',true);}
 }}catch(e){pesanAkun('Login gagal: '+String(e.message||'Pastikan email sudah dikonfirmasi dan kata sandi benar.').slice(0,180),true);}finally{$('loginPenjual').disabled=false;}});
