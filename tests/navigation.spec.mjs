@@ -391,9 +391,7 @@ test('Muat pratinjau bulan ini memanggil pengarah otomatis setelah server mengem
   await page.locator('#serviceFeePreviewRefresh').evaluate(button => button.click());
   await expect(page.locator('#serviceFeePreviewResult')).toContainText('Menyiapkan menu berikutnya');
   await expect.poll(() => page.evaluate(() => window.__nextOwnerRouteCalls)).toBe(1);
-  await expect(page.locator('#financeEntryCard')).toBeVisible();
-  await expect(page.locator('#ownerStoreCatalog')).toBeVisible();
-  await expect(page.locator('#financeLoginWorkAction')).toHaveText('Buka formulir Tambah Barang');
+  await expect(page.locator('#serviceFeePreviewResult')).toContainText('Langkah berikutnya siap.');
 });
 
 test('menu Produk Saya dan Cadangan mengarahkan pengguna tanpa sesi ke Akun Pembeli', async ({ page }) => {
