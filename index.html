@@ -5824,7 +5824,7 @@ async function arahkanKePekerjaanBerikutnya(){
  let destination='kasir',message='';
  if(financeMemberRole==='owner'&&activeProducts.length===0){
   destination='stok';
-  message='Langkah berikutnya: tambah barang yang dijual. Isi nama, harga jual, dan stok awal. Tekan Simpan Barang. Setelah itu Kasir terbuka otomatis.';
+  message='Langkah berikutnya: tambah barang yang dijual. Isi nama, harga jual, dan stok awal. Tekan Simpan Barang. Setelah itu Kasir terbuka otomatis. Barang bahan baku boleh ditambahkan setelahnya.';
  }else if(financeMemberRole==='employee'&&activeProducts.length===0){
   destination='katalog';
   message='Belum ada barang untuk dijual. Minta Owner menambahkan barang terlebih dahulu.';
