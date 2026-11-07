@@ -71,3 +71,23 @@ Versi remote `20261106113750` adalah migrasi helper entitlement/finance; versi r
 - Edge Function Midtrans diperkuat melalui source deployment terpisah; perubahan Edge Function tidak menambah versi migrasi database.
 - Migrasi referral capture `20261106115500` tetap belum diterapkan.
 - Jangan menjalankan `supabase db push`, `db reset --remote`, atau mengubah riwayat remote sampai 80 SQL historis dapat dipulihkan atau baseline skema yang terkontrol disiapkan dan diuji.
+
+
+## Rekonsiliasi audit 7 November 2026
+
+Pemeriksaan read-only terbaru menemukan 121 versi migrasi tercatat pada Supabase dan 41 file SQL pada `main`. Enam migrasi terbaru sudah diterapkan pada database, tetapi prefix versi pada nama file lokal berbeda dari versi yang tercatat pada remote. Nama migrasi pada riwayat remote cocok dengan nama SQL dan objek produksi yang diverifikasi.
+
+Untuk mencegah migrasi yang sudah diterapkan dianggap pending, enam file hanya diselaraskan nama filenya ke versi remote berikut:
+
+| Versi remote | Nama migrasi |
+|---|---|
+| `20261107104118` | `transaction_cash_validation_and_stock_movement_ledger_20261107` |
+| `20261107141421` | `protect_public_product_shipping_and_write_paths` |
+| `20261107142427` | `preserve_customer_and_table_labels_for_open_bill_settlement` |
+| `20261107142954` | `bind_marketplace_products_to_verified_business_entitlement` |
+| `20261107143320` | `hide_unentitled_marketplace_listings` |
+| `20261107143852` | `fix_public_marketplace_entitlement_evaluation` |
+
+Perubahan ini hanya rename file: isi SQL tidak diubah, tidak ada migrasi dijalankan ulang, dan tidak ada data atau skema database yang diubah. Verifikasi read-only mengonfirmasi tabel pergerakan stok, RPC kasir dengan validasi uang diterima, RPC profil pengiriman penjual, RPC penyelesaian tagihan, kolom workspace produk marketplace, RPC penetapan produk ke usaha, helper entitlement listing publik, dan policy listing publik tersedia.
+
+Setelah penyelarasan, seluruh 41 file lokal memiliki versi yang cocok dengan riwayat remote. Sebanyak 80 migrasi historis remote tetap belum memiliki file SQL lokal. Karena itu, **jangan jalankan `supabase db push`, reset, atau rekonstruksi database hanya dari folder ini** sampai arsip SQL historis dipulihkan atau baseline skema terkontrol dibuat dan diuji. Jangan menghapus atau mengedit riwayat migrasi remote secara manual.
