@@ -18,6 +18,7 @@ const cashierItemNotesSettlementMigration = fs.readFileSync("supabase/migrations
 const cashierItemNotesLengthMigration = fs.readFileSync("supabase/migrations/20261107170500_cap_paid_sale_note_description_length.sql", "utf8");
 const idempotentOpenBillMigration = fs.readFileSync("supabase/migrations/20261107171500_idempotent_open_bill_creation.sql", "utf8");
 const separateCashierNoteMigration = fs.readFileSync("supabase/migrations/20261107172000_store_cashier_customer_note_separately.sql", "utf8");
+const financePartyIdempotencyMigration = fs.readFileSync("supabase/migrations/20261108000100_idempotent_finance_party_creation.sql", "utf8");
 
 const productShippingPrivacySql = fs.readFileSync("supabase/migrations/20261107141421_protect_public_product_shipping_and_write_paths.sql", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
@@ -958,6 +959,17 @@ for (const [ok, message] of openBillCreationIdempotencyChecks) {
   else fail(message);
 }
 
+
+const financePartyIdempotencyChecks = [
+  [html.includes("kasusaha_finance_party_pending_v1") && html.includes("client_request_id:requestId"), "finance party creation must persist and send a stable request ID"],
+  [html.includes("pending.fingerprint!==fingerprint") && html.includes("sebelum membuat data pihak lain"), "finance party creation must block different details while a previous result is uncertain"],
+  [html.includes(".eq('client_request_id',requestId)") && html.includes("row.created_by===financeMemberUserId"), "finance party retry must verify the exact server row and creator before reporting success"],
+  [financePartyIdempotencyMigration.includes("ADD COLUMN IF NOT EXISTS client_request_id uuid") && financePartyIdempotencyMigration.includes("CREATE UNIQUE INDEX IF NOT EXISTS finance_parties_business_request_id_key"), "finance party request IDs must be uniquely constrained per business without changing legacy rows"],
+];
+for (const [ok, message] of financePartyIdempotencyChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
 
 const separateCashierNoteChecks = [
   [separateCashierNoteMigration.includes("ADD COLUMN IF NOT EXISTS customer_note text"), "paid cashier item notes must use a separate transaction column"],
