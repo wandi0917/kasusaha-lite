@@ -20,6 +20,7 @@ const idempotentOpenBillMigration = fs.readFileSync("supabase/migrations/2026110
 const separateCashierNoteMigration = fs.readFileSync("supabase/migrations/20261107172000_store_cashier_customer_note_separately.sql", "utf8");
 const financePartyIdempotencyMigration = fs.readFileSync("supabase/migrations/20261108000100_idempotent_finance_party_creation.sql", "utf8");
 const offlineTimestampMigration = fs.readFileSync("supabase/migrations/20261108000200_preserve_offline_client_recorded_at.sql", "utf8");
+const liteTrialMigration = fs.readFileSync("supabase/migrations/20261108000000_kasusaha_lite_31_day_trial_entitlements.sql", "utf8");
 
 const productShippingPrivacySql = fs.readFileSync("supabase/migrations/20261107141421_protect_public_product_shipping_and_write_paths.sql", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
@@ -33,6 +34,21 @@ const failClosedStoreCostMigration = fs.readFileSync("supabase/migrations/202611
 const failClosedFinanceMigration = fs.readFileSync("supabase/migrations/20261106113750_fail_closed_package_entitlement_helper_and_finance_rpcs.sql", "utf8");
 const idempotentFinanceSettlementMigration = fs.readFileSync("supabase/migrations/20261107171000_idempotent_finance_open_item_settlement.sql", "utf8");
 const manifestText = fs.readFileSync("manifest.webmanifest", "utf8");
+
+const liteTrialChecks = [
+  [html.includes("async function mulaiUjiCobaKasUsaha") && html.includes("kasusaha_start_free_trial"), "Owner onboarding must request the server-side one-time Lite trial"],
+  [html.includes("kasusaha_get_business_trial_status") && html.includes("kasusahaTrialStatus"), "the application must display the authoritative server-side trial status"],
+  [html.includes("seluruh fitur paket Lite") && html.includes("uji coba gratis 31 hari"), "first-time business setup must explain the full Lite trial"],
+  [liteTrialMigration.includes("interval '31 days'"), "the trial duration must be calculated by the database as 31 days"],
+  [liteTrialMigration.includes("unique (owner_id)") && liteTrialMigration.includes("kasusaha_free_trials_owner_unique"), "each Owner may receive only one trial"],
+  [liteTrialMigration.includes("private.kasusaha_business_license_is_verified") && liteTrialMigration.includes("trial.expires_at > now()"), "server entitlement checks must expire trial access automatically"],
+  [liteTrialMigration.includes("lite_plan.features") && liteTrialMigration.includes("'lite'"), "trial feature flags must be sourced from the active Lite package"],
+  [liteTrialMigration.includes("revoke all on table private.kasusaha_free_trials from public, anon, authenticated"), "trial records must not be exposed to client roles"],
+];
+for (const [ok, message] of liteTrialChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
 
 const paidCashierItemNoteChecks = [
   [html.includes("lines:lines.map(d=>({product_id:d.p.id,quantity:d.qty,unit_price:d.price,note:d.note}))"), "direct paid cashier sales must send each item note to the server RPC"],
@@ -158,7 +174,7 @@ const recoveryNavigationChecks = [
   [html.includes("true,'kasir');"), "cashier recovery guidance must provide a direct Kasir Cepat action"],
   [html.includes("true,'katalog');"), "catalog loading recovery guidance must provide a direct Daftar Barang action"],
   [html.includes("Buka Paket & Harga") && html.includes("paketKasUsaha"), "missing-license recovery must navigate directly to Packages and Pricing"],
-  [html.includes("Untuk membuat ruang usaha, pilih dan aktifkan paket KasUsaha Lite terlebih dahulu."), "workspace creation without a paid license must explain the exact next step"],
+  [html.includes("Uji coba gratis 31 hari sudah digunakan atau lisensi diperlukan.") && html.includes("paketKasUsaha"), "expired or previously used trial must direct Owner to Packages and Pricing"],
 
   [html.includes("Formulir pengaturan usaha sudah terbuka di halaman ini."), "first workspace instructions must not tell users to search for the already-open form"],
 ];
