@@ -107,9 +107,9 @@ test('pesan pemulihan Owner menyediakan tombol langsung ke menu Transaksi', asyn
 });
 
 
-test('onboarding menampilkan kebijakan uji coba gratis 31 hari dengan seluruh fitur Lite', async ({ page }) => {
+test('onboarding menampilkan uji coba gratis 31 hari untuk seluruh fitur aplikasi', async ({ page }) => {
   await expect(page.locator('#financeFirstBusinessGuide')).toContainText('uji coba gratis 31 hari');
-  await expect(page.locator('#financeFirstBusinessGuide')).toContainText('seluruh fitur paket Lite');
+  await expect(page.locator('#financeFirstBusinessGuide')).toContainText('seluruh fitur aplikasi, termasuk fitur lanjutan');
   await expect(page.locator('#kasusahaTrialStatus')).toBeAttached();
 
   const helpers = await page.evaluate(() => ({
@@ -122,4 +122,12 @@ test('onboarding menampilkan kebijakan uji coba gratis 31 hari dengan seluruh fi
     renderTrialStatus: 'function',
     licenseCheck: 'function',
   });
+});
+
+
+test('alur login menyiapkan pengalihan otomatis ke absensi dan langkah kerja berikutnya', async ({ page }) => {
+  const source = await page.locator('script').allTextContents();
+  const authScript = source.find((item) => item.includes("kasusahaLastAuthUserId")) || '';
+  expect(authScript).toContain("await arahkanSetelahLoginFinance()");
+  expect(authScript).toContain("event==='INITIAL_SESSION'||event==='SIGNED_IN'");
 });
