@@ -2000,7 +2000,7 @@ async function bagikanKasUsahaLite(){
 <div class="card" id="reportCategoryChooser" hidden><h3>Pilih Menu dan Kategori Laporan</h3><p class="small">Pilih kategori untuk menampilkan laporan yang diperlukan. Setiap tabel memiliki judul tersendiri.</p><label for="reportCategorySelect">Menu laporan</label><select id="reportCategorySelect"><option value="">— Pilih kategori laporan —</option><option value="sales">Laporan Penjualan</option><option value="stock">Laporan Stok Barang</option><option value="finance">Laporan Keuangan Lengkap (Owner)</option><option value="accounting">Akuntansi Lengkap: Laba Rugi, Neraca, Arus Kas &amp; Buku Besar (Owner)</option><option value="income">Laporan Pemasukan (Karyawan)</option><option value="daily">Laporan Keuangan Harian (Lokal)</option><option value="history">Riwayat Transaksi (Lokal)</option></select></div>
 
 <div id="financeSetupForms">
-<div class="card" id="financeFirstBusinessGuide"><h4>Langkah 1 — Isi data usaha</h4><p>Isi nama usaha dan pilih jenis usaha. Nomor telepon dan alamat boleh dikosongkan. Setelah itu tekan <strong>Simpan Usaha</strong>. Aplikasi akan membuka langkah berikutnya secara otomatis. uji coba gratis 31 hari untuk seluruh fitur aplikasi, termasuk fitur lanjutan, tersedia satu kali untuk setiap Owner.</p></div>
+<div class="card" id="financeFirstBusinessGuide"><h4>Langkah 1 — Buat usaha</h4><ol><li>Isi nama usaha.</li><li>Pilih jenis usaha.</li><li>Tekan <strong>Simpan Usaha</strong>.</li></ol><p class="small">Telepon dan alamat boleh dikosongkan. Uji coba gratis 31 hari aktif otomatis jika Owner memenuhi syarat. Setelah tersimpan, aplikasi membuka langkah berikutnya.</p></div>
 <div id="financeSavedBusinesses" class="card" hidden><h4>Usaha yang sudah terdaftar</h4><p class="small">Klik nama usaha untuk memakai usaha yang sudah terhubung dengan akun ini.</p><div id="financeSavedBusinessList" class="grid"></div></div>
 <label for="financeBusinessName">Nama usaha <span class="required">*</span></label>
 <input id="financeBusinessName" maxlength="120" required placeholder="Contoh: Kedai Kopi Seroja">
@@ -5795,7 +5795,7 @@ function tampilkanPanduanLangkahKerja(message,isError=false,nextTarget=''){
  start.after(notice);
  let action=$('financeLoginWorkAction');
  if(action)action.remove();
- const actions={absensi:'Buka formulir Absen Masuk',kasir:'Buka Kasir Cepat',stok:'Buka formulir Tambah Barang',katalog:'Buka Daftar Barang',laporan:'Buka Laporan'};
+ const actions={absensi:'Absen Masuk',kasir:'Buka Kasir',stok:'Tambah Barang',katalog:'Lihat Barang',laporan:'Buka Laporan'};
  if(Object.prototype.hasOwnProperty.call(actions,nextTarget)){
   action=document.createElement('button');
   action.id='financeLoginWorkAction';
@@ -5824,13 +5824,13 @@ async function arahkanKePekerjaanBerikutnya(){
  let destination='kasir',message='';
  if(financeMemberRole==='owner'&&activeProducts.length===0){
   destination='stok';
-  message='Langkah berikutnya: tambahkan barang yang akan dijual. Isi nama, harga jual, dan stok awal. Barang bahan baku boleh ditambahkan setelahnya. Setelah barang jual tersimpan, Kasir akan terbuka otomatis.';
+  message='Langkah berikutnya: tambah barang yang dijual. Isi nama, harga jual, dan stok awal. Tekan Simpan Barang. Setelah itu Kasir terbuka otomatis.';
  }else if(financeMemberRole==='employee'&&activeProducts.length===0){
   destination='katalog';
-  message='Belum ada barang yang bisa dijual. Minta Owner menambahkan barang jual terlebih dahulu.';
+  message='Belum ada barang untuk dijual. Minta Owner menambahkan barang terlebih dahulu.';
  }else{
   destination='kasir';
-  message='Langkah berikutnya: Kasir siap digunakan. Pilih barang, isi jumlah, periksa total dan uang yang diterima, lalu tekan Simpan Penjualan.';
+  message='Kasir siap digunakan. Pilih barang, isi jumlah, periksa total dan uang diterima, lalu tekan Simpan Penjualan.';
  }
  await bukaPanelTransaksi(destination);
  tampilkanPanduanLangkahKerja(message,destination==='katalog',destination);
