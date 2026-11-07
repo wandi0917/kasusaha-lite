@@ -4436,7 +4436,10 @@ $('financeForm')?.addEventListener('submit',async function(e){
    this.reset();$('financeDate').value=financeToday();setFinanceStatus('Transaksi sudah tersimpan dan diverifikasi server. Memuat ulang laporan...');
    await loadFinanceWorkspace();
    if(!financeRows.some(r=>r.id===saved.id))setFinanceStatus('Transaksi sudah tersimpan dan diverifikasi di server, tetapi laporan belum berhasil dimuat ulang. Tekan Muat Ulang laporan.',true);
-   else setFinanceStatus('Transaksi berhasil disimpan, diverifikasi, dan muncul pada laporan bersama.');
+   else{
+    setFinanceStatus('Transaksi berhasil disimpan, diverifikasi, dan muncul pada laporan bersama. Membuka laporan berikutnya...');
+    await arahkanKeLaporanSetelahSimpan(financeMemberRole==='employee'?'income':'finance');
+   }
   }
  }catch(err){setFinanceStatus('PENCATATAN BELUM DAPAT DINYATAKAN BERHASIL: '+String(err.message||err).slice(0,280),true);}
  finally{btn.disabled=false;}
@@ -5630,6 +5633,22 @@ async function arahkanSetelahLoginFinance(){
   return false;
  }
 }
+async function arahkanKeLaporanSetelahSimpan(category){
+ if(!financeBusiness||!financeMemberUserId||!['owner','employee'].includes(financeMemberRole))return false;
+ const selectedCategory=financeMemberRole==='employee'?'income':(category||'sales');
+ await bukaPanelTransaksi('laporan');
+ if(!$('transaksi')?.classList.contains('active'))return false;
+ const chooser=$('reportCategoryChooser');
+ if(!chooser||chooser.hidden)return false;
+ const selector=$('reportCategorySelect');
+ if(selector)selector.value=selectedCategory;
+ applyReportCategory(selectedCategory);
+ await muatDanTampilkanLaporan();
+ const target=selectedCategory==='stock'?'stockReportTableCard':'financeReportCard';
+ $(target)?.scrollIntoView({behavior:'smooth',block:'start'});
+ tampilkanPanduanLangkahKerja('Data berhasil disimpan dan laporan '+(selectedCategory==='income'?'pemasukan':selectedCategory==='finance'?'keuangan':'penjualan')+' sudah dibuka. Periksa hasilnya sebelum melanjutkan pekerjaan berikutnya.');
+ return true;
+}
 async function absenMasuk(){
  if(!sb||!financeBusiness||!financeMemberUserId||!financeMemberRole){setFinanceStatus('Login dan hubungkan akun ke usaha terlebih dahulu.',true);return;}
  const btn=$('attendanceCheckIn');if(!btn)return;btn.disabled=true;
@@ -5757,7 +5776,8 @@ $('stockEntryForm')?.addEventListener('submit',async function(e){
   if(!result?.ok)throw new Error('Server belum mengonfirmasi perubahan stok. ID permintaan dipertahankan agar pengulangan tidak menggandakan perubahan.');
   try{const saved=JSON.parse(localStorage.getItem(pendingKey)||'null');if(saved?.requestId===requestId)localStorage.removeItem(pendingKey);}catch(_){}
   await loadStoreProducts();this.reset();status.className='status';
-  status.textContent='Perubahan stok '+p.product_name+' terkonfirmasi oleh server: '+Number(result.quantity_before)+' → '+Number(result.quantity_after)+' '+(p.stock_unit||'unit')+'. Riwayat pergerakan stok dicatat.';
+  status.textContent='Perubahan stok '+p.product_name+' terkonfirmasi oleh server: '+Number(result.quantity_before)+' → '+Number(result.quantity_after)+' '+(p.stock_unit||'unit')+'. Riwayat pergerakan stok dicatat. Menyiapkan langkah berikutnya...';
+  try{await arahkanSetelahLoginFinance();}catch(routeError){tampilkanPanduanLangkahKerja('Perubahan stok sudah tersimpan dan diverifikasi. Buka Kasir Cepat untuk melanjutkan. '+String(routeError.message||routeError).slice(0,120),true);}
  }catch(err){status.className='status error';status.textContent='Perubahan stok tidak dapat dinyatakan berhasil: '+String(err.message||err).slice(0,230);}
  finally{btn.disabled=false;}
 });
@@ -5961,8 +5981,11 @@ $('quickSaleForm')?.addEventListener('submit',async function(e){
   // Server sudah mengonfirmasi penyimpanan. Kegagalan muat ulang laporan tidak berarti transaksi gagal.
   this.reset();$('quickSaleTableNumber').value='';if($('quickSaleCashReceived'))$('quickSaleCashReceived').value='';$('quickSaleItems').replaceChildren();addQuickSaleLine();
   setFinanceStatus('Transaksi '+locationLabel+' BERHASIL DISIMPAN: '+lines.length+' jenis barang, total '+formatStoreRupiah(amount)+'. Uang diterima '+formatStoreRupiah(cashReceived)+', kembalian '+formatStoreRupiah(cashReceived-amount)+'. Stok dan pemasukan sudah dicatat oleh server.');
-  try{await loadFinanceWorkspace();setFinanceStatus('Transaksi '+locationLabel+' BERHASIL DISIMPAN: '+lines.length+' jenis barang, total '+formatStoreRupiah(amount)+'. Uang diterima '+formatStoreRupiah(cashReceived)+', kembalian '+formatStoreRupiah(cashReceived-amount)+'. Stok dan laporan sudah diperbarui.');}
-  catch(refreshErr){console.error('Penjualan tersimpan, tetapi penyegaran laporan gagal:',refreshErr);setFinanceStatus('Transaksi SUDAH TERSIMPAN di server ('+formatStoreRupiah(amount)+'), tetapi laporan belum berhasil dimuat ulang. Klik Muat Ulang laporan. Detail: '+String(refreshErr.message||refreshErr).slice(0,150),true);}
+  try{
+   await loadFinanceWorkspace();
+   setFinanceStatus('Transaksi '+locationLabel+' BERHASIL DISIMPAN: '+lines.length+' jenis barang, total '+formatStoreRupiah(amount)+'. Uang diterima '+formatStoreRupiah(cashReceived)+', kembalian '+formatStoreRupiah(cashReceived-amount)+'. Stok dan laporan sudah diperbarui. Membuka laporan berikutnya...');
+   await arahkanKeLaporanSetelahSimpan(financeMemberRole==='employee'?'income':'sales');
+  }catch(refreshErr){console.error('Penjualan tersimpan, tetapi penyegaran/pengalihan laporan gagal:',refreshErr);setFinanceStatus('Transaksi SUDAH TERSIMPAN di server ('+formatStoreRupiah(amount)+'), tetapi laporan belum berhasil dibuka. Klik Muat Ulang laporan. Detail: '+String(refreshErr.message||refreshErr).slice(0,150),true);}
  }catch(err){setFinanceStatus('PENJUALAN BELUM TERSIMPAN: '+String(err.message||err).slice(0,350),true);}
  finally{btn.disabled=false;}
 });
