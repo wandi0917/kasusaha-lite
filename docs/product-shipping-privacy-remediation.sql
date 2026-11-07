@@ -17,14 +17,21 @@ REVOKE UPDATE ON TABLE public.produk FROM authenticated;
 -- The current seller UI only edits these public catalog fields directly.
 GRANT UPDATE (harga, stok, aktif) ON TABLE public.produk TO authenticated;
 
--- Cost price is read-protected already, but table-level UPDATE currently
--- allows direct API writes around the full_finance check in set_store_product_cost.
--- Keep only the non-sensitive fields that the current Owner UI edits directly.
+-- Cost price is read-protected already, but table-level INSERT/UPDATE
+-- currently allows direct API writes around the full_finance check in
+-- set_store_product_cost. Stock updates must also use the idempotent RPC.
+REVOKE INSERT ON TABLE public.store_products FROM authenticated;
+GRANT INSERT (
+  business_id, product_code, product_name, barcode_value, barcode_type,
+  price, stock_quantity, stock_unit, item_type, active, updated_at
+) ON TABLE public.store_products TO authenticated;
 REVOKE UPDATE ON TABLE public.store_products FROM authenticated;
 GRANT UPDATE (
   product_code, product_name, price, active, updated_at,
   stock_unit, item_type, barcode_value, barcode_type, barcode_aliases
 ) ON TABLE public.store_products TO authenticated;
+-- stock_quantity remains insertable for initial stock (audited by trigger),
+-- but cannot be changed directly; changes go through adjust_store_product_stock.
 
 -- Owners must still be able to list their own inactive products so the
 -- "Tampilkan lagi" action can work after a product is hidden.
