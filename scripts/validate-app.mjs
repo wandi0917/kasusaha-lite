@@ -19,6 +19,7 @@ const cashierItemNotesLengthMigration = fs.readFileSync("supabase/migrations/202
 const idempotentOpenBillMigration = fs.readFileSync("supabase/migrations/20261107171500_idempotent_open_bill_creation.sql", "utf8");
 const separateCashierNoteMigration = fs.readFileSync("supabase/migrations/20261107172000_store_cashier_customer_note_separately.sql", "utf8");
 const financePartyIdempotencyMigration = fs.readFileSync("supabase/migrations/20261108000100_idempotent_finance_party_creation.sql", "utf8");
+const offlineTimestampMigration = fs.readFileSync("supabase/migrations/20261108000200_preserve_offline_client_recorded_at.sql", "utf8");
 
 const productShippingPrivacySql = fs.readFileSync("supabase/migrations/20261107141421_protect_public_product_shipping_and_write_paths.sql", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
@@ -959,6 +960,20 @@ for (const [ok, message] of openBillCreationIdempotencyChecks) {
   else fail(message);
 }
 
+
+const offlineTimestampIntegrityChecks = [
+  [offlineTimestampMigration.includes("ADD COLUMN IF NOT EXISTS client_recorded_at timestamptz"), "offline sync must have a separate nullable device timestamp column"],
+  [offlineTimestampMigration.includes("GRANT INSERT (client_recorded_at)") && offlineTimestampMigration.includes("GRANT SELECT (client_recorded_at)") && offlineTimestampMigration.includes("REVOKE UPDATE (client_recorded_at)"), "device timestamp must be insertable/readable but immutable after creation"],
+  [!offlineTimestampMigration.includes("GRANT INSERT (created_at)") && !offlineTimestampMigration.includes("GRANT UPDATE (server_recorded_at)"), "offline sync must not gain write access to authoritative server timestamps"],
+  [html.includes("row.client_recorded_at=d.toISOString()") && !html.includes("row.created_at=d.toISOString()"), "offline importer must preserve device time without attempting forbidden created_at writes"],
+  [html.includes("client_recorded_at,category,created_at") && html.includes("new Date(r.client_recorded_at||r.created_at)"), "finance reports must display device time for offline imports and server time for normal transactions"],
+  [html.includes("client_recorded_at,created_by,created_by_role") && html.includes("new Date(saved.client_recorded_at||'').getTime()"), "offline sync must verify the persisted device timestamp before marking local records synced"],
+  [offlineTimestampMigration.includes("server_recorded_at remains authoritative"), "offline device time must be explicitly excluded from billing authority"],
+];
+for (const [ok, message] of offlineTimestampIntegrityChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
 
 const financePartyIdempotencyChecks = [
   [html.includes("kasusaha_finance_party_pending_v1") && html.includes("client_request_id:requestId"), "finance party creation must persist and send a stable request ID"],
