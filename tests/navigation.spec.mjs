@@ -79,9 +79,9 @@ test('petunjuk langkah kerja menyediakan tombol yang membuka modul tujuan secara
     const action = page.locator('#financeLoginWorkAction');
     await expect(action).toBeAttached();
     await expect(action).toHaveText(item.label);
-    // The logged-out test fixture keeps the gated Transaksi tab hidden; force
-    // the click only to exercise the button's real event handler.
-    await action.click({ force: true });
+    // The logged-out fixture keeps the gated Transaksi tab hidden; dispatch
+    // the native button click to exercise the real registered event handler.
+    await action.evaluate((button) => button.click());
     await expect.poll(() => page.evaluate(() => window.__guidedNavigationTarget)).toBe(item.target);
   }
 
