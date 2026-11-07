@@ -677,7 +677,7 @@ const businessTypeChecks = [
   [html.includes("select('id,business_name,invite_code,owner_id,business_type,service_fee_consent_at"), "workspace loader reads the persisted business_type field"],
   [html.includes("applyKasUsahaBusinessModule(business.business_type)"), "workspace load applies the selected business type to transaction navigation"],
   [html.includes("Operasional obat resep, batch, kedaluwarsa, izin edar"), "pharmacy module clearly discloses unimplemented regulated workflows"],
-  [html.includes("bukan rekam medis, sistem klinis"), "clinic type is not represented as a clinical records system"],
+  [html.includes("Jangan gunakan aplikasi ini sebagai rekam medis, sistem klinis"), "clinic type is not represented as a clinical records system"],
 ];
 for (const [ok, message] of businessTypeChecks) {
   if (!ok) fail(message);
