@@ -228,6 +228,10 @@ test('Kasir menyediakan cetak tagihan dan struk lunas dengan layout printer ther
     return { html, unpaid };
   });
   expect(receipt.html).toContain('LUNAS / SUDAH DIBAYAR');
+  expect(receipt.html).toContain('<h2>Kedai Uji</h2>');
+  expect(receipt.html).not.toContain('KasUsaha Lite');
+  expect(receipt.unpaid).toContain('<h2>Kedai Uji</h2>');
+  expect(receipt.unpaid).not.toContain('KasUsaha Lite');
   expect(receipt.html).toContain('Rp30.000');
   expect(receipt.html).toContain('Kurang gula');
   expect(receipt.html).toContain('width:80mm');
