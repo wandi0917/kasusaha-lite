@@ -25,6 +25,27 @@ test('menu publik membuka panel yang benar dan menandai menu aktif', async ({ pa
   }
 });
 
+test('seluruh menu publik utama membuka panel tujuan yang benar', async ({ page }) => {
+  const nav = page.locator('nav[aria-label="Navigasi utama"]');
+  const cases = [
+    { button: '#navCompleteGuide', panel: '#panduanLengkap' },
+    { button: '#navPasarOnline', panel: '#pasar' },
+    { button: 'button[onclick*="paketKasUsaha"]', panel: '#paketKasUsaha' },
+    { button: 'button[onclick*="buka(\'keranjang\'"]', panel: '#keranjang' },
+    { button: 'button[onclick*="buka(\'akun\'"]', panel: '#akun' },
+    { button: '#navAkunPembeli', panel: '#akunPembeli' },
+    { button: '#navPesananSaya', panel: '#pesananSaya' },
+    { button: 'button[onclick*="buka(\'pesananMasuk\'"]', panel: '#pesananMasuk' },
+  ];
+  for (const item of cases) {
+    const button = nav.locator(item.button);
+    await expect(button).toBeVisible();
+    await button.click();
+    await expect(page.locator(item.panel)).toHaveClass(/active/);
+    await expect(button).toHaveClass(/active/);
+  }
+});
+
 test('menu Transaksi tanpa sesi terdaftar tetap mengunci fitur dan mengarahkan ke akun pembeli', async ({ page }) => {
   await page.locator('#navTransaksi').click();
   await expect(page.locator('#akunPembeli')).toHaveClass(/active/, { timeout: 20_000 });
