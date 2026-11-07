@@ -88,3 +88,20 @@ test('petunjuk langkah kerja menyediakan tombol yang membuka modul tujuan secara
   await page.evaluate(() => window.tampilkanPanduanLangkahKerja('Selesai tanpa tindakan lanjutan.'));
   await expect(page.locator('#financeLoginWorkAction')).toHaveCount(0);
 });
+
+
+test('pesan pemulihan Owner menyediakan tombol langsung ke menu Transaksi', async ({ page }) => {
+  await page.evaluate(() => {
+    window.__financeStatusTarget = null;
+    window.buka = async (target) => {
+      window.__financeStatusTarget = target;
+    };
+    window.setFinanceStatus('Usaha tersimpan. Buka Transaksi untuk melanjutkan.', true, 'transaksi');
+  });
+
+  const action = page.locator('#financeStatusAction');
+  await expect(action).toBeAttached();
+  await expect(action).toHaveText('Buka menu Transaksi');
+  await action.evaluate((button) => button.click());
+  await expect.poll(() => page.evaluate(() => window.__financeStatusTarget)).toBe('transaksi');
+});
