@@ -22,7 +22,7 @@
 <meta name="twitter:title" content="KasUsaha Lite — Bantu Usaha Lebih Tertata">
 <meta name="twitter:description" content="Kelola transaksi, stok, dan laporan dengan KasUsaha Lite. Empat paket mulai Rp49.000, termasuk 12 bulan layanan cloud pertama.">
 <meta name="twitter:image" content="https://kasusaha-lite.pages.dev/assets/kasusaha-banner-baru-3.webp?v=20261102">
-<meta name="kasusaha-build" content="2026-11-08-simple-guided-workflow-5">
+<meta name="kasusaha-build" content="2026-11-08-kasir-thermal-receipts-1">
 <title>KasUsaha Lite</title>
 <style>
 *{box-sizing:border-box}.employee-management-wrap{width:100%;overflow-x:auto;margin:10px 0}.employee-management-table{width:100%;min-width:760px;border-collapse:collapse;background:#fff;font-size:13px}.employee-management-table th,.employee-management-table td{border:1px solid #d7ded9;padding:10px;text-align:left;vertical-align:top}.employee-management-table th{background:#e8f1eb;color:#164e2c;white-space:nowrap}.employee-management-table tr:nth-child(even){background:#f8faf8}.employee-management-table .employee-device-entry{border-bottom:1px solid #e5e7eb;padding:6px 0}.employee-management-table .employee-device-entry:last-child{border-bottom:0}.employee-management-table .row-actions{min-width:150px}.table-wrap{width:100%;overflow-x:auto;margin-top:10px}.report-table{width:100%;border-collapse:collapse;background:#fff;font-size:13px}.report-table th,.report-table td{border:1px solid #d7ded9;padding:9px;text-align:left;vertical-align:top}.report-table th{background:#e8f1eb;color:#164e2c;white-space:nowrap}.report-table td.amount{white-space:nowrap;text-align:right}.report-table .income{color:#166534}.report-table .expense{color:#b42318}.report-table tr:nth-child(even){background:#f8faf8}body{margin:0;font-family:Arial,sans-serif;background:#f3f6f4;color:#17211b}header{background:#166534;color:white;padding:18px}header h1{margin:0;font-size:24px}header p{margin:6px 0 0}nav{display:flex;gap:6px;overflow-x:auto;background:white;padding:10px;position:sticky;top:0;z-index:5}nav button{padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#166534;font-weight:bold;white-space:nowrap}nav button.active,.primary{background:#166534;color:white}#navCompleteGuide{display:none}body.license-verified nav #navCompleteGuide,body.owner-verified nav #navCompleteGuide,body.employee-verified nav #navCompleteGuide{display:inline-flex}main{max-width:850px;margin:auto;padding:12px}.tab{display:none}.tab.active{display:block}.card{background:white;border-radius:12px;padding:15px;margin-bottom:12px;border:1px solid #ddd}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}label{display:block;font-weight:bold;margin:10px 0 5px}input,select,textarea{width:100%;padding:11px;border:1px solid #ccc;border-radius:8px;font-size:15px}button{cursor:pointer}.primary{border:0;border-radius:8px;padding:12px;font-weight:bold}.primary:disabled{opacity:.58;cursor:not-allowed;filter:grayscale(.25)}.secondary{background:#e5eee7;color:#166534;border:1px solid #b7d0bd;border-radius:8px;padding:10px;font-weight:bold}.secondary:disabled{opacity:.58;cursor:not-allowed;filter:grayscale(.3)}#attendanceCard .grid{gap:12px}#attendanceCard button{min-height:46px;white-space:normal;line-height:1.35}#attendanceCard button:disabled{box-shadow:none}.danger{background:#fee2e2;color:#991b1b;border:0;border-radius:8px;padding:8px}.wide{width:100%;margin-top:12px}.item{background:white;border:1px solid #ddd;border-radius:9px;padding:12px;margin-top:9px;overflow-wrap:anywhere}.price{font-weight:bold;color:#166534;font-size:18px}.small{font-size:12px;color:#666}.status{padding:10px;background:#eef5ef;border-radius:8px;margin:10px 0;overflow-wrap:anywhere}.status.error{background:#fff0f0;color:#8a1c1c}.status.warn{background:#fff8e1;color:#785600}footer{text-align:center;padding:20px;color:#666;font-size:12px}.employee-device-paywall{border:1px solid #f59e0b;background:#fffbeb;color:#78350f}.employee-device-paywall[hidden]{display:none!important}#employeeLoginForm[hidden],#employeeLoginIntro[hidden],#employeeLogout[hidden]{display:none!important}body.employee-device-pending main #transaksi{display:none!important}img.product-photo{display:block;max-width:100%;max-height:220px;object-fit:contain;margin:8px 0;border-radius:8px}.foto-preview-box{margin-top:8px;padding:8px;border:1px dashed #b7d0bd;border-radius:8px}.foto-preview-box img{display:block;max-width:100%;max-height:220px;object-fit:contain;margin:8px auto}.foto-preview-status{font-size:12px;color:#666}.foto-preview-status.error{color:#991b1b}.row-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}@media(max-width:480px){.grid{grid-template-columns:1fr}header h1{font-size:22px}}
@@ -31,6 +31,7 @@ details summary{cursor:pointer;padding:8px 0;color:#166534}details[open] summary
 @media print{body{background:#fff!important;color:#000!important}body *{visibility:hidden!important}#areaLaporanCetak,#areaLaporanCetak *{visibility:visible!important}#areaLaporanCetak{position:absolute!important;left:0!important;top:0!important;width:100%!important;padding:0!important;margin:0!important}#areaLaporanCetak .report-table{font-size:10pt!important}#areaLaporanCetak .report-table th,#areaLaporanCetak .report-table td{padding:5px!important;border:1px solid #777!important}#areaLaporanCetak h2,#areaLaporanCetak p{color:#000!important}#areaLaporanCetak .table-wrap{overflow:visible!important} @page{size:auto;margin:12mm}}
 .kasusaha-install-after-payment{margin-top:14px;padding:14px;border:1px solid #c7d2fe;border-radius:12px;background:linear-gradient(135deg,#eff6ff,#f5f3ff)}.kasusaha-install-after-payment h3{margin:0 0 10px;color:#3730a3}.kasusaha-install-after-payment p{line-height:1.55;margin:8px 0}.kasusaha-payment-return{margin:12px auto;max-width:850px;padding:16px;border:1px solid #a5b4fc;border-radius:14px;background:#eef2ff;color:#1e1b4b}.kasusaha-payment-return[hidden]{display:none!important}.kasusaha-payment-return-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .print-device-guide{margin-top:12px;padding:12px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc;color:#17211b}.print-device-guide h4{margin:0 0 8px}.print-device-guide p,.print-device-guide li{font-size:13px;line-height:1.5}.print-device-guide ul{padding-left:20px;margin:8px 0}.print-device-guide .small{font-size:12px}@media print{.print-device-guide{display:none!important}}
+.quick-sale-receipt-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}.quick-sale-receipt-actions button{flex:1 1 190px}.quick-sale-last-receipt{margin:12px 0;padding:12px;border:1px solid #86c9a0;border-radius:10px;background:#f0fdf4}.quick-sale-last-receipt[hidden]{display:none!important}@media print{.quick-sale-receipt-actions,.quick-sale-last-receipt{display:none!important}}
 /* Beranda selalu dapat dibuka. Fitur kasir lokal tetap memerlukan lisensi aktif. */
 body:not(.license-verified) main #transaksi,
 body:not(.license-verified) main #produk,
@@ -1964,10 +1965,13 @@ async function bagikanKasUsahaLite(){
 <div style="border-top:1px solid #93c5fd;padding-top:10px;margin-top:10px"><span><strong>TOTAL YANG HARUS DIBAYAR</strong></span><strong id="quickSaleTotal" style="display:block;font-size:28px;color:#166534">Rp0</strong></div>
 <div class="card" id="quickSalePaymentPanel" style="background:#fff;border:1px solid #93c5fd"><h4 style="margin-top:0">Pembayaran pelanggan</h4><label for="quickSaleCashReceived">Uang diterima dari pelanggan (Rp)</label><input id="quickSaleCashReceived" type="number" min="0" step="1" inputmode="numeric" placeholder="Masukkan uang yang dibayarkan"><div class="row-actions" style="margin-top:8px"><button type="button" class="secondary quick-sale-cash-option" data-cash="exact">Uang pas</button><button type="button" class="secondary quick-sale-cash-option" data-cash="10000">Rp10.000</button><button type="button" class="secondary quick-sale-cash-option" data-cash="20000">Rp20.000</button><button type="button" class="secondary quick-sale-cash-option" data-cash="50000">Rp50.000</button><button type="button" class="secondary quick-sale-cash-option" data-cash="100000">Rp100.000</button><button type="button" class="secondary quick-sale-cash-option" data-cash="200000">Rp200.000</button></div><p style="margin:12px 0 4px"><strong>Kembalian pelanggan:</strong> <strong id="quickSaleChange" style="font-size:24px;color:#166534">Rp0</strong></p><p class="small" id="quickSalePaymentHint">Isi jumlah uang pelanggan. Transaksi dapat disimpan setelah jumlah barang benar dan uang diterima mencukupi.</p></div>
 <p class="small" id="quickSaleBillHint">Tambahkan semua barang untuk meja yang sama atau transaksi kasir. Pastikan rincian dan total benar sebelum menekan Simpan.</p>
+<div class="quick-sale-receipt-actions"><button id="quickSalePrintBill" type="button" class="secondary" onclick="cetakTagihanKasir()">🧾 Cetak tagihan / belum dibayar</button><label style="display:flex;align-items:center;gap:8px;margin:0;font-weight:normal">Ukuran kertas struk <select id="quickSaleReceiptWidth" style="width:auto;min-width:100px;padding:8px"><option value="58">58 mm</option><option value="80" selected>80 mm</option></select></label></div>
+<details class="print-device-guide"><summary><strong>🖨️ Cara menghubungkan printer struk</strong></summary><ul><li><strong>Bluetooth:</strong> pasangkan printer melalui pengaturan Bluetooth HP terlebih dahulu. Jika printer meminta aplikasi/driver khusus, pasang aplikasi resmi dari produsennya.</li><li><strong>USB atau Wi-Fi:</strong> hubungkan printer ke komputer/HP dan aktifkan driver atau layanan cetak sistem operasi.</li><li>Tekan Cetak, lalu pilih printer yang sudah tersedia pada dialog cetak browser. Atur kertas 58 mm atau 80 mm sesuai printer.</li></ul><p class="small">KasUsaha Lite mengirim dokumen melalui dialog cetak browser. Browser tidak selalu dapat menemukan printer Bluetooth/USB secara langsung; beberapa printer ESC/POS Bluetooth membutuhkan aplikasi pendamping. Tidak ada transaksi yang otomatis dicetak tanpa tindakan kasir.</p></details>
 </div>
 <button id="quickSaleSaveDraft" class="secondary wide" type="button" disabled>＋ Simpan sebagai tagihan belum dibayar</button><button id="quickSalePayDraft" class="primary wide" type="button" hidden>Bayar tagihan tersimpan</button><button id="quickSaleSave" class="primary wide" type="submit" disabled>Simpan transaksi setelah periksa total</button>
 <div id="quickSaleOpenBills" class="card" style="background:#fff"><h4>Daftar Tagihan Belum Dibayar</h4><p class="small">Cari menggunakan nomor meja atau nama pelanggan. Pilih tagihan untuk melihat rincian, memperbaiki pesanan, dan memproses pembayaran. Tagihan belum masuk laporan penjualan dan belum mengurangi stok.</p><label for="quickSaleOpenBillsSearch">Cari nomor meja / atas nama</label><input id="quickSaleOpenBillsSearch" type="search" autocomplete="off" placeholder="Contoh: Meja 5 atau Budi"><div id="quickSaleOpenBillsStatus" class="status">Memuat tagihan...</div><button id="quickSaleNewDraft" type="button" class="secondary">＋ Buat tagihan baru</button><div id="quickSaleOpenBillsList"></div></div>
 </form>
+<div id="quickSaleLastReceipt" class="quick-sale-last-receipt" hidden><strong>Pembayaran berhasil diverifikasi.</strong><p class="small" id="quickSaleLastReceiptInfo">Struk pembayaran terakhir siap dicetak.</p><button id="quickSalePrintLastReceipt" type="button" class="primary wide" onclick="cetakStrukPembayaranTerakhir()">🖨️ Cetak struk pembayaran terakhir</button></div>
 <div id="ownerStoreCatalog" class="card" hidden>
 <h3>Langkah berikutnya: isikan barang di toko Anda</h3>
 <p class="small">Masukkan daftar barang dan harga saat usaha mulai digunakan. Kode barang sebaiknya singkat dan mudah diketik karyawan, misalnya KOP, TEH, MIE.</p>
@@ -4236,7 +4240,10 @@ function updateFinanceActivePerson(){syncTransactionRoleMenus();const name=finan
 function setFinanceStatus(message,isError=false,nextTarget=''){
  const el=$('financeStatus');if(!el)return;
  el.className=isError?'status error':'status';el.textContent=message;
- $('financeStatusAction')?.remove();
+ $('financeStatusAction')?.remove();$('financeStatusReceiptAction')?.remove();
+ if(typeof quickSaleLastReceiptData!=='undefined'&&quickSaleLastReceiptData){
+  const receiptButton=document.createElement('button');receiptButton.id='financeStatusReceiptAction';receiptButton.type='button';receiptButton.className='primary wide';receiptButton.textContent='🖨️ Cetak struk pembayaran terakhir';receiptButton.addEventListener('click',cetakStrukPembayaranTerakhir);el.after(receiptButton);
+ }
  const actions={transaksi:'Buka menu Transaksi',akun:'Buka Login Owner / Penjual',akunPembeli:'Buka Akun Pembeli',loginKaryawan:'Buka Login Karyawan',pasar:'Buka Pasar Online',paketKasUsaha:'Buka Paket & Harga',pesananSaya:'Buka Pesanan Saya'};
  if(!Object.prototype.hasOwnProperty.call(actions,nextTarget))return;
  const button=document.createElement('button');
@@ -6136,6 +6143,56 @@ $('stockEntryForm')?.addEventListener('submit',async function(e){
  }finally{btn.disabled=stockNeedsManualReview;}
 });
 
+let quickSaleLastReceiptData=null;
+function escapeQuickSaleReceipt(value){
+ return String(value==null?'':value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function formatQuickSaleReceiptTime(value){
+ const date=value?new Date(value):new Date();
+ return Number.isFinite(date.getTime())?date.toLocaleString('id-ID'):'—';
+}
+function buildQuickSaleReceiptHtml(data){
+ const width=['58','80'].includes(String($('quickSaleReceiptWidth')?.value))?String($('quickSaleReceiptWidth').value):'80';
+ const lines=Array.isArray(data.lines)?data.lines:[];
+ const rows=lines.map(line=>{
+  const name=escapeQuickSaleReceipt(line.product_name||'Barang');
+  const qty=Number(line.quantity||0),price=Number(line.unit_price||0),subtotal=qty*price;
+  return '<div class="item"><div class="name">'+name+'</div><div class="detail">'+qty+' x '+escapeQuickSaleReceipt(formatStoreRupiah(price))+'</div><div class="amount">'+escapeQuickSaleReceipt(formatStoreRupiah(subtotal))+'</div>'+(line.note?'<div class="note">Catatan: '+escapeQuickSaleReceipt(line.note)+'</div>':'')+'</div>';
+ }).join('');
+ const total=Number(data.total||0),cash=Number(data.cash_received||0),change=Number(data.change||Math.max(0,cash-total));
+ return '<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+escapeQuickSaleReceipt(data.paid?'Struk Pembayaran':'Tagihan')+'</title><style>*{box-sizing:border-box}body{font:12px/1.4 Arial,sans-serif;color:#000;width:'+width+'mm;max-width:100%;margin:0 auto;padding:3mm}h2{font-size:16px;text-align:center;margin:0 0 4px}p{margin:3px 0}.center{text-align:center}.rule{border-top:1px dashed #000;margin:7px 0}.item{padding:4px 0;border-bottom:1px dashed #aaa}.name{font-weight:700}.detail{font-size:11px}.amount{text-align:right;font-weight:700}.note{font-size:10px;font-style:italic}.total{font-size:15px;font-weight:800;text-align:right;margin-top:5px}.meta{display:flex;justify-content:space-between;gap:5px}.status{font-size:14px;font-weight:800;text-align:center;border:1px solid #000;padding:4px;margin:7px 0}.thanks{text-align:center;margin-top:12px;font-size:11px}@page{size:auto;margin:0}</style></head><body><h2>'+escapeQuickSaleReceipt(data.business_name||'KasUsaha Lite')+'</h2><p class="center">'+escapeQuickSaleReceipt(data.location||'Kasir')+'</p><div class="rule"></div><p>No. transaksi: '+escapeQuickSaleReceipt(data.transaction_id||'—')+'</p><p>Tanggal: '+escapeQuickSaleReceipt(formatQuickSaleReceiptTime(data.created_at))+'</p><p>Kasir: '+escapeQuickSaleReceipt(data.cashier||'—')+'</p>'+(data.customer?'<p>Pelanggan: '+escapeQuickSaleReceipt(data.customer)+'</p>':'')+'<div class="rule"></div>'+rows+'<div class="rule"></div><div class="total">TOTAL: '+escapeQuickSaleReceipt(formatStoreRupiah(total))+'</div>'+(data.paid?'<p class="meta"><span>Tunai diterima</span><strong>'+escapeQuickSaleReceipt(formatStoreRupiah(cash))+'</strong></p><p class="meta"><span>Kembalian</span><strong>'+escapeQuickSaleReceipt(formatStoreRupiah(change))+'</strong></p><div class="status">LUNAS / SUDAH DIBAYAR</div>':'<div class="status">TAGIHAN — BELUM DIBAYAR</div>')+'<div class="thanks">Terima kasih telah berbelanja</div></body></html>';
+}
+function openQuickSaleReceiptPrint(data){
+ if(!data||!Array.isArray(data.lines)||!data.lines.length){setFinanceStatus('Belum ada rincian barang yang dapat dicetak.',true);return false;}
+ const popup=window.open('','_blank','width=420,height=720');
+ if(!popup){setFinanceStatus('Jendela cetak diblokir browser. Izinkan pop-up untuk KasUsaha Lite, lalu tekan tombol cetak kembali.',true);return false;}
+ popup.document.open();popup.document.write(buildQuickSaleReceiptHtml(data));popup.document.close();
+ let printed=false;
+ const printNow=()=>{if(printed||popup.closed)return;printed=true;try{popup.focus();popup.print();}catch(error){console.error('Dialog cetak struk tidak dapat dibuka:',error);}};
+ popup.onload=()=>setTimeout(printNow,150);
+ setTimeout(printNow,500);
+ return true;
+}
+function cetakTagihanKasir(){
+ try{
+  const lines=quickSaleItemRows().map(row=>quickSaleLineData(row,false)).filter(d=>d.p&&Number.isSafeInteger(d.qty)&&d.qty>0&&Number.isSafeInteger(d.price)&&d.price>0);
+  if(!lines.length)throw new Error('Pilih barang dan jumlah terlebih dahulu.');
+  const total=lines.reduce((sum,line)=>sum+line.subtotal,0);
+  const table=String($('quickSaleTableNumber')?.value||'').trim(),customer=String($('quickSaleCustomerName')?.value||'').trim();
+  return openQuickSaleReceiptPrint({paid:false,business_name:financeBusiness?.business_name||'KasUsaha Lite',location:table?'Meja '+table:'Kasir',customer, cashier:financeCurrentUserName||financeMemberRole||'—',created_at:new Date().toISOString(),lines:lines.map(d=>({product_name:d.p.product_name,quantity:d.qty,unit_price:d.price,note:d.note})),total});
+ }catch(error){setFinanceStatus('Tagihan belum dapat dicetak: '+String(error.message||error),true);return false;}
+}
+function setQuickSaleLastReceipt(data){
+ quickSaleLastReceiptData=data;
+ const panel=$('quickSaleLastReceipt'),info=$('quickSaleLastReceiptInfo');
+ if(panel)panel.hidden=!data;
+ if(info&&data)info.textContent='No. transaksi '+String(data.transaction_id||'—')+' • Total '+formatStoreRupiah(data.total)+'. Tekan tombol untuk mencetak struk pembayaran.';
+}
+function cetakStrukPembayaranTerakhir(){
+ if(!quickSaleLastReceiptData){setFinanceStatus('Belum ada pembayaran terverifikasi yang dapat dicetak.',true);return false;}
+ return openQuickSaleReceiptPrint(quickSaleLastReceiptData);
+}
+
 let activeOpenBillId=null;
 function quickSaleDraftLines(){
  const rows=quickSaleItemRows().map(row=>quickSaleLineData(row,false));
@@ -6306,6 +6363,7 @@ $('quickSalePayDraft')?.addEventListener('click',async function(){
   const serverTotal=Number(data.total_amount),serverCash=Number(data.payment_cash),serverChange=Number(data.change_amount);
   const paymentMatches=String(data.bill_id)===String(activeOpenBillId)&&Number.isSafeInteger(serverTotal)&&serverTotal===total&&(wasAlreadyPaid||(Number.isSafeInteger(serverCash)&&serverCash===cash&&Number.isSafeInteger(serverChange)&&serverChange===expectedChange));
   const billLabel=$('quickSaleTableNumber').value?'Meja '+$('quickSaleTableNumber').value:($('quickSaleCustomerName').value||'Kasir');
+  if(!wasAlreadyPaid&&paymentMatches)setQuickSaleLastReceipt({paid:true,business_name:financeBusiness?.business_name||'KasUsaha Lite',location:billLabel,customer:$('quickSaleCustomerName').value||'',cashier:financeCurrentUserName||financeMemberRole||'—',transaction_id:String(activeOpenBillId),created_at:new Date().toISOString(),lines:lines.map(line=>({product_name:line.product_name,quantity:line.quantity,unit_price:line.unit_price,note:line.note})),total:serverTotal,cash_received:serverCash,change:serverChange});
   activeOpenBillId=null;$('quickSaleForm').reset();$('quickSaleCustomerName').value='';$('quickSaleTableNumber').value='';$('quickSaleCashReceived').value='';
   $('quickSaleItems').replaceChildren();addQuickSaleLine();$('quickSaleSaveDraft').textContent='＋ Simpan sebagai tagihan belum dibayar';$('quickSalePayDraft').hidden=true;$('quickSaleSave').hidden=false;
   if(wasAlreadyPaid){
@@ -6412,6 +6470,7 @@ $('quickSaleForm')?.addEventListener('submit',async function(e){
    return;
   }
   try{const saved=JSON.parse(localStorage.getItem(quickSalePendingKey)||'null');if(saved?.requestId===quickSaleRequestId)localStorage.removeItem(quickSalePendingKey);}catch(_){}
+  setQuickSaleLastReceipt({paid:true,business_name:financeBusiness?.business_name||'KasUsaha Lite',location:locationLabel,customer:customerName,cashier:financeCurrentUserName||financeMemberRole||'—',transaction_id:String(quickSaleRequestId),created_at:new Date().toISOString(),lines:lines.map(d=>({product_name:d.p.product_name,quantity:d.qty,unit_price:d.price,note:d.note})),total:serverTotal,cash_received:serverCashReceived,change:serverChange});
   
   // Server sudah mengonfirmasi penyimpanan. Kegagalan muat ulang laporan tidak berarti transaksi gagal.
   this.reset();$('quickSaleTableNumber').value='';if($('quickSaleCashReceived'))$('quickSaleCashReceived').value='';$('quickSaleItems').replaceChildren();addQuickSaleLine();

@@ -208,3 +208,29 @@ test('alur Owner nyata mengarahkan ke Stok atau Kasir sesuai ketersediaan produk
     stockCatalogHidden: true,
   });
 });
+
+test('Kasir menyediakan cetak tagihan dan struk lunas dengan layout printer thermal', async ({ page }) => {
+  await expect(page.locator('#quickSalePrintBill')).toHaveText(/Cetak tagihan/);
+  await expect(page.locator('#quickSaleReceiptWidth')).toHaveValue('80');
+  await expect(page.locator('#quickSaleLastReceipt')).toBeHidden();
+  const receipt = await page.evaluate(() => {
+    const html = buildQuickSaleReceiptHtml({
+      paid: true, business_name: 'Kedai Uji', location: 'Meja 2',
+      cashier: 'Kasir Uji', transaction_id: 'TRX-123',
+      lines: [{ product_name: 'Kopi Susu', quantity: 2, unit_price: 10000, note: 'Kurang gula' }],
+      total: 20000, cash_received: 50000, change: 30000
+    });
+    const unpaid = buildQuickSaleReceiptHtml({
+      paid: false, business_name: 'Kedai Uji',
+      lines: [{ product_name: 'Roti', quantity: 1, unit_price: 7000 }],
+      total: 7000
+    });
+    return { html, unpaid };
+  });
+  expect(receipt.html).toContain('LUNAS / SUDAH DIBAYAR');
+  expect(receipt.html).toContain('Rp30.000');
+  expect(receipt.html).toContain('Kurang gula');
+  expect(receipt.html).toContain('width:80mm');
+  expect(receipt.unpaid).toContain('TAGIHAN — BELUM DIBAYAR');
+  expect(receipt.unpaid).not.toContain('LUNAS / SUDAH DIBAYAR');
+});

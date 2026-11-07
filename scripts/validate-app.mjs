@@ -1009,10 +1009,22 @@ for (const [ok, message] of publicMarketplaceAnonymousEvaluationChecks) {
 
 
 const pwaReleaseRefreshChecks = [
-  [/meta name="kasusaha-build" content="2026-11-08-simple-guided-workflow-5"/.test(html), "production build marker must identify the hardened release"],
-  [/const CACHE_NAME = CACHE_PREFIX \+ 'v68';/.test(sw), "PWA service worker cache version must advance to refresh installed app shells"],
+  [/meta name="kasusaha-build" content="2026-11-08-kasir-thermal-receipts-1"/.test(html), "production build marker must identify the cashier thermal receipt release"],
+  [/const CACHE_NAME = CACHE_PREFIX \+ 'v69';/.test(sw), "PWA service worker cache version must advance to refresh installed app shells"],
 ];
 for (const [ok, message] of pwaReleaseRefreshChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
+const cashierReceiptPrintChecks = [
+  [html.includes('id="quickSalePrintBill"') && html.includes('cetakTagihanKasir()'), "Quick Sale must expose a pre-payment bill print action"],
+  [html.includes('id="quickSalePrintLastReceipt"') && html.includes('cetakStrukPembayaranTerakhir()'), "Quick Sale must expose a paid receipt print action"],
+  [html.includes("LUNAS / SUDAH DIBAYAR") && html.includes("TAGIHAN — BELUM DIBAYAR"), "printed documents must distinguish paid receipts from unpaid bills"],
+  [html.includes('value="58"') && html.includes('value="80"'), "thermal receipt must support 58 mm and 80 mm paper widths"],
+  [html.includes("paymentMatches") && html.includes("setQuickSaleLastReceipt"), "paid receipt must only be stored after verified server payment values match"],
+];
+for (const [ok, message] of cashierReceiptPrintChecks) {
   if (ok) pass(message);
   else fail(message);
 }
