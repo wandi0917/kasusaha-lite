@@ -812,7 +812,7 @@ const confirmedOperationChecks = [
   [html.includes("let productConfirmed=false;") && html.includes("productConfirmed=true;") && html.includes("Jangan simpan ulang barang yang sama."), "product save must not be reported as failed or retried after server confirmation"],
   [html.includes("kasusaha_product_save_pending_v1") && html.includes("productFingerprint"), "product save must retain the same local fingerprint across uncertain retries"],
   [html.includes("const matches=!!existing&&existing.product_code===code") && html.includes("lookupError"), "product save must verify the authoritative product row before reporting an ambiguous request as failed"],
-  [html.includes("productRequestPending.fingerprint!==productFingerprint") && html.includes("jangan membuat atau mengubah barang lain"), "product save must block a different product while a previous save result is uncertain"],
+  [html.includes("productRequestPending.fingerprint!==productFingerprint") && html.includes("sebelum membuat atau mengubah barang lain"), "product save must block a different product while a previous save result is uncertain"],
 
   [html.includes("let stockConfirmed=false,stockNeedsManualReview=false;") && html.includes("String(result.product_id)!==String(p.id)") && html.includes("String(result.request_id)!==String(requestId)"), "stock adjustment must verify server product and idempotency request identity"],
   [html.includes("quantity_before") && html.includes("quantity_after") && html.includes("quantity_delta") && html.includes("after!==expectedAfter"), "stock adjustment must reconcile before/after/delta values before clearing the pending request"],
@@ -949,7 +949,7 @@ const openBillCreationIdempotencyChecks = [
   [idempotentOpenBillMigration.includes("GRANT INSERT (client_request_id)") && idempotentOpenBillMigration.includes("GRANT SELECT (client_request_id)"), "authenticated cashiers must be able to store and verify their own request ID under existing RLS"],
   [html.includes("kasusaha_open_bill_create_pending_v1") && html.includes("client_request_id:requestId"), "new unpaid bills must persist and reuse the same request ID across retries"],
   [html.includes("eq('client_request_id',requestId)") && html.includes("const sameLines=Array.isArray(existing.lines)"), "ambiguous open-bill creation must verify the matching server row and every line before recovery"],
-  [html.includes("pending.fingerprint!==fingerprint") && html.includes("jangan membuat tagihan lain"), "open-bill creation must block different details while a previous request is uncertain"],
+  [html.includes("pending.fingerprint!==fingerprint") && html.includes("sebelum membuat tagihan lain"), "open-bill creation must block different details while a previous request is uncertain"],
   [html.includes("existing.status==='paid'?'Tagihan dengan ID permintaan ini sudah dibayar"), "recovered paid bills must never be recreated as new unpaid bills"],
 ];
 for (const [ok, message] of openBillCreationIdempotencyChecks) {
