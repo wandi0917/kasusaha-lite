@@ -5353,11 +5353,13 @@ async function saveAttendanceWage(){
    p_business_id:financeBusiness.id,p_identity_id:null,p_user_id:financeMemberUserId,p_hourly_wage:wage
   });
   if(error)throw error;
-  localStorage.setItem(attendanceWageKey(),String(wage));
+  let cacheNote='';
+  try{localStorage.setItem(attendanceWageKey(),String(wage));}
+  catch(cacheError){console.warn('Cache lokal tarif gaji tidak dapat diperbarui; nilai server tetap tersimpan.',cacheError);cacheNote=' Cache perangkat tidak diperbarui, tetapi nilai di server tetap tersimpan.';}
   status.className='status';
-  status.textContent='Tarif gaji Owner tersimpan di server dan berlaku untuk absensi berikutnya. '+Number(data?.updated_rows||0)+' catatan absensi sebelumnya diperbarui.';
+  status.textContent='Tarif gaji Owner tersimpan di server dan berlaku untuk absensi berikutnya. '+Number(data?.updated_rows||0)+' catatan absensi sebelumnya diperbarui.'+cacheNote;
   await loadAttendance();
- }catch(e){status.className='status error';status.textContent='Tarif gaji belum tersimpan di server: '+String(e.message||e).slice(0,180);}
+ }catch(e){status.className='status error';status.textContent='Tarif gaji belum dapat dikonfirmasi di server: '+String(e.message||e).slice(0,180);}
  finally{if(btn)btn.disabled=false;}
 }
 async function editAttendanceRecord(row){
