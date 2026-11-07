@@ -5311,7 +5311,7 @@ async function editAttendanceRecord(row){
  const currentOut=row.check_out_at?new Date(row.check_out_at).toLocaleTimeString('en-GB',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'';
  const inValue=prompt('Edit jam masuk (format HH:MM:SS, WIB). Kosongkan untuk menghapus:',currentIn);if(inValue===null)return;
  const outValue=prompt('Edit jam pulang (format HH:MM:SS, WIB). Kosongkan jika belum pulang:',currentOut);if(outValue===null)return;
- const validTime=v=>v===''||/^([01]\\d|2[0-3]):[0-5]\\d:[0-5]\\d$/.test(v);
+ const validTime=v=>v===''||/^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/.test(v);
  if(!validTime(inValue.trim())||!validTime(outValue.trim())){alert('Format waktu tidak valid. Gunakan HH:MM:SS.');return;}
  if(outValue.trim()&&!inValue.trim()){alert('Jam masuk harus diisi jika jam pulang diisi.');return;}
  const toIso=v=>v.trim()?new Date(row.work_date+'T'+v.trim()+'+07:00').toISOString():null;
@@ -5331,7 +5331,7 @@ async function editAttendanceWage(identityId,item){
  const current=Number(item?.wage||0);
  const raw=prompt('Tetapkan gaji per jam untuk '+(item?.employee_name||'akun ini')+' (Rp):',String(current));
  if(raw===null)return;
- const wage=Number(String(raw).replace(/[.\\s]/g,''));
+ const wage=Number(String(raw).replace(/[.\s]/g,''));
  if(!Number.isSafeInteger(wage)||wage<0){alert('Gaji harus bilangan bulat nol atau lebih.');return;}
  const status=$('attendancePayrollStatus');
  try{
@@ -5550,18 +5550,33 @@ $('stockEntryForm')?.addEventListener('submit',async function(e){
  const current=Number(p.stock_quantity||0),next=type==='in'?current+qty:type==='out'?current-qty:qty;
  if(!Number.isSafeInteger(next)||next<0){status.className='status error';status.textContent='Stok keluar melebihi stok yang tersedia.';return;}
  const btn=$('stockMovementSave');btn.disabled=true;
- const updateStamp=new Date().toISOString();
+ const fingerprint=JSON.stringify({businessId:financeBusiness.id,productId:p.id,type,quantity:qty});
+ const pendingKey='kasusaha_stock_adjustment_pending_v1';
  try{
-  const {data:updated,error}=await sb.from('store_products').update({stock_quantity:next,updated_at:updateStamp}).eq('id',p.id).eq('business_id',financeBusiness.id).eq('stock_quantity',current).select('id,stock_quantity,updated_at').maybeSingle();
-  if(error){
-   const {data:latest,error:verifyError}=await sb.from('store_products').select('stock_quantity,updated_at').eq('id',p.id).eq('business_id',financeBusiness.id).maybeSingle();
-   if(verifyError||!latest||new Date(latest.updated_at).getTime()!==new Date(updateStamp).getTime()||Number(latest.stock_quantity)!==next)throw new Error('Perubahan stok belum dapat dipastikan. Stok mungkin berubah karena transaksi lain. Muat ulang daftar stok dan periksa sebelum mencoba lagi. '+String(error.message||error).slice(0,120));
-  }else if(!updated){
-   const {data:latest,error:latestError}=await sb.from('store_products').select('stock_quantity').eq('id',p.id).eq('business_id',financeBusiness.id).maybeSingle();
-   if(latestError)throw latestError;
-   throw new Error('Stok barang berubah dari '+current+' menjadi '+Number(latest?.stock_quantity??0)+' sebelum koreksi disimpan. Daftar stok telah berubah; muat ulang lalu ulangi dengan angka terbaru.');
+  let pending=null;
+  try{pending=JSON.parse(localStorage.getItem(pendingKey)||'null');}catch(_){throw new Error('Kunci pengaman perubahan stok tidak dapat dibaca. Muat ulang dan periksa stok sebelum mencoba lagi.');}
+  if(pending&&pending.businessId!==financeBusiness.id)throw new Error('Ada perubahan stok tertunda dari usaha lain. Buka usaha tersebut dan pastikan hasilnya sebelum melanjutkan.');
+  if(pending&&pending.fingerprint!==fingerprint)throw new Error('Ada perubahan stok sebelumnya yang belum terkonfirmasi. Muat ulang stok dan ulangi permintaan yang sama terlebih dahulu.');
+  let requestId=pending?.requestId;
+  if(!requestId){
+   requestId=crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,ch=>{const n=Math.random()*16|0;return(ch==='x'?n:(n&3|8)).toString(16);});
+   try{localStorage.setItem(pendingKey,JSON.stringify({businessId:financeBusiness.id,fingerprint,requestId,createdAt:new Date().toISOString()}));}
+   catch(_){throw new Error('Kunci pengaman perubahan stok tidak dapat disimpan. Perubahan stok tidak dikirim agar tidak berisiko tercatat dua kali.');}
   }
-  await loadStoreProducts();this.reset();status.className='status';status.textContent='Perubahan stok '+p.product_name+' terkonfirmasi: '+current+' → '+next+' '+(p.stock_unit||'unit')+'.';
+  const {data:result,error}=await sb.rpc('adjust_store_product_stock',{
+   p_business_id:financeBusiness.id,p_product_id:p.id,p_movement_type:type,p_quantity:qty,p_request_id:requestId
+  });
+  if(error){
+   if(typeof error.code==='string'&&error.code){
+    try{const saved=JSON.parse(localStorage.getItem(pendingKey)||'null');if(saved?.requestId===requestId)localStorage.removeItem(pendingKey);}catch(_){}
+    throw new Error('Server menolak perubahan stok dan melakukan rollback: '+String(error.message||error).slice(0,180));
+   }
+   throw new Error('Hasil perubahan stok belum dapat dipastikan karena koneksi terputus. ID permintaan dipertahankan; muat ulang daftar stok lalu ulangi permintaan yang sama. '+String(error.message||error).slice(0,140));
+  }
+  if(!result?.ok)throw new Error('Server belum mengonfirmasi perubahan stok. ID permintaan dipertahankan agar pengulangan tidak menggandakan perubahan.');
+  try{const saved=JSON.parse(localStorage.getItem(pendingKey)||'null');if(saved?.requestId===requestId)localStorage.removeItem(pendingKey);}catch(_){}
+  await loadStoreProducts();this.reset();status.className='status';
+  status.textContent='Perubahan stok '+p.product_name+' terkonfirmasi oleh server: '+Number(result.quantity_before)+' → '+Number(result.quantity_after)+' '+(p.stock_unit||'unit')+'. Riwayat pergerakan stok dicatat.';
  }catch(err){status.className='status error';status.textContent='Perubahan stok tidak dapat dinyatakan berhasil: '+String(err.message||err).slice(0,230);}
  finally{btn.disabled=false;}
 });
@@ -5860,11 +5875,11 @@ function renderFinanceReport(){
  const salesProductByCode=new Map((Array.isArray(storeProductRows)?storeProductRows:[]).map(p=>[String(p.product_code||'').toUpperCase(),p]));
  const parseRupiahText=value=>{const n=String(value||'').replace(/[^0-9-]/g,'');return n?Number(n):null;};
  salesRows.forEach(r=>{
-  const description=String(r.description||''),match=description.match(/^(Meja .+?|Kasir) — Penjualan /),location=match?match[1]:'Penjualan umum';
+  const description=String(r.description||''),match=description.match(/^(Meja .+?|Pelanggan: .+?|Kasir) — Penjualan /),location=match?match[1]:'Penjualan umum';
   const timestamp=String(r.created_at||r.transaction_date||''),key=match?[r.created_by||'',r.created_by_role||'',location,timestamp].join('|'):'legacy:'+String(r.id||timestamp+'|'+description);
   if(!salesGroups.has(key))salesGroups.set(key,{location,created_at:r.created_at,transaction_date:r.transaction_date,items:[],total:0,modal:0,modalKnown:true,usedCurrentCost:false});
   const g=salesGroups.get(key),amount=Number(r.amount||0);
-  g.items.push(description.replace(/^(Meja .+?|Kasir) — /,''));
+  g.items.push(description.replace(/^(Meja .+?|Pelanggan: .+?|Kasir) — /,''));
   g.total+=amount;
   if(isSalesOwner){
    const savedModal=description.match(/Modal total\s*Rp\s*([0-9.,]+)/i);
