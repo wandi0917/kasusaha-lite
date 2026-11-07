@@ -4402,7 +4402,7 @@ async function loadFinanceWorkspaceInternal(){
   // Pertahankan kategori laporan aktif saat workspace dimuat ulang; sebelumnya panel laporan langsung disembunyikan kembali.
   applyReportCategory($('reportCategorySelect')?.value||'');if(!$('financeDate').value)$('financeDate').value=financeToday();if(!$('financeReportStart').value)$('financeReportStart').value=financeToday().slice(0,8)+'01';if(!$('financeReportEnd').value)$('financeReportEnd').value=financeToday();if(!$('tanggalMulaiLaporan').value)$('tanggalMulaiLaporan').value=financeToday().slice(0,8)+'01';if(!$('tanggalSampaiLaporan').value)$('tanggalSampaiLaporan').value=financeToday();
   const rows=await financeFetchAllRows(()=>{
-   let q=sb.from('financial_transactions').select('id,business_id,created_by,created_by_role,transaction_date,transaction_type,amount,description,customer_note,category,created_at').eq('business_id',business.id).order('transaction_date',{ascending:true}).order('created_at',{ascending:true}).order('id',{ascending:true});
+   let q=sb.from('financial_transactions').select('id,business_id,created_by,created_by_role,transaction_date,transaction_type,amount,description,customer_note,client_recorded_at,category,created_at').eq('business_id',business.id).order('transaction_date',{ascending:true}).order('created_at',{ascending:true}).order('id',{ascending:true});
    if(member.role==='employee')q=q.in('created_by',financeEmployeeIdentityUserIds);
    return q;
   });
@@ -6350,8 +6350,8 @@ function renderFinanceReport(){
  const parseRupiahText=value=>{const n=String(value||'').replace(/[^0-9-]/g,'');return n?Number(n):null;};
  salesRows.forEach(r=>{
   const description=String(r.description||''),match=description.match(/^(Meja .+?|Pelanggan: .+?|Kasir) — Penjualan /),location=match?match[1]:'Penjualan umum';
-  const timestamp=String(r.created_at||r.transaction_date||''),key=match?[r.created_by||'',r.created_by_role||'',location,timestamp].join('|'):'legacy:'+String(r.id||timestamp+'|'+description);
-  if(!salesGroups.has(key))salesGroups.set(key,{location,created_at:r.created_at,transaction_date:r.transaction_date,items:[],total:0,modal:0,modalKnown:true,usedCurrentCost:false});
+  const timestamp=String(r.client_recorded_at||r.created_at||r.transaction_date||''),key=match?[r.created_by||'',r.created_by_role||'',location,timestamp].join('|'):'legacy:'+String(r.id||timestamp+'|'+description);
+  if(!salesGroups.has(key))salesGroups.set(key,{location,created_at:r.client_recorded_at||r.created_at,transaction_date:r.transaction_date,items:[],total:0,modal:0,modalKnown:true,usedCurrentCost:false});
   const g=salesGroups.get(key),amount=Number(r.amount||0);
   g.items.push(description.replace(/^(Meja .+?|Pelanggan: .+?|Kasir) — /,'')+(r.customer_note?' | Catatan: '+String(r.customer_note):''));
   g.total+=amount;
@@ -6462,7 +6462,7 @@ function renderFinanceReport(){
  const runningBalanceById=new Map();
  let running=openingBalance;
  allPeriodRows.forEach(r=>{running+=r.transaction_type==='income'?Number(r.amount):-Number(r.amount);runningBalanceById.set(r.id,running);});
- const rowHtml=rows.map(r=>{const d=new Date(r.created_at);const time=Number.isFinite(d.getTime())?d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'—';if(isEmployee)return '<tr><td>'+aman(formatHariTanggal(r.transaction_date))+'<br>'+aman(time)+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+format(r.amount)+'</td></tr>';const rowBalance=runningBalanceById.get(r.id);return '<tr><td>'+aman(formatHariTanggal(r.transaction_date))+'<br>'+aman(time)+'</td><td>'+aman(financeCreatorLabel(r))+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+(r.transaction_type==='income'?format(r.amount):'—')+'</td><td class="amount expense">'+(r.transaction_type==='expense'?format(r.amount):'—')+'</td><td class="amount">'+format(rowBalance??openingBalance)+'</td><td><div class="row-actions"><button type="button" class="secondary" data-id="'+aman(r.id)+'" onclick="mulaiEditFinanceTransaction(this.dataset.id)">Edit</button><button type="button" class="danger" data-id="'+aman(r.id)+'" onclick="hapusFinanceTransaction(this.dataset.id)">Hapus</button></div></td></tr>';}).join('');
+ const rowHtml=rows.map(r=>{const d=new Date(r.client_recorded_at||r.created_at);const time=Number.isFinite(d.getTime())?d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'—';if(isEmployee)return '<tr><td>'+aman(formatHariTanggal(r.transaction_date))+'<br>'+aman(time)+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+format(r.amount)+'</td></tr>';const rowBalance=runningBalanceById.get(r.id);return '<tr><td>'+aman(formatHariTanggal(r.transaction_date))+'<br>'+aman(time)+'</td><td>'+aman(financeCreatorLabel(r))+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+(r.transaction_type==='income'?format(r.amount):'—')+'</td><td class="amount expense">'+(r.transaction_type==='expense'?format(r.amount):'—')+'</td><td class="amount">'+format(rowBalance??openingBalance)+'</td><td><div class="row-actions"><button type="button" class="secondary" data-id="'+aman(r.id)+'" onclick="mulaiEditFinanceTransaction(this.dataset.id)">Edit</button><button type="button" class="danger" data-id="'+aman(r.id)+'" onclick="hapusFinanceTransaction(this.dataset.id)">Hapus</button></div></td></tr>';}).join('');
  $('financeReportHead').innerHTML=isEmployee?'<tr><th>Hari, Tanggal &amp; Jam</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th></tr>':'<tr><th>Hari, Tanggal &amp; Jam</th><th>Pencatat</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo periode</th><th>Aksi</th></tr>';
  tbody.innerHTML=rowHtml||(isEmployee?'<tr><td colspan="4">Belum ada pemasukan pada periode ini. Karyawan hanya melihat pemasukan yang tersimpan di laporan bersama.</td></tr>':'<tr><td colspan="8">Tidak ada transaksi bersama pada periode ini. Jika catatan lama masih ada di perangkat ini, tekan “Pindahkan transaksi lokal ke laporan bersama”. Catatan lokal tidak akan dihapus.</td></tr>');
  const detailTable=$('financeReportRows')?.closest('table');
@@ -6521,7 +6521,7 @@ async function imporTransaksiLokalKeBersama(options={}){
    const category=String(t.kategori||t.category||'Lainnya').trim().slice(0,80)||'Lainnya';
    const legacyRef=role==='employee'?'local:'+sessionUserId+':'+rawId.slice(0,150):'local:'+rawId.slice(0,180);
    const row={business_id:businessId,created_by:sessionUserId,created_by_role:role,transaction_date:date,transaction_type:kind,amount,description:desc.slice(0,300),category,legacy_ref:legacyRef};
-   if(raw){const d=new Date(raw);if(Number.isFinite(d.getTime()))row.created_at=d.toISOString();}
+   if(raw){const d=new Date(raw);if(Number.isFinite(d.getTime()))row.client_recorded_at=d.toISOString();}
    const localId=t.id!==undefined&&t.id!==null?String(t.id):'legacy:'+i;
    valid.push({row,localId});
   });
@@ -6535,7 +6535,7 @@ async function imporTransaksiLokalKeBersama(options={}){
    if(error)throw error;
    inserted+=(data||[]).length;
    const refs=batch.map(x=>x.legacy_ref);
-   const {data:confirmed,error:verifyError}=await sb.from('financial_transactions').select('id,legacy_ref,transaction_date,transaction_type,amount,description,category,created_by,created_by_role').eq('business_id',businessId).in('legacy_ref',refs);
+   const {data:confirmed,error:verifyError}=await sb.from('financial_transactions').select('id,legacy_ref,transaction_date,transaction_type,amount,description,category,client_recorded_at,created_by,created_by_role').eq('business_id',businessId).in('legacy_ref',refs);
    if(verifyError)throw new Error('Transaksi terkirim tetapi belum dapat diverifikasi dari laporan bersama: '+verifyError.message);
    const confirmedByRef=new Map((confirmed||[]).map(row=>[String(row.legacy_ref),row]));
    const mismatched=batch.find(row=>{
@@ -6546,6 +6546,7 @@ async function imporTransaksiLokalKeBersama(options={}){
      Number(saved.amount)!==Number(row.amount)||
      String(saved.description)!==String(row.description)||
      String(saved.category)!==String(row.category)||
+     (row.client_recorded_at?new Date(saved.client_recorded_at||'').getTime()!==new Date(row.client_recorded_at).getTime():!!saved.client_recorded_at)||
      String(saved.created_by)!==String(row.created_by)||
      String(saved.created_by_role)!==String(row.created_by_role);
    });
@@ -6647,7 +6648,7 @@ function applyHomeFinanceRole(){
   $('laporanHarianBeranda').innerHTML=dailyRows;const dailyTransactionReport=$('laporanHarianTransaksi');if(dailyTransactionReport)dailyTransactionReport.innerHTML=dailyRows;
   let running=0;const ordered=financeRows.slice().sort((a,b)=>(String(a.transaction_date)+' '+String(a.created_at)).localeCompare(String(b.transaction_date)+' '+String(b.created_at)));
   const withBalance=ordered.map(r=>{running+=r.transaction_type==='income'?Number(r.amount||0):-Number(r.amount||0);return {...r,running};});
-  $('terbaru').innerHTML=withBalance.slice(-10).reverse().map(r=>{const d=new Date(r.created_at),time=Number.isFinite(d.getTime())?d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'—';return '<tr><td>'+aman(formatHariTanggal(r.transaction_date))+'</td><td>'+aman(time)+'</td><td>'+financeRoleLabel(r.created_by_role)+'</td><td>'+aman(r.description)+'</td><td>'+(r.transaction_type==='income'?'Pemasukan':'Pengeluaran')+'</td><td class="amount income">'+(r.transaction_type==='income'?format(r.amount):'—')+'</td><td class="amount expense">'+(r.transaction_type==='expense'?format(r.amount):'—')+'</td><td class="amount">'+format(r.running)+'</td></tr>';}).join('')||'<tr><td colspan="8">Belum ada transaksi usaha.</td></tr>';
+  $('terbaru').innerHTML=withBalance.slice(-10).reverse().map(r=>{const d=new Date(r.client_recorded_at||r.created_at),time=Number.isFinite(d.getTime())?d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'—';return '<tr><td>'+aman(formatHariTanggal(r.transaction_date))+'</td><td>'+aman(time)+'</td><td>'+financeRoleLabel(r.created_by_role)+'</td><td>'+aman(r.description)+'</td><td>'+(r.transaction_type==='income'?'Pemasukan':'Pengeluaran')+'</td><td class="amount income">'+(r.transaction_type==='income'?format(r.amount):'—')+'</td><td class="amount expense">'+(r.transaction_type==='expense'?format(r.amount):'—')+'</td><td class="amount">'+format(r.running)+'</td></tr>';}).join('')||'<tr><td colspan="8">Belum ada transaksi usaha.</td></tr>';
   return;
  }
  if(!employee)return;
@@ -6657,7 +6658,7 @@ function applyHomeFinanceRole(){
  const days=Object.keys(daily).sort();
  $('employeeHomeDailyRows').innerHTML=days.length?days.map(day=>'<tr><td>'+aman(formatHariTanggal(day))+'</td><td>'+daily[day].count+'</td><td class="amount income">'+format(daily[day].total)+'</td></tr>').join(''):'<tr><td colspan="3">Belum ada pemasukan.</td></tr>';
  const recent=own.slice().sort((a,b)=>(String(b.transaction_date)+' '+String(b.created_at)).localeCompare(String(a.transaction_date)+' '+String(a.created_at))).slice(0,10);
- $('employeeHomeRecentRows').innerHTML=recent.length?recent.map(r=>{const d=new Date(r.created_at);return '<tr><td>'+aman(formatHariTanggal(r.transaction_date))+'</td><td>'+aman(Number.isFinite(d.getTime())?d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'—')+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+format(r.amount)+'</td></tr>';}).join(''):'<tr><td colspan="5">Belum ada pemasukan.</td></tr>';
+ $('employeeHomeRecentRows').innerHTML=recent.length?recent.map(r=>{const d=new Date(r.client_recorded_at||r.created_at);return '<tr><td>'+aman(formatHariTanggal(r.transaction_date))+'</td><td>'+aman(Number.isFinite(d.getTime())?d.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}):'—')+'</td><td>'+aman(r.description)+'</td><td>'+aman(r.category)+'</td><td class="amount income">'+format(r.amount)+'</td></tr>';}).join(''):'<tr><td colspan="5">Belum ada pemasukan.</td></tr>';
 }
 function ekspor(){const cadangan={versi:3,tanggal:new Date().toISOString(),transaksi,produk,keranjang,pesanan};const blob=new Blob([JSON.stringify(cadangan,null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='kasusaha-cadangan.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function impor(){
