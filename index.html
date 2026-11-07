@@ -1481,6 +1481,15 @@ body>main img{max-width:100%}
   *,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}
 }
 </style>
+<style id="kasusaha-navigation-usability">
+/* Navigasi: tombol tidak menyusut dan panel tidak tertutup oleh menu sticky. */
+nav[aria-label="Navigasi utama"] button{flex:0 0 auto}
+main .tab{scroll-margin-top:84px}
+@media(max-width:650px){
+ nav[aria-label="Navigasi utama"]{scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+ main .tab{scroll-margin-top:78px}
+}
+</style>
 </head>
 <body>
 <header class="ks-brand-header">
@@ -2792,6 +2801,27 @@ async function buka(id,tombol,opsi={}){
   if(id==='pesananSaya')muatPesananSaya();if(id==='pesananMasuk')muatPesananMasuk();
  }
  // Ekspos fungsi navigasi untuk seluruh tombol dan pemanggil dari komponen lain.
+ 
+ // Serialisasi semua perpindahan halaman. Klik menu yang beruntun tidak boleh
+ // saling menimpa ketika pemeriksaan sesi/lisensi masih berjalan.
+ let __kasUsahaNavigationQueue=Promise.resolve();
+ const __kasUsahaNavigateCore=buka;
+ buka=function(id,tombol,opsi={}){
+   const execute=()=>__kasUsahaNavigateCore(id,tombol,opsi);
+   const task=__kasUsahaNavigationQueue.then(execute,execute);
+   __kasUsahaNavigationQueue=task.catch(error=>{
+     console.error('Navigasi KasUsaha Lite gagal:',error);
+     const status=document.getElementById('statusAktivasi');
+     if(status){
+       status.textContent='Halaman belum dapat dibuka. Periksa koneksi dan status login, lalu coba kembali.';
+       status.classList.add('error');
+     }
+   });
+   return task.catch(error=>{
+     console.error('Permintaan navigasi tidak berhasil:',error);
+     return false;
+   });
+ };
  window.buka=buka;
  function aman(teks){return String(teks==null?'':teks).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function formatWaktuTransaksi(t){const nilai=t.waktu||t.createdAt||t.timestamp;const d=nilai?new Date(nilai):null;if(d&&Number.isFinite(d.getTime()))return d.toLocaleString('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).replace(/\./g,':');return t.tanggal||'Waktu transaksi lama tidak tersedia';}
