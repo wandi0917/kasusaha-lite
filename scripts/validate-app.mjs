@@ -34,6 +34,7 @@ const quickSaleNotesChecks = [
   [html.includes("noteField.value=String(line.note||'').slice(0,300)"), "reopening an unpaid bill must restore each item's note"],
   [html.includes("line.note?' | Catatan: '+String(line.note):''"), "unpaid bill list must display saved item notes"],
   [html.includes("const note=document.createElement('td');note.textContent=d.note||'—'"), "cashier bill preview must show item notes as text, not executable HTML"],
+  [html.includes("quick-sale-item-note').addEventListener('input',()=>updateQuickSalePreview(false))"), "editing an item note must immediately refresh the bill preview"],
 ];
 for (const [ok, message] of quickSaleNotesChecks) {
   if (!ok) fail(message);
