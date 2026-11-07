@@ -3843,7 +3843,11 @@ if(employeeDeviceCheckButton){
   employeeDeviceCheckButton.textContent='Memeriksa status...';
   employeeDeviceStatus('Memeriksa ulang status aktivasi langsung dari server. Fitur tetap terkunci selama pemeriksaan.',false);
   try{
-   await ensureEmployeeDeviceActivation();
+   const activated=await ensureEmployeeDeviceActivation();
+   if(activated){
+    employeeDeviceStatus('Aktivasi sudah diverifikasi. Memuat ulang usaha dan langkah kerja karyawan...',false);
+    await loadFinanceWorkspace();
+   }
   }finally{
    employeeDeviceCheckButton.disabled=false;
    employeeDeviceCheckButton.textContent='Periksa Status Aktivasi';
