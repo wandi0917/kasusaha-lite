@@ -165,7 +165,7 @@ begin
   if v_trial.business_id <> p_business_id then
     return jsonb_build_object(
       'success', true, 'is_trial', false, 'status', 'already_used',
-      'used_for_business_id', v_trial.business_id, 'expires_at', v_trial.expires_at
+      'expires_at', v_trial.expires_at
     );
   end if;
 
