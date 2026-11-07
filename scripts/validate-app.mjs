@@ -1029,6 +1029,16 @@ for (const [ok, message] of cashierReceiptPrintChecks) {
   else fail(message);
 }
 
+const employeeDeviceStatusButtonChecks = [
+  [html.includes('id="employeeDeviceCheckButton"') && html.includes("employeeDeviceCheckButton.addEventListener('click'"), "Employee activation status button must perform a fresh server status check"],
+  [html.includes("await ensureEmployeeDeviceActivation()") && html.includes("employeeDeviceCheckButton.disabled=true"), "Employee status recheck must prevent duplicate clicks while checking"],
+  [html.includes("if(activated)") && html.includes("await loadFinanceWorkspace()"), "newly activated employee must reload verified workspace and resume the guided work flow"],
+];
+for (const [ok, message] of employeeDeviceStatusButtonChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 
 const financeSettlementIdempotencyChecks = [
   [idempotentFinanceSettlementMigration.includes("p_request_id uuid") && idempotentFinanceSettlementMigration.includes("v_source_id := 'settle-' || v_item.id::text || '-' || p_request_id::text"), "finance settlement must derive a stable journal source ID from item and request IDs"],
