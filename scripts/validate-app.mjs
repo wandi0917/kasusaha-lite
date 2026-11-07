@@ -8,6 +8,7 @@ const fail = (message) => {
 const pass = (message) => console.log("PASS:", message);
 
 const html = fs.readFileSync("index.html", "utf8");
+const publicMarketplaceEntitlementFix = fs.readFileSync("supabase/migrations/20261107180000_fix_public_marketplace_entitlement_evaluation.sql", "utf8");
 const publicMarketplaceVisibilityMigration = fs.readFileSync("supabase/migrations/20261107170000_hide_unentitled_marketplace_listings.sql", "utf8");
 const marketplaceWorkspaceMigration = fs.readFileSync("supabase/migrations/20261107160000_bind_marketplace_products_to_verified_business_entitlement.sql", "utf8");
 
@@ -836,6 +837,21 @@ const publicMarketplaceVisibilityChecks = [
   [!publicMarketplaceVisibilityMigration.includes('DROP POLICY IF EXISTS "Penjual dapat melihat produk miliknya"'), "Owner private SELECT policy must remain intact for legacy listing management"],
 ];
 for (const [ok, message] of publicMarketplaceVisibilityChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
+
+const publicMarketplaceAnonymousEvaluationChecks = [
+  [publicMarketplaceEntitlementFix.includes("SECURITY DEFINER") && publicMarketplaceEntitlementFix.includes("SET search_path = ''"), "anonymous marketplace visibility helper remains hardened with empty search_path"],
+  [!publicMarketplaceEntitlementFix.includes("auth.uid()") && !publicMarketplaceEntitlementFix.includes("auth.jwt()"), "public listing eligibility must not depend on the current anonymous request identity"],
+  [publicMarketplaceEntitlementFix.includes("m.user_id = w.owner_id") && publicMarketplaceEntitlementFix.includes("m.role = 'owner'") && publicMarketplaceEntitlementFix.includes("m.active IS TRUE"), "public listing eligibility must verify the actual active Owner membership"],
+  [publicMarketplaceEntitlementFix.includes("e.verification_status = 'verified'") && publicMarketplaceEntitlementFix.includes("e.processed_at IS NOT NULL"), "public listing eligibility must require a processed verified payment event"],
+  [publicMarketplaceEntitlementFix.includes("o.payment_review_required IS NOT TRUE") && publicMarketplaceEntitlementFix.includes("l.cloud_expires_at > now()"), "public listing eligibility must reject review-held or expired licenses"],
+  [publicMarketplaceEntitlementFix.includes("lp.features ->> 'marketplace'") && publicMarketplaceEntitlementFix.includes("ORDER BY l.activated_at DESC NULLS LAST, l.created_at DESC"), "public listing eligibility must use the latest verified license plan feature"],
+  [!publicMarketplaceEntitlementFix.includes("private.kasusaha_business_license_is_verified") && !publicMarketplaceEntitlementFix.includes("private.kasusaha_business_has_feature"), "public listing helper must not call auth.uid-dependent private entitlement helpers"],
+];
+for (const [ok, message] of publicMarketplaceAnonymousEvaluationChecks) {
   if (ok) pass(message);
   else fail(message);
 }
