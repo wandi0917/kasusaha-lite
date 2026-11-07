@@ -3911,12 +3911,15 @@ function tampilProdukLokalUntukOnline(){const box=$('produkLokalUntukOnline');if
 async function pastikanHakMarketplace(user,requiredBusinessId=null){
  if(!sb)throw new Error('Koneksi server belum tersedia untuk memeriksa hak Pasar Online.');
  if(!user||user.is_anonymous===true)throw new Error('Pasar Online hanya tersedia untuk akun Owner/Penjual terdaftar.');
- const selectedId=String(requiredBusinessId||financeSelectedBusinessId||financeBusiness?.id||'').trim();
- let query=sb.from('business_workspaces').select('id,business_name,city,address,phone').eq('owner_id',user.id);
- if(selectedId)query=query.eq('id',selectedId);
- const {data:workspaces,error:workspaceError}=await query.limit(20);
+ const requiredId=String(requiredBusinessId||'').trim(),selectedId=String(financeSelectedBusinessId||financeBusiness?.id||'').trim();
+ const baseQuery=()=>sb.from('business_workspaces').select('id,business_name,city,address,phone').eq('owner_id',user.id);
+ let query=baseQuery();if(requiredId)query=query.eq('id',requiredId);else if(selectedId)query=query.eq('id',selectedId);
+ let {data:workspaces,error:workspaceError}=await query.limit(20);
  if(workspaceError)throw new Error('Tidak dapat memeriksa usaha Owner: '+String(workspaceError.message||workspaceError).slice(0,160));
- if(!Array.isArray(workspaces)||!workspaces.length)throw new Error(selectedId?'Usaha terpilih tidak dimiliki akun Owner ini. Pilih ulang usaha melalui menu Transaksi.':'Akun ini belum memiliki usaha Owner yang terhubung.');
+ if(!requiredId&&selectedId&&(!Array.isArray(workspaces)||!workspaces.length)){
+  const fallback=await baseQuery().limit(20);if(fallback.error)throw fallback.error;workspaces=fallback.data;
+ }
+ if(!Array.isArray(workspaces)||!workspaces.length)throw new Error(requiredId?'Produk terhubung ke usaha yang tidak dimiliki akun Owner ini. Hubungi pengelola untuk pemeriksaan.':selectedId?'Usaha terpilih tidak dapat diverifikasi. Pilih ulang usaha melalui menu Transaksi.':'Akun ini belum memiliki usaha Owner yang terhubung.');
  if(workspaces.length>1)throw new Error('Akun memiliki beberapa usaha. Pilih usaha yang akan digunakan melalui menu Transaksi, lalu terbitkan produk kembali.');
  const workspace=workspaces[0];
  const {data,error}=await sb.rpc('kasusaha_get_business_package_entitlements',{p_business_id:workspace.id});
