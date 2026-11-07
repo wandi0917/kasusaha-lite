@@ -5095,15 +5095,38 @@ financeAccountingEl('financePartyForm')?.addEventListener('submit',async functio
 });
 financeAccountingEl('financeOpenItemForm')?.addEventListener('submit',async function(ev){
  ev.preventDefault();if(financeMemberRole!=='owner')return;
+ const form=this,button=form.querySelector('button[type="submit"]');
  const direction=financeAccountingEl('financeOpenDirection').value,partyId=financeAccountingEl('financeOpenParty').value,amount=Number(financeAccountingEl('financeOpenAmount').value),date=financeAccountingEl('financeOpenDate').value,due=financeAccountingEl('financeOpenDue').value||null,number=financeAccountingEl('financeOpenNumber').value.trim(),description=financeAccountingEl('financeOpenDescription').value.trim(),isRec=direction==='receivable',party=financeAccounting.parties.find(function(p){return p.id===partyId;}),debit=financeAccountingAccountByCode(isRec?'1101':'1201'),credit=financeAccountingAccountByCode(isRec?'4001':'2001');
+ if(button)button.disabled=true;
  try{
-  if(!Number.isSafeInteger(amount)||amount<=0)throw new Error('Nominal tagihan harus bilangan bulat positif.');
+  if(!financeBusiness||!['receivable','payable'].includes(direction)||!number||number.length>80||!date||description.length<2||description.length>300||!Number.isSafeInteger(amount)||amount<=0)throw new Error('Lengkapi nomor dokumen, tanggal, keterangan, arah tagihan, dan nominal bilangan bulat positif.');
   if(!party||(isRec&&party.party_type!=='customer'&&party.party_type!=='both')||(!isRec&&party.party_type!=='supplier'&&party.party_type!=='both'))throw new Error('Jenis pelanggan/pemasok tidak sesuai dengan tagihan.');
-  const r=await sb.from('finance_open_items').insert({business_id:financeBusiness.id,direction:direction,document_number:number,party_id:partyId,document_date:date,due_date:due,description:description,total_amount:amount,created_by:financeMemberUserId}).select('id').single();if(r.error)throw r.error;
-  try{await financeAccountingCreateJournal({date:date,description:(isRec?'Faktur piutang ':'Faktur utang ')+number+' — '+description,sourceType:isRec?'sale':'purchase',sourceId:r.data.id,debitAccount:debit.id,creditAccount:credit.id,amount:amount,partyId:partyId});}
-  catch(jerr){await sb.from('finance_open_items').delete().eq('id',r.data.id).eq('business_id',financeBusiness.id);throw jerr;}
-  this.reset();await loadFinanceAccounting();financeAccountingSetStatus('financeOpenStatus','Tagihan tersimpan dan jurnal otomatis berhasil diposting.');
- }catch(err){financeAccountingSetStatus('financeOpenStatus','Gagal menyimpan tagihan: '+String(err.message||err).slice(0,200),true);}
+  if(!debit||!credit)throw new Error('Akun akuntansi default belum tersedia. Muat ulang modul akuntansi dan periksa daftar akun.');
+  const payload={business_id:financeBusiness.id,direction:direction,document_number:number,party_id:partyId,document_date:date,due_date:due,description:description,total_amount:amount,created_by:financeMemberUserId};
+  let itemId=null;
+  const inserted=await sb.from('finance_open_items').insert(payload).select('id').single();
+  if(!inserted.error)itemId=inserted.data.id;
+  else{
+   // Nomor dokumen unik per usaha dan arah tagihan menjadi kunci pemulihan
+   // jika server menyimpan baris tetapi respons jaringan hilang.
+   const existing=await sb.from('finance_open_items').select('id,party_id,document_date,due_date,description,total_amount').eq('business_id',financeBusiness.id).eq('direction',direction).eq('document_number',number).maybeSingle();
+   if(existing.error)throw new Error('Status tagihan sebelumnya belum dapat diverifikasi. Jangan membuat dokumen baru dahulu. '+String(existing.error.message||existing.error).slice(0,150));
+   const row=existing.data;
+   if(!row)throw inserted.error;
+   const same=row.party_id===partyId&&String(row.document_date).slice(0,10)===date&&String(row.due_date||'')===String(due||'')&&row.description===description&&Number(row.total_amount)===amount;
+   if(!same)throw new Error('Nomor dokumen sudah dipakai dengan rincian berbeda. Periksa daftar piutang/utang sebelum melanjutkan.');
+   itemId=row.id;
+  }
+  try{
+   await financeAccountingCreateJournal({date:date,description:(isRec?'Faktur piutang ':'Faktur utang ')+number+' — '+description,sourceType:isRec?'sale':'purchase',sourceId:itemId,debitAccount:debit.id,creditAccount:credit.id,amount:amount,partyId:partyId});
+  }catch(jerr){
+   // Jangan hapus tagihan: jurnal mungkin sudah ter-posting ketika respons jaringan
+   // hilang. Pengulangan dengan nomor dokumen yang sama akan memulihkan jurnal via sourceId.
+   throw new Error('Tagihan tersimpan, tetapi status jurnal belum dapat dikonfirmasi. Jangan buat nomor dokumen baru. Ulangi dengan nomor dan rincian yang sama setelah memeriksa koneksi. '+String(jerr.message||jerr).slice(0,140));
+  }
+  form.reset();await loadFinanceAccounting();financeAccountingSetStatus('financeOpenStatus','Tagihan tersimpan dan jurnal otomatis berhasil diposting.');
+ }catch(err){financeAccountingSetStatus('financeOpenStatus',String(err.message||err).slice(0,300),true);}
+ finally{if(button)button.disabled=false;}
 });
 financeAccountingEl('financeSettlementForm')?.addEventListener('submit',async function(ev){
  ev.preventDefault();if(financeMemberRole!=='owner')return;
@@ -5946,11 +5969,14 @@ function exportFinanceReportCSV(){
 
 function setFinanceReportPreset(preset){
  const start=$('financeReportStart'),end=$('financeReportEnd');if(!start||!end)return;
- const now=new Date(),localDate=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
- let first=new Date(now.getFullYear(),now.getMonth(),now.getDate()),last=new Date(first);
- if(preset==='week'){const day=(first.getDay()+6)%7;first.setDate(first.getDate()-day);}
- else if(preset==='month'){first=new Date(now.getFullYear(),now.getMonth(),1);}
- start.value=localDate(first);end.value=localDate(last);
+ // Batas tanggal laporan mengikuti kalender WIB, bukan zona waktu perangkat.
+ const today=financeToday(),parts=today.split('-').map(Number);
+ const last=new Date(Date.UTC(parts[0],parts[1]-1,parts[2]));
+ const first=new Date(last);
+ if(preset==='week'){const day=(first.getUTCDay()+6)%7;first.setUTCDate(first.getUTCDate()-day);}
+ else if(preset==='month'){first.setUTCDate(1);}
+ const iso=d=>[d.getUTCFullYear(),String(d.getUTCMonth()+1).padStart(2,'0'),String(d.getUTCDate()).padStart(2,'0')].join('-');
+ start.value=iso(first);end.value=today;
  renderFinanceReport();
 }
 function renderFinanceReport(){
