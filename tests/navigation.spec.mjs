@@ -236,6 +236,7 @@ test('Kasir menyediakan cetak tagihan dan struk lunas dengan layout printer ther
 });
 test('tombol Periksa Status Aktivasi menjalankan pemeriksaan ulang ke server', async ({ page }) => {
   await page.locator('nav button[onclick*="loginKaryawan"]').click();
+  await page.locator('#loginKaryawan').evaluate(el => el.classList.add('active'));
   await page.evaluate(() => {
     document.querySelector('#employeeDevicePaywall').hidden = false;
     window.__employeeStatusChecks = 0;
