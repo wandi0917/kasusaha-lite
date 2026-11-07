@@ -27,6 +27,21 @@ const failClosedStoreCostMigration = fs.readFileSync("supabase/migrations/202611
 const failClosedFinanceMigration = fs.readFileSync("supabase/migrations/20261106113750_fail_closed_package_entitlement_helper_and_finance_rpcs.sql", "utf8");
 const manifestText = fs.readFileSync("manifest.webmanifest", "utf8");
 
+const quickSaleNotesChecks = [
+  [html.includes('class="quick-sale-item-note"') && html.includes('Catatan barang / permintaan pelanggan'), "each cashier item must expose an optional customer note field"],
+  [html.includes("note:String(row.querySelector('.quick-sale-item-note')?.value||'').trim().slice(0,300)"), "cashier line notes must be trimmed and limited to 300 characters"],
+  [html.includes("unit_price:d.price,note:d.note"), "unpaid bill JSON must persist each item's note"],
+  [html.includes("noteField.value=String(line.note||'').slice(0,300)"), "reopening an unpaid bill must restore each item's note"],
+  [html.includes("line.note?' | Catatan: '+String(line.note):''"), "unpaid bill list must display saved item notes"],
+  [html.includes("const note=document.createElement('td');note.textContent=d.note||'—'"), "cashier bill preview must show item notes as text, not executable HTML"],
+];
+for (const [ok, message] of quickSaleNotesChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
+
+
 try {
   const manifest = JSON.parse(manifestText);
   if (!manifest.name || !manifest.start_url || !Array.isArray(manifest.icons)) {
