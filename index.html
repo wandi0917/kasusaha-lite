@@ -5142,9 +5142,41 @@ financeAccountingEl('financeJournalForm')?.addEventListener('submit',async funct
  finally{if(button)button.disabled=false;}
 });
 financeAccountingEl('financePartyForm')?.addEventListener('submit',async function(ev){
- ev.preventDefault();if(financeMemberRole!=='owner')return;
- try{const r=await sb.from('finance_parties').insert({business_id:financeBusiness.id,party_type:financeAccountingEl('financePartyType').value,party_name:financeAccountingEl('financePartyName').value.trim(),phone:financeAccountingEl('financePartyPhone').value.trim()||null,email:financeAccountingEl('financePartyEmail').value.trim()||null,address:financeAccountingEl('financePartyAddress').value.trim()||null,created_by:financeMemberUserId});if(r.error)throw r.error;this.reset();await loadFinanceAccounting();financeAccountingSetStatus('financePartyStatus','Data pelanggan/pemasok tersimpan.');}
- catch(err){financeAccountingSetStatus('financePartyStatus','Gagal menyimpan data pihak: '+String(err.message||err).slice(0,200),true);}
+ ev.preventDefault();if(financeMemberRole!=='owner'||!financeBusiness||!financeMemberUserId)return;
+ const form=this,button=form.querySelector('button[type="submit"]');
+ const partyType=financeAccountingEl('financePartyType').value,partyName=financeAccountingEl('financePartyName').value.trim(),phone=financeAccountingEl('financePartyPhone').value.trim()||null,email=financeAccountingEl('financePartyEmail').value.trim()||null,address=financeAccountingEl('financePartyAddress').value.trim()||null;
+ if(!['customer','supplier','both'].includes(partyType)||partyName.length<2||partyName.length>160){financeAccountingSetStatus('financePartyStatus','Pilih jenis relasi dan isi nama minimal 2 karakter (maksimal 160).',true);return;}
+ if(button)button.disabled=true;
+ let partyConfirmed=false;
+ const requestKey='kasusaha_finance_party_pending_v1';
+ const fingerprint=JSON.stringify({businessId:financeBusiness.id,userId:financeMemberUserId,partyType,partyName,phone,email,address});
+ try{
+  let pending=null;
+  try{pending=JSON.parse(localStorage.getItem(requestKey)||'null');}catch(_){throw new Error('Kunci pengaman data pelanggan/pemasok tidak dapat dibaca. Periksa daftar pihak sebelum mencoba lagi.');}
+  if(pending&&(pending.businessId!==financeBusiness.id||pending.fingerprint!==fingerprint))throw new Error('Ada penyimpanan data pelanggan/pemasok sebelumnya yang hasilnya belum dipastikan. Periksa daftar pihak dan ulangi rincian yang sama sebelum membuat data pihak lain.');
+  const requestId=pending?.requestId||((crypto.randomUUID&&crypto.randomUUID())||('xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,ch=>{const n=Math.random()*16|0;return(ch==='x'?n:(n&3|8).toString(16));})));
+  if(!pending){try{localStorage.setItem(requestKey,JSON.stringify({businessId:financeBusiness.id,fingerprint,requestId,createdAt:new Date().toISOString()}));}catch(_){throw new Error('Kunci pengaman tidak dapat disimpan pada perangkat. Data pihak tidak dikirim agar tidak berisiko tercatat ganda.');}}
+  const payload={business_id:financeBusiness.id,party_type:partyType,party_name:partyName,phone,email,address,created_by:financeMemberUserId,client_request_id:requestId};
+  const inserted=await sb.from('finance_parties').insert(payload).select('id,client_request_id,created_by,party_type,party_name,phone,email,address').single();
+  let saved=inserted.data;
+  if(inserted.error){
+   const lookup=await sb.from('finance_parties').select('id,client_request_id,created_by,party_type,party_name,phone,email,address').eq('business_id',financeBusiness.id).eq('client_request_id',requestId).maybeSingle();
+   if(lookup.error)throw new Error('Status penyimpanan pihak belum dapat dipastikan. Kunci pengaman dipertahankan; periksa daftar pelanggan/pemasok sebelum mencoba lagi. '+String(lookup.error.message||lookup.error).slice(0,140));
+   const row=lookup.data;
+   const same=!!row&&row.created_by===financeMemberUserId&&row.party_type===partyType&&row.party_name===partyName&&String(row.phone||'')===String(phone||'')&&String(row.email||'')===String(email||'')&&String(row.address||'')===String(address||'');
+   if(same)saved=row;
+   else if(typeof inserted.error.code==='string'&&inserted.error.code){try{const current=JSON.parse(localStorage.getItem(requestKey)||'null');if(current?.requestId===requestId)localStorage.removeItem(requestKey);}catch(_){}throw new Error('Server menolak data pelanggan/pemasok dan tidak menemukan data dengan ID permintaan yang sama. '+String(inserted.error.message||inserted.error).slice(0,160));}
+   else throw new Error('Respons penyimpanan terputus dan hasilnya belum dapat dipastikan. Kunci pengaman tetap disimpan; ulangi rincian yang sama setelah memeriksa daftar pihak.');
+  }
+  if(!saved?.id||saved.client_request_id!==requestId)throw new Error('Server belum mengembalikan bukti penyimpanan pihak dengan ID permintaan yang benar.');
+  partyConfirmed=true;
+  try{const current=JSON.parse(localStorage.getItem(requestKey)||'null');if(current?.requestId===requestId)localStorage.removeItem(requestKey);}catch(_){}
+  form.reset();
+  financeAccountingSetStatus('financePartyStatus','Data pelanggan/pemasok berhasil disimpan dan diverifikasi. Memuat ulang daftar...');
+  try{await loadFinanceAccounting();financeAccountingSetStatus('financePartyStatus','Data pelanggan/pemasok tersimpan dan sudah muncul pada daftar.');}
+  catch(refreshError){financeAccountingSetStatus('financePartyStatus','Data pelanggan/pemasok SUDAH TERSIMPAN di server, tetapi daftar belum berhasil dimuat ulang. Jangan simpan ulang. '+String(refreshError.message||refreshError).slice(0,150),true);}
+ }catch(err){financeAccountingSetStatus('financePartyStatus',partyConfirmed?'Data pelanggan/pemasok sudah tersimpan di server. Jangan simpan ulang. '+String(err.message||err).slice(0,150):'Data pelanggan/pemasok belum dapat dinyatakan berhasil: '+String(err.message||err).slice(0,220),true);}
+ finally{if(button)button.disabled=false;}
 });
 financeAccountingEl('financeOpenItemForm')?.addEventListener('submit',async function(ev){
  ev.preventDefault();if(financeMemberRole!=='owner')return;
