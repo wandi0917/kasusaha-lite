@@ -152,3 +152,14 @@ test('alur login menyiapkan pengalihan otomatis ke absensi dan langkah kerja ber
   expect(authScript).toContain("await arahkanSetelahLoginFinance()");
   expect(authScript).toContain("event==='INITIAL_SESSION'||event==='SIGNED_IN'");
 });
+
+
+test('panduan memakai bahasa sederhana dan alur produk jual tidak terhenti oleh bahan baku', async ({ page }) => {
+  const source = await page.locator('script').allTextContents();
+  const app = source.join('\n');
+  await expect(page.locator('#transactionGuide')).toContainText('Absen Masuk → Tambah Barang → Kasir → Laporan');
+  await expect(page.locator('#financeFirstBusinessGuide')).toContainText('Isi nama usaha dan pilih jenis usaha');
+  expect(app).toContain("p.item_type==='product'");
+  expect(app).toContain("row.item_type==='product'");
+  expect(app).toContain("Barang bahan baku boleh ditambahkan setelahnya");
+});
