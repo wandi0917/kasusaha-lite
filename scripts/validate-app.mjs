@@ -639,7 +639,7 @@ for (const [ok, message] of paymentIntegrityChecks) {
   else pass(message);
 }
 
-const quickSaleCashIdempotencyStart = html.indexOf("const quickSalePayload={businessId:financeBusiness.id,tableNumber:serverLocation,customerName,cashReceived,lines:");
+const quickSaleCashIdempotencyStart = html.indexOf("const quickSalePayload={businessId:financeBusiness.id,userId:financeMemberUserId,tableNumber:serverLocation,customerName,cashReceived,lines:");
 const quickSaleCashIdempotencyEnd = html.indexOf("const quickSaleFingerprint=JSON.stringify(quickSalePayload)", quickSaleCashIdempotencyStart);
 if (quickSaleCashIdempotencyStart < 0 || quickSaleCashIdempotencyEnd <= quickSaleCashIdempotencyStart) {
   fail("cashier idempotency fingerprint must include the received-cash amount so uncertain retries cannot be mistaken for a different payment");
