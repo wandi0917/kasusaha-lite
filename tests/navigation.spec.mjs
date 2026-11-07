@@ -128,6 +128,12 @@ test('pesan pemulihan Owner menyediakan tombol langsung ke menu Transaksi', asyn
 });
 
 
+test('panduan karyawan sesuai login dengan ID unik, bukan kode undangan lama', async ({ page }) => {
+  await expect(page.locator('#panduanLengkap')).toContainText('ID unik serta nama yang didaftarkan');
+  await expect(page.locator('#panduanLengkap')).toContainText('Kode undangan bersama lama tidak digunakan');
+  await expect(page.locator('#panduanLengkap')).not.toContainText('memasukkan kode undangan sesuai instruksi');
+});
+
 test('onboarding menampilkan uji coba gratis 31 hari untuk seluruh fitur aplikasi', async ({ page }) => {
   await expect(page.locator('#financeFirstBusinessGuide')).toContainText('uji coba gratis 31 hari');
   await expect(page.locator('#financeFirstBusinessGuide')).toContainText('seluruh fitur aplikasi, termasuk fitur lanjutan');
