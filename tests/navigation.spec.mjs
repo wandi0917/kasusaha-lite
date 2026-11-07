@@ -235,6 +235,7 @@ test('Kasir menyediakan cetak tagihan dan struk lunas dengan layout printer ther
   expect(receipt.unpaid).not.toContain('LUNAS / SUDAH DIBAYAR');
 });
 test('tombol Periksa Status Aktivasi menjalankan pemeriksaan ulang ke server', async ({ page }) => {
+  await page.locator('nav button[onclick*="loginKaryawan"]').click();
   await page.evaluate(() => {
     document.querySelector('#employeeDevicePaywall').hidden = false;
     window.__employeeStatusChecks = 0;
