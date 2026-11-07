@@ -5798,21 +5798,64 @@ $('storeProductForm')?.addEventListener('submit',async function(e){
  let productConfirmed=false;
  const guidedNotice=$('financeLoginWorkNotice');
  const advanceToCashier=!editId&&storeProductRows.filter(p=>p.active===true).length===0&&/Tambahkan barang di menu Barang & Stok/.test(guidedNotice?.textContent||'');
+ const pendingKey='kasusaha_product_save_pending_v1';
+ let productFingerprint='',productRequestPending=null;
  try{
   const itemType=$('storeProductSaleStatus')?.value||'product',stockUnit=String($('storeProductStockUnit')?.value||'unit').trim().toLowerCase(),barcodeType=$('storeProductBarcodeType')?.value||'custom',barcodeValue=String($('storeProductBarcodeValue')?.value||'').trim();
   if(!stockUnit||stockUnit.length>24){$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Isi satuan stok, maksimal 24 karakter.';return;}
   // Ambil barang yang sedang diedit sebelum menentukan barcode agar tidak terjadi ReferenceError.
   const currentItem=editId?storeProductRows.find(p=>String(p.id)===String(editId)):null;
+  if(editId&&!currentItem)throw new Error('Barang yang akan diedit tidak ditemukan pada daftar usaha aktif. Muat ulang daftar barang.');
   const normalizedBarcode=barcodeType==='custom'?(currentItem&&String(currentItem.product_code||'').toUpperCase()===code&&currentItem.barcode_value?currentItem.barcode_value:generateKasUsahaBarcode(code)):barcodeValue;
   if(!normalizedBarcode){$('storeProductStatus').className='status error';$('storeProductStatus').textContent='Barcode belum terbentuk. Isi kode barang atau pilih barcode otomatis KasUsaha.';return;}
   const payload={product_code:code,product_name:name,barcode_value:normalizedBarcode,barcode_type:barcodeType,price,stock_unit:stockUnit,item_type:itemType,active:editId?Boolean(currentItem?.active):true,updated_at:new Date().toISOString()};
   if(!editId)payload.stock_quantity=initialStock;
+
+  // A browser timeout can happen after Postgres commits. Keep the same fingerprint
+  // until the row is verified so a retry cannot silently create a second product.
+  productFingerprint=JSON.stringify({businessId:financeBusiness.id,editId,code,name,price,costPrice,initialStock,itemType,stockUnit,barcodeType,normalizedBarcode});
+  try{productRequestPending=JSON.parse(localStorage.getItem(pendingKey)||'null');}catch(_){throw new Error('Kunci pengaman simpan barang tidak dapat dibaca. Periksa daftar barang sebelum mencoba lagi.');}
+  if(productRequestPending&&(productRequestPending.businessId!==financeBusiness.id||productRequestPending.fingerprint!==productFingerprint)){
+   throw new Error('Ada penyimpanan barang sebelumnya yang hasilnya belum dipastikan. Periksa daftar barang dan ulangi dengan rincian yang SAMA sebelum membuat atau mengubah barang lain.');
+  }
+  if(!productRequestPending){
+   try{localStorage.setItem(pendingKey,JSON.stringify({businessId:financeBusiness.id,fingerprint:productFingerprint,createdAt:new Date().toISOString()}));}
+   catch(_){throw new Error('Kunci pengaman simpan barang tidak dapat disimpan. Perubahan tidak dikirim agar tidak berisiko membuat data barang ganda.');}
+  }
+
   let error,productId=editId;
-  if(editId){const updated=await sb.from('store_products').update(payload).eq('id',editId).eq('business_id',financeBusiness.id).select('id').maybeSingle();error=updated.error;if(!error){if(!updated.data)throw new Error('Barang tidak ditemukan atau perubahan tidak diizinkan oleh server.');productId=updated.data.id;}}
-  else{const inserted=await sb.from('store_products').insert({...payload,business_id:financeBusiness.id}).select('id').single();error=inserted.error;productId=inserted.data?.id||null;}
-  if(error){if(error.code==='23505')throw new Error('Kode barang atau barcode sudah dipakai oleh barang lain dalam usaha ini. Periksa kembali nilai barcode.');throw error;}
+  if(editId){
+   const updated=await sb.from('store_products').update(payload).eq('id',editId).eq('business_id',financeBusiness.id).select('id').maybeSingle();
+   error=updated.error;
+   if(!error){if(!updated.data)throw new Error('Barang tidak ditemukan atau perubahan tidak diizinkan oleh server.');productId=updated.data.id;}
+  }else{
+   const inserted=await sb.from('store_products').insert({...payload,business_id:financeBusiness.id}).select('id').single();
+   error=inserted.error;productId=inserted.data?.id||null;
+  }
+
+  if(error){
+   // Verify an ambiguous insert/update against the authoritative row before reporting failure.
+   let lookup=sb.from('store_products').select('id,product_code,product_name,price,stock_quantity,stock_unit,item_type,active,barcode_value,barcode_type').eq('business_id',financeBusiness.id);
+   lookup=editId?lookup.eq('id',editId):lookup.eq('product_code',code);
+   const {data:existing,error:lookupError}=await lookup.maybeSingle();
+   if(lookupError)throw new Error('Status simpan barang belum dapat dipastikan. Kunci pengaman tetap disimpan; muat ulang daftar dan ulangi dengan rincian yang sama. '+String(lookupError.message||lookupError).slice(0,150));
+   const matches=!!existing&&existing.product_code===code&&existing.product_name===name&&Number(existing.price)===price&&
+    existing.stock_unit===stockUnit&&existing.item_type===itemType&&existing.active===payload.active&&
+    existing.barcode_value===normalizedBarcode&&existing.barcode_type===barcodeType&&
+    (editId||Number(existing.stock_quantity)===initialStock);
+   if(!matches){
+    if(typeof error.code==='string'&&error.code){
+     try{const saved=JSON.parse(localStorage.getItem(pendingKey)||'null');if(saved?.fingerprint===productFingerprint)localStorage.removeItem(pendingKey);}catch(_){}
+     if(error.code==='23505')throw new Error('Kode barang atau barcode sudah dipakai oleh barang lain dalam usaha ini. Periksa kembali nilai barcode.');
+     throw new Error('Server menolak penyimpanan barang dan tidak ada perubahan yang cocok pada daftar. '+String(error.message||error).slice(0,160));
+    }
+    throw new Error('Respons penyimpanan barang terputus dan baris yang cocok belum dapat diverifikasi. Kunci pengaman dipertahankan; jangan ubah rincian sebelum hasil penyimpanan dipastikan.');
+   }
+   productId=existing.id;
+  }
   if(!productId)throw new Error('Barang tersimpan tetapi ID barang tidak terbaca. Muat ulang daftar barang sebelum melanjutkan.');
   productConfirmed=true;
+  try{const saved=JSON.parse(localStorage.getItem(pendingKey)||'null');if(saved?.fingerprint===productFingerprint)localStorage.removeItem(pendingKey);}catch(_){}
   const previousCost=Number(currentItem?.cost_price||0),needsCostUpdate=editId?previousCost!==costPrice:costPrice>0;
   if(needsCostUpdate){
    const {error:costError}=await sb.rpc('set_store_product_cost',{p_product_id:productId,p_cost_price:costPrice});
@@ -5827,7 +5870,7 @@ $('storeProductForm')?.addEventListener('submit',async function(e){
     tampilkanPanduanLangkahKerja('Barang pertama berhasil disimpan. Kasir belum terbuka otomatis: '+String(routeError.message||routeError).slice(0,140)+'. Pilih menu Kasir Cepat untuk melanjutkan.',true);
    }
   }
- }catch(e){$('storeProductStatus').className='status error';if(productConfirmed){try{cancelStoreProductEdit();}catch(_){}$('storeProductStatus').textContent='Barang sudah tersimpan dan dikonfirmasi server, tetapi tampilan/daftar belum selesai diperbarui. Jangan simpan ulang barang yang sama. Muat ulang daftar barang. Detail: '+String(e.message||e).slice(0,160);}else $('storeProductStatus').textContent='Gagal menyimpan barang: '+String(e.message||e).slice(0,200);}
+ }catch(e){$('storeProductStatus').className='status error';if(productConfirmed){try{cancelStoreProductEdit();}catch(_){}$('storeProductStatus').textContent='Barang sudah tersimpan dan dikonfirmasi server, tetapi tampilan/daftar belum selesai diperbarui. Jangan simpan ulang barang yang sama. Muat ulang daftar barang. Detail: '+String(e.message||e).slice(0,160);}else $('storeProductStatus').textContent='Gagal menyimpan barang: '+String(e.message||e).slice(0,220);}
  finally{btn.disabled=false;}
 });
 $('stockProductSelect')?.addEventListener('change',()=>{const p=storeProductRows.find(x=>x.id===$('stockProductSelect').value);$('stockEntryStatus').textContent=p?'Stok saat ini '+p.product_name+': '+Number(p.stock_quantity||0)+' '+(p.stock_unit||'unit')+'.':'Pilih barang untuk mencatat perubahan stok.';});
