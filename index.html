@@ -4193,6 +4193,8 @@ async function renderOwnerServiceFeePanel(){
  const panel=$('serviceFeeOwnerPanel'),host=$('serviceFeeOwnerContent');if(!panel||!host)return;
  const isOwner=financeMemberRole==='owner'&&financeBusiness&&financeBusiness.owner_id===financeMemberUserId;
  panel.hidden=!isOwner;if(!isOwner)return;
+ const panelBusinessId=String(financeBusiness?.id||'').trim();
+ const panelOwnerId=String(financeBusiness?.owner_id||'').trim();
  const trial=financeBusiness.service_fee_trial_started_at;
  if(!trial){
   host.innerHTML='<p>Informasi pratinjau skema biaya layanan (belum diberlakukan):</p><ul><li>Simulasi masa awal 30 hari bebas biaya dimulai setelah Owner mengaktifkan pratinjau.</li><li>Dalam simulasi, omzet bersih sampai Rp3.000.000 per bulan tidak dikenai biaya.</li><li>Dalam simulasi, hanya bagian omzet bersih di atas Rp3.000.000 yang dihitung dengan tarif rencana 0,1%.</li><li>Lisensi dibeli terpisah sesuai paket. Komisi marketplace 2,5% adalah biaya berbeda.</li><li>Ini bukan persetujuan untuk penagihan di masa depan. Billing, invoice, pemotongan saldo, dan penguncian fitur tetap nonaktif.</li></ul><label style="display:flex;gap:9px;align-items:flex-start;margin:12px 0"><input id="serviceFeeConsentCheck" type="checkbox" style="width:auto;margin-top:3px"><span>Saya memahami bahwa ini hanya pratinjau informasi, bukan persetujuan penagihan, dan ingin memulai periode pratinjau 30 hari untuk usaha ini.</span></label><button id="serviceFeeConsentSubmit" type="button" class="primary" disabled>Mulai pratinjau 30 hari</button><p id="serviceFeeOwnerStatus" class="small" role="status" aria-live="polite">Pratinjau belum dimulai. Tidak ada tagihan atau pemotongan saldo.</p>';
@@ -4202,12 +4204,13 @@ async function renderOwnerServiceFeePanel(){
    if(!check?.checked){if(status)status.textContent='Centang pernyataan pratinjau terlebih dahulu.';return;}
    // financeBusiness dapat sementara dikosongkan oleh proses pemuatan ulang bersamaan.
    // ID pilihan tersimpan menjadi fallback, tetapi tetap diverifikasi keanggotaan dan owner_id di server.
-   const targetBusinessId=String(financeBusiness?.id||financeSelectedBusinessId||'').trim();
+   const targetBusinessId=String(panelBusinessId||financeBusiness?.id||financeSelectedBusinessId||'').trim();
    if(!targetBusinessId){
     if(status)status.textContent='ID usaha belum tersedia. Buka kembali menu Transaksi dan pilih usaha Owner sampai nama usaha tampil.';
     return;
    }
    financeSelectedBusinessId=targetBusinessId;
+   if(panelOwnerId&&panelOwnerId!==financeMemberUserId){if(status)status.textContent='Konteks Owner berubah. Tutup panel, muat ulang usaha, lalu coba kembali.';return;}
    if(!sb){if(status)status.textContent='Koneksi server belum tersedia. Periksa internet lalu coba kembali.';return;}
       submit.disabled=true;if(status)status.textContent='Memverifikasi sesi Owner dan usaha ke server…';
    try{
@@ -4293,6 +4296,8 @@ async function loadFinanceWorkspaceInternal(){
    setFinanceStatus('Akun ini terhubung ke beberapa usaha. Klik nama usaha yang ingin digunakan.');return;
   }
   const member=memberList[0]||null;
+  // Simpan konteks usaha secara eksplisit untuk panel Owner, termasuk sesi dengan satu usaha.
+  if(member)financeSelectedBusinessId=member.business_id;
   document.body.classList.remove('workspace-selection-pending');
   const savedPicker=$('financeSavedBusinesses');if(savedPicker)savedPicker.hidden=true;
   if(!member){document.body.classList.add('workspace-selection-pending');document.body.classList.remove('employee-verified','owner-verified');financeBusiness=null;financeMemberRole=null;financeEmployeeDirectory=new Map();financeRows=[];$('attendanceStatus').textContent='Akun ini belum terhubung ke usaha. Owner harus membuat usaha satu kali atau Karyawan bergabung memakai kode undangan.';$('attendanceCheckIn').disabled=true;$('attendanceCheckOut').disabled=true;setup.hidden=false;info.hidden=true;entry.hidden=true;report.hidden=true;if($('attendanceCard'))$('attendanceCard').hidden=true;if($('reportCategoryChooser'))$('reportCategoryChooser').hidden=true;applyReportCategory('');setTransactionBusinessSetupMode(true);const tbody=$('financeReportRows');if(tbody)tbody.innerHTML='<tr><td colspan="7">Laporan bersama belum dapat dimuat: akun '+aman(sd.session.user.email||'login ini')+' belum terhubung ke usaha. Masuk dengan akun Owner yang terdaftar atau hubungkan akun ini ke usaha terlebih dahulu. Data transaksi tidak dihapus.</td></tr>';const summary=$('financeReportSummary');if(summary)summary.innerHTML='';applyHomeFinanceRole();setFinanceStatus('Akun login terdeteksi ('+sd.session.user.email+'), tetapi belum terhubung ke usaha. Laporan bersama hanya bisa ditampilkan setelah akun yang benar terhubung.');return;}
