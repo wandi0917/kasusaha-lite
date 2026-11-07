@@ -362,21 +362,30 @@ test('Muat pratinjau bulan ini otomatis membuka langkah Owner berikutnya', async
       return query;
     };
     sb.rpc = async (name) => {
-      if (name !== 'kasusaha_owner_service_fee_preview') {
-        return { data: null, error: new Error('RPC tidak diharapkan: ' + name) };
+      if (name === 'kasusaha_start_free_trial') {
+        return { data: { success: true, status: 'already_active' }, error: null };
       }
-      return {
-        data: {
-          billing_enabled: false,
-          preview_only: true,
-          gross_recorded_sales: 1250000,
-          recognized_returns: 0,
-          net_sales_for_preview: 1250000,
-          billable_amount: 0,
-          estimated_fee: 0,
-        },
-        error: null,
-      };
+      if (name === 'kasusaha_is_business_license_verified') {
+        return { data: true, error: null };
+      }
+      if (name === 'kasusaha_get_business_trial_status') {
+        return { data: { status: 'paid' }, error: null };
+      }
+      if (name === 'kasusaha_owner_service_fee_preview') {
+        return {
+          data: {
+            billing_enabled: false,
+            preview_only: true,
+            gross_recorded_sales: 1250000,
+            recognized_returns: 0,
+            net_sales_for_preview: 1250000,
+            billable_amount: 0,
+            estimated_fee: 0,
+          },
+          error: null,
+        };
+      }
+      return { data: null, error: new Error('RPC tidak diharapkan: ' + name) };
     };
     await renderOwnerServiceFeePanel();
     // Tampilkan panel Owner pada fixture terisolasi; pada aplikasi normal panel
