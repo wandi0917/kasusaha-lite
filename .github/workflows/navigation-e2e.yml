@@ -4,7 +4,8 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [fix/playwright-test-current-pr-20261108]
+    branches: [main, fix/playwright-test-current-pr-20261108]
+  workflow_dispatch:
 
 jobs:
   navigation-e2e:
