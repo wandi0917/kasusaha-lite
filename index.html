@@ -5806,7 +5806,8 @@ function tampilkanPanduanLangkahKerja(message,isError=false,nextTarget=''){
   action.setAttribute('aria-label',actions[nextTarget]+' sekarang');
   action.addEventListener('click',async()=>{
    action.disabled=true;
-   try{await bukaPanelTransaksi(nextTarget);}
+   try{const opened=await bukaPanelTransaksi(nextTarget);if(!opened)setFinanceStatus('Menu belum berhasil dibuka. Periksa koneksi, status usaha, dan lisensi, lalu tekan tombol ini untuk mencoba lagi.',true);}
+   catch(e){setFinanceStatus('Menu belum berhasil dibuka: '+String(e.message||e).slice(0,160),true);}
    finally{action.disabled=false;}
   });
   notice.after(action);
@@ -5878,7 +5879,8 @@ async function arahkanSetelahLoginFinance(){
   if(attendance.check_in_at&&!attendance.check_out_at){
    const routed=await arahkanKePekerjaanBerikutnya();
    if(routed)tampilkanPanduanLangkahKerja('Absensi masuk hari ini tercatat pukul '+attendanceTime(attendance.check_in_at)+'. Ikuti instruksi pada panel berikutnya untuk melanjutkan pekerjaan.');
-   return true;
+   else tampilkanPanduanLangkahKerja('Absensi masuk sudah tercatat, tetapi menu pekerjaan berikutnya belum terbuka. Tekan Coba Lagi setelah koneksi dan lisensi usaha dapat diperiksa.',true,'kasir');
+   return routed;
   }
   await buka('transaksi',transactionButton);
   const attendanceOpened=await bukaPanelTransaksi('absensi');
@@ -5920,7 +5922,7 @@ async function absenMasuk(){
   if(!data?.ok||!data?.id)throw new Error('Server belum mengonfirmasi absensi masuk. Jangan mengulang sebelum memuat ulang data.');
   await loadAttendance();
   setFinanceStatus('Absen masuk tercatat di server pada '+attendanceTime(data.check_in_at)+'. Menyiapkan pekerjaan berikutnya...');
-  try{await arahkanKePekerjaanBerikutnya();}catch(nextError){tampilkanPanduanLangkahKerja('Absensi berhasil tersimpan, tetapi langkah kerja berikutnya belum terbuka. Kembali ke Absensi untuk memeriksa status dan mencoba lagi. '+String(nextError.message||nextError).slice(0,120),true,'absensi');}
+  try{const routed=await arahkanKePekerjaanBerikutnya();if(!routed)tampilkanPanduanLangkahKerja('Absensi berhasil tersimpan, tetapi menu pekerjaan berikutnya belum terbuka. Tekan Coba Lagi setelah koneksi dan status lisensi dapat diperiksa.',true,'kasir');}catch(nextError){tampilkanPanduanLangkahKerja('Absensi berhasil tersimpan, tetapi langkah kerja berikutnya belum terbuka. Periksa koneksi dan coba lagi. '+String(nextError.message||nextError).slice(0,120),true,'absensi');}
  }catch(e){
   $('attendanceStatus').className='status error';
   $('attendanceStatus').textContent='Absen masuk gagal: '+String(e.message||e).slice(0,200);
