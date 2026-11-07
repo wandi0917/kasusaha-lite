@@ -358,6 +358,7 @@ DECLARE
   v_product_id uuid;
   v_qty integer;
   v_price numeric;
+  v_client_price numeric;
   v_cost numeric;
   v_stock integer;
   v_name text;
@@ -431,6 +432,7 @@ BEGIN
     BEGIN
       v_product_id := (v_line->>'product_id')::uuid;
       v_qty := (v_line->>'quantity')::integer;
+      v_client_price := (v_line->>'unit_price')::numeric;
     EXCEPTION WHEN OTHERS THEN RAISE EXCEPTION 'Data barang atau jumlah penjualan tidak valid.';
     END;
     IF v_qty IS NULL OR v_qty < 1 THEN RAISE EXCEPTION 'Jumlah barang harus bilangan bulat positif.'; END IF;
@@ -442,6 +444,9 @@ BEGIN
     IF NOT FOUND THEN RAISE EXCEPTION 'Barang tidak ditemukan, nonaktif, atau bukan produk kasir.'; END IF;
     IF v_price IS NULL OR v_price <= 0 OR v_price <> trunc(v_price) THEN
       RAISE EXCEPTION 'Harga jual pada master produk belum valid. Periksa harga produk terlebih dahulu.';
+    END IF;
+    IF v_client_price IS NULL OR v_client_price IS DISTINCT FROM v_price THEN
+      RAISE EXCEPTION 'Harga produk berubah sejak rincian ditampilkan. Muat ulang kasir dan periksa harga sebelum mengulangi penjualan.';
     END IF;
     IF v_stock IS NULL OR v_stock < v_qty THEN
       RAISE EXCEPTION 'Stok % tidak cukup atau belum ditetapkan. Stok tersedia: %.', v_name, coalesce(v_stock, 0);
