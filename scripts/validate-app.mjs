@@ -64,6 +64,20 @@ const missingNavigationTargets = [...new Set(navigationTargets.filter((target) =
 if (missingNavigationTargets.length) {
   fail("navigation buttons target missing sections: " + missingNavigationTargets.join(", "));
 } else pass(navigationTargets.length + " navigation targets resolve to existing HTML sections");
+ 
+const appNavigationScript = scriptTags.map((tag) => tag[2]).find((source) => source.includes("async function buka(")) || "";
+const globalNavigationChecks = [
+  [ /window\.buka\s*=\s*buka/.test(appNavigationScript), "main navigation function must be exported globally for HTML menu buttons" ],
+  [ /window\.bukaKotakSaran\s*=/.test(html), "suggestion navigation handler must be exported globally" ],
+  [ /window\.bukaKotakSaranMasuk\s*=/.test(html), "suggestion inbox navigation handler must be exported globally" ],
+  [ /data-id="\s*'\s*\+\s*aman\(r\.id\)\s*\+\s*'"\s+onclick="mulaiEditFinanceTransaction\(this\.dataset\.id\)"/.test(html), "finance report edit action must use a safely bound row ID" ],
+  [ /data-id="\s*'\s*\+\s*aman\(r\.id\)\s*\+\s*'"\s+onclick="hapusFinanceTransaction\(this\.dataset\.id\)"/.test(html), "finance report delete action must use a safely bound row ID" ],
+];
+for (const [ok, message] of globalNavigationChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
+
 
 if (!html.includes('class="quick-sale-camera-head"') ||
     !html.includes('id="quickSaleBarcodeClose"') ||
