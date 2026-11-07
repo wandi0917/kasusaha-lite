@@ -2000,7 +2000,7 @@ async function bagikanKasUsahaLite(){
 <div class="card" id="reportCategoryChooser" hidden><h3>Pilih Menu dan Kategori Laporan</h3><p class="small">Pilih kategori untuk menampilkan laporan yang diperlukan. Setiap tabel memiliki judul tersendiri.</p><label for="reportCategorySelect">Menu laporan</label><select id="reportCategorySelect"><option value="">— Pilih kategori laporan —</option><option value="sales">Laporan Penjualan</option><option value="stock">Laporan Stok Barang</option><option value="finance">Laporan Keuangan Lengkap (Owner)</option><option value="accounting">Akuntansi Lengkap: Laba Rugi, Neraca, Arus Kas &amp; Buku Besar (Owner)</option><option value="income">Laporan Pemasukan (Karyawan)</option><option value="daily">Laporan Keuangan Harian (Lokal)</option><option value="history">Riwayat Transaksi (Lokal)</option></select></div>
 
 <div id="financeSetupForms">
-<div class="card" id="financeFirstBusinessGuide"><h4>Langkah pertama: buat data usaha</h4><p>Akun Anda sudah login. Formulir pengaturan usaha sudah terbuka di halaman ini. Lengkapi data usaha di bawah, lalu tekan <strong>Simpan Usaha</strong>. Setelah tersimpan, sistem akan memeriksa absensi dan langsung membuka pekerjaan berikutnya.</p></div>
+<div class="card" id="financeFirstBusinessGuide"><h4>Langkah pertama: buat data usaha</h4><p>Akun Anda sudah login. Formulir pengaturan usaha sudah terbuka di halaman ini. Lengkapi data usaha di bawah, lalu tekan <strong>Simpan Usaha</strong>. Setelah tersimpan, sistem otomatis memberikan uji coba gratis 31 hari dengan seluruh fitur paket Lite, satu kali per Owner. Masa uji coba dimulai saat usaha pertama berhasil dibuat atau saat Owner pertama kali mengaktifkannya pada usaha yang sudah terdaftar. Setelah itu sistem memeriksa absensi dan membuka pekerjaan berikutnya.</p></div>
 <div id="financeSavedBusinesses" class="card" hidden><h4>Usaha yang sudah terdaftar</h4><p class="small">Klik nama usaha untuk memakai usaha yang sudah terhubung dengan akun ini.</p><div id="financeSavedBusinessList" class="grid"></div></div>
 <label for="financeBusinessName">Nama usaha <span class="required">*</span></label>
 <input id="financeBusinessName" maxlength="120" required placeholder="Contoh: Kedai Kopi Seroja">
@@ -2054,6 +2054,7 @@ async function bagikanKasUsahaLite(){
 <h3>Hubungkan akun ke usaha</h3>
 <p class="small">Laporan bersama disimpan di Supabase, sehingga owner dan karyawan dapat mengaksesnya dari perangkat berbeda. Login memakai akun yang sama dengan Akun Pembeli/Penjual. Catatan lokal lama tetap disimpan dan tidak otomatis digabung.</p>
 <div id="financeStatus" class="status" role="status">Memeriksa akun dan usaha...</div>
+<div id="kasusahaTrialStatus" class="status" role="status" hidden></div>
 </div>
 <div class="card report-category-view" id="stockReportCard" hidden><h3>Ringkasan Stok</h3><div class="grid"><div class="finance-metric">Jenis barang aktif<strong id="stockReportKinds">0</strong></div><div class="finance-metric">Jumlah stok (angka gabungan)<strong id="stockReportUnits">0</strong></div><div class="finance-metric">Barang stok menipis (≤ 5)<strong id="stockReportLow">0</strong></div></div></div><div class="card report-category-view" id="stockReportTableCard" hidden><h3>Tabel Laporan Stok Barang</h3><p class="small">Tabel ini khusus untuk stok barang dan bahan baku, terpisah dari tabel laporan penjualan pada menu Transaksi.</p><div class="table-wrap"><table class="report-table"><thead><tr><th>Kode</th><th>Nama barang / bahan baku</th><th>Jenis</th><th>Stok saat ini</th><th>Harga modal / satuan</th><th>Nilai persediaan (modal)</th><th>Status stok</th></tr></thead><tbody id="stockReportRows"><tr><td colspan="7">Memuat stok...</td></tr></tbody></table></div><p class="small">Nilai persediaan dihitung dari stok saat ini × harga modal. Jika data modal belum dapat dibaca, nilai ditandai tidak tersedia; sistem tidak menganggap modal nol.</p><h4>Riwayat Pergerakan Stok</h4><p class="small">Mencatat stok awal, penjualan, stok masuk, stok keluar, koreksi, dan perubahan stok produk. Maksimal 200 catatan terbaru ditampilkan.</p><div class="row-actions"><button type="button" class="secondary" onclick="loadStoreStockMovements()">Muat ulang riwayat stok</button></div><p id="stockMovementStatus" class="status" role="status">Riwayat pergerakan stok akan dimuat saat laporan dibuka.</p><div class="table-wrap"><table class="report-table"><thead><tr><th>Waktu (WIB)</th><th>Kode / Barang</th><th>Jenis perubahan</th><th>Stok sebelum → sesudah</th><th>Perubahan</th><th>Catatan</th></tr></thead><tbody id="stockMovementRows"><tr><td colspan="6">Buka laporan stok untuk memuat riwayat.</td></tr></tbody></table></div></div>
 <div class="card report-category-view" id="financeReportCard" hidden>
@@ -2645,10 +2646,39 @@ function refreshPlatformFinanceVisibility(){
 }
 window.muatKeuanganMarketplace=muatKeuanganMarketplace;window.renderKeuanganMarketplace=renderKeuanganMarketplace;window.cetakKeuanganMarketplace=cetakKeuanganMarketplace;
 if(sb&&sb.auth){sb.auth.onAuthStateChange(()=>setTimeout(refreshPlatformFinanceVisibility,700));setTimeout(refreshPlatformFinanceVisibility,1300);}
+async function mulaiUjiCobaKasUsaha(businessId){
+ if(!sb||!businessId)throw new Error('Usaha belum dipilih untuk aktivasi uji coba.');
+ const {data,error}=await sb.rpc('kasusaha_start_free_trial',{p_business_id:businessId});
+ if(error)throw error;
+ return data||{success:false,status:'unknown'};
+}
+async function renderKasUsahaTrialStatus(businessId){
+ const el=$('kasusahaTrialStatus');if(!el||!sb||!businessId)return null;
+ const {data,error}=await sb.rpc('kasusaha_get_business_trial_status',{p_business_id:businessId});
+ if(error)throw error;
+ if(!data||data.status==='paid'||data.status==='not_started'||data.status==='owner_required'){
+  el.hidden=true;el.textContent='';return data;
+ }
+ const expiry=data.expires_at?new Date(data.expires_at):null;
+ const expiryText=expiry&&!Number.isNaN(expiry.getTime())?new Intl.DateTimeFormat('id-ID',{dateStyle:'long',timeZone:'Asia/Jakarta'}).format(expiry):'tanggal belum tersedia';
+ const days=Math.max(0,Number(data.days_remaining)||0);
+ el.hidden=false;
+ if(data.status==='active'){
+  el.className=days<=3?'status warn':'status';
+  el.textContent='Uji coba gratis paket Lite aktif. Seluruh fitur Lite tersedia sampai '+expiryText+'. Sisa '+days+' hari. Setelah berakhir, data usaha tetap tersimpan dan Anda dapat mengaktifkan lisensi melalui menu Paket & Harga.';
+ }else{
+  el.className='status error';
+  el.textContent='Uji coba gratis 31 hari telah berakhir. Data usaha tetap tersimpan, tetapi fitur berlisensi terkunci sampai Owner mengaktifkan lisensi melalui menu Paket & Harga.';
+ }
+ return data;
+}
 async function periksaLisensiWorkspace(businessId){
  if(!sb||!businessId)throw new Error('Usaha belum dipilih untuk pemeriksaan lisensi.');
+ // The RPC starts a one-time trial only for the authenticated Owner; employee calls are read-only.
+ await mulaiUjiCobaKasUsaha(businessId);
  const {data,error}=await sb.rpc('kasusaha_is_business_license_verified',{p_business_id:businessId});
  if(error)throw error;
+ try{await renderKasUsahaTrialStatus(businessId);}catch(statusError){console.warn('Status uji coba belum dapat ditampilkan:',statusError);}
  return data===true;
 }
 async function buka(id,tombol,opsi={}){
@@ -4429,7 +4459,14 @@ async function loadFinanceWorkspaceInternal(){
    financeEmployeeIdentityUserIds=Array.isArray(identityIds)?identityIds.filter(id=>typeof id==='string'):[];
    if(!financeEmployeeIdentityUserIds.includes(financeMemberUserId))throw new Error('Identitas riwayat karyawan belum dapat diverifikasi. Hubungi Owner.');
   }
-  financeBusiness=business;financeMemberRole=member.role;financeEmployeeDirectory=new Map();if(typeof applyKasUsahaBusinessModule==='function')applyKasUsahaBusinessModule(business.business_type);renderOwnerServiceFeePanel();try{await loadFinancePackageFeatures(business.id);}catch(packageError){console.error('Hak fitur paket belum dapat dimuat:',packageError);financePackageFeatures=null;applyFinancePackageFeatures(null);}
+  financeBusiness=business;financeMemberRole=member.role;financeEmployeeDirectory=new Map();
+  if(member.role==='owner'){
+   const trialStart=await mulaiUjiCobaKasUsaha(business.id);
+   if(trialStart&&trialStart.status==='expired')console.info('Uji coba 31 hari telah digunakan dan berakhir. Lisensi berbayar diperlukan untuk melanjutkan fitur berlisensi.');
+  }
+  if(typeof applyKasUsahaBusinessModule==='function')applyKasUsahaBusinessModule(business.business_type);renderOwnerServiceFeePanel();
+  try{await loadFinancePackageFeatures(business.id);}catch(packageError){console.error('Hak fitur paket belum dapat dimuat:',packageError);financePackageFeatures=null;applyFinancePackageFeatures(null);}
+  try{await renderKasUsahaTrialStatus(business.id);}catch(trialStatusError){console.warn('Status uji coba belum dapat ditampilkan:',trialStatusError);}
   if(member.role==='owner'){
    try{
     const {data:directoryRows,error:directoryError}=await sb.rpc('kasusaha_owner_employee_directory',{p_business_id:business.id});
