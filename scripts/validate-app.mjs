@@ -668,9 +668,6 @@ for (const [ok, message] of guidedOwnerEmployeeFlowChecks) {
   else pass(message);
 }
 
-if (process.exitCode) process.exit(process.exitCode);
-
-
 const businessTypeChecks = [
   [/id="financeBusinessType"[\\s\\S]{0,2200}value="pharmacy"[\\s\\S]{0,300}value="drugstore"[\\s\\S]{0,300}value="pharmaceutical_retail"/, html, "business type selector must include pharmacy, drugstore, and pharmaceutical retail"],
   [/value="optical"/, html, "business type selector must include optical shops"],
@@ -687,3 +684,5 @@ for (const [pattern, source, message] of businessTypeChecks) {
   if (!pattern.test(source)) fail(message);
   else pass(message);
 }
+
+if (process.exitCode) process.exit(process.exitCode);
