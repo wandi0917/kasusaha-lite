@@ -1,4 +1,4 @@
--- Public marketplace visibility must not depend on auth.uid(), because buyers are anonymous.
+-- Public marketplace visibility must not depend on the buyer's current login session.
 -- Evaluate the listing owner's verified license and plan directly, returning only a boolean.
 
 CREATE OR REPLACE FUNCTION public.kasusaha_marketplace_product_is_public(p_product_id bigint)
