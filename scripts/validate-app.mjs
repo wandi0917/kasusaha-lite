@@ -16,6 +16,7 @@ const stockLedgerMigration = fs.readFileSync("supabase/migrations/20261107104118
 const openBillAttributionMigration = fs.readFileSync("supabase/migrations/20261107142427_preserve_customer_and_table_labels_for_open_bill_settlement.sql", "utf8");
 const cashierItemNotesSettlementMigration = fs.readFileSync("supabase/migrations/20261107144500_preserve_cashier_item_notes_after_payment.sql", "utf8");
 const cashierItemNotesLengthMigration = fs.readFileSync("supabase/migrations/20261107170500_cap_paid_sale_note_description_length.sql", "utf8");
+const idempotentOpenBillMigration = fs.readFileSync("supabase/migrations/20261107171500_idempotent_open_bill_creation.sql", "utf8");
 
 const productShippingPrivacySql = fs.readFileSync("supabase/migrations/20261107141421_protect_public_product_shipping_and_write_paths.sql", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
@@ -927,6 +928,21 @@ const financeSettlementIdempotencyChecks = [
   [html.includes("result.data.replayed?'Pelunasan ini sudah tercatat sebelumnya"), "finance settlement UI must distinguish safe replay from a new payment"],
 ];
 for (const [ok, message] of financeSettlementIdempotencyChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
+
+const openBillCreationIdempotencyChecks = [
+  [idempotentOpenBillMigration.includes("ADD COLUMN IF NOT EXISTS client_request_id uuid"), "open bills must persist a client request ID for retry safety"],
+  [idempotentOpenBillMigration.includes("store_open_bills_business_client_request_unique") && idempotentOpenBillMigration.includes("WHERE client_request_id IS NOT NULL"), "open bill request IDs must be unique per business while preserving legacy bills"],
+  [idempotentOpenBillMigration.includes("GRANT INSERT (client_request_id)") && idempotentOpenBillMigration.includes("GRANT SELECT (client_request_id)"), "authenticated cashiers must be able to store and verify their own request ID under existing RLS"],
+  [html.includes("kasusaha_open_bill_create_pending_v1") && html.includes("client_request_id:requestId"), "new unpaid bills must persist and reuse the same request ID across retries"],
+  [html.includes("eq('client_request_id',requestId)") && html.includes("const sameLines=Array.isArray(existing.lines)"), "ambiguous open-bill creation must verify the matching server row and every line before recovery"],
+  [html.includes("pending.fingerprint!==fingerprint") && html.includes("jangan membuat tagihan lain"), "open-bill creation must block different details while a previous request is uncertain"],
+  [html.includes("existing.status==='paid'?'Tagihan dengan ID permintaan ini sudah dibayar"), "recovered paid bills must never be recreated as new unpaid bills"],
+];
+for (const [ok, message] of openBillCreationIdempotencyChecks) {
   if (ok) pass(message);
   else fail(message);
 }
