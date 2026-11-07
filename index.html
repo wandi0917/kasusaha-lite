@@ -5730,7 +5730,7 @@ $('quickSalePayDraft')?.addEventListener('click',async function(){
   await saveQuickSaleDraft();
   const lines=quickSaleDraftLines(),total=quickSaleDraftTotal(lines),cash=Number($('quickSaleCashReceived').value||0);
   if(!Number.isSafeInteger(cash)||cash<total)throw new Error('Uang diterima belum mencukupi total tagihan.');
-  if(!confirm('Konfirmasi pembayaran '+formatStoreRupiah(total)+'? Setelah dikonfirmasi, penjualan masuk laporan dan stok dikurangi satu kali.'))return;
+  if(!confirm('Konfirmasi pembayaran '+formatStoreRupiah(total)+'?\nUang diterima: '+formatStoreRupiah(cash)+'\nKembalian: '+formatStoreRupiah(cash-total)+'\n\nSetelah dikonfirmasi, penjualan masuk laporan dan stok dikurangi satu kali.'))return;
   const {data,error}=await sb.rpc('settle_store_open_bill',{p_bill_id:activeOpenBillId,p_cash_received:cash});if(error)throw error;
   if(!data?.ok)throw new Error('Server belum mengonfirmasi pembayaran.');
   const wasAlreadyPaid=!!data.already_paid;
@@ -5770,7 +5770,7 @@ $('quickSaleForm')?.addEventListener('submit',async function(e){
  if(!Number.isSafeInteger(cashReceived)||cashReceived<amount){setFinanceStatus('PENJUALAN BELUM DISIMPAN: uang diterima pelanggan belum mencukupi total tagihan. Masukkan pembayaran yang benar, lalu periksa kembali kembalian.',true);updateQuickSalePreview(false);return;}
  const tableNumber=String($('quickSaleTableNumber')?.value||'').trim().replace(/[<>]/g,'').slice(0,20),customerName=String($('quickSaleCustomerName')?.value||'').trim().replace(/[<>]/g,'').slice(0,80),serverLocation=tableNumber||(customerName?'Pelanggan: '+customerName:null),locationLabel=tableNumber?'Meja '+tableNumber:(customerName?'Pelanggan: '+customerName:'Kasir');
  const itemLines=lines.map(d=>financeMemberRole==='owner'?'• '+d.p.product_name+' ('+d.p.product_code+') — jumlah '+d.qty+'; modal/unit '+formatStoreRupiah(d.costPrice)+'; jual/unit '+formatStoreRupiah(d.price)+'; laba kotor '+formatStoreRupiah(d.profitTotal)+'; subtotal jual '+formatStoreRupiah(d.subtotal):'• '+d.p.product_name+' ('+d.p.product_code+') — jumlah '+d.qty+'; harga jual/unit '+formatStoreRupiah(d.price)+'; subtotal jual '+formatStoreRupiah(d.subtotal));
- const confirmText='PERIKSA TAGIHAN SEBELUM DISIMPAN\n\nLokasi: '+locationLabel+'\n\n'+itemLines.join('\n')+'\n\nTOTAL YANG HARUS DIBAYAR: '+formatStoreRupiah(amount)+'\n\nSimpan semua barang sebagai transaksi?';
+ const confirmText='PERIKSA TAGIHAN SEBELUM DISIMPAN\n\nLokasi: '+locationLabel+'\n\n'+itemLines.join('\n')+'\n\nTOTAL YANG HARUS DIBAYAR: '+formatStoreRupiah(amount)+'\nUANG DITERIMA: '+formatStoreRupiah(cashReceived)+'\nKEMBALIAN: '+formatStoreRupiah(cashReceived-amount)+'\n\nSimpan semua barang sebagai transaksi?';
  if(!window.confirm(confirmText)){setFinanceStatus('Transaksi belum disimpan. Periksa atau ubah rincian tagihan terlebih dahulu.');return;}
  const btn=$('quickSaleSave');btn.disabled=true;
  const quickSalePayload={businessId:financeBusiness.id,tableNumber:serverLocation,customerName,lines:lines.map(d=>({product_id:d.p.id,quantity:d.qty,unit_price:d.price}))};
@@ -5813,8 +5813,8 @@ $('quickSaleForm')?.addEventListener('submit',async function(e){
   
   // Server sudah mengonfirmasi penyimpanan. Kegagalan muat ulang laporan tidak berarti transaksi gagal.
   this.reset();$('quickSaleTableNumber').value='';if($('quickSaleCashReceived'))$('quickSaleCashReceived').value='';$('quickSaleItems').replaceChildren();addQuickSaleLine();
-  setFinanceStatus('Transaksi '+locationLabel+' BERHASIL DISIMPAN: '+lines.length+' jenis barang, total '+formatStoreRupiah(amount)+'. Stok dan pemasukan sudah dicatat oleh server.');
-  try{await loadFinanceWorkspace();setFinanceStatus('Transaksi '+locationLabel+' BERHASIL DISIMPAN: '+lines.length+' jenis barang, total '+formatStoreRupiah(amount)+'. Stok dan laporan sudah diperbarui.');}
+  setFinanceStatus('Transaksi '+locationLabel+' BERHASIL DISIMPAN: '+lines.length+' jenis barang, total '+formatStoreRupiah(amount)+'. Uang diterima '+formatStoreRupiah(cashReceived)+', kembalian '+formatStoreRupiah(cashReceived-amount)+'. Stok dan pemasukan sudah dicatat oleh server.');
+  try{await loadFinanceWorkspace();setFinanceStatus('Transaksi '+locationLabel+' BERHASIL DISIMPAN: '+lines.length+' jenis barang, total '+formatStoreRupiah(amount)+'. Uang diterima '+formatStoreRupiah(cashReceived)+', kembalian '+formatStoreRupiah(cashReceived-amount)+'. Stok dan laporan sudah diperbarui.');}
   catch(refreshErr){console.error('Penjualan tersimpan, tetapi penyegaran laporan gagal:',refreshErr);setFinanceStatus('Transaksi SUDAH TERSIMPAN di server ('+formatStoreRupiah(amount)+'), tetapi laporan belum berhasil dimuat ulang. Klik Muat Ulang laporan. Detail: '+String(refreshErr.message||refreshErr).slice(0,150),true);}
  }catch(err){setFinanceStatus('PENJUALAN BELUM TERSIMPAN: '+String(err.message||err).slice(0,350),true);}
  finally{btn.disabled=false;}
