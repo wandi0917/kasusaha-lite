@@ -744,4 +744,38 @@ for (const [ok, message] of stockCorrectionZeroChecks) {
   else pass(message);
 }
 
+
+const confirmedOperationChecks = [
+  [html.includes("let transactionConfirmed=false;") && html.includes("transactionConfirmed=true;") && html.includes("Jangan ulangi pencatatan."), "manual finance save/edit must retain confirmed-server state when report refresh fails"],
+  [html.includes("let productConfirmed=false;") && html.includes("productConfirmed=true;") && html.includes("Jangan simpan ulang barang yang sama."), "product save must not be reported as failed or retried after server confirmation"],
+  [html.includes("let stockConfirmed=false,stockNeedsManualReview=false;") && html.includes("String(result.product_id)!==String(p.id)") && html.includes("String(result.request_id)!==String(requestId)"), "stock adjustment must verify server product and idempotency request identity"],
+  [html.includes("quantity_before") && html.includes("quantity_after") && html.includes("quantity_delta") && html.includes("after!==expectedAfter"), "stock adjustment must reconcile before/after/delta values before clearing the pending request"],
+  [html.includes("finally{btn.disabled=stockNeedsManualReview;}"), "stock adjustment button must remain disabled when server result needs manual review"],
+  [html.includes("let paymentConfirmed=false;") && html.includes("paymentConfirmed=true;") && html.includes("Jangan ulangi pembayaran."), "open-bill settlement must distinguish confirmed payment from failed UI refresh"],
+  [html.includes("serverCash===cash") && html.includes("serverChange===expectedChange") && html.includes("serverTotal===total"), "open-bill settlement must reconcile server total, cash received, and change"],
+  [html.includes("stockMovementType')?.dispatchEvent(new Event('change'))"), "stock quantity minimum must initialize from the default movement type"],
+];
+for (const [ok, message] of confirmedOperationChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
+const costEntitlementUiCheck = html.includes("const previousCost=Number(currentItem?.cost_price||0),needsCostUpdate=editId?previousCost!==costPrice:costPrice>0;") && html.includes("if(needsCostUpdate){");
+if (costEntitlementUiCheck) pass("product save skips the full-finance cost RPC when a new or unchanged cost is zero");
+else fail("product save must not call the full-finance cost RPC unnecessarily for zero/unchanged cost");
+
+
+const cashierResultIntegrityChecks = [
+  [html.includes("let quickSaleResponseNeedsReview=false;") && html.includes("quickSaleResponseNeedsReview=true;"), "cashier must block resubmission when a successful server response needs manual reconciliation"],
+  [html.includes("String(result.request_id)!==String(quickSaleRequestId)"), "cashier must reconcile the server request ID before clearing its idempotency key"],
+  [html.includes("serverTotal!==amount") && html.includes("serverCashReceived!==cashReceived") && html.includes("serverChange!==cashReceived-amount"), "cashier must verify server total, received cash, and change against the submitted sale"],
+  [html.includes("Number(result.lines_count)!==lines.length"), "cashier must verify server-confirmed line count"],
+  [html.includes("finally{btn.disabled=quickSaleResponseNeedsReview;}"), "cashier submit must remain blocked when a successful response needs manual review"],
+  [html.includes("String(data.bill_id)===String(activeOpenBillId)") && html.includes("serverTotal===total"), "open-bill settlement must match the exact bill ID and server total"],
+];
+for (const [ok, message] of cashierResultIntegrityChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 if (process.exitCode) process.exit(process.exitCode);
