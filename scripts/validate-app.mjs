@@ -142,6 +142,8 @@ const globalNavigationChecks = [
 const navigationConcurrencyChecks = [
   [appNavigationScript.includes("let __kasUsahaNavigationQueue=Promise.resolve()"), "navigation requests must be serialized while session and license checks are pending"],
   [appNavigationScript.includes("const __kasUsahaNavigateCore=buka"), "navigation queue must preserve the original guarded navigation handler"],
+  [appNavigationScript.includes("window.__kasUsahaNavigateInternal=(id,tombol,opsi={})=>__kasUsahaNavigateCore(id,tombol,opsi)"), "internal navigation must be able to bypass the external queue without bypassing access guards"],
+  [appNavigationScript.includes("await window.__kasUsahaNavigateInternal('loginKaryawan',loginButton)") && !appNavigationScript.includes("await buka('loginKaryawan',loginButton)"), "employee device gate must not deadlock by queueing navigation inside an active navigation request"],
   [appNavigationScript.includes("__kasUsahaNavigationQueue=task.catch(error=>"), "a failed navigation must not permanently block later menu navigation"],
   [html.includes('id="kasusaha-navigation-usability"') && html.includes("scroll-margin-top:84px"), "selected panels must remain visible below the sticky navigation bar"],
   [html.includes("window.bukaKotakSaran = async (button) =>") && html.includes("await window.buka('beranda', berandaButton, {scroll:false})"), "suggestion form navigation must wait for Beranda before scrolling to the form"],
