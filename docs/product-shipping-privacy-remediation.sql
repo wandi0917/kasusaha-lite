@@ -17,6 +17,15 @@ REVOKE UPDATE ON TABLE public.produk FROM authenticated;
 -- The current seller UI only edits these public catalog fields directly.
 GRANT UPDATE (harga, stok, aktif) ON TABLE public.produk TO authenticated;
 
+-- Cost price is read-protected already, but table-level UPDATE currently
+-- allows direct API writes around the full_finance check in set_store_product_cost.
+-- Keep only the non-sensitive fields that the current Owner UI edits directly.
+REVOKE UPDATE ON TABLE public.store_products FROM authenticated;
+GRANT UPDATE (
+  product_code, product_name, price, active, updated_at,
+  stock_unit, item_type, barcode_value, barcode_type, barcode_aliases
+) ON TABLE public.store_products TO authenticated;
+
 -- Owners must still be able to list their own inactive products so the
 -- "Tampilkan lagi" action can work after a product is hidden.
 DROP POLICY IF EXISTS "Penjual dapat melihat produk miliknya" ON public.produk;
