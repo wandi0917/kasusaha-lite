@@ -379,6 +379,9 @@ test('Muat pratinjau bulan ini otomatis membuka langkah Owner berikutnya', async
       };
     };
     await renderOwnerServiceFeePanel();
+    // Tampilkan panel Owner pada fixture terisolasi; pada aplikasi normal panel
+    // ini hanya terlihat setelah status Owner dan workspace berhasil dimuat.
+    document.querySelector('#serviceFeeOwnerPanel').hidden = false;
   });
 
   await expect(page.locator('#serviceFeePreviewRefresh')).toBeVisible();
@@ -390,17 +393,20 @@ test('Muat pratinjau bulan ini otomatis membuka langkah Owner berikutnya', async
 });
 
 
-test('menu Produk Saya dan Cadangan membuka panel tujuan yang benar', async ({ page }) => {
+test('menu Produk Saya dan Cadangan mengarahkan pengguna tanpa sesi ke Akun Pembeli', async ({ page }) => {
   const nav = page.locator('nav[aria-label="Navigasi utama"]');
   const cases = [
-    { button: 'button[onclick*="buka(\'produk\'"]', panel: '#produk' },
-    { button: 'button[onclick*="buka(\'cadangan\'"]', panel: '#cadangan' },
+    { button: 'button[onclick*="buka(\\'produk\\'"]' },
+    { button: 'button[onclick*="buka(\\'cadangan\\'"]' },
   ];
   for (const item of cases) {
     const button = nav.locator(item.button);
     await expect(button).toBeVisible();
     await button.click();
-    await expect(page.locator(item.panel)).toHaveClass(/active/);
-    await expect(button).toHaveClass(/active/);
+    // Produk dan Cadangan adalah fitur berlisensi: tanpa sesi, redirect ke akun.
+    await expect(page.locator('#akunPembeli')).toHaveClass(/active/);
+    await expect(nav.locator('#navAkunPembeli')).toHaveClass(/active/);
+    await expect(page.locator('#produk')).not.toHaveClass(/active/);
+    await expect(page.locator('#cadangan')).not.toHaveClass(/active/);
   }
 });
