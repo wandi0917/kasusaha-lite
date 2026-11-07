@@ -4940,11 +4940,11 @@ function updateQuickSalePreview(useCatalogPrice=false){
 }
 async function bukaPanelTransaksi(tujuan){
   if(!$('transaksi')?.classList.contains('active'))await buka('transaksi',document.querySelector('nav button[onclick*="transaksi"]'));
-  if(!$('transaksi')?.classList.contains('active'))return;
-  if(document.body.classList.contains('employee-device-pending')){setFinanceStatus('Akun Karyawan ini belum diaktifkan oleh Owner. Kasir, absensi, dan laporan bersama tetap terkunci sampai aktivasi dikonfirmasi server.',true);return;}
+  if(!$('transaksi')?.classList.contains('active'))return false;
+  if(document.body.classList.contains('employee-device-pending')){setFinanceStatus('Akun Karyawan ini belum diaktifkan oleh Owner. Kasir, absensi, dan laporan bersama tetap terkunci sampai aktivasi dikonfirmasi server.',true);return false;}
   // Pastikan peran dan usaha sudah termuat sebelum tombol modul menjalankan aksi.
   if(!offlineTransactionMode&&(!financeBusiness||!financeMemberRole||!financeMemberUserId)){
-    try{await loadFinanceWorkspace();}catch(e){setFinanceStatus('Gagal memuat akses usaha: '+String(e.message||e).slice(0,180),true);return;}
+    try{await loadFinanceWorkspace();}catch(e){setFinanceStatus('Gagal memuat akses usaha: '+String(e.message||e).slice(0,180),true);return false;}
   }
   const isOwner=financeMemberRole==='owner',isEmployee=financeMemberRole==='employee';
   // Setiap menu Transaksi berdiri sendiri: sembunyikan panel lain sebelum membuka tujuan.
@@ -4956,27 +4956,27 @@ async function bukaPanelTransaksi(tujuan){
   const workspaceInfo=$('financeWorkspaceInfo');if(workspaceInfo){workspaceInfo.hidden=true;const employeePanel=$('ownerEmployeeActivationPanel');if(employeePanel)employeePanel.open=false;}
   if(tujuan!=='laporan')applyReportCategory('');
   if(!offlineTransactionMode&&financeBusiness&&financeMemberRole){
-    try{const licenseOk=await periksaLisensiWorkspace(financeBusiness.id);if(!licenseOk){setFinanceStatus('Lisensi usaha belum terverifikasi. Minta Owner utama menyelesaikan pemeriksaan lisensi sebelum memakai Kasir, Absensi, atau laporan bersama.',true);return;}}
-    catch(licenseError){setFinanceStatus('Status lisensi usaha belum dapat diperiksa: '+String(licenseError.message||licenseError).slice(0,160)+'. Fitur tetap dikunci sampai verifikasi berhasil.',true);return;}
+    try{const licenseOk=await periksaLisensiWorkspace(financeBusiness.id);if(!licenseOk){setFinanceStatus('Lisensi usaha belum terverifikasi. Minta Owner utama menyelesaikan pemeriksaan lisensi sebelum memakai Kasir, Absensi, atau laporan bersama.',true);return false;}}
+    catch(licenseError){setFinanceStatus('Status lisensi usaha belum dapat diperiksa: '+String(licenseError.message||licenseError).slice(0,160)+'. Fitur tetap dikunci sampai verifikasi berhasil.',true);return false;}
   }
   if(['kasir','absensi','catat','laporan','katalog'].includes(tujuan)&&(!financeBusiness||!financeMemberRole||!financeMemberUserId)){
     const picker=$('financeSavedBusinesses'),setup=$('financeSetupForms');
-    if(picker&&!picker.hidden){setFinanceStatus('Akun terhubung ke beberapa usaha. Pilih nama usaha pada daftar di atas agar Kasir, Absensi, dan laporan dibuka dengan data yang benar.',true);picker.scrollIntoView({behavior:'smooth',block:'center'});return;}
-    if(setup&&!setup.hidden){setFinanceStatus('Selesaikan login dan hubungkan akun ke usaha terlebih dahulu. Setelah usaha dimuat, menu Kasir dan Absensi akan aktif.',true);setup.scrollIntoView({behavior:'smooth',block:'start'});return;}
+    if(picker&&!picker.hidden){setFinanceStatus('Akun terhubung ke beberapa usaha. Pilih nama usaha pada daftar di atas agar Kasir, Absensi, dan laporan dibuka dengan data yang benar.',true);picker.scrollIntoView({behavior:'smooth',block:'center'});return false;}
+    if(setup&&!setup.hidden){setFinanceStatus('Selesaikan login dan hubungkan akun ke usaha terlebih dahulu. Setelah usaha dimuat, menu Kasir dan Absensi akan aktif.',true);setup.scrollIntoView({behavior:'smooth',block:'start'});return false;}
     setFinanceStatus('Menu belum dapat digunakan karena sesi ini belum terhubung ke usaha. Muat ulang sesi atau minta Owner memeriksa keanggotaan akun.',true);
-    const status=$('financeStatus');if(status)status.scrollIntoView({behavior:'smooth',block:'center'});return;
+    const status=$('financeStatus');if(status)status.scrollIntoView({behavior:'smooth',block:'center'});return false;
   }
-  if(tujuan==='stok'&&!isOwner){const sel=$('reportCategorySelect');if(sel&&isEmployee){sel.value='income';applyReportCategory('income');setFinanceStatus('Menu pengelolaan barang dan stok hanya tersedia untuk Owner.');}return;}
-  if(tujuan==='katalog'&&!isEmployee){setFinanceStatus('Menu Daftar Barang Karyawan hanya tersedia untuk akun Karyawan.',true);return;}
+  if(tujuan==='stok'&&!isOwner){const sel=$('reportCategorySelect');if(sel&&isEmployee){sel.value='income';applyReportCategory('income');setFinanceStatus('Menu pengelolaan barang dan stok hanya tersedia untuk Owner.');}return false;}
+  if(tujuan==='katalog'&&!isEmployee){setFinanceStatus('Menu Daftar Barang Karyawan hanya tersedia untuk akun Karyawan.',true);return false;}
   if(tujuan==='laporan'){
    const sel=$('reportCategorySelect');if(sel){sel.value=isEmployee?'income':'';applyReportCategory(sel.value);}
-   const report=$('reportCategoryChooser');if(report){report.hidden=false;report.removeAttribute('hidden');report.style.display='block';report.scrollIntoView({behavior:'smooth',block:'start'});if(isEmployee)await muatDanTampilkanLaporan();return;}
+   const report=$('reportCategoryChooser');if(report){report.hidden=false;report.removeAttribute('hidden');report.style.display='block';report.scrollIntoView({behavior:'smooth',block:'start'});if(isEmployee)await muatDanTampilkanLaporan();return false;}
   }
   if(tujuan==='catat'){
    if(offlineTransactionMode){
     const localForm=$('formKas'),details=localForm?.closest('details');if(details){details.hidden=false;details.open=true;}
     const type=$('jenis');if(type&&financeMemberRole==='employee'){type.value='masuk';type.disabled=true;const expense=Array.from(type.options).find(o=>o.value==='keluar');if(expense)expense.disabled=true;}
-    if(localForm){localForm.scrollIntoView({behavior:'smooth',block:'center'});$('keterangan')?.focus({preventScroll:true});setFinanceStatus('Mode offline aktif. Catatan disimpan di perangkat ini saja dan belum masuk laporan bersama.',true);return;}
+    if(localForm){localForm.scrollIntoView({behavior:'smooth',block:'center'});$('keterangan')?.focus({preventScroll:true});setFinanceStatus('Mode offline aktif. Catatan disimpan di perangkat ini saja dan belum masuk laporan bersama.',true);return true;}
    }
    const form=$('financeForm');
    if(form){
@@ -4994,18 +4994,18 @@ async function bukaPanelTransaksi(tujuan){
     if(!isOwner&&!isEmployee){
      const status=$('financeStatus');
      if(status)status.scrollIntoView({behavior:'smooth',block:'center'});else form.scrollIntoView({behavior:'smooth',block:'center'});
-     setFinanceStatus('Untuk mencatat transaksi bersama, login dengan akun Owner atau Karyawan yang sudah terhubung ke usaha.',true);return;
+     setFinanceStatus('Untuk mencatat transaksi bersama, login dengan akun Owner atau Karyawan yang sudah terhubung ke usaha.',true);return false;
     }
     form.scrollIntoView({behavior:'smooth',block:'center'});
     const field=$('financeDescription');if(field)field.focus({preventScroll:true});
-    return;
+    return true;
    }
    const localForm=$('formKas');
-   if(localForm){const details=localForm.closest('details');if(details)details.open=true;localForm.scrollIntoView({behavior:'smooth',block:'center'});const field=$('keterangan');if(field)field.focus({preventScroll:true});return;}
-   alert('Form Catat Transaksi tidak ditemukan. Muat ulang halaman.');return;
+   if(localForm){const details=localForm.closest('details');if(details)details.open=true;localForm.scrollIntoView({behavior:'smooth',block:'center'});const field=$('keterangan');if(field)field.focus({preventScroll:true});return true;}
+   alert('Form Catat Transaksi tidak ditemukan. Muat ulang halaman.');return false;
   }
-  if(tujuan==='kasir'&&offlineTransactionMode){const localForm=$('formKas'),details=localForm?.closest('details');if(details){details.hidden=false;details.open=true;}localForm?.scrollIntoView({behavior:'smooth',block:'center'});setFinanceStatus('Kasir dengan daftar barang dan pembaruan stok memerlukan koneksi. Untuk mencatat total penjualan saat offline, gunakan Catat Transaksi Lokal; stok tidak akan berkurang otomatis.',true);return;}
-  if(tujuan==='absensi'&&offlineTransactionMode){setFinanceStatus('Absensi online memerlukan koneksi internet. Jangan anggap absen tersimpan saat perangkat offline.',true);return;}
+  if(tujuan==='kasir'&&offlineTransactionMode){const localForm=$('formKas'),details=localForm?.closest('details');if(details){details.hidden=false;details.open=true;}localForm?.scrollIntoView({behavior:'smooth',block:'center'});setFinanceStatus('Kasir dengan daftar barang dan pembaruan stok memerlukan koneksi. Untuk mencatat total penjualan saat offline, gunakan Catat Transaksi Lokal; stok tidak akan berkurang otomatis.',true);return false;}
+  if(tujuan==='absensi'&&offlineTransactionMode){setFinanceStatus('Absensi online memerlukan koneksi internet. Jangan anggap absen tersimpan saat perangkat offline.',true);return false;}
   const targets={kasir:'financeEntryCard',absensi:'attendanceCard',stok:'financeEntryCard',katalog:'financeEntryCard'};
   const el=$(targets[tujuan]);
   if(el){
@@ -5026,7 +5026,7 @@ async function bukaPanelTransaksi(tujuan){
          const employeeCatalog=$('employeeProductCatalog');
          if(employeeCatalog){employeeCatalog.hidden=false;employeeCatalog.scrollIntoView({behavior:'smooth',block:'start'});}
          setFinanceStatus('Daftar barang dan barcode berhasil dimuat. Karyawan dapat melihat harga jual dan stok, tetapi tidak dapat mengubahnya.');
-         return;
+         return false;
         }
         if(tujuan==='kasir'){
           const currentHasProducts=quickSaleItemRows().some(row=>String(row.querySelector('.quick-sale-product')?.value||'').trim());
@@ -5047,9 +5047,10 @@ async function bukaPanelTransaksi(tujuan){
           if(barcodeInput){barcodeInput.value='';barcodeInput.focus({preventScroll:true});setQuickSaleBarcodeStatus('Kolom scan aktif. Hubungkan scanner USB/Bluetooth atau gunakan kamera HP.');}
         }
         else if(isOwner){catalog?.scrollIntoView({behavior:'smooth',block:'start'});}
-      }catch(e){setFinanceStatus((tujuan==='kasir'?'Kasir':'Menu barang dan stok')+' belum dapat memuat daftar barang: '+String(e.message||e).slice(0,180),true);}
+      }catch(e){setFinanceStatus((tujuan==='kasir'?'Kasir':'Menu barang dan stok')+' belum dapat memuat daftar barang: '+String(e.message||e).slice(0,180),true);return false;}
     }
-  }
+  }else{return false;}
+  return true;
 }
 
 const FINANCE_DEFAULT_ACCOUNTS=[['1001','Kas','asset','debit'],['1002','Bank','asset','debit'],['1101','Piutang Usaha','asset','debit'],['1201','Persediaan Barang','asset','debit'],['1501','Peralatan','asset','debit'],['2001','Utang Usaha','liability','credit'],['2101','Utang Gaji','liability','credit'],['3001','Modal Pemilik','equity','credit'],['3101','Prive Pemilik','equity','debit'],['4001','Penjualan','revenue','credit'],['4101','Pendapatan Lain','revenue','credit'],['5001','Harga Pokok Penjualan','expense','debit'],['6001','Beban Gaji','expense','debit'],['6002','Beban Sewa','expense','debit'],['6003','Beban Listrik, Air & Internet','expense','debit'],['6004','Beban Transportasi','expense','debit'],['6099','Beban Operasional Lain','expense','debit']];
@@ -5816,6 +5817,8 @@ async function arahkanKePekerjaanBerikutnya(){
  if(!financeBusiness||!financeMemberUserId||!['owner','employee'].includes(financeMemberRole))return false;
  const transactionButton=document.querySelector('nav button[onclick*="transaksi"]');
  await buka('transaksi',transactionButton);
+ if(!$('transaksi')?.classList.contains('active'))return false;
+ if(!offlineTransactionMode&&(!financeBusiness||!financeMemberUserId||!['owner','employee'].includes(financeMemberRole)))return false;
  try{await loadStoreProducts();}catch(e){
   tampilkanPanduanLangkahKerja('Absensi sudah tercatat. Daftar barang belum dapat dimuat. Buka Daftar Barang untuk mencoba memuat katalog kembali atau hubungi Owner.',true,'katalog');
   return false;
@@ -5832,7 +5835,10 @@ async function arahkanKePekerjaanBerikutnya(){
   destination='kasir';
   message='Kasir siap digunakan. Pilih barang, isi jumlah, periksa total dan uang diterima, lalu tekan Simpan Penjualan.';
  }
- await bukaPanelTransaksi(destination);
+ const opened=await bukaPanelTransaksi(destination);
+ if(!opened)return false;
+ const expectedPanel=destination==='kasir'||destination==='stok'||destination==='katalog'?'financeEntryCard':destination==='absensi'?'attendanceCard':null;
+ if(expectedPanel&&$(expectedPanel)?.hidden)return false;
  tampilkanPanduanLangkahKerja(message,destination==='katalog',destination);
  return true;
 }
@@ -5861,7 +5867,8 @@ async function arahkanSetelahLoginFinance(){
   const transactionButton=document.querySelector('nav button[onclick*="transaksi"]');
   if(!attendance||!attendance.check_in_at){
    await buka('transaksi',transactionButton);
-   await bukaPanelTransaksi('absensi');
+   const attendanceOpened=await bukaPanelTransaksi('absensi');
+   if(!attendanceOpened)return false;
    const status=$('attendanceStatus');
    if(status){status.className='status warn';status.textContent='Silakan absen untuk mulai bekerja sebelum membuka pekerjaan usaha.';}
    tampilkanPanduanLangkahKerja('LANGKAH 1 — Lakukan Absen Masuk terlebih dahulu. Setelah server mencatat absensi, KasUsaha Lite akan otomatis membuka pekerjaan berikutnya sesuai peran Anda.','', 'absensi');
@@ -5874,7 +5881,8 @@ async function arahkanSetelahLoginFinance(){
    return true;
   }
   await buka('transaksi',transactionButton);
-  await bukaPanelTransaksi('absensi');
+  const attendanceOpened=await bukaPanelTransaksi('absensi');
+  if(!attendanceOpened)return false;
   const status=$('attendanceStatus');
   if(status){status.className='status';status.textContent='Absen masuk dan absen pulang hari ini sudah tercatat. Anda telah menyelesaikan absensi hari ini.';}
   tampilkanPanduanLangkahKerja('Absensi hari ini sudah selesai. Periksa rekap kerja bila diperlukan. Jangan melakukan transaksi baru jika giliran kerja sudah berakhir.',false,'absensi');
