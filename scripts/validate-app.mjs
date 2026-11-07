@@ -157,6 +157,9 @@ const recoveryNavigationChecks = [
   [html.includes("true,'transaksi');"), "workspace setup recovery must provide a direct Transaksi action"],
   [html.includes("true,'kasir');"), "cashier recovery guidance must provide a direct Kasir Cepat action"],
   [html.includes("true,'katalog');"), "catalog loading recovery guidance must provide a direct Daftar Barang action"],
+  [html.includes("Buka Paket & Harga") && html.includes("paketKasUsaha"), "missing-license recovery must navigate directly to Packages and Pricing"],
+  [html.includes("Untuk membuat ruang usaha, pilih dan aktifkan paket KasUsaha Lite terlebih dahulu."), "workspace creation without a paid license must explain the exact next step"],
+
   [html.includes("Formulir pengaturan usaha sudah terbuka di halaman ini."), "first workspace instructions must not tell users to search for the already-open form"],
 ];
 for (const [ok, message] of recoveryNavigationChecks) {
