@@ -1962,6 +1962,13 @@ async function bagikanKasUsahaLite(){
 <div id="ownerStoreCatalog" class="card" hidden>
 <h3>Langkah berikutnya: isikan barang di toko Anda</h3>
 <p class="small">Masukkan daftar barang dan harga saat usaha mulai digunakan. Kode barang sebaiknya singkat dan mudah diketik karyawan, misalnya KOP, TEH, MIE.</p>
+<div id="stockMovementHistoryCard" class="card" hidden>
+ <h3>Riwayat Mutasi Stok</h3>
+ <p class="small">Riwayat 100 perubahan stok terakhir dari stok awal, penjualan kasir, stok masuk/keluar, dan koreksi. Riwayat ini hanya dapat dilihat Owner.</p>
+ <button type="button" class="secondary" onclick="loadStockMovementHistory()">Muat / Perbarui Riwayat Mutasi</button>
+ <div id="stockMovementHistoryStatus" class="status" role="status">Tekan tombol untuk memuat riwayat mutasi stok.</div>
+ <div class="table-wrap"><table class="report-table"><thead><tr><th>Waktu</th><th>Barang</th><th>Jenis</th><th>Perubahan</th><th>Stok sebelum</th><th>Stok sesudah</th><th>Catatan</th></tr></thead><tbody id="stockMovementHistoryRows"><tr><td colspan="7">Belum dimuat.</td></tr></tbody></table></div>
+</div>
 <form id="storeProductForm">
 <input id="storeProductEditId" type="hidden" value="">
 <div id="storeProductFormMode" class="small">Tambah barang baru. Jika kode sudah terdaftar, gunakan tombol Edit pada daftar barang di bawah.</div>
@@ -5348,7 +5355,32 @@ function renderEmployeeProductCatalog(){
  }
  if(status)status.textContent=products.length+' barang jual aktif tersedia. Karyawan hanya dapat melihat katalog; perubahan barang dan stok dilakukan Owner.';
 }
+async function loadStockMovementHistory(){
+ const status=$('stockMovementHistoryStatus'),tbody=$('stockMovementHistoryRows');
+ if(!status||!tbody)return;
+ if(!sb||!financeBusiness||financeMemberRole!=='owner'){status.className='status error';status.textContent='Riwayat mutasi stok hanya tersedia bagi Owner pada usaha yang aktif.';return;}
+ const btn=document.querySelector('#stockMovementHistoryCard button');
+ if(btn)btn.disabled=true;
+ status.className='status';status.textContent='Memuat riwayat mutasi stok dari server...';
+ try{
+  const {data,error}=await sb.from('store_stock_movements').select('id,product_code,product_name,movement_type,quantity_before,quantity_after,quantity_delta,note,created_at').eq('business_id',financeBusiness.id).order('created_at',{ascending:false}).limit(100);
+  if(error)throw error;
+  const labels={initial_stock:'Stok awal',sale:'Penjualan',stock_in:'Stok masuk',stock_out:'Stok keluar',stock_correction:'Koreksi stok',product_edit:'Edit barang'};
+  tbody.replaceChildren();
+  (data||[]).forEach(row=>{
+   const tr=document.createElement('tr');
+   const values=[new Date(row.created_at).toLocaleString('id-ID'),(row.product_code||'—')+' — '+(row.product_name||'Barang dihapus'),labels[row.movement_type]||row.movement_type,(Number(row.quantity_delta)>0?'+':'')+String(row.quantity_delta),String(row.quantity_before),String(row.quantity_after),row.note||'—'];
+   values.forEach((value,index)=>{const td=document.createElement('td');td.textContent=value;if(index===3)td.className='amount';tr.appendChild(td);});
+   tbody.appendChild(tr);
+  });
+  if(!data?.length){const tr=document.createElement('tr'),td=document.createElement('td');td.colSpan=7;td.textContent='Belum ada mutasi stok yang tercatat.';tr.appendChild(td);tbody.appendChild(tr);}
+  status.textContent='Riwayat berhasil dimuat: '+(data||[]).length+' catatan terakhir.';
+ }catch(e){status.className='status error';status.textContent='Riwayat mutasi gagal dimuat: '+String(e.message||e).slice(0,200);}
+ finally{if(btn)btn.disabled=false;}
+}
+
 async function loadStoreProducts(){
+  if($('stockMovementHistoryCard'))$('stockMovementHistoryCard').hidden=financeMemberRole!=='owner';
   if(!sb)throw new Error('Koneksi Supabase belum tersedia.');
   if(!financeBusiness||!financeMemberRole)throw new Error('Pilih usaha dan pastikan akun Owner/Karyawan sudah terhubung sebelum memuat barang.');
   storeProductRows=await financeFetchAllRows(()=>sb.from('store_products').select('id,business_id,product_code,product_name,barcode_value,barcode_aliases,barcode_type,price,stock_quantity,stock_unit,item_type,active,created_at,updated_at').eq('business_id',financeBusiness.id).order('product_code',{ascending:true}).order('id'));
