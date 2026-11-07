@@ -131,7 +131,7 @@ BEGIN
   RETURN v_result;
 END;
 $function$
-
+;
 
 CREATE OR REPLACE FUNCTION public.record_store_quick_sale(p_business_id uuid, p_table_number text, p_lines jsonb, p_request_id uuid, p_cash_received numeric)
  RETURNS jsonb
