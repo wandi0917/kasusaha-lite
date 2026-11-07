@@ -707,3 +707,14 @@ for (const [ok, message] of businessTypeChecks) {
 }
 
 if (process.exitCode) process.exit(process.exitCode);
+
+
+const stockCorrectionZeroChecks = [
+  [/id="stockMovementQty" type="number" min="0" step="1" required/.test(html), "stock correction input must permit zero so a product can be corrected to out-of-stock"],
+  [html.includes("qty<(type==='set'?0:1)"), "stock movement validation must allow zero only for absolute stock correction, not stock-in/out"],
+  [html.includes("p_movement_type:type,p_quantity:qty,p_request_id:requestId"), "stock changes must continue through the atomic idempotent server RPC"],
+];
+for (const [ok, message] of stockCorrectionZeroChecks) {
+  if (!ok) fail(message);
+  else pass(message);
+}
