@@ -107,18 +107,19 @@ test('pesan pemulihan Owner menyediakan tombol langsung ke menu Transaksi', asyn
 });
 
 
-test('gagal membuat usaha karena lisensi mengarahkan Owner langsung ke Paket dan Harga', async ({ page }) => {
-  await page.evaluate(() => {
-    window.__financeStatusTarget = null;
-    window.buka = async (target) => {
-      window.__financeStatusTarget = target;
-    };
-    window.setFinanceStatus('Aktifkan paket KasUsaha Lite terlebih dahulu.', true, 'paketKasUsaha');
-  });
+test('onboarding menampilkan kebijakan uji coba gratis 31 hari dengan seluruh fitur Lite', async ({ page }) => {
+  await expect(page.locator('#financeFirstBusinessGuide')).toContainText('uji coba gratis 31 hari');
+  await expect(page.locator('#financeFirstBusinessGuide')).toContainText('seluruh fitur paket Lite');
+  await expect(page.locator('#kasusahaTrialStatus')).toBeAttached();
 
-  const action = page.locator('#financeStatusAction');
-  await expect(action).toBeAttached();
-  await expect(action).toHaveText('Buka Paket & Harga');
-  await action.evaluate((button) => button.click());
-  await expect.poll(() => page.evaluate(() => window.__financeStatusTarget)).toBe('paketKasUsaha');
+  const helpers = await page.evaluate(() => ({
+    startTrial: typeof window.mulaiUjiCobaKasUsaha,
+    renderTrialStatus: typeof window.renderKasUsahaTrialStatus,
+    licenseCheck: typeof window.periksaLisensiWorkspace,
+  }));
+  expect(helpers).toEqual({
+    startTrial: 'function',
+    renderTrialStatus: 'function',
+    licenseCheck: 'function',
+  });
 });
