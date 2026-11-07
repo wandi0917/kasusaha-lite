@@ -4415,6 +4415,12 @@ async function renderOwnerServiceFeePanel(){
    const {data:workspace,error:workspaceError}=await sb.from('business_workspaces').select('id,owner_id').eq('id',targetBusinessId).maybeSingle();
    if(workspaceError)throw workspaceError;
    if(!workspace||workspace.owner_id!==liveUserId)throw new Error('Akun yang login bukan Owner utama usaha ini.');
+   // Pulihkan konteks Owner dari identitas usaha yang baru saja diverifikasi server.
+   // State financeBusiness dapat kosong sementara setelah pemuatan ulang workspace.
+   financeSelectedBusinessId=targetBusinessId;
+   financeBusiness={...(financeBusiness||{}),id:targetBusinessId,owner_id:liveUserId};
+   financeMemberRole='owner';
+   financeMemberUserId=liveUserId;
    const month=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()).slice(0,7)+'-01';
    const {data,error}=await sb.rpc('kasusaha_owner_service_fee_preview',{p_business_id:targetBusinessId,p_month:month});if(error)throw error;
    if(!data||data.billing_enabled!==false||data.preview_only!==true)throw new Error('Status server tidak memenuhi pengaman pratinjau. Jangan gunakan hasil ini sebagai tagihan.');
@@ -5833,7 +5839,9 @@ function tampilkanPanduanLangkahKerja(message,isError=false,nextTarget=''){
 async function arahkanKePekerjaanBerikutnya(){
  if(!financeBusiness||!financeMemberUserId||!['owner','employee'].includes(financeMemberRole))return false;
  const transactionButton=document.querySelector('nav button[onclick*="transaksi"]');
- await buka('transaksi',transactionButton);
+ // Jangan membuka ulang tab Transaksi jika sudah aktif. Membuka ulang di sini
+ // memicu pemeriksaan workspace kedua dan dapat mengosongkan state Owner sementara.
+ if(!$('transaksi')?.classList.contains('active'))await buka('transaksi',transactionButton);
  if(!$('transaksi')?.classList.contains('active'))return false;
  if(!offlineTransactionMode&&(!financeBusiness||!financeMemberUserId||!['owner','employee'].includes(financeMemberRole)))return false;
  try{await loadStoreProducts();}catch(e){

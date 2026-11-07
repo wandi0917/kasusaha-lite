@@ -176,3 +176,35 @@ test('pengaturan Owner menjelaskan ID unik lintas perangkat dan biaya aktivasi p
   expect(app).toContain('Karyawan masuk menggunakan nama dan ID unik yang sama dari HP atau komputer mana pun.');
   expect(app).not.toContain('Pengelolaan ID permanen lintas perangkat sedang disiapkan');
 });
+
+
+test('alur Owner nyata mengarahkan ke Stok atau Kasir sesuai ketersediaan produk', async ({ page }) => {
+  await page.evaluate(async () => {
+    // Hanya mock lapisan server; fungsi pengarah dan pembuka panel produksi tetap dijalankan.
+    document.querySelector('#transaksi')?.classList.add('active');
+    financeBusiness = { id: 'e2e-owner-business', owner_id: 'e2e-owner' };
+    financeMemberRole = 'owner';
+    financeMemberUserId = 'e2e-owner';
+    offlineTransactionMode = false;
+    periksaLisensiWorkspace = async () => true;
+    loadStoreProducts = async () => {};
+    storeProductRows = [];
+    window.__ownerRouteResults = {};
+    window.__ownerRouteResults.noProducts = await arahkanKePekerjaanBerikutnya();
+    window.__ownerRouteResults.stockVisible = !document.querySelector('#financeEntryCard')?.hidden;
+    window.__ownerRouteResults.catalogVisible = !document.querySelector('#ownerStoreCatalog')?.hidden;
+    storeProductRows = [{ id: 'e2e-product', active: true, item_type: 'product' }];
+    window.__ownerRouteResults.withProducts = await arahkanKePekerjaanBerikutnya();
+    window.__ownerRouteResults.cashierVisible = !document.querySelector('#quickSaleForm')?.hidden;
+    window.__ownerRouteResults.stockCatalogHidden = !!document.querySelector('#ownerStoreCatalog')?.hidden;
+  });
+  const result = await page.evaluate(() => window.__ownerRouteResults);
+  expect(result).toEqual({
+    noProducts: true,
+    stockVisible: true,
+    catalogVisible: true,
+    withProducts: true,
+    cashierVisible: true,
+    stockCatalogHidden: true,
+  });
+});

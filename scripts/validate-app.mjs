@@ -189,6 +189,15 @@ for (const [ok, message] of recoveryNavigationChecks) {
   else fail(message);
 }
 
+const ownerNavigationStateChecks = [
+  [html.includes("if(!$('transaksi')?.classList.contains('active'))await buka('transaksi',transactionButton)"), "next-step routing must not reopen an already-active Transaksi tab and trigger a competing workspace reload"],
+  [html.includes("financeBusiness={...(financeBusiness||{}),id:targetBusinessId,owner_id:liveUserId}") && html.includes("financeMemberRole='owner'") && html.includes("financeMemberUserId=liveUserId"), "verified service-fee preview context must restore Owner workspace state before automatic routing"],
+];
+for (const [ok, message] of ownerNavigationStateChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 const serviceFeePreviewNavigationChecks = [
   [html.includes("const nextStepOpened=await arahkanKePekerjaanBerikutnya()"), "a successful monthly service-fee preview must automatically route the Owner to the next operational step"],
   [html.includes("Pratinjau berhasil dimuat. Pengalihan otomatis tertahan"), "a blocked post-preview route must explain the failure and provide a recovery action"],
