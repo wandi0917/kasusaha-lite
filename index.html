@@ -4420,6 +4420,14 @@ async function renderOwnerServiceFeePanel(){
    if(!data||data.billing_enabled!==false||data.preview_only!==true)throw new Error('Status server tidak memenuhi pengaman pratinjau. Jangan gunakan hasil ini sebagai tagihan.');
    const idr=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
    result.innerHTML='<strong>Pratinjau '+aman(month.slice(0,7))+'</strong><br>Penjualan tercatat: '+idr(data.gross_recorded_sales)+'<br>Retur tercatat: '+idr(data.recognized_returns)+'<br>Omzet bersih: '+idr(data.net_sales_for_preview)+'<br>Bagian di atas ambang: '+idr(data.billable_amount)+'<br><strong>Estimasi biaya: '+idr(data.estimated_fee)+'</strong><p class="small">Ini hanya pratinjau, bukan tagihan. Billing aktif: tidak.</p>';
+   // Setelah hasil pratinjau berhasil diverifikasi server, lanjutkan alur Owner
+   // ke pekerjaan nyata berikutnya: Produk & Stok bila belum ada barang, atau Kasir bila sudah ada.
+   result.insertAdjacentHTML('beforeend','<p class="small"><strong>Berhasil.</strong> Menyiapkan menu berikutnya secara otomatis…</p>');
+   const nextStepOpened=await arahkanKePekerjaanBerikutnya();
+   if(!nextStepOpened){
+    result.insertAdjacentHTML('beforeend','<p class="small">Pratinjau berhasil, tetapi menu berikutnya belum dapat dibuka. Periksa status lisensi/koneksi, lalu gunakan tombol Coba Lagi di petunjuk langkah kerja.</p>');
+    setFinanceStatus('Pratinjau berhasil dimuat. Pengalihan otomatis tertahan karena langkah berikutnya belum dapat diverifikasi. Data pratinjau tidak berubah.',true,'transaksi');
+   }
   }catch(e){if(result)result.textContent='Pratinjau gagal dimuat: '+String(e.message||e).slice(0,220);}finally{refresh.disabled=false;}
  });
 }
