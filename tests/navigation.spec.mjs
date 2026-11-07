@@ -395,12 +395,8 @@ test('Muat pratinjau bulan ini otomatis membuka langkah Owner berikutnya', async
 
 test('menu Produk Saya dan Cadangan mengarahkan pengguna tanpa sesi ke Akun Pembeli', async ({ page }) => {
   const nav = page.locator('nav[aria-label="Navigasi utama"]');
-  const cases = [
-    { button: 'button[onclick*="buka(\\'produk\\'"]' },
-    { button: 'button[onclick*="buka(\\'cadangan\\'"]' },
-  ];
-  for (const item of cases) {
-    const button = nav.locator(item.button);
+  for (const label of ['Produk Saya', 'Cadangan']) {
+    const button = nav.getByRole('button', { name: label, exact: true });
     await expect(button).toBeVisible();
     await button.click();
     // Produk dan Cadangan adalah fitur berlisensi: tanpa sesi, redirect ke akun.
