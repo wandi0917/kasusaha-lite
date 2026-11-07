@@ -2659,6 +2659,11 @@ async function renderKasUsahaTrialStatus(businessId){
  if(!data||data.status==='paid'||data.status==='not_started'||data.status==='owner_required'){
   el.hidden=true;el.textContent='';return data;
  }
+ if(data.status==='already_used'){
+  el.hidden=false;el.className='status error';
+  el.textContent='Uji coba gratis 31 hari sudah digunakan pada usaha lain oleh Owner ini. Uji coba tidak dapat dipindahkan atau dimulai ulang. Aktifkan lisensi melalui menu Paket & Harga untuk usaha ini.';
+  return data;
+ }
  const expiry=data.expires_at?new Date(data.expires_at):null;
  const expiryText=expiry&&!Number.isNaN(expiry.getTime())?new Intl.DateTimeFormat('id-ID',{dateStyle:'long',timeZone:'Asia/Jakarta'}).format(expiry):'tanggal belum tersedia';
  const days=Math.max(0,Number(data.days_remaining)||0);
@@ -4264,8 +4269,8 @@ async function financeCreateBusiness(){
   }
  }catch(e){
   const message=String(e.message||e);
-  if(message.includes('Lisensi KasUsaha Lite aktif dengan pembayaran terverifikasi diperlukan')){
-   setFinanceStatus('Untuk membuat ruang usaha, pilih dan aktifkan paket KasUsaha Lite terlebih dahulu. Setelah lisensi terverifikasi, kembali ke formulir usaha ini.',true,'paketKasUsaha');
+  if(message.includes('Uji coba gratis 31 hari sudah pernah digunakan')||message.includes('Lisensi KasUsaha Lite aktif dengan pembayaran terverifikasi diperlukan')){
+   setFinanceStatus('Uji coba gratis 31 hari sudah digunakan atau lisensi diperlukan. Pilih paket KasUsaha Lite untuk melanjutkan tanpa menghapus data usaha.',true,'paketKasUsaha');
   }else setFinanceStatus('Usaha belum berhasil disimpan: '+message.slice(0,220),true);
  }finally{btn.disabled=false;}
 }
