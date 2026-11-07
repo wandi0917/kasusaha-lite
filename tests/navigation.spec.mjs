@@ -209,6 +209,34 @@ test('alur Owner nyata mengarahkan ke Stok atau Kasir sesuai ketersediaan produk
   });
 });
 
+test('pratinjau kasir kosong merentang tujuh kolom dan struk 58 mm aman dari HTML pelanggan', async ({ page }) => {
+  const emptyPreview = await page.evaluate(() => {
+    updateQuickSalePreview(false);
+    return document.querySelector('#quickSaleBillRows td')?.colSpan;
+  });
+  expect(emptyPreview).toBe(7);
+
+  const receipt = await page.evaluate(() => {
+    document.querySelector('#quickSaleReceiptWidth').value = '58';
+    return buildQuickSaleReceiptHtml({
+      paid: false,
+      business_name: '<img src=x onerror=alert(1)>',
+      location: 'Meja <script>alert(1)</script>',
+      customer: 'Budi <b>uji</b>',
+      cashier: 'Kasir',
+      transaction_id: 'TRX-XSS',
+      lines: [{ product_name: '<svg onload=alert(1)>', quantity: 1, unit_price: 5000, note: '<iframe src=javascript:alert(1)>' }],
+      total: 5000
+    });
+  });
+  expect(receipt).toContain('width:58mm');
+  expect(receipt).toContain('&lt;img src=x onerror=alert(1)&gt;');
+  expect(receipt).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+  expect(receipt).toContain('&lt;svg onload=alert(1)&gt;');
+  expect(receipt).toContain('&lt;iframe src=javascript:alert(1)&gt;');
+  expect(receipt).not.toContain('<script>alert(1)</script>');
+});
+
 test('Kasir menyediakan cetak tagihan dan struk lunas dengan layout printer thermal', async ({ page }) => {
   await expect(page.locator('#quickSalePrintBill')).toHaveText(/Cetak tagihan/);
   await expect(page.locator('#quickSaleReceiptWidth')).toHaveValue('80');
