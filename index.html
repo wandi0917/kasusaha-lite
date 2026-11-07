@@ -4402,7 +4402,7 @@ async function loadFinanceWorkspaceInternal(){
   // Pertahankan kategori laporan aktif saat workspace dimuat ulang; sebelumnya panel laporan langsung disembunyikan kembali.
   applyReportCategory($('reportCategorySelect')?.value||'');if(!$('financeDate').value)$('financeDate').value=financeToday();if(!$('financeReportStart').value)$('financeReportStart').value=financeToday().slice(0,8)+'01';if(!$('financeReportEnd').value)$('financeReportEnd').value=financeToday();if(!$('tanggalMulaiLaporan').value)$('tanggalMulaiLaporan').value=financeToday().slice(0,8)+'01';if(!$('tanggalSampaiLaporan').value)$('tanggalSampaiLaporan').value=financeToday();
   const rows=await financeFetchAllRows(()=>{
-   let q=sb.from('financial_transactions').select('id,business_id,created_by,created_by_role,transaction_date,transaction_type,amount,description,category,created_at').eq('business_id',business.id).order('transaction_date',{ascending:true}).order('created_at',{ascending:true}).order('id',{ascending:true});
+   let q=sb.from('financial_transactions').select('id,business_id,created_by,created_by_role,transaction_date,transaction_type,amount,description,customer_note,category,created_at').eq('business_id',business.id).order('transaction_date',{ascending:true}).order('created_at',{ascending:true}).order('id',{ascending:true});
    if(member.role==='employee')q=q.in('created_by',financeEmployeeIdentityUserIds);
    return q;
   });
@@ -6321,7 +6321,7 @@ function renderFinanceReport(){
   const timestamp=String(r.created_at||r.transaction_date||''),key=match?[r.created_by||'',r.created_by_role||'',location,timestamp].join('|'):'legacy:'+String(r.id||timestamp+'|'+description);
   if(!salesGroups.has(key))salesGroups.set(key,{location,created_at:r.created_at,transaction_date:r.transaction_date,items:[],total:0,modal:0,modalKnown:true,usedCurrentCost:false});
   const g=salesGroups.get(key),amount=Number(r.amount||0);
-  g.items.push(description.replace(/^(Meja .+?|Pelanggan: .+?|Kasir) — /,''));
+  g.items.push(description.replace(/^(Meja .+?|Pelanggan: .+?|Kasir) — /,'')+(r.customer_note?' | Catatan: '+String(r.customer_note):''));
   g.total+=amount;
   if(isSalesOwner){
    const savedModal=description.match(/Modal total\s*Rp\s*([0-9.,]+)/i);

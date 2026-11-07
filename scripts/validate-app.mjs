@@ -17,6 +17,7 @@ const openBillAttributionMigration = fs.readFileSync("supabase/migrations/202611
 const cashierItemNotesSettlementMigration = fs.readFileSync("supabase/migrations/20261107144500_preserve_cashier_item_notes_after_payment.sql", "utf8");
 const cashierItemNotesLengthMigration = fs.readFileSync("supabase/migrations/20261107170500_cap_paid_sale_note_description_length.sql", "utf8");
 const idempotentOpenBillMigration = fs.readFileSync("supabase/migrations/20261107171500_idempotent_open_bill_creation.sql", "utf8");
+const separateCashierNoteMigration = fs.readFileSync("supabase/migrations/20261107172000_store_cashier_customer_note_separately.sql", "utf8");
 
 const productShippingPrivacySql = fs.readFileSync("supabase/migrations/20261107141421_protect_public_product_shipping_and_write_paths.sql", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
@@ -943,6 +944,20 @@ const openBillCreationIdempotencyChecks = [
   [html.includes("existing.status==='paid'?'Tagihan dengan ID permintaan ini sudah dibayar"), "recovered paid bills must never be recreated as new unpaid bills"],
 ];
 for (const [ok, message] of openBillCreationIdempotencyChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
+
+const separateCashierNoteChecks = [
+  [separateCashierNoteMigration.includes("ADD COLUMN IF NOT EXISTS customer_note text"), "paid cashier item notes must use a separate transaction column"],
+  [separateCashierNoteMigration.includes("char_length(customer_note) <= 300"), "customer notes must retain the 300-character limit without extending the description constraint"],
+  [separateCashierNoteMigration.includes("GRANT SELECT (customer_note)") && !separateCashierNoteMigration.includes("GRANT INSERT (customer_note)"), "customers notes must be readable by authenticated members but not directly writable by clients"],
+  [(separateCashierNoteMigration.match(/customer_note\)/g)||[]).length>=2 && (separateCashierNoteMigration.match(/nullif\(left\(trim\(coalesce\(v_line->>'note'/g)||[]).length===2, "both cashier RPC overloads must store the per-item note separately on the matching sale row"],
+  [html.includes("amount,description,customer_note,category,created_at"), "shared transaction report query must load paid item notes"],
+  [html.includes("r.customer_note?' | Catatan: '+String(r.customer_note):''"), "sales report must display the saved note alongside its exact product line"],
+];
+for (const [ok, message] of separateCashierNoteChecks) {
   if (ok) pass(message);
   else fail(message);
 }
