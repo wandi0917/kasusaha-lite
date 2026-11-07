@@ -259,3 +259,43 @@ test('tombol Periksa Status Aktivasi menjalankan pemeriksaan ulang ke server', a
   await expect.poll(() => page.evaluate(() => window.__employeeWorkspaceLoads)).toBe(1);
   await expect.poll(() => page.evaluate(() => window.__employeeStatusChecks)).toBe(2);
 });
+
+
+test('panduan login Owner mengikuti kondisi barang yang tersedia', async ({ page }) => {
+  await page.evaluate(async () => {
+    document.querySelector('#transaksi')?.classList.add('active');
+    sb = {};
+    financeBusiness = { id: 'e2e-owner-business', owner_id: 'e2e-owner' };
+    financeMemberRole = 'owner';
+    financeMemberUserId = 'e2e-owner';
+    document.body.classList.remove('employee-device-pending');
+    window.arahkanKePekerjaanBerikutnya = async () => true;
+
+    storeProductRows = [];
+    window.__ownerLoginGuideNoProducts = await arahkanSetelahLoginFinance();
+    window.__ownerLoginGuideNoProductsText = document.querySelector('#financeLoginWorkNotice')?.textContent || '';
+    window.__ownerLoginGuideNoProductsTarget = document.querySelector('#financeLoginWorkAction')?.textContent || '';
+
+    storeProductRows = [{ id: 'e2e-product', active: true, item_type: 'product' }];
+    window.__ownerLoginGuideWithProducts = await arahkanSetelahLoginFinance();
+    window.__ownerLoginGuideWithProductsText = document.querySelector('#financeLoginWorkNotice')?.textContent || '';
+    window.__ownerLoginGuideWithProductsTarget = document.querySelector('#financeLoginWorkAction')?.textContent || '';
+  });
+
+  const result = await page.evaluate(() => ({
+    noProducts: window.__ownerLoginGuideNoProducts,
+    noProductsText: window.__ownerLoginGuideNoProductsText,
+    noProductsTarget: window.__ownerLoginGuideNoProductsTarget,
+    withProducts: window.__ownerLoginGuideWithProducts,
+    withProductsText: window.__ownerLoginGuideWithProductsText,
+    withProductsTarget: window.__ownerLoginGuideWithProductsTarget,
+  }));
+
+  expect(result.noProducts).toBe(true);
+  expect(result.noProductsText).toContain('Tambahkan barang yang dijual');
+  expect(result.noProductsTarget).toBe('Buka formulir Tambah Barang');
+  expect(result.withProducts).toBe(true);
+  expect(result.withProductsText).toContain('Barang jual sudah tersedia');
+  expect(result.withProductsText).toContain('Kasir Cepat');
+  expect(result.withProductsTarget).toBe('Buka Kasir Cepat');
+});
