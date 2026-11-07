@@ -1032,6 +1032,7 @@ for (const [ok, message] of cashierReceiptPrintChecks) {
 const employeeDeviceStatusButtonChecks = [
   [html.includes('id="employeeDeviceCheckButton"') && html.includes("employeeDeviceCheckButton.addEventListener('click'"), "Employee activation status button must perform a fresh server status check"],
   [html.includes("await ensureEmployeeDeviceActivation()") && html.includes("employeeDeviceCheckButton.disabled=true"), "Employee status recheck must prevent duplicate clicks while checking"],
+  [html.includes("if(activated)") && html.includes("await loadFinanceWorkspace()"), "newly activated employee must reload verified workspace and resume the guided work flow"],
 ];
 for (const [ok, message] of employeeDeviceStatusButtonChecks) {
   if (ok) pass(message);
