@@ -6411,6 +6411,13 @@ $('quickSalePayDraft')?.addEventListener('click',async function(){
    }else{
     setFinanceStatus('PEMBAYARAN SUDAH DIKONFIRMASI SERVER, tetapi nilai uang/kembalian perlu pemeriksaan manual. Jangan ulangi pembayaran. Laporan sudah dimuat ulang.',true);
    }
+   // Route only after the server-confirmed payment snapshot matches.
+   if(paymentMatches&&!wasAlreadyPaid){
+    const reportOpened=await arahkanKeLaporanSetelahSimpan(financeMemberRole==='employee'?'income':'sales');
+    if(!reportOpened){
+     tampilkanPanduanLangkahKerja('Pembayaran sudah tersimpan dan terverifikasi. Laporan belum terbuka otomatis; tekan tombol Coba Lagi untuk membuka laporan tanpa mengulangi pembayaran.',true,'laporan');
+    }
+   }
   }catch(refreshErr){
    setFinanceStatus('Pembayaran sudah dikonfirmasi server'+(paymentMatches?' dan tidak perlu diulang':' tetapi memerlukan pemeriksaan manual')+'. Laporan belum berhasil dimuat ulang. Jangan ulangi pembayaran. Detail: '+String(refreshErr.message||refreshErr).slice(0,180),true);
   }
