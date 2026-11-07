@@ -169,3 +169,10 @@ test('panduan memakai bahasa sederhana dan alur produk jual tidak terhenti oleh 
   expect(app).toContain("row.item_type==='product'");
   expect(app).toContain("Barang bahan baku boleh ditambahkan setelahnya");
 });
+
+test('pengaturan Owner menjelaskan ID unik lintas perangkat dan biaya aktivasi per karyawan', async ({ page }) => {
+  const source = await page.locator('script').allTextContents();
+  const app = source.join('\\n');
+  expect(app).toContain('Karyawan masuk menggunakan nama dan ID unik yang sama dari HP atau komputer mana pun.');
+  expect(app).not.toContain('Pengelolaan ID permanen lintas perangkat sedang disiapkan');
+});
