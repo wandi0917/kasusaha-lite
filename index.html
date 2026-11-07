@@ -4246,11 +4246,27 @@ async function renderOwnerServiceFeePanel(){
  host.innerHTML='<p><strong>Status:</strong> Periode pratinjau aktif.</p><p><strong>Pratinjau dimulai:</strong> '+aman(started.toLocaleString('id-ID',{timeZone:'Asia/Jakarta'}))+'</p><p><strong>Pratinjau berakhir:</strong> '+aman(ends.toLocaleString('id-ID',{timeZone:'Asia/Jakarta'}))+'</p><p class="small">Ambang gratis Rp3.000.000 per bulan; tarif 0,1% hanya atas bagian di atas ambang. Pratinjau bukan tagihan. Billing dan pemotongan saldo tetap nonaktif.</p><button id="serviceFeePreviewRefresh" type="button" class="secondary">Muat pratinjau bulan ini</button><div id="serviceFeePreviewResult" class="status" role="status" aria-live="polite">Pratinjau belum dimuat.</div>';
  const refresh=$('serviceFeePreviewRefresh'),result=$('serviceFeePreviewResult');
  refresh?.addEventListener('click',async()=>{
-  refresh.disabled=true;if(result)result.textContent='Menghitung pratinjau dari data server…';
+  refresh.disabled=true;if(result)result.textContent='Memverifikasi sesi Owner dan menghitung pratinjau dari server…';
   try{
+   if(!sb)throw new Error('Koneksi server belum tersedia. Periksa internet lalu coba kembali.');
+   // Gunakan ID usaha yang ditangkap saat panel Owner dirender. financeBusiness
+   // dapat bernilai null sementara ketika pemuatan workspace berjalan ulang.
+   const targetBusinessId=panelBusinessId;
+   const targetOwnerId=panelOwnerId;
+   if(!targetBusinessId||!targetOwnerId)throw new Error('Identitas usaha tidak tersedia. Tutup panel, muat ulang usaha Owner, lalu buka kembali.');
+   const {data:sessionData,error:sessionError}=await sb.auth.getSession();
+   if(sessionError)throw sessionError;
+   const liveUserId=sessionData?.session?.user?.id;
+   if(!liveUserId||liveUserId!==targetOwnerId||liveUserId!==financeMemberUserId)throw new Error('Sesi Owner berubah atau tidak cocok dengan usaha. Login ulang menggunakan akun Owner utama.');
+   const {data:membership,error:membershipError}=await sb.from('business_members').select('business_id,role,active').eq('business_id',targetBusinessId).eq('user_id',liveUserId).eq('active',true).maybeSingle();
+   if(membershipError)throw membershipError;
+   if(!membership||membership.role!=='owner')throw new Error('Keanggotaan Owner aktif tidak ditemukan untuk usaha ini.');
+   const {data:workspace,error:workspaceError}=await sb.from('business_workspaces').select('id,owner_id').eq('id',targetBusinessId).maybeSingle();
+   if(workspaceError)throw workspaceError;
+   if(!workspace||workspace.owner_id!==liveUserId)throw new Error('Akun yang login bukan Owner utama usaha ini.');
    const month=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()).slice(0,7)+'-01';
-   const {data,error}=await sb.rpc('kasusaha_owner_service_fee_preview',{p_business_id:financeBusiness.id,p_month:month});if(error)throw error;
-   if(!data||data.billing_enabled!==false)throw new Error('Status billing tidak sesuai pengaman. Jangan gunakan hasil ini sebagai tagihan.');
+   const {data,error}=await sb.rpc('kasusaha_owner_service_fee_preview',{p_business_id:targetBusinessId,p_month:month});if(error)throw error;
+   if(!data||data.billing_enabled!==false||data.preview_only!==true)throw new Error('Status server tidak memenuhi pengaman pratinjau. Jangan gunakan hasil ini sebagai tagihan.');
    const idr=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
    result.innerHTML='<strong>Pratinjau '+aman(month.slice(0,7))+'</strong><br>Penjualan tercatat: '+idr(data.gross_recorded_sales)+'<br>Retur tercatat: '+idr(data.recognized_returns)+'<br>Omzet bersih: '+idr(data.net_sales_for_preview)+'<br>Bagian di atas ambang: '+idr(data.billable_amount)+'<br><strong>Estimasi biaya: '+idr(data.estimated_fee)+'</strong><p class="small">Ini hanya pratinjau, bukan tagihan. Billing aktif: tidak.</p>';
   }catch(e){if(result)result.textContent='Pratinjau gagal dimuat: '+String(e.message||e).slice(0,220);}finally{refresh.disabled=false;}
