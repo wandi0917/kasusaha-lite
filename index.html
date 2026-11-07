@@ -4950,9 +4950,27 @@ function financeAccountingAccountByCode(code){return financeAccounting.accounts.
 async function financeAccountingCreateJournal(data){
  const value=Number(data.amount);if(!Number.isSafeInteger(value)||value<=0)throw new Error('Nominal jurnal harus bilangan bulat positif.');
  if(!data.debitAccount||!data.creditAccount||data.debitAccount===data.creditAccount)throw new Error('Pilih dua akun yang berbeda.');
+ const sourceType=data.sourceType||'manual',sourceId=data.sourceId||null;
  const number='JU-'+Date.now()+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
- const head=await sb.from('finance_journal_entries').insert({business_id:financeBusiness.id,entry_number:number,entry_date:data.date,description:data.description,source_type:data.sourceType||'manual',source_id:data.sourceId||null,created_by:financeMemberUserId,status:'draft'}).select('id').single();
- if(head.error)throw head.error;
+ const head=await sb.from('finance_journal_entries').insert({business_id:financeBusiness.id,entry_number:number,entry_date:data.date,description:data.description,source_type:sourceType,source_id:sourceId,created_by:financeMemberUserId,status:'draft'}).select('id').single();
+ if(head.error){
+  // Source ID unik menjadi kunci idempotensi. Jika respons sebelumnya hilang
+  // setelah jurnal berhasil diposting, verifikasi jurnal lama alih-alih membuat duplikat.
+  if(!sourceId)throw head.error;
+  const existing=await sb.from('finance_journal_entries').select('id,status').eq('business_id',financeBusiness.id).eq('source_type',sourceType).eq('source_id',sourceId).maybeSingle();
+  if(existing.error)throw new Error('Status jurnal sebelumnya belum dapat diverifikasi. Jangan membuat jurnal baru dahulu. '+String(existing.error.message||existing.error).slice(0,140));
+  if(!existing.data)throw head.error;
+  const savedLines=await sb.from('finance_journal_lines').select('account_id,party_id,debit,credit').eq('business_id',financeBusiness.id).eq('entry_id',existing.data.id);
+  if(savedLines.error)throw savedLines.error;
+  const rows=savedLines.data||[];
+  const debitLine=rows.find(x=>x.account_id===data.debitAccount&&Number(x.debit)===value&&Number(x.credit)===0&&String(x.party_id||'')===String(data.partyId||''));
+  const creditLine=rows.find(x=>x.account_id===data.creditAccount&&Number(x.credit)===value&&Number(x.debit)===0&&String(x.party_id||'')===String(data.partyId||''));
+  if(rows.length!==2||!debitLine||!creditLine)throw new Error('Kunci jurnal sudah digunakan, tetapi isi jurnal server berbeda atau belum lengkap. Periksa buku jurnal sebelum mencoba lagi.');
+  if(existing.data.status==='posted')return existing.data.id;
+  if(existing.data.status!=='draft')throw new Error('Jurnal dengan kunci ini sudah dibatalkan. Buat jurnal baru setelah memeriksa buku jurnal.');
+  const postedExisting=await sb.rpc('post_finance_journal_entry',{p_entry_id:existing.data.id});if(postedExisting.error)throw postedExisting.error;
+  return existing.data.id;
+ }
  try{
   const lines=await sb.from('finance_journal_lines').insert([
    {business_id:financeBusiness.id,entry_id:head.data.id,account_id:data.debitAccount,party_id:data.partyId||null,debit:value,credit:0,description:data.description},
@@ -4961,7 +4979,7 @@ async function financeAccountingCreateJournal(data){
   if(lines.error)throw lines.error;
   const posted=await sb.rpc('post_finance_journal_entry',{p_entry_id:head.data.id});if(posted.error)throw posted.error;
   return head.data.id;
- }catch(err){await sb.from('finance_journal_entries').delete().eq('id',head.data.id).eq('business_id',financeBusiness.id).eq('status','draft');throw err;}
+ }catch(err){if(!sourceId)await sb.from('finance_journal_entries').delete().eq('id',head.data.id).eq('business_id',financeBusiness.id).eq('status','draft');throw err;}
 }
 function financeAccountingSetStatus(id,message,isError){const el=financeAccountingEl(id);if(el){el.textContent=message;el.style.color=isError?'#b42318':'';}}
 function financeAccountingRange(){
@@ -5042,9 +5060,19 @@ function printFinanceAccounting(){
 financeAccountingEl('financeOpenDirection')?.addEventListener('change',financeAccountingPopulateControls);
 financeAccountingEl('financeJournalForm')?.addEventListener('submit',async function(ev){
  ev.preventDefault();if(financeMemberRole!=='owner')return financeAccountingSetStatus('financeJournalStatus','Akses hanya untuk Owner.',true);
- const debit=financeAccountingEl('financeJournalDebit').value,credit=financeAccountingEl('financeJournalCredit').value,amount=Number(financeAccountingEl('financeJournalAmount').value),date=financeAccountingEl('financeJournalDate').value,description=financeAccountingEl('financeJournalDescription').value.trim();
- try{await financeAccountingCreateJournal({date:date,description:description,debitAccount:debit,creditAccount:credit,amount:amount});this.reset();financeAccountingEl('financeJournalDate').value=financeToday();await loadFinanceAccounting();financeAccountingSetStatus('financeJournalStatus','Jurnal berhasil disimpan dan seimbang.');}
- catch(err){financeAccountingSetStatus('financeJournalStatus','Gagal menyimpan jurnal: '+String(err.message||err).slice(0,200),true);}
+ const form=this,button=form.querySelector('button[type="submit"]'),debit=financeAccountingEl('financeJournalDebit').value,credit=financeAccountingEl('financeJournalCredit').value,amount=Number(financeAccountingEl('financeJournalAmount').value),date=financeAccountingEl('financeJournalDate').value,description=financeAccountingEl('financeJournalDescription').value.trim();
+ const key='kasusaha_manual_journal_pending_v1',fingerprint=JSON.stringify({businessId:financeBusiness?.id||'',debit,credit,amount,date,description});let pending=null;
+ if(button)button.disabled=true;
+ try{
+  try{pending=JSON.parse(localStorage.getItem(key)||'null');}catch(_){throw new Error('Kunci pengaman jurnal tidak dapat dibaca. Periksa buku jurnal sebelum mencoba lagi.');}
+  if(pending&&(pending.businessId!==financeBusiness?.id||pending.fingerprint!==fingerprint))throw new Error('Ada jurnal sebelumnya yang hasilnya belum dipastikan. Periksa buku jurnal dan ulangi rincian yang sama sebelum membuat jurnal baru.');
+  let sourceId=pending?.sourceId;
+  if(!sourceId){sourceId='manual-ui:'+((crypto.randomUUID&&crypto.randomUUID())||('xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,ch=>{const n=Math.random()*16|0;return(ch==='x'?n:(n&3|8)).toString(16);})));try{localStorage.setItem(key,JSON.stringify({businessId:financeBusiness.id,fingerprint,sourceId,createdAt:new Date().toISOString()}));}catch(_){throw new Error('Kunci pengaman jurnal tidak dapat disimpan di perangkat. Jurnal tidak dikirim agar tidak berisiko tercatat ganda.');}}
+  await financeAccountingCreateJournal({date:date,description:description,debitAccount:debit,creditAccount:credit,amount:amount,sourceType:'manual',sourceId:sourceId});
+  try{const saved=JSON.parse(localStorage.getItem(key)||'null');if(saved?.sourceId===sourceId)localStorage.removeItem(key);}catch(_){}
+  form.reset();financeAccountingEl('financeJournalDate').value=financeToday();await loadFinanceAccounting();financeAccountingSetStatus('financeJournalStatus','Jurnal berhasil disimpan dan seimbang.');
+ }catch(err){financeAccountingSetStatus('financeJournalStatus','Jurnal belum dapat dinyatakan berhasil: '+String(err.message||err).slice(0,220)+'. Periksa buku jurnal sebelum mengirim ulang.',true);}
+ finally{if(button)button.disabled=false;}
 });
 financeAccountingEl('financePartyForm')?.addEventListener('submit',async function(ev){
  ev.preventDefault();if(financeMemberRole!=='owner')return;
