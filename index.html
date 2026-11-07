@@ -1966,6 +1966,7 @@ async function bagikanKasUsahaLite(){
 <div class="card" id="quickSalePaymentPanel" style="background:#fff;border:1px solid #93c5fd"><h4 style="margin-top:0">Pembayaran pelanggan</h4><label for="quickSaleCashReceived">Uang diterima dari pelanggan (Rp)</label><input id="quickSaleCashReceived" type="number" min="0" step="1" inputmode="numeric" placeholder="Masukkan uang yang dibayarkan"><div class="row-actions" style="margin-top:8px"><button type="button" class="secondary quick-sale-cash-option" data-cash="exact">Uang pas</button><button type="button" class="secondary quick-sale-cash-option" data-cash="10000">Rp10.000</button><button type="button" class="secondary quick-sale-cash-option" data-cash="20000">Rp20.000</button><button type="button" class="secondary quick-sale-cash-option" data-cash="50000">Rp50.000</button><button type="button" class="secondary quick-sale-cash-option" data-cash="100000">Rp100.000</button><button type="button" class="secondary quick-sale-cash-option" data-cash="200000">Rp200.000</button></div><p style="margin:12px 0 4px"><strong>Kembalian pelanggan:</strong> <strong id="quickSaleChange" style="font-size:24px;color:#166534">Rp0</strong></p><p class="small" id="quickSalePaymentHint">Isi jumlah uang pelanggan. Transaksi dapat disimpan setelah jumlah barang benar dan uang diterima mencukupi.</p></div>
 <p class="small" id="quickSaleBillHint">Tambahkan semua barang untuk meja yang sama atau transaksi kasir. Pastikan rincian dan total benar sebelum menekan Simpan.</p>
 <div class="quick-sale-receipt-actions"><button id="quickSalePrintBill" type="button" class="secondary" onclick="cetakTagihanKasir()">🧾 Cetak tagihan / belum dibayar</button><label style="display:flex;align-items:center;gap:8px;margin:0;font-weight:normal">Ukuran kertas struk <select id="quickSaleReceiptWidth" style="width:auto;min-width:100px;padding:8px"><option value="58">58 mm</option><option value="80" selected>80 mm</option></select></label></div>
+<details class="print-device-guide"><summary><strong>🖨️ Cara menghubungkan printer struk</strong></summary><ul><li><strong>Bluetooth:</strong> pasangkan printer melalui pengaturan Bluetooth HP terlebih dahulu. Jika printer meminta aplikasi/driver khusus, pasang aplikasi resmi dari produsennya.</li><li><strong>USB atau Wi-Fi:</strong> hubungkan printer ke komputer/HP dan aktifkan driver atau layanan cetak sistem operasi.</li><li>Tekan Cetak, lalu pilih printer yang sudah tersedia pada dialog cetak browser. Atur kertas 58 mm atau 80 mm sesuai printer.</li></ul><p class="small">KasUsaha Lite mengirim dokumen melalui dialog cetak browser. Browser tidak selalu dapat menemukan printer Bluetooth/USB secara langsung; beberapa printer ESC/POS Bluetooth membutuhkan aplikasi pendamping. Tidak ada transaksi yang otomatis dicetak tanpa tindakan kasir.</p></details>
 </div>
 <button id="quickSaleSaveDraft" class="secondary wide" type="button" disabled>＋ Simpan sebagai tagihan belum dibayar</button><button id="quickSalePayDraft" class="primary wide" type="button" hidden>Bayar tagihan tersimpan</button><button id="quickSaleSave" class="primary wide" type="submit" disabled>Simpan transaksi setelah periksa total</button>
 <div id="quickSaleOpenBills" class="card" style="background:#fff"><h4>Daftar Tagihan Belum Dibayar</h4><p class="small">Cari menggunakan nomor meja atau nama pelanggan. Pilih tagihan untuk melihat rincian, memperbaiki pesanan, dan memproses pembayaran. Tagihan belum masuk laporan penjualan dan belum mengurangi stok.</p><label for="quickSaleOpenBillsSearch">Cari nomor meja / atas nama</label><input id="quickSaleOpenBillsSearch" type="search" autocomplete="off" placeholder="Contoh: Meja 5 atau Budi"><div id="quickSaleOpenBillsStatus" class="status">Memuat tagihan...</div><button id="quickSaleNewDraft" type="button" class="secondary">＋ Buat tagihan baru</button><div id="quickSaleOpenBillsList"></div></div>
@@ -4239,7 +4240,10 @@ function updateFinanceActivePerson(){syncTransactionRoleMenus();const name=finan
 function setFinanceStatus(message,isError=false,nextTarget=''){
  const el=$('financeStatus');if(!el)return;
  el.className=isError?'status error':'status';el.textContent=message;
- $('financeStatusAction')?.remove();
+ $('financeStatusAction')?.remove();$('financeStatusReceiptAction')?.remove();
+ if(typeof quickSaleLastReceiptData!=='undefined'&&quickSaleLastReceiptData){
+  const receiptButton=document.createElement('button');receiptButton.id='financeStatusReceiptAction';receiptButton.type='button';receiptButton.className='primary wide';receiptButton.textContent='🖨️ Cetak struk pembayaran terakhir';receiptButton.addEventListener('click',cetakStrukPembayaranTerakhir);el.after(receiptButton);
+ }
  const actions={transaksi:'Buka menu Transaksi',akun:'Buka Login Owner / Penjual',akunPembeli:'Buka Akun Pembeli',loginKaryawan:'Buka Login Karyawan',pasar:'Buka Pasar Online',paketKasUsaha:'Buka Paket & Harga',pesananSaya:'Buka Pesanan Saya'};
  if(!Object.prototype.hasOwnProperty.call(actions,nextTarget))return;
  const button=document.createElement('button');
@@ -6163,9 +6167,10 @@ function openQuickSaleReceiptPrint(data){
  const popup=window.open('','_blank','width=420,height=720');
  if(!popup){setFinanceStatus('Jendela cetak diblokir browser. Izinkan pop-up untuk KasUsaha Lite, lalu tekan tombol cetak kembali.',true);return false;}
  popup.document.open();popup.document.write(buildQuickSaleReceiptHtml(data));popup.document.close();
- const printNow=()=>{try{popup.focus();popup.print();}catch(error){console.error('Dialog cetak struk tidak dapat dibuka:',error);}};
+ let printed=false;
+ const printNow=()=>{if(printed||popup.closed)return;printed=true;try{popup.focus();popup.print();}catch(error){console.error('Dialog cetak struk tidak dapat dibuka:',error);}};
  popup.onload=()=>setTimeout(printNow,150);
- setTimeout(()=>{if(!popup.closed&&popup.document.readyState==='complete')printNow();},350);
+ setTimeout(printNow,500);
  return true;
 }
 function cetakTagihanKasir(){
