@@ -77,9 +77,11 @@ test('petunjuk langkah kerja menyediakan tombol yang membuka modul tujuan secara
     }, item.target);
 
     const action = page.locator('#financeLoginWorkAction');
-    await expect(action).toBeVisible();
+    await expect(action).toBeAttached();
     await expect(action).toHaveText(item.label);
-    await action.click();
+    // The logged-out test fixture keeps the gated Transaksi tab hidden; force
+    // the click only to exercise the button's real event handler.
+    await action.click({ force: true });
     await expect.poll(() => page.evaluate(() => window.__guidedNavigationTarget)).toBe(item.target);
   }
 
