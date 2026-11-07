@@ -760,4 +760,8 @@ for (const [ok, message] of confirmedOperationChecks) {
   else fail(message);
 }
 
+const costEntitlementUiCheck = html.includes("const previousCost=Number(currentItem?.cost_price||0),needsCostUpdate=editId?previousCost!==costPrice:costPrice>0;") && html.includes("if(needsCostUpdate){");
+if (costEntitlementUiCheck) pass("product save skips the full-finance cost RPC when a new or unchanged cost is zero");
+else fail("product save must not call the full-finance cost RPC unnecessarily for zero/unchanged cost");
+
 if (process.exitCode) process.exit(process.exitCode);
