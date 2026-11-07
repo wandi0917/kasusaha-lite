@@ -8,6 +8,7 @@ const fail = (message) => {
 const pass = (message) => console.log("PASS:", message);
 
 const html = fs.readFileSync("index.html", "utf8");
+const marketplaceWorkspaceMigration = fs.readFileSync("supabase/migrations/20261107160000_bind_marketplace_products_to_verified_business_entitlement.sql", "utf8");
 
 const stockLedgerMigration = fs.readFileSync("supabase/migrations/20261107120000_transaction_cash_validation_and_stock_movement_ledger.sql", "utf8");
 const openBillAttributionMigration = fs.readFileSync("supabase/migrations/20261107150000_preserve_customer_and_table_labels_for_open_bill_settlement.sql", "utf8");
@@ -800,6 +801,25 @@ const openBillAttributionChecks = [
   [openBillAttributionMigration.includes("'Kasir'"), "open-bill settlement retains a safe default location label"],
 ];
 for (const [ok, message] of openBillAttributionChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
+
+const marketplaceWorkspaceChecks = [
+  [marketplaceWorkspaceMigration.includes("ADD COLUMN IF NOT EXISTS business_id uuid") && marketplaceWorkspaceMigration.includes("REFERENCES public.business_workspaces(id)"), "marketplace listings must reference one exact Owner workspace"],
+  [marketplaceWorkspaceMigration.includes("HAVING count(*) = 1"), "legacy product backfill must only assign a workspace when the Owner has exactly one workspace"],
+  [marketplaceWorkspaceMigration.includes("business_id IS NOT NULL") && marketplaceWorkspaceMigration.includes("w.id = business_id") && marketplaceWorkspaceMigration.includes("kasusaha_business_has_feature(w.id, 'marketplace') IS TRUE"), "new marketplace listings must require entitlement from their exact workspace"],
+  [marketplaceWorkspaceMigration.includes("aktif IS FALSE") && marketplaceWorkspaceMigration.includes("kasusaha_business_license_is_verified(w.id)"), "unentitled sellers may hide their own listings but may not keep/reactivate listings without a verified marketplace entitlement"],
+  [marketplaceWorkspaceMigration.includes("kasusaha_assign_my_marketplace_product") && marketplaceWorkspaceMigration.includes("p.owner_id = v_uid") && marketplaceWorkspaceMigration.includes("w.id = p_business_id"), "legacy product assignment RPC must verify both product ownership and target workspace ownership"],
+  [marketplaceWorkspaceMigration.includes("REVOKE ALL ON FUNCTION public.kasusaha_assign_my_marketplace_product") && marketplaceWorkspaceMigration.includes("GRANT EXECUTE ON FUNCTION public.kasusaha_assign_my_marketplace_product"), "legacy assignment RPC must have explicit authenticated-only execution"],
+  [marketplaceWorkspaceMigration.includes("GRANT SELECT (business_id) ON TABLE public.produk TO authenticated"), "workspace association must be readable only to signed-in sellers, not anonymous catalog users"],
+  [html.includes("async function pastikanHakMarketplace(user,requiredBusinessId=null)") && html.includes("financeSelectedBusinessId") && html.includes("workspaces.length>1"), "marketplace publishing must use the selected Owner workspace and reject ambiguous multi-workspace selection"],
+  [html.includes("business_id:marketplace.business_id"), "both local-product and manual marketplace publishing must bind new listings to the entitled workspace"],
+  [html.includes("select('id,business_id,nama_produk") && html.includes("kasusaha_assign_my_marketplace_product"), "seller management must load private workspace association and safely link legacy products before edits"],
+  [html.includes("if(next){const entitlement=await pastikanHakMarketplace(session.user,p.business_id||null)"), "reactivating a hidden listing must re-check the exact workspace entitlement"],
+];
+for (const [ok, message] of marketplaceWorkspaceChecks) {
   if (ok) pass(message);
   else fail(message);
 }
