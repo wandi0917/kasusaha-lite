@@ -46,3 +46,45 @@ test('klik menu cepat berurutan berakhir pada menu terakhir yang dipilih', async
   await expect(page.locator('#beranda')).toHaveClass(/active/);
   await expect(nav.locator('button[onclick*="buka(\'beranda\'"]')).toHaveClass(/active/);
 });
+
+
+test('petunjuk langkah kerja menyediakan tombol yang membuka modul tujuan secara langsung', async ({ page }) => {
+  const cases = [
+    { target: 'absensi', label: 'Buka formulir Absen Masuk' },
+    { target: 'kasir', label: 'Buka Kasir Cepat' },
+    { target: 'stok', label: 'Buka formulir Tambah Barang' },
+    { target: 'katalog', label: 'Buka Daftar Barang' },
+    { target: 'laporan', label: 'Buka Laporan' },
+  ];
+
+  await page.evaluate(() => {
+    // The production helper is rendered inside the Transaksi tab. Expose that
+    // tab in the isolated test without bypassing or changing production logic.
+    document.querySelector('#transaksi')?.classList.add('active');
+    for (let node = document.querySelector('#transactionGuide'); node; node = node.parentElement) {
+      node.hidden = false;
+      if (node.classList?.contains('tab')) node.style.display = 'block';
+    }
+    window.__guidedNavigationTarget = null;
+    window.bukaPanelTransaksi = async (target) => {
+      window.__guidedNavigationTarget = target;
+    };
+  });
+
+  for (const item of cases) {
+    await page.evaluate((target) => {
+      window.tampilkanPanduanLangkahKerja('Ikuti langkah berikutnya.', false, target);
+    }, item.target);
+
+    const action = page.locator('#financeLoginWorkAction');
+    await expect(action).toBeAttached();
+    await expect(action).toHaveText(item.label);
+    // The logged-out fixture keeps the gated Transaksi tab hidden; dispatch
+    // the native button click to exercise the real registered event handler.
+    await action.evaluate((button) => button.click());
+    await expect.poll(() => page.evaluate(() => window.__guidedNavigationTarget)).toBe(item.target);
+  }
+
+  await page.evaluate(() => window.tampilkanPanduanLangkahKerja('Selesai tanpa tindakan lanjutan.'));
+  await expect(page.locator('#financeLoginWorkAction')).toHaveCount(0);
+});
