@@ -2654,6 +2654,16 @@ async function mulaiUjiCobaKasUsaha(businessId){
 }
 async function renderKasUsahaTrialStatus(businessId){
  const el=$('kasusahaTrialStatus');if(!el||!sb||!businessId)return null;
+ const actionId='kasusahaTrialAction';
+ document.getElementById(actionId)?.remove();
+ const showPackageAction=()=>{
+  if(financeMemberRole==='employee')return;
+  const button=document.createElement('button');
+  button.id=actionId;button.type='button';button.className='primary wide';
+  button.textContent='Buka Paket & Harga';
+  button.addEventListener('click',()=>window.buka?.('paketKasUsaha',document.querySelector('nav[aria-label="Navigasi utama"] button[onclick*="paketKasUsaha"]')));
+  el.after(button);
+ };
  const {data,error}=await sb.rpc('kasusaha_get_business_trial_status',{p_business_id:businessId});
  if(error)throw error;
  if(!data||data.status==='paid'||data.status==='not_started'||data.status==='owner_required'){
@@ -2662,7 +2672,7 @@ async function renderKasUsahaTrialStatus(businessId){
  if(data.status==='already_used'){
   el.hidden=false;el.className='status error';
   el.textContent=financeMemberRole==='employee'?'Uji coba atau lisensi usaha belum aktif. Hubungi Owner untuk mengaktifkan akses.':'Uji coba gratis 31 hari sudah digunakan pada usaha lain oleh Owner ini. Uji coba tidak dapat dipindahkan atau dimulai ulang. Aktifkan lisensi melalui menu Paket & Harga untuk usaha ini.';
-  return data;
+  showPackageAction();return data;
  }
  const expiry=data.expires_at?new Date(data.expires_at):null;
  const expiryText=expiry&&!Number.isNaN(expiry.getTime())?new Intl.DateTimeFormat('id-ID',{dateStyle:'long',timeZone:'Asia/Jakarta'}).format(expiry):'tanggal belum tersedia';
@@ -2674,6 +2684,7 @@ async function renderKasUsahaTrialStatus(businessId){
  }else{
   el.className='status error';
   el.textContent='Uji coba gratis 31 hari telah berakhir. Data usaha tetap tersimpan, tetapi fitur berlisensi terkunci sampai Owner mengaktifkan lisensi melalui menu Paket & Harga.';
+  showPackageAction();
  }
  return data;
 }
