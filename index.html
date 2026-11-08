@@ -6314,8 +6314,11 @@ function quickSaleDraftStatus(message,isError=false){const el=$('quickSaleOpenBi
 // Pencarian tagihan lama dilakukan manual dari daftar tagihan; tidak ada auto-lookup dari kolom pelanggan/meja.
 async function loadQuickSaleOpenBills(){
  const host=$('quickSaleOpenBillsList');if(!host)return;host.replaceChildren();if(!sb||!financeBusiness){quickSaleDraftStatus('Login dan pilih usaha untuk melihat tagihan belum dibayar.',true);return;}
- quickSaleDraftStatus('Memuat tagihan belum dibayar...');
  try{
+  const {data:authData,error:authError}=await sb.auth.getSession();
+  if(authError)throw authError;
+  if(!authData?.session?.user?.id){quickSaleDraftStatus('Silakan login kembali untuk melihat tagihan belum dibayar.');return;}
+  quickSaleDraftStatus('Memuat tagihan belum dibayar...');
   let data=[];for(let offset=0;;offset+=500){const {data:page,error}=await sb.from('store_open_bills').select('id,table_number,customer_name,lines,total_amount,status,created_at,updated_at,version').eq('business_id',financeBusiness.id).eq('status','open').order('created_at',{ascending:false}).range(offset,offset+499);if(error)throw error;if(page?.length)data.push(...page);if(!page||page.length<500)break;}
   host.replaceChildren();
   if(!data?.length){quickSaleDraftStatus('Belum ada tagihan tersimpan.');return;}
