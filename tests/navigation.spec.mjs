@@ -976,3 +976,14 @@ test('catatan offline hanya terlihat oleh akun dan usaha pembuatnya sesuai peran
   expect(result.employeeVisible).toEqual(['employee-a-income']);
   expect(result.ownerVisible).toEqual(['owner-income', 'legacy-unattributed']);
 });
+
+
+test('tagihan belum dibayar memakai tabel dan garis tabel berwarna hitam', async ({ page }) => {
+  await expect(page.locator('#quickSaleOpenBillsTable')).toBeAttached();
+  await expect(page.locator('#quickSaleOpenBillsTable thead th')).toHaveCount(6);
+  await expect(page.locator('#quickSaleOpenBillsTable thead')).toContainText('Meja / Pelanggan');
+  await expect(page.locator('#quickSaleOpenBillsTable thead')).toContainText('Total tagihan');
+  const borderColor = await page.locator('#quickSaleOpenBillsTable th').first().evaluate((el) => getComputedStyle(el).borderTopColor);
+  expect(borderColor).toBe('rgb(0, 0, 0)');
+  await expect(page.locator('#quickSalePrintLastReceipt')).toHaveText(/Cetak struk pembayaran terakhir/);
+});
