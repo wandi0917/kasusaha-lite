@@ -241,18 +241,21 @@ if (!/detail\.includes\(['"]saldo akun biteship['"]\)/.test(html)) {
   fail("localized Biteship balance errors must show the dedicated checkout guidance");
 } else pass("localized Biteship balance errors map to dedicated checkout guidance");
 
-const barcodeScanStart = html.indexOf("function addScannedBarcodeToQuickSale(raw){");
+const barcodeScanStart = html.indexOf("function addScannedBarcodeToQuickSale(raw,requestedQuantity=1){");
 const barcodeScanEnd = html.indexOf("\nfunction handleQuickSaleCameraResult", barcodeScanStart);
 const barcodeScan = html.slice(barcodeScanStart, barcodeScanEnd);
 const cameraStart = html.indexOf("function handleQuickSaleCameraResult(raw){");
 const cameraEnd = html.indexOf("\nasync function ensureKasUsahaZXing", cameraStart);
 const cameraScan = html.slice(cameraStart, cameraEnd);
 const barcodeRegressionChecks = [
-  [barcodeScan.includes("qty.value=String(current+1)"), "repeated product scans must increment quantity"],
-  [barcodeScan.includes("qtyField.value='1'"), "first product scan must add one unit automatically"],
-  [barcodeScan.includes("current>=available"), "repeated scans must not exceed available stock"],
+  [barcodeScan.includes("qty.value=String(current+quantity)"), "a scanned product must add the quantity entered by the cashier"],
+  [barcodeScan.includes("qtyField.value=String(quantity)"), "the first scanned product must use the entered quantity"],
+  [barcodeScan.includes("current+quantity>available"), "quantity entry must not exceed available stock"],
+  [cameraScan.includes("closeQuickSaleBarcodeCamera();showQuickSaleBarcodeQuantityForm(value)"), "camera must pause after each barcode and open the quantity form"],
+  [html.includes("Scan Produk Berikutnya") && html.includes("Selesai"), "quantity form must offer repeat scanning and finish actions"],
+  [html.includes("quickSaleScannedQuantity") && html.includes("Masukkan jumlah barang"), "camera barcode result must request a quantity before adding to cart"],
   [barcodeScan.includes("quickSaleBarcodeModal')?.hidden!==false"), "camera mode must not force keyboard focus over the camera"],
-  [cameraScan.includes("if(added)setQuickSaleBarcodeStatus") && !cameraScan.includes("if(added)closeQuickSaleBarcodeCamera()"), "camera cart scanning must remain open for consecutive products"],
+  
   [html.includes("barcodeInput.focus({preventScroll:true})"), "cashier must focus the scanner input when opening a sale"],
 ];
 for (const [ok, message] of barcodeRegressionChecks) {

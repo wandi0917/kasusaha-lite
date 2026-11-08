@@ -4750,8 +4750,8 @@ function showQuickSaleBarcodeLinker(value){
  }
  anchor?.insertAdjacentElement('afterend',panel);
 }
-function addScannedBarcodeToQuickSale(raw){
- const value=String(raw||'').trim();if(!value)return false;
+function addScannedBarcodeToQuickSale(raw,requestedQuantity=1){
+ const value=String(raw||'').trim(),quantity=Number(requestedQuantity);if(!value||!Number.isSafeInteger(quantity)||quantity<1||quantity>9999){setQuickSaleBarcodeStatus('Jumlah barang harus berupa bilangan bulat minimal 1.',true);return false;}
  const matches=p=>p.active&&p.item_type!=='ingredient'&&(kasUsahaBarcodeMatches(p.barcode_value||generateKasUsahaBarcode(p.product_code),value)||kasUsahaBarcodeMatches(p.product_code,value)||(Array.isArray(p.barcode_aliases)&&p.barcode_aliases.some(a=>kasUsahaBarcodeMatches(a,value))));
  const candidates=storeProductRows.filter(matches);
  if(candidates.length>1){setQuickSaleBarcodeStatus('Barcode '+value+' cocok dengan lebih dari satu barang. Owner perlu memeriksa barcode ganda.',true);return false;}
@@ -4769,17 +4769,50 @@ function addScannedBarcodeToQuickSale(raw){
   const qty=row.querySelector('.quick-sale-qty');
   const current=Math.max(1,Number.parseInt(qty?.value||'1',10)||1);
   const available=Math.max(0,Number(p.stock_quantity||0));
-  if(current>=available){setQuickSaleBarcodeStatus('Stok '+p.product_name+' hanya tersedia '+available+' unit. Jumlah di keranjang tidak ditambah.',true);return false;}
-  if(qty){qty.max=String(available);qty.value=String(current+1);}
+  if(current+quantity>available){setQuickSaleBarcodeStatus('Stok '+p.product_name+' hanya tersedia '+available+' unit. Jumlah yang diminta melebihi sisa stok.',true);return false;}
+  if(qty){qty.max=String(available);qty.value=String(current+quantity);}
  }else{
   row=quickSaleItemRows().find(el=>{const input=el.querySelector('.quick-sale-product');return !String(input?.value||'').trim()&&!input?.dataset.productId;});
   if(!row){addQuickSaleLine();row=quickSaleItemRows().slice(-1)[0];}
   const input=row?.querySelector('.quick-sale-product');if(input){input.value=p.product_code+' — '+p.product_name;input.dataset.productId=p.id;}
-  const qtyField=row?.querySelector('.quick-sale-qty');if(qtyField){qtyField.value='1';qtyField.min='1';qtyField.max=String(Math.max(0,Number(p.stock_quantity||0)));qtyField.step='1';}
+  const qtyField=row?.querySelector('.quick-sale-qty');if(qtyField){qtyField.value=String(quantity);qtyField.min='1';qtyField.max=String(Math.max(0,Number(p.stock_quantity||0)));qtyField.step='1';}
  }
  const cancelButton=row?.querySelector('.quick-sale-cancel-scan');if(cancelButton)cancelButton.hidden=false;
- updateQuickSalePreview(true);setQuickSaleBarcodeStatus('✓ '+p.product_name+' ditambahkan. Scan barang berikutnya; scan ulang akan menambah jumlah.');
+ updateQuickSalePreview(true);setQuickSaleBarcodeStatus('✓ '+p.product_name+' ditambahkan sebanyak '+quantity+' unit.');
  const scanInput=$('quickSaleBarcodeInput');if(scanInput){scanInput.value='';if($('quickSaleBarcodeModal')?.hidden!==false)scanInput.focus({preventScroll:true});}return true;
+}
+function showQuickSaleBarcodeQuantityForm(barcode){
+ const existing=$('quickSaleBarcodeQuantityModal');if(existing)existing.remove();
+ const modal=document.createElement('div');modal.id='quickSaleBarcodeQuantityModal';
+ modal.style.cssText='position:fixed;inset:0;z-index:10060;background:rgba(15,23,42,.72);display:flex;align-items:center;justify-content:center;padding:16px';
+ const card=document.createElement('section');card.className='card';card.style.cssText='width:min(100%,420px);background:#fff;padding:18px;border-radius:14px;color:#172033';
+ const heading=document.createElement('h3');heading.textContent='Masukkan jumlah barang';heading.style.margin='0 0 8px';
+ const detail=document.createElement('p');detail.className='small';detail.textContent='Barcode terbaca: '+barcode+'. Masukkan jumlah produk ini sebelum memindai barang berikutnya.';
+ const label=document.createElement('label');label.textContent='Jumlah';label.style.cssText='display:block;font-weight:700;margin:12px 0 6px';
+ const qty=document.createElement('input');qty.type='number';qty.id='quickSaleScannedQuantity';qty.min='1';qty.max='9999';qty.step='1';qty.inputMode='numeric';qty.value='1';qty.required=true;qty.style.cssText='width:100%;padding:12px;font-size:20px;border:1px solid #cbd5e1;border-radius:8px';
+ const status=document.createElement('p');status.id='quickSaleScannedQuantityStatus';status.className='small';status.setAttribute('role','status');status.style.margin='10px 0';
+ const add=document.createElement('button');add.type='button';add.className='primary wide';add.textContent='Tambah ke Keranjang';
+ const actions=document.createElement('div');actions.style.cssText='display:none;gap:8px;margin-top:10px';
+ const again=document.createElement('button');again.type='button';again.className='primary';again.textContent='Scan Produk Berikutnya';again.style.flex='1';
+ const done=document.createElement('button');done.type='button';done.className='secondary';done.textContent='Selesai';done.style.flex='1';
+ actions.append(again,done);card.append(heading,detail,label,qty,add,status,actions);modal.appendChild(card);document.body.appendChild(modal);
+ const close=()=>modal.remove();
+ add.onclick=()=>{
+  const amount=Number(qty.value);
+  if(!Number.isSafeInteger(amount)||amount<1||amount>9999){status.textContent='Masukkan jumlah bilangan bulat minimal 1.';qty.focus();return;}
+  add.disabled=true;add.textContent='Menambahkan…';
+  const ok=addScannedBarcodeToQuickSale(barcode,amount);
+  if(!ok){status.textContent='Produk belum berhasil ditambahkan. Periksa barcode, stok, atau hubungan produk di formulir yang tersedia.';add.disabled=false;add.textContent='Coba Tambah Lagi';return;}
+  heading.textContent='Produk berhasil ditambahkan';
+  detail.textContent='Jumlah '+amount+' unit sudah masuk ke keranjang. Jika ada barang lain, tekan Scan Produk Berikutnya.';
+  label.hidden=true;qty.hidden=true;add.hidden=true;status.textContent='Produk tersimpan di daftar transaksi sementara. Anda dapat melanjutkan scan atau menyelesaikan pemindaian.';
+  actions.style.display='flex';
+ };
+ again.onclick=()=>{close();openQuickSaleBarcodeCamera('cart');};
+ done.onclick=close;
+ modal.addEventListener('click',e=>{if(e.target===modal)close();});
+ qty.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();add.click();}});
+ qty.focus({preventScroll:true});qty.select();
 }
 function handleQuickSaleCameraResult(raw){
  const value=String(raw||'').trim(),now=Date.now();
@@ -4799,7 +4832,7 @@ function handleQuickSaleCameraResult(raw){
   const help=$('storeProductBarcodeHelp');if(help)help.textContent='Barcode pabrik berhasil dipindai. Pastikan nilainya sesuai label kemasan lalu simpan produk.';
   const status=$('storeProductStatus');if(status){status.className='status';status.textContent='Barcode pabrik terbaca: '+value+'. Periksa lalu simpan produk.';}
   closeQuickSaleBarcodeCamera();field?.focus();
- }else{const added=addScannedBarcodeToQuickSale(value);if(added)setQuickSaleBarcodeStatus('✓ Barcode '+value+' berhasil masuk ke keranjang. Arahkan kamera ke barang berikutnya atau tekan Tutup kamera.');}
+ }else{closeQuickSaleBarcodeCamera();showQuickSaleBarcodeQuantityForm(value);}
 }
 async function ensureKasUsahaZXing(){
  if(window.ZXingBrowser?.BrowserMultiFormatReader)return window.ZXingBrowser;
