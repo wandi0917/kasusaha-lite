@@ -1052,6 +1052,20 @@ for (const [ok, message] of publicMarketplaceAnonymousEvaluationChecks) {
 }
 
 
+
+const biteshipWebhook = fs.readFileSync("supabase/functions/biteship-webhook/index.ts", "utf8");
+const biteshipWebhookOrderingChecks = [
+  [biteshipWebhook.includes("on_hold: 75") && biteshipWebhook.includes("return_in_transit: 90") && biteshipWebhook.includes("returned: 95"), "Biteship exception and return statuses must have explicit forward ordering"],
+  [biteshipWebhook.includes("rejected: 100") && biteshipWebhook.includes("cancelled: 100") && biteshipWebhook.includes("disposed: 100"), "Biteship terminal statuses must be ranked and protected from earlier movement events"],
+  [biteshipWebhook.includes("if (currentRank === undefined || incomingRank === undefined) return false;"), "unknown Biteship status transitions must fail closed"],
+  [biteshipWebhook.includes("updateQuery.is(\"shipping_status\", null)") && biteshipWebhook.includes("updateQuery.eq(\"shipping_status\", expectedStatus)"), "Biteship status updates must compare-and-set the exact previously read status"],
+  [biteshipWebhook.includes("Status lebih baru telah diterapkan oleh notifikasi lain"), "a concurrent newer webhook must be acknowledged without overwriting its status"],
+];
+for (const [ok, message] of biteshipWebhookOrderingChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 const pwaReleaseRefreshChecks = [
   [/meta name="kasusaha-build" content="2026-11-08-kasir-thermal-receipts-1"/.test(html), "production build marker must identify the cashier thermal receipt release"],
   [/const CACHE_NAME = CACHE_PREFIX \+ 'v70';/.test(sw), "PWA service worker cache version must advance to refresh installed app shells"],
