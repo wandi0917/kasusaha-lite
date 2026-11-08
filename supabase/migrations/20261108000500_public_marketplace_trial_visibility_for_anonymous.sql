@@ -1,4 +1,4 @@
--- Public marketplace visibility must evaluate trial entitlement without auth.uid().
+-- Public marketplace visibility must evaluate trial entitlement without visitor identity.
 -- The private membership helper is intentionally not used here because anonymous
 -- catalog visitors have no authenticated user ID. Keep the Owner/workspace checks
 -- and verified paid-license checks intact.
