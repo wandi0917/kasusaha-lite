@@ -49,6 +49,8 @@ const liteTrialChecks = [
   [liteTrialMigration.includes("private.kasusaha_business_license_is_verified") && liteTrialMigration.includes("trial.expires_at > now()"), "server entitlement checks must expire trial access automatically"],
   [fullAppTrialMigration.includes("'advanced_reports', true") && fullAppTrialMigration.includes("'priority_support', true"), "31-day trial must unlock all application feature flags including advanced reports"],
   [fullAppTrialMigration.includes("kasusaha_business_has_feature") && fullAppTrialMigration.includes("kasusaha_get_business_package_entitlements"), "server feature checks and returned entitlements must both grant the complete trial feature set"],
+  [(fullAppTrialMigration.match(/if position\(v_new in v_def\) = 0 then/g)||[]).length === 2, "trial feature and entitlement migration must safely no-op when the target definition is already installed"],
+
   [marketplaceTrialMigration.includes("kasusaha_marketplace_product_is_public") && marketplaceTrialMigration.includes("kasusaha_business_license_is_verified(w.id)"), "public marketplace product visibility must recognize the active 31-day trial"],
   [liteTrialMigration.includes("revoke all on table private.kasusaha_free_trials from public, anon, authenticated"), "trial records must not be exposed to client roles"],
 ];
