@@ -438,7 +438,19 @@ test('Muat pratinjau bulan ini memanggil pengarah otomatis setelah server mengem
   await expect(page.locator('#serviceFeePreviewResult')).toContainText('Menyiapkan menu berikutnya');
   await expect(page.locator('#serviceFeePreviewResult')).toContainText('Status uji coba periode ini: belum selesai');
   await expect(page.locator('#serviceFeePreviewResult')).toContainText('Pratinjau saja, bukan tagihan. Billing tetap nonaktif.');
-  await expect(page.locator('#financeEntryCard')).toBeVisible();
+  const routeDiagnostics = await page.evaluate(() => ({
+    preview: document.querySelector('#serviceFeePreviewResult')?.textContent,
+    financeStatus: document.querySelector('#financeStatus')?.textContent,
+    transactionActive: document.querySelector('#transaksi')?.classList.contains('active'),
+    businessId: financeBusiness?.id || null,
+    role: financeMemberRole,
+    userId: financeMemberUserId,
+    entryHidden: document.querySelector('#financeEntryCard')?.hidden,
+    ownerCatalogHidden: document.querySelector('#ownerStoreCatalog')?.hidden,
+    quickSaleHidden: document.querySelector('#quickSaleForm')?.hidden,
+    products: storeProductRows?.length,
+  }));
+  expect(routeDiagnostics.entryHidden, JSON.stringify(routeDiagnostics)).toBe(false);
   await expect(page.locator('#ownerStoreCatalog')).toBeVisible();
   await expect(page.locator('#quickSaleForm')).toBeHidden();
   await expect(page.locator('#financeEntryTitle')).toContainText('Barang & Stok');
