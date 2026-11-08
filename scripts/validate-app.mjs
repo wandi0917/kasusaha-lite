@@ -435,9 +435,10 @@ if (!/KS_PACKAGE_PRICES/.test(html) ||
     !/starter:49000/.test(html) ||
     !/lite:99000/.test(html) ||
     !/business:149000/.test(html) ||
-    !/professional:249000/.test(html)) {
-  fail("four-package checkout prices are missing or inconsistent");
-} else pass("four package checkout prices are present");
+    /professional:249000/.test(html) ||
+    /<h3>Professional<\/h3>/.test(html)) {
+  fail("public checkout must expose only Starter, Lite, and Business while Professional is hidden");
+} else pass("public checkout exposes only Starter, Lite, and Business; Professional is hidden");
 
 if (!/const description=\$\('financeDescription'\)\.value\.trim\(\),amount=Number\(\$\('financeAmount'\)\.value\)[\s\S]{0,500}description\.length<2/.test(html)) {
   fail("Owner and Employee transaction form must reject descriptions shorter than two characters");
