@@ -94,6 +94,20 @@ test('Midtrans webhook bounds Status API wait and keeps provider response bodies
 });
 
 
+test('Midtrans webhook and employee activation normalize the configured server key', async () => {
+  const webhookSource = readFileSync(
+    new URL('../supabase/functions/midtrans-webhook/index.ts', import.meta.url),
+    'utf8',
+  );
+  const employeeSource = readFileSync(
+    new URL('../supabase/functions/employee-device-activation/index.ts', import.meta.url),
+    'utf8',
+  );
+
+  expect(webhookSource).toContain('const serverKey = configuredServerKey?.trim() || "";');
+  expect(employeeSource).toContain('const serverKey = configuredServerKey?.trim() || "";');
+});
+
 test('Midtrans server key is trimmed and encoded using HTTP Basic authentication', async () => {
   const paymentSource = readFileSync(
     new URL('../supabase/functions/create-midtrans-payment/index.ts', import.meta.url),
