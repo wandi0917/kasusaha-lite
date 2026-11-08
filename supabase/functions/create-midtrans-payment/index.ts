@@ -436,6 +436,18 @@ Deno.serve(async (req: Request): Promise<Response> => {
       );
     }
 
+    // Tolak pembayaran Production sebelum membuat reservasi transaksi apa pun.
+    // Jika pemeriksaan ini diletakkan setelah reservasi, order akan menyimpan
+    // provider_transaction_id tanpa URL pembayaran dan dapat terkunci pada retry.
+    if (production && hasPhysicalProduct && norm(Deno.env.get("MARKETPLACE_PRODUCTION_PAYMENTS_ENABLED")) !== "true") {
+      return reply({ success: false, code: "MARKETPLACE_PRODUCTION_PAYMENTS_DISABLED", error: "Pembayaran Production untuk pesanan barang fisik belum diaktifkan. Pesanan belum ditagih; silakan hubungi pengelola." }, 503);
+    }
+
+    if (!productionPaymentsEnabled(production)) {
+      return reply({ success: false, code: "PRODUCTION_PAYMENTS_DISABLED", error: "Pembayaran Production belum diaktifkan melalui pengaman server." }, 503);
+    }
+
+
     const statusBase = production
       ? "https://api.midtrans.com"
       : "https://api.sandbox.midtrans.com";
@@ -777,14 +789,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
       payload.callbacks = {
         finish: finishUrl,
       };
-    }
-
-    if (production && hasPhysicalProduct && norm(Deno.env.get("MARKETPLACE_PRODUCTION_PAYMENTS_ENABLED")) !== "true") {
-      return reply({ success: false, code: "MARKETPLACE_PRODUCTION_PAYMENTS_DISABLED", error: "Pembayaran Production untuk pesanan barang fisik belum diaktifkan. Pesanan belum ditagih; silakan hubungi pengelola." }, 503);
-    }
-
-    if (!productionPaymentsEnabled(production)) {
-      return reply({ success: false, code: "PRODUCTION_PAYMENTS_DISABLED", error: "Pembayaran Production belum diaktifkan melalui pengaman server." }, 503);
     }
 
     let response: Response;
