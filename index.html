@@ -6037,7 +6037,11 @@ async function arahkanKeLaporanSetelahSimpan(category){
  const selector=$('reportCategorySelect');
  if(selector)selector.value=selectedCategory;
  applyReportCategory(selectedCategory);
- await muatDanTampilkanLaporan();
+ const reportLoaded=await muatDanTampilkanLaporan();
+ if(reportLoaded!==true){
+  tampilkanPanduanLangkahKerja('Transaksi sudah tersimpan di server, tetapi laporan belum berhasil dimuat. Jangan ulangi transaksi. Periksa koneksi lalu tekan Coba Lagi untuk memuat laporan.',true,'laporan');
+  return false;
+ }
  const target=selectedCategory==='stock'?'stockReportTableCard':'financeReportCard';
  $(target)?.scrollIntoView({behavior:'smooth',block:'start'});
  tampilkanPanduanLangkahKerja('Data berhasil disimpan dan laporan '+(selectedCategory==='income'?'pemasukan':selectedCategory==='finance'?'keuangan':'penjualan')+' sudah dibuka. Periksa hasilnya sebelum melanjutkan pekerjaan berikutnya.',false,'laporan');
@@ -6613,7 +6617,7 @@ function financeNormalizeCategory(value){return String(value||'').normalize('NFD
 
 async function muatDanTampilkanLaporan(){
  const tbody=$('financeReportRows');if(tbody)tbody.innerHTML='<tr><td colspan="7">Memuat ulang transaksi untuk periode yang dipilih...</td></tr>';
- if(!sb||!financeBusiness){renderFinanceReport();return;}
+ if(!sb||!financeBusiness){renderFinanceReport();return true;}
  try{
   await loadFinanceWorkspace();
   // Jaga kategori tetap aktif sesudah pemuatan workspace, agar proses reload tidak menyembunyikan laporan.
@@ -6627,9 +6631,11 @@ async function muatDanTampilkanLaporan(){
    applyReportCategory($('reportCategorySelect')?.value||'');
   }
   renderFinanceReport();
+  return true;
  }catch(e){
   if(tbody)tbody.innerHTML='<tr><td colspan="7">Gagal memuat transaksi: '+aman(String(e.message||e).slice(0,180))+'</td></tr>';
   setFinanceStatus('Laporan gagal dimuat: '+String(e.message||e).slice(0,220),true);
+  return false;
  }
 }
 
