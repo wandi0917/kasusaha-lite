@@ -24,6 +24,24 @@ const allowedStatuses = new Set([
   "returned", "cancelled", "disposed",
 ]);
 
+// Webhook events may arrive out of order. Never let an older movement event
+// downgrade a shipment that has already advanced to a later delivery stage.
+const statusRank: Record<string, number> = {
+  confirmed: 10, scheduled: 20, allocated: 30,
+  picking_up: 40, pickingUp: 40, picked: 50,
+  in_transit: 60, inTransit: 60,
+  dropping_off: 70, droppingOff: 70,
+  delivered: 80,
+};
+function shouldApplyStatus(current: unknown, incoming: string): boolean {
+  const currentStatus = text(current);
+  if (!currentStatus || currentStatus === incoming) return true;
+  const currentRank = statusRank[currentStatus];
+  const incomingRank = statusRank[incoming];
+  if (currentRank === undefined || incomingRank === undefined) return true;
+  return incomingRank >= currentRank;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return reply({ success: false, error: "Gunakan POST." }, 405);
 
@@ -76,7 +94,19 @@ Deno.serve(async (req: Request) => {
     if (!status || !allowedStatuses.has(status)) {
       return reply({ success: false, error: "Status pengiriman tidak dikenal." }, 400);
     }
-    patch.shipping_status = status;
+    // Preserve terminal/exception events, but ignore stale lower-rank movement events.
+    // The read is advisory; database write remains scoped to the matched Biteship order.
+    const { data: currentOrder, error: currentOrderError } = await admin.from("marketplace_orders")
+      .select("id,shipping_status")
+      .eq("biteship_order_id", biteshipOrderId)
+      .eq("shipping_provider", "Biteship")
+      .maybeSingle();
+    if (currentOrderError) {
+      console.error("Gagal membaca status pengiriman saat memproses webhook Biteship.", currentOrderError.message);
+      return reply({ success: false, error: "Status pengiriman belum dapat diperiksa." }, 500);
+    }
+    if (!currentOrder) return reply({ success: false, error: "Pesanan Biteship tidak ditemukan." }, 404);
+    if (shouldApplyStatus(currentOrder.shipping_status, status)) patch.shipping_status = status;
   }
   const trackingId = text(body.courier_tracking_id);
   const waybillId = text(body.courier_waybill_id);
