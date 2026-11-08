@@ -606,3 +606,51 @@ test('mode offline tidak mengaku berhasil membuka kasir atau absensi server', as
   expect(result.attendance).toBe(false);
   expect(result.attendanceStatus).toContain('Absensi online memerlukan koneksi internet');
 });
+
+
+test('pemilih kategori Laporan Stok memuat daftar barang sekaligus riwayat pergerakan stok', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    financeBusiness = { id: 'e2e-stock-report-business', owner_id: 'e2e-stock-owner' };
+    financeMemberRole = 'owner';
+    financeMemberUserId = 'e2e-stock-owner';
+    financeSelectedBusinessId = null;
+    offlineTransactionMode = false;
+    document.body.classList.remove('employee-device-pending');
+    sb.auth.getSession = async () => ({
+      data: { session: { user: { id: 'e2e-stock-owner' } } },
+      error: null,
+    });
+    const memberQuery = {
+      select() { return this; },
+      eq() { return this; },
+      then(resolve, reject) {
+        return Promise.resolve({
+          data: [{ business_id: 'e2e-stock-report-business', role: 'owner', active: true }],
+          error: null,
+        }).then(resolve, reject);
+      },
+    };
+    sb.from = () => memberQuery;
+    periksaLisensiWorkspace = async () => true;
+    const calls = [];
+    window.loadStoreProducts = async () => { calls.push('products'); };
+    window.loadStoreStockMovements = async () => { calls.push('stock-movements'); };
+    await buka('transaksi', document.querySelector('#navTransaksi'));
+    const selector = document.querySelector('#reportCategorySelect');
+    selector.value = 'stock';
+    await selector.onchange();
+    return {
+      selected: selector.value,
+      calls,
+      reportVisible: !document.querySelector('#stockReportTableCard')?.hidden,
+      movementRowsPresent: !!document.querySelector('#stockMovementRows'),
+    };
+  });
+
+  expect(result).toEqual({
+    selected: 'stock',
+    calls: ['products', 'stock-movements'],
+    reportVisible: true,
+    movementRowsPresent: true,
+  });
+});
