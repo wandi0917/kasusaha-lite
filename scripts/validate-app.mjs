@@ -493,6 +493,30 @@ for (const [pattern, source, message] of requiredChecks) {
   else pass(message);
 }
 
+const midtransAttemptReservation = paymentCreate.indexOf("const attemptId = newAttemptId()");
+const midtransMarketplaceGate = paymentCreate.indexOf(
+  'if (production && hasPhysicalProduct && norm(Deno.env.get("MARKETPLACE_PRODUCTION_PAYMENTS_ENABLED")) !== "true")',
+);
+const midtransGlobalGate = paymentCreate.indexOf("if (!productionPaymentsEnabled(production))");
+if (midtransAttemptReservation < 0 || midtransMarketplaceGate < 0 ||
+    midtransGlobalGate < 0 || midtransMarketplaceGate > midtransAttemptReservation ||
+    midtransGlobalGate > midtransAttemptReservation) {
+  fail("Midtrans Production and marketplace gates must run before reserving a transaction ID");
+} else pass("Midtrans Production and marketplace gates run before transaction reservation");
+
+const paidOrderRetryGuard = 'if (!["paid", "processing", "completed"].includes(paidOrder.status))';
+const paidOrderRetryUpdates = (paymentWebhook.match(/\.in\("status", \["paid", "processing", "completed"\]\)/g) || []).length;
+if (!paymentWebhook.includes(paidOrderRetryGuard) ||
+    paymentWebhook.includes('if (paidOrder.status !== "paid")') ||
+    paidOrderRetryUpdates < 2) {
+  fail("verified Midtrans webhook retries must remain idempotent after Seller processing/completion");
+} else pass("verified Midtrans webhook retries accept paid, processing, and completed order states");
+
+if (!marketplaceFinance.includes('"https://fix-navigation-serialization.kasusaha-lite.pages.dev"') ||
+    !marketplaceFinance.includes('if (req.method === "OPTIONS")')) {
+  fail("marketplace finance endpoint must allow the exact Playwright preview origin to complete CORS preflight");
+} else pass("marketplace finance CORS allows only the configured Playwright preview origin");
+
 if (/SUPABASE_SERVICE_ROLE_KEY|MIDTRANS_SERVER_KEY|BITESHIP_API_KEY/.test(html)) {
   fail("server secrets must never appear in frontend HTML");
 } else pass("no known server-secret variable names appear in frontend HTML");
