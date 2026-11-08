@@ -90,6 +90,13 @@ test('petunjuk langkah kerja menyediakan tombol yang membuka modul tujuan secara
     window.bukaPanelTransaksi = async (target) => {
       window.__guidedNavigationTarget = target;
     };
+    // The report action intentionally uses the dedicated report-navigation
+    // helper rather than the generic transaction-module router.
+    window.arahkanKeLaporanSetelahSimpan = async (category) => {
+      window.__guidedNavigationTarget = 'laporan';
+      window.__guidedNavigationCategory = category;
+      return true;
+    };
   });
 
   for (const item of cases) {
