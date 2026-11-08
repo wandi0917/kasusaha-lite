@@ -133,3 +133,14 @@ test('Midtrans webhook returns retryable failure when an attempted physical ship
   expect(webhookSource).toContain('retry_required: true');
   expect(webhookSource).toContain('}, 502);');
 });
+
+
+test('Biteship webhook guards against out-of-order status downgrades', async () => {
+  const source = readFileSync(
+    new URL('../supabase/functions/biteship-webhook/index.ts', import.meta.url),
+    'utf8',
+  );
+  expect(source).toContain('function shouldApplyStatus(current: unknown, incoming: string)');
+  expect(source).toContain('return incomingRank >= currentRank;');
+  expect(source).toContain('shouldApplyStatus(currentOrder.shipping_status, status)');
+});
