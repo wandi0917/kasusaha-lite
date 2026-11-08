@@ -1053,7 +1053,7 @@ for (const [ok, message] of publicMarketplaceAnonymousEvaluationChecks) {
 
 
 
-const biteshipWebhookOrderingSource = fs.readFileSync("supabase/functions/biteship-webhook/index.ts", "utf8");
+
 const biteshipWebhookOrderingChecks = [
   [biteshipWebhookOrderingSource.includes("on_hold: 75") && biteshipWebhookOrderingSource.includes("return_in_transit: 90") && biteshipWebhookOrderingSource.includes("returned: 95"), "Biteship exception and return statuses must have explicit forward ordering"],
   [biteshipWebhookOrderingSource.includes("rejected: 100") && biteshipWebhookOrderingSource.includes("cancelled: 100") && biteshipWebhookOrderingSource.includes("disposed: 100"), "Biteship terminal statuses must be ranked and protected from earlier movement events"],
