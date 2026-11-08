@@ -12,6 +12,22 @@
 <meta name="description" content="KasUsaha Lite membantu warung dan UMKM mengelola kasir, transaksi, stok, barcode sesuai paket, dan laporan. Paket mulai Rp49.000 termasuk 12 bulan layanan cloud pertama.">
 <meta name="keywords" content="aplikasi kasir UMKM, pencatatan keuangan usaha, stok barang, laporan penjualan, KasUsaha Lite, perlengkapan usaha, Shopee Affiliate">
 <link rel="canonical" href="https://kasusaha-lite.pages.dev/">
+<!-- kasusaha-legacy-host-redirect: migrate old GitHub Pages sessions to the canonical Cloudflare Pages origin. -->
+<script>
+(function () {
+  if (window.location.hostname !== "wandi0917.github.io") return;
+  var legacyPrefix = "/kasusaha-lite";
+  var pathname = window.location.pathname;
+  if (pathname === legacyPrefix) pathname = "/";
+  else if (pathname.indexOf(legacyPrefix + "/") === 0) pathname = pathname.slice(legacyPrefix.length) || "/";
+  var target = new URL("https://kasusaha-lite.pages.dev/");
+  target.pathname = pathname;
+  target.search = window.location.search;
+  target.hash = window.location.hash;
+  window.location.replace(target.toString());
+})();
+</script>
+
 <meta property="og:type" content="website">
 <meta property="og:title" content="KasUsaha Lite — Bantu Usaha Lebih Tertata">
 <meta property="og:description" content="Kelola transaksi, stok, dan laporan usaha dengan KasUsaha Lite. Empat paket mulai Rp49.000, termasuk 12 bulan layanan cloud pertama.">
