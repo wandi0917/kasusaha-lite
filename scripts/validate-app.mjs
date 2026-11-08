@@ -1145,7 +1145,7 @@ for (const [ok, message] of separateCashierNoteChecks) {
 
 
 const paidOrderRetryMigration = fs.readFileSync(
-  "supabase/migrations/20261108101000_allow_processed_order_states_for_payment_retries.sql",
+  "supabase/migrations/20261108100705_allow_processed_order_states_for_payment_retries.sql",
   "utf8",
 );
 const paidOrderRetryChecks = [
