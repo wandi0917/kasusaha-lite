@@ -434,3 +434,175 @@ test('menu Produk Saya dan Cadangan mengarahkan pengguna tanpa sesi ke Akun Pemb
     await expect(page.locator('#cadangan')).not.toHaveClass(/active/);
   }
 });
+
+
+test('seluruh modul Transaksi Owner membuka panel yang tepat tanpa menumpuk panel lama', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    document.querySelector('#transaksi')?.classList.add('active');
+    financeBusiness = { id: 'e2e-owner-transaction', owner_id: 'e2e-owner' };
+    financeMemberRole = 'owner';
+    financeMemberUserId = 'e2e-owner';
+    offlineTransactionMode = false;
+    document.body.classList.remove('employee-device-pending');
+    periksaLisensiWorkspace = async () => true;
+    loadStoreProducts = async () => { storeProductRows = []; };
+    loadAttendance = async () => {};
+    const cases = [
+      { target: 'kasir', visible: '#quickSaleForm' },
+      { target: 'absensi', visible: '#attendanceCard' },
+      { target: 'catat', visible: '#financeForm' },
+      { target: 'stok', visible: '#ownerStoreCatalog' },
+      { target: 'laporan', visible: '#reportCategoryChooser' },
+    ];
+    const results = [];
+    for (const item of cases) {
+      const opened = await bukaPanelTransaksi(item.target);
+      results.push({
+        target: item.target,
+        opened,
+        visible: !document.querySelector(item.visible)?.hidden,
+        otherPanelsHidden: ['quickSaleForm', 'attendanceCard', 'reportCategoryChooser', 'employeeProductCatalog']
+          .filter(id => id !== item.visible.slice(1))
+          .every(id => document.querySelector('#' + id)?.hidden),
+      });
+    }
+    return results;
+  });
+
+  expect(result).toEqual([
+    { target: 'kasir', opened: true, visible: true, otherPanelsHidden: true },
+    { target: 'absensi', opened: true, visible: true, otherPanelsHidden: true },
+    { target: 'catat', opened: true, visible: true, otherPanelsHidden: true },
+    { target: 'stok', opened: true, visible: true, otherPanelsHidden: true },
+    { target: 'laporan', opened: true, visible: true, otherPanelsHidden: true },
+  ]);
+});
+
+test('semua kategori laporan Owner memuat tujuan dan tombol cetak yang sesuai', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    document.querySelector('#transaksi')?.classList.add('active');
+    financeBusiness = { id: 'e2e-owner-reports', owner_id: 'e2e-owner' };
+    financeMemberRole = 'owner';
+    financeMemberUserId = 'e2e-owner';
+    offlineTransactionMode = false;
+    periksaLisensiWorkspace = async () => true;
+    const calls = [];
+    window.muatDanTampilkanLaporan = async () => { calls.push('finance'); };
+    window.loadStoreProducts = async () => { calls.push('products'); };
+    window.loadStoreStockMovements = async () => { calls.push('stock-movements'); };
+    window.loadFinanceAccounting = async () => { calls.push('accounting'); };
+    window.tampilLaporanHarianUsaha = () => { calls.push('daily'); };
+    window.tampilTransaksi = () => { calls.push('history'); };
+    const cases = [
+      { category: 'sales', panel: '#financeTableSalesSummary', call: 'finance', print: true },
+      { category: 'stock', panel: '#stockReportTableCard', call: 'stock-movements', print: true },
+      { category: 'finance', panel: '#financeTransactionsTableCard', call: 'finance', print: true },
+      { category: 'accounting', panel: '#financeAccountingCard', call: 'accounting', print: false },
+      { category: 'daily', panel: '#localDailyReportCard', call: 'daily', print: true },
+      { category: 'history', panel: '#localTransactionHistoryCard', call: 'history', print: true },
+    ];
+    const results = [];
+    for (const item of cases) {
+      await pilihLaporanTransaksi(item.category);
+      const panel = document.querySelector(item.panel);
+      const printButton = item.category === 'accounting'
+        ? document.querySelector('#financeAccountingCard button[onclick*="printFinanceAccounting"]')
+        : panel?.querySelector(':scope > .report-print-action');
+      results.push({
+        category: item.category,
+        selected: document.querySelector('#reportCategorySelect')?.value,
+        visible: !!panel && !panel.hidden,
+        printAvailable: !!printButton,
+        callObserved: calls.includes(item.call),
+      });
+    }
+    return results;
+  });
+
+  expect(result).toEqual([
+    { category: 'sales', selected: 'sales', visible: true, printAvailable: true, callObserved: true },
+    { category: 'stock', selected: 'stock', visible: true, printAvailable: true, callObserved: true },
+    { category: 'finance', selected: 'finance', visible: true, printAvailable: true, callObserved: true },
+    { category: 'accounting', selected: 'accounting', visible: true, printAvailable: true, callObserved: true },
+    { category: 'daily', selected: 'daily', visible: true, printAvailable: true, callObserved: true },
+    { category: 'history', selected: 'history', visible: true, printAvailable: true, callObserved: true },
+  ]);
+});
+
+test('Karyawan hanya dapat membuka laporan pemasukan dan tidak melihat menu Owner', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    document.querySelector('#transaksi')?.classList.add('active');
+    financeBusiness = { id: 'e2e-employee-reports', owner_id: 'e2e-owner' };
+    financeMemberRole = 'employee';
+    financeMemberUserId = 'e2e-employee';
+    offlineTransactionMode = false;
+    periksaLisensiWorkspace = async () => true;
+    window.muatDanTampilkanLaporan = async () => {};
+    let ownerDataCalls = 0;
+    window.loadStoreProducts = async () => { ownerDataCalls += 1; };
+    window.loadStoreStockMovements = async () => { ownerDataCalls += 1; };
+    window.loadFinanceAccounting = async () => { ownerDataCalls += 1; };
+    updateFinanceActivePerson();
+    await pilihLaporanTransaksi('sales');
+    const result = {
+      selected: document.querySelector('#reportCategorySelect')?.value,
+      incomeVisible: !document.querySelector('#financeReportCard')?.hidden,
+      ownerStockMenuHidden: document.querySelector('[data-transaction-role="owner"]')?.hidden,
+      expenseActionHidden: [...document.querySelectorAll('#transactionShortcuts .transaction-submenu button')]
+        .find(button => button.textContent.includes('Catat pengeluaran'))?.hidden,
+      ownerDataCalls,
+    };
+    return result;
+  });
+
+  expect(result).toEqual({
+    selected: 'income',
+    incomeVisible: true,
+    ownerStockMenuHidden: true,
+    expenseActionHidden: true,
+    ownerDataCalls: 0,
+  });
+});
+
+test('navigasi Transaksi tanpa usaha terhubung berhenti dengan petunjuk pengaturan, bukan panel kosong', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    document.querySelector('#transaksi')?.classList.add('active');
+    financeBusiness = null;
+    financeMemberRole = null;
+    financeMemberUserId = null;
+    offlineTransactionMode = false;
+    window.loadFinanceWorkspace = async () => {};
+    const opened = await bukaPanelTransaksi('kasir');
+    return {
+      opened,
+      setupVisible: !document.querySelector('#financeSetupForms')?.hidden,
+      cashierHidden: !!document.querySelector('#quickSaleForm')?.hidden,
+      status: document.querySelector('#financeStatus')?.textContent || '',
+    };
+  });
+
+  expect(result.opened).toBe(false);
+  expect(result.setupVisible).toBe(true);
+  expect(result.cashierHidden).toBe(true);
+  expect(result.status).toContain('Selesaikan login dan hubungkan akun ke usaha terlebih dahulu');
+});
+
+test('mode offline tidak mengaku berhasil membuka kasir atau absensi server', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    document.querySelector('#transaksi')?.classList.add('active');
+    financeBusiness = { id: 'e2e-offline-business', owner_id: 'e2e-owner' };
+    financeMemberRole = 'owner';
+    financeMemberUserId = 'e2e-owner';
+    offlineTransactionMode = true;
+    const cashier = await bukaPanelTransaksi('kasir');
+    const cashierStatus = document.querySelector('#financeStatus')?.textContent || '';
+    const attendance = await bukaPanelTransaksi('absensi');
+    const attendanceStatus = document.querySelector('#financeStatus')?.textContent || '';
+    return { cashier, cashierStatus, attendance, attendanceStatus };
+  });
+
+  expect(result.cashier).toBe(false);
+  expect(result.cashierStatus).toContain('Kasir dengan daftar barang dan pembaruan stok memerlukan koneksi');
+  expect(result.attendance).toBe(false);
+  expect(result.attendanceStatus).toContain('Absensi online memerlukan koneksi internet');
+});
