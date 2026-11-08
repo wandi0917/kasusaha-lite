@@ -850,5 +850,9 @@ test('navigasi laporan setelah transaksi berhasil hanya setelah laporan terkonfi
 
   const result = await page.evaluate(() => arahkanKeLaporanSetelahSimpan('sales'));
   expect(result).toBe(true);
-  expect(await page.evaluate(() => window.__reportRecovery)).toBeNull();
+  await expect.poll(() => page.evaluate(() => window.__reportRecovery)).toMatchObject({
+    isError: false,
+    target: 'laporan',
+  });
+  await expect.poll(() => page.evaluate(() => window.__reportRecovery.message)).toContain('laporan penjualan sudah dibuka');
 });
