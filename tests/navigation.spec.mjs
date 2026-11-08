@@ -425,7 +425,9 @@ test('Muat pratinjau bulan ini memanggil pengarah otomatis setelah server mengem
     // router. Mock only server reads so this test proves the visible destination,
     // rather than merely proving that a mocked callback was invoked.
     periksaLisensiWorkspace = async () => true;
-    loadStoreProducts = async () => { storeProductRows = []; };
+    // Set the global function property explicitly so the production router uses the
+    // isolated server-read stub rather than making a real Supabase product query.
+    window.loadStoreProducts = async () => { storeProductRows = []; };
     window.loadQuickSaleOpenBills = async () => {};
     await renderOwnerServiceFeePanel();
     document.querySelector('#serviceFeeOwnerPanel').hidden = false;
