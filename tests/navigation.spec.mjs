@@ -440,7 +440,18 @@ test('Muat pratinjau bulan ini memanggil pengarah otomatis setelah server mengem
   });
 
   await expect(page.locator('#serviceFeePreviewRefresh')).toBeAttached();
-  await page.locator('#serviceFeePreviewRefresh').evaluate(button => button.click());
+  await page.evaluate(() => {
+    // The page's initial logged-out redirect can hide this gated tab after setup.
+    // Re-establish the already-open Owner tab immediately before the user action.
+    const transactionPanel = document.querySelector('#transaksi');
+    if (transactionPanel) {
+      transactionPanel.classList.add('active');
+      transactionPanel.hidden = false;
+      transactionPanel.removeAttribute('hidden');
+      transactionPanel.style.display = 'block';
+    }
+    document.querySelector('#serviceFeePreviewRefresh')?.click();
+  });
   await expect(page.locator('#serviceFeePreviewResult')).toContainText('Menyiapkan menu berikutnya');
   await expect(page.locator('#serviceFeePreviewResult')).toContainText('Status uji coba periode ini: belum selesai');
   await expect(page.locator('#serviceFeePreviewResult')).toContainText('Pratinjau saja, bukan tagihan. Billing tetap nonaktif.');
