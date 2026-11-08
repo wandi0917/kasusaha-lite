@@ -1064,6 +1064,7 @@ for (const [ok, message] of pwaReleaseRefreshChecks) {
 const openBillPaymentNavigationChecks = [
   [html.includes("if(paymentMatches&&!wasAlreadyPaid)") && html.includes("arahkanKeLaporanSetelahSimpan(financeMemberRole==='employee'?'income':'sales')"), "a newly verified open-bill payment must automatically open the role-appropriate report"],
   [html.includes("Pembayaran sudah tersimpan dan terverifikasi. Laporan belum terbuka otomatis") && html.includes("true,'laporan'"), "failed report navigation after payment must provide a safe retry action without repeating payment"],
+  [html.includes("if(nextTarget==='laporan')") && html.includes("arahkanKeLaporanSetelahSimpan(category)"), "the report retry action must select the role-appropriate report, load it, and scroll to its results rather than only opening the panel"],
   [html.includes("if(paymentMatches&&!wasAlreadyPaid)") && html.includes("wasAlreadyPaid"), "a previously paid bill must not trigger a second report/payment flow"],
   [html.includes("if(nextTarget==='laporan')") && html.includes("arahkanKeLaporanSetelahSimpan(category)"), "the report retry action must select the role-appropriate report, load it, and scroll to its results rather than only opening the panel"],
   [html.includes("PEMBAYARAN SUDAH DIKONFIRMASI SERVER") && html.includes("Jangan ulangi pembayaran"), "a payment snapshot mismatch must warn the user not to repeat a server-confirmed payment"],
