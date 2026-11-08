@@ -376,12 +376,13 @@ test('Muat pratinjau bulan ini memanggil pengarah otomatis setelah server mengem
     const ownerId = '10000000-0000-4000-8000-000000000111';
     const businessId = '10000000-0000-4000-8000-000000000112';
     document.body.classList.remove('employee-device-pending');
+    // Model the authenticated Owner state used by the production CSS access gate.
+    document.body.classList.add('owner-verified');
     const transactionPanel = document.querySelector('#transaksi');
     if (transactionPanel) {
       transactionPanel.classList.add('active');
       transactionPanel.hidden = false;
       transactionPanel.removeAttribute('hidden');
-      transactionPanel.style.display = 'block';
     }
     financeBusiness = {
       id: businessId,
