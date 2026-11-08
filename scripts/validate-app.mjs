@@ -539,7 +539,7 @@ const biteshipCreateShipment = fs.readFileSync("supabase/functions/biteship-crea
 const employeeActivation = fs.readFileSync("supabase/functions/employee-device-activation/index.ts", "utf8");
 const licenseActivation = fs.readFileSync("supabase/functions/activate-kasusaha-license/index.ts", "utf8");
 const biteshipShipment = fs.readFileSync("supabase/functions/biteship-create-shipment/index.ts", "utf8");
-const biteshipWebhookOrderingSource = fs.readFileSync("supabase/functions/biteship-webhook/index.ts", "utf8");
+const biteshipWebhook = fs.readFileSync("supabase/functions/biteship-webhook/index.ts", "utf8");
 
 const physicalMarketplaceGate = /production && hasPhysicalProduct && norm\(Deno\.env\.get\("MARKETPLACE_PRODUCTION_PAYMENTS_ENABLED"\)\) !== "true"/.test(createMidtrans);
 if (!physicalMarketplaceGate) fail("physical marketplace Production payments must require a separate explicit enable flag");
@@ -1055,11 +1055,11 @@ for (const [ok, message] of publicMarketplaceAnonymousEvaluationChecks) {
 
 
 const biteshipWebhookOrderingChecks = [
-  [biteshipWebhookOrderingSource.includes("on_hold: 75") && biteshipWebhookOrderingSource.includes("return_in_transit: 90") && biteshipWebhookOrderingSource.includes("returned: 95"), "Biteship exception and return statuses must have explicit forward ordering"],
-  [biteshipWebhookOrderingSource.includes("rejected: 100") && biteshipWebhookOrderingSource.includes("cancelled: 100") && biteshipWebhookOrderingSource.includes("disposed: 100"), "Biteship terminal statuses must be ranked and protected from earlier movement events"],
-  [biteshipWebhookOrderingSource.includes("if (currentRank === undefined || incomingRank === undefined) return false;"), "unknown Biteship status transitions must fail closed"],
-  [biteshipWebhookOrderingSource.includes("updateQuery.is(\"shipping_status\", null)") && biteshipWebhookOrderingSource.includes("updateQuery.eq(\"shipping_status\", expectedStatus)"), "Biteship status updates must compare-and-set the exact previously read status"],
-  [biteshipWebhookOrderingSource.includes("Status lebih baru telah diterapkan oleh notifikasi lain"), "a concurrent newer webhook must be acknowledged without overwriting its status"],
+  [biteshipWebhook.includes("on_hold: 75") && biteshipWebhook.includes("return_in_transit: 90") && biteshipWebhook.includes("returned: 95"), "Biteship exception and return statuses must have explicit forward ordering"],
+  [biteshipWebhook.includes("rejected: 100") && biteshipWebhook.includes("cancelled: 100") && biteshipWebhook.includes("disposed: 100"), "Biteship terminal statuses must be ranked and protected from earlier movement events"],
+  [biteshipWebhook.includes("if (currentRank === undefined || incomingRank === undefined) return false;"), "unknown Biteship status transitions must fail closed"],
+  [biteshipWebhook.includes("updateQuery.is(\"shipping_status\", null)") && biteshipWebhook.includes("updateQuery.eq(\"shipping_status\", expectedStatus)"), "Biteship status updates must compare-and-set the exact previously read status"],
+  [biteshipWebhook.includes("Status lebih baru telah diterapkan oleh notifikasi lain"), "a concurrent newer webhook must be acknowledged without overwriting its status"],
 ];
 for (const [ok, message] of biteshipWebhookOrderingChecks) {
   if (ok) pass(message);
