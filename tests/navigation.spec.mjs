@@ -698,3 +698,76 @@ test('pemulihan daftar barang mengarahkan Owner dan Karyawan ke menu sesuai pera
     { role: 'employee', opened: false, action: 'Buka Daftar Barang' },
   ]);
 });
+
+test('Keuangan Marketplace tetap menyembunyikan rincian jika server menolak akses', async ({ page }) => {
+  await page.route('**/functions/v1/platform-marketplace-finance', route => route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify({ authorized: false, error: 'Akses ditolak: khusus Platform Owner.' }),
+  }));
+  const result = await page.evaluate(async () => {
+    await window.muatKeuanganMarketplace();
+    return {
+      contentHidden: document.querySelector('#platformFinanceContent').hidden,
+      status: document.querySelector('#platformFinanceStatus').textContent,
+      hasFinanceData: platformFinanceData !== null,
+    };
+  });
+  expect(result.contentHidden).toBe(true);
+  expect(result.status).toContain('Akses ditolak');
+  expect(result.hasFinanceData).toBe(false);
+});
+
+test('judul seluruh kelompok laporan mengikuti nama usaha aktif dan berubah saat workspace diganti', async ({ page }) => {
+  const result = await page.evaluate(() => {
+    financeBusiness = { id: 'business-a', business_name: 'Kedai Kopi Seroja' };
+    window.perbaruiJudulLaporanDenganNamaUsaha();
+    const selectors = [
+      '#localDailyReportCard h3',
+      '#ownerHomeReports .card h3',
+      '#employeeHomeReport h3',
+      '#stockReportCard h3',
+      '#stockReportTableCard h3',
+      '#financeReportCard h3',
+      '#financeTableSalesSummary h3',
+      '#financeTransactionsTableCard h3',
+      '#financeAccountingCard .ks-accounting-head h3',
+    ];
+    const first = selectors.map(selector => document.querySelector(selector)?.textContent || '');
+    financeBusiness = { id: 'business-b', business_name: 'Warung Pagi Baru' };
+    window.perbaruiJudulLaporanDenganNamaUsaha();
+    const second = selectors.map(selector => document.querySelector(selector)?.textContent || '');
+    return { first, second };
+  });
+  expect(result.first).toHaveLength(9);
+  expect(result.first.every(title => title.includes('Kedai Kopi Seroja'))).toBe(true);
+  expect(result.second.every(title => title.includes('Warung Pagi Baru'))).toBe(true);
+  expect(result.second.every(title => !title.includes('Kedai Kopi Seroja'))).toBe(true);
+});
+
+test('pemulihan cadangan menolak struktur tidak valid tanpa mengubah data lokal', async ({ page }) => {
+  await page.evaluate(() => {
+    localStorage.setItem('kasusaha_transaksi', JSON.stringify([{ id: 'existing-transaction' }]));
+    localStorage.setItem('kasusaha_produk', JSON.stringify([{ id: 'existing-product' }]));
+    localStorage.setItem('kasusaha_keranjang', JSON.stringify([{ id: 'existing-cart-item' }]));
+    localStorage.setItem('kasusaha_pesanan', JSON.stringify([{ id: 'existing-order' }]));
+  });
+  page.on('dialog', dialog => dialog.accept());
+  await page.locator('#fileCadangan').setInputFiles({
+    name: 'cadangan-tidak-valid.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify({ transaksi: 'bukan-array', produk: [] })),
+  });
+  await page.evaluate(() => window.impor());
+  await expect.poll(() => page.evaluate(() => ({
+    transaksi: localStorage.getItem('kasusaha_transaksi'),
+    produk: localStorage.getItem('kasusaha_produk'),
+    keranjang: localStorage.getItem('kasusaha_keranjang'),
+    pesanan: localStorage.getItem('kasusaha_pesanan'),
+  }))).toEqual({
+    transaksi: JSON.stringify([{ id: 'existing-transaction' }]),
+    produk: JSON.stringify([{ id: 'existing-product' }]),
+    keranjang: JSON.stringify([{ id: 'existing-cart-item' }]),
+    pesanan: JSON.stringify([{ id: 'existing-order' }]),
+  });
+});
