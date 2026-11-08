@@ -390,7 +390,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
 
       const { data: currentProducts, error: currentProductsError } = await shippingAdmin
         .from("produk")
-        .select("id,aktif,owner_id,stok,berat_gram,panjang_cm,lebar_cm,tinggi_cm,kode_pos_asal_pengiriman,latitude_asal_pengiriman,longitude_asal_pengiriman")
+        .select("id,aktif,owner_id,stok,berat_gram,panjang_cm,lebar_cm,tinggi_cm,kode_pos_asal_pengiriman,alamat_asal_pengiriman,telepon_pengirim,nama_kontak_pengirim,nama_penjual,latitude_asal_pengiriman,longitude_asal_pengiriman")
         .in("id", physicalItems.map((item) => item.product_id));
       if (currentProductsError || !currentProducts || currentProducts.length !== physicalItems.length) {
         return reply({ success: false, error: "Data paket berubah atau tidak dapat diverifikasi. Silakan cek ongkir kembali." }, 409);
@@ -399,6 +399,22 @@ Deno.serve(async (req: Request): Promise<Response> => {
           !Number.isFinite(Number(p.stok)) ||
           Number(p.stok) < (physicalItems.find((i) => i.product_id === Number(p.id))?.quantity || 0))) {
         return reply({ success: false, error: "Produk tidak aktif atau stok berubah setelah cek ongkir. Perbarui keranjang dan hitung ongkir kembali." }, 409);
+      }
+      const invalidSenderProfile = currentProducts.some((p) => {
+        const senderPhone = readText(p.telepon_pengirim);
+        const senderAddress = readText(p.alamat_asal_pengiriman);
+        const senderContact = readText(p.nama_kontak_pengirim) || readText(p.nama_penjual);
+        return !senderAddress || senderAddress.length > 1000 ||
+          !senderPhone || senderPhone.length > 30 ||
+          !/^[0-9+().\-\s]+$/.test(senderPhone) ||
+          !senderContact || senderContact.length > 120;
+      });
+      if (invalidSenderProfile) {
+        return reply({
+          success: false,
+          error: "Profil pengiriman penjual belum lengkap. Lengkapi alamat asal, nama kontak, dan nomor telepon pengirim sebelum checkout.",
+          error_code: "SELLER_SHIPPING_PROFILE_INCOMPLETE",
+        }, 409);
       }
       const currentOrigins = [...new Set(currentProducts.map((p) => String(p.kode_pos_asal_pengiriman || "").trim()))];
       const currentSellers = [...new Set(currentProducts.map((p) => String(p.owner_id || "")))];

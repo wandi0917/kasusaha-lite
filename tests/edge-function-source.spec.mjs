@@ -105,3 +105,19 @@ test('Midtrans server key is trimmed and encoded using HTTP Basic authentication
   expect(paymentSource).toContain('https://api.sandbox.midtrans.com');
   expect(paymentSource).toContain('https://app.sandbox.midtrans.com');
 });
+
+
+test('physical marketplace checkout blocks incomplete seller sender profile before payment', async () => {
+  const checkoutSource = readFileSync(
+    new URL('../supabase/functions/create-marketplace-order/index.ts', import.meta.url),
+    'utf8',
+  );
+
+  expect(checkoutSource).toContain('alamat_asal_pengiriman,telepon_pengirim,nama_kontak_pengirim,nama_penjual');
+  expect(checkoutSource).toContain('SELLER_SHIPPING_PROFILE_INCOMPLETE');
+  expect(checkoutSource).toContain('const invalidSenderProfile = currentProducts.some');
+  expect(checkoutSource).toContain('if (invalidSenderProfile)');
+  expect(checkoutSource.indexOf('if (invalidSenderProfile)')).toBeLessThan(
+    checkoutSource.indexOf('create_marketplace_order_secure'),
+  );
+});
