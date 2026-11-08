@@ -178,7 +178,7 @@ const recoveryNavigationChecks = [
   [html.includes("id='financeStatusAction'") && html.includes("window.buka?.(nextTarget"), "recovery status messages must render a real direct-navigation button"],
   [html.includes("true,'transaksi');"), "workspace setup recovery must provide a direct Transaksi action"],
   [html.includes("true,'kasir');"), "cashier recovery guidance must provide a direct Kasir Cepat action"],
-  [html.includes("true,'katalog');"), "catalog loading recovery guidance must provide a direct Daftar Barang action"],
+  [html.includes("const recoveryTarget=financeMemberRole==='owner'?'stok':'katalog';") && html.includes("const recoveryMenu=financeMemberRole==='owner'?'Barang & Stok':'Daftar Barang';"), "catalog loading recovery guidance must route Owner to Barang & Stok and Employee to Daftar Barang"],
   [html.includes("Buka Paket & Harga") && html.includes("paketKasUsaha"), "missing-license recovery must navigate directly to Packages and Pricing"],
   [html.includes("Uji coba gratis 31 hari sudah digunakan atau lisensi diperlukan.") && html.includes("paketKasUsaha"), "expired or previously used trial must direct Owner to Packages and Pricing"],
 
