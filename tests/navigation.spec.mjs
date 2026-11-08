@@ -856,3 +856,62 @@ test('navigasi laporan setelah transaksi berhasil hanya setelah laporan terkonfi
   });
   await expect.poll(() => page.evaluate(() => window.__reportRecovery.message)).toContain('laporan penjualan sudah dibuka');
 });
+
+
+test('semua ID DOM unik dan handler tombol inline merujuk fungsi yang tersedia', async ({ page }) => {
+  const result = await page.evaluate(() => {
+    const ids = [...document.querySelectorAll('[id]')].map(node => node.id).filter(Boolean);
+    const counts = new Map();
+    for (const id of ids) counts.set(id, (counts.get(id) || 0) + 1);
+    const duplicateIds = [...counts.entries()]
+      .filter(([, count]) => count > 1)
+      .map(([id]) => id)
+      .sort();
+
+    const source = [...document.scripts].map(script => script.textContent || '').join('\\n');
+    const declared = new Set();
+    for (const match of source.matchAll(/\\b(?:async\\s+)?function\\s+([A-Za-z_$][\\w$]*)\\s*\\(/g)) {
+      declared.add(match[1]);
+    }
+    for (const match of source.matchAll(/\\b(?:const|let|var)\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*(?:async\\s*)?(?:function|\\([^)]*\\)\\s*=>|[A-Za-z_$][\\w$]*\\s*=>)/g)) {
+      declared.add(match[1]);
+    }
+    for (const match of source.matchAll(/\\bwindow\\.([A-Za-z_$][\\w$]*)\\s*=/g)) {
+      declared.add(match[1]);
+    }
+
+    const ignored = new Set([
+      'if', 'for', 'while', 'switch', 'catch', 'return', 'typeof', 'new',
+      'this', 'window', 'document', 'event', 'console', 'Math', 'Date',
+      'JSON', 'String', 'Number', 'Boolean', 'Array', 'Object', 'Promise',
+      'setTimeout', 'clearTimeout', 'setInterval', 'navigator', 'localStorage',
+      'sessionStorage', 'URL', 'Blob', 'FileReader', 'alert', 'confirm',
+      'prompt', 'parseInt', 'parseFloat'
+    ]);
+    const missingHandlers = new Set();
+    const elements = [...document.querySelectorAll(
+      '[onclick], [onchange], [oninput], [onsubmit], [onkeyup], [onkeydown]'
+    )];
+    for (const element of elements) {
+      for (const attribute of ['onclick', 'onchange', 'oninput', 'onsubmit', 'onkeyup', 'onkeydown']) {
+        const expression = element.getAttribute(attribute);
+        if (!expression) continue;
+        for (const match of expression.matchAll(/(?:^|[^\\w$.])([A-Za-z_$][\\w$]*)\\s*\\(/g)) {
+          const name = match[1];
+          if (!ignored.has(name) && !declared.has(name) && typeof window[name] !== 'function') {
+            missingHandlers.add(name);
+          }
+        }
+      }
+    }
+    return {
+      duplicateIds,
+      missingHandlers: [...missingHandlers].sort(),
+      interactiveHandlerCount: elements.length
+    };
+  });
+
+  expect(result.duplicateIds).toEqual([]);
+  expect(result.missingHandlers).toEqual([]);
+  expect(result.interactiveHandlerCount).toBeGreaterThan(50);
+});
