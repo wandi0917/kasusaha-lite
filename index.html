@@ -6318,7 +6318,7 @@ async function loadQuickSaleOpenBills(){
    tr.appendChild(cell((b.table_number?'Meja '+b.table_number:'Kasir')+(b.customer_name?' • '+b.customer_name:'')));
    tr.appendChild(cell(new Date(b.created_at).toLocaleString('id-ID')));
    const detail=document.createElement('td');
-   (b.lines||[]).forEach(line=>{const row=document.createElement('div');row.textContent=(line.product_name||'Produk')+(line.product_code?' ['+line.product_code+']':'')+' × '+Number(line.quantity||0)+' = '+formatStoreRupiah(Number(line.quantity||0)*Number(line.unit_price||0))+(line.note?' | '+String(line.note):'');detail.appendChild(row);});
+   (b.lines||[]).forEach(line=>{const row=document.createElement('div');row.textContent=(line.product_name||'Produk')+(line.product_code?' ['+line.product_code+']':'')+' × '+Number(line.quantity||0)+' = '+formatStoreRupiah(Number(line.quantity||0)*Number(line.unit_price||0))+(line.note?' | Catatan: '+String(line.note):'');detail.appendChild(row);});
    tr.appendChild(detail);
    const amount=cell(formatStoreRupiah(b.total_amount));amount.className='amount';tr.appendChild(amount);
    const actions=document.createElement('td'),wrap=document.createElement('div');wrap.className='row-actions';
