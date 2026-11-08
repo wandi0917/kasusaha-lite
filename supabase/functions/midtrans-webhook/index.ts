@@ -1609,6 +1609,63 @@ Deno.serve(async (req: Request) => {
       }, 500);
     }
 
+    // Marketplace commission rows have no payout status column. Preserve the
+    // financial amount and add an explicit review marker to every affected item.
+    // This keeps downstream payout/reconciliation workflows from treating the
+    // order as clean after a refund or chargeback.
+    const { data: refundedItems, error: refundedItemsError } = await supabase
+      .from("marketplace_order_items")
+      .select("id")
+      .eq("order_id", databaseOrderId);
+
+    if (refundedItemsError) {
+      console.error("Gagal membaca item untuk menahan komisi marketplace:", refundedItemsError.message);
+      return reply({
+        success: false,
+        message: "Pesanan ditandai untuk pemeriksaan, tetapi item komisi marketplace belum dapat dibaca.",
+        order_id: databaseOrderId,
+      }, 500);
+    }
+
+    const refundedItemIds = (refundedItems ?? []).map((item) => item.id).filter(Boolean);
+    if (refundedItemIds.length > 0) {
+      const { data: marketplaceCommissionRows, error: marketplaceCommissionReadError } = await supabase
+        .from("marketplace_commission_ledger")
+        .select("id, notes")
+        .in("order_item_id", refundedItemIds);
+
+      if (marketplaceCommissionReadError) {
+        console.error("Gagal membaca komisi marketplace untuk pemeriksaan refund:", marketplaceCommissionReadError.message);
+        return reply({
+          success: false,
+          message: "Pesanan ditandai untuk pemeriksaan, tetapi catatan komisi marketplace belum dapat dibaca.",
+          order_id: databaseOrderId,
+        }, 500);
+      }
+
+      for (const row of marketplaceCommissionRows ?? []) {
+        const priorNotes = String(row.notes ?? "").trim();
+        const refundMarker = "REVIEW REFUND/CHARGEBACK:";
+        const updatedNotes = priorNotes.includes(refundMarker)
+          ? priorNotes
+          : [priorNotes, refundMarker, reviewNote].filter(Boolean).join(" ");
+
+        const { error: commissionNoteError } = await supabase
+          .from("marketplace_commission_ledger")
+          .update({ notes: updatedNotes })
+          .eq("id", row.id);
+
+        if (commissionNoteError) {
+          console.error("Gagal menandai komisi marketplace untuk pemeriksaan refund:", commissionNoteError.message);
+          return reply({
+            success: false,
+            message: "Sebagian komisi marketplace belum berhasil ditandai untuk pemeriksaan refund.",
+            order_id: databaseOrderId,
+          }, 500);
+        }
+      }
+    }
+
     // Komisi yang sudah dibayar tidak diubah nilainya atau di-clawback otomatis.
     // Tambahkan catatan agar admin meninjau payout yang mungkin sudah terjadi.
     const { data: paidPartnerRows, error: paidPartnerReadError } = await supabase
