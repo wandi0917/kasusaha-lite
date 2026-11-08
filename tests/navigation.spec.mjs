@@ -451,7 +451,7 @@ test('Muat pratinjau bulan ini memanggil pengarah otomatis setelah server mengem
     products: storeProductRows?.length,
   }));
   expect(routeDiagnostics.entryHidden, JSON.stringify(routeDiagnostics)).toBe(false);
-  await expect(page.locator('#ownerStoreCatalog')).toBeVisible();
+  await expect(page.locator('#ownerStoreCatalog'), JSON.stringify(routeDiagnostics)).toBeVisible();
   await expect(page.locator('#quickSaleForm')).toBeHidden();
   await expect(page.locator('#financeEntryTitle')).toContainText('Barang & Stok');
 });
