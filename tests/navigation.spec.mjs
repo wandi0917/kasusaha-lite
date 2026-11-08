@@ -444,6 +444,7 @@ test('Muat pratinjau bulan ini memanggil pengarah otomatis setelah server mengem
   await page.evaluate(() => {
     // The page's initial logged-out redirect can hide this gated tab after setup.
     // Re-establish the already-open Owner tab immediately before the user action.
+    document.body.classList.remove('employee-device-pending');
     const transactionPanel = document.querySelector('#transaksi');
     if (transactionPanel) {
       transactionPanel.classList.add('active');
@@ -460,6 +461,7 @@ test('Muat pratinjau bulan ini memanggil pengarah otomatis setelah server mengem
     preview: document.querySelector('#serviceFeePreviewResult')?.textContent,
     financeStatus: document.querySelector('#financeStatus')?.textContent,
     transactionActive: document.querySelector('#transaksi')?.classList.contains('active'),
+    bodyClass: document.body.className,
     businessId: financeBusiness?.id || null,
     role: financeMemberRole,
     userId: financeMemberUserId,
