@@ -44,3 +44,22 @@ test('verified Midtrans webhook accepts already-paid orders after seller process
     '.in("status", ["paid", "processing", "completed"])',
   );
 });
+ 
+test('platform finance endpoint allows the configured Playwright preview origin for CORS preflight', async () => {
+  const financeSource = readFileSync(
+    new URL('../supabase/functions/platform-marketplace-finance/index.ts', import.meta.url),
+    'utf8',
+  );
+  const playwrightConfig = readFileSync(
+    new URL('../playwright.config.mjs', import.meta.url),
+    'utf8',
+  );
+
+  expect(playwrightConfig).toContain(
+    'https://fix-navigation-serialization.kasusaha-lite.pages.dev',
+  );
+  expect(financeSource).toContain(
+    '"https://fix-navigation-serialization.kasusaha-lite.pages.dev"',
+  );
+  expect(financeSource).toContain('if (req.method === "OPTIONS")');
+});
