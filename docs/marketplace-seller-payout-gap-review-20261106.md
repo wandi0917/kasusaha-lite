@@ -32,7 +32,7 @@ Marketplace checkout, Midtrans payment verification, Biteship shipping gates, an
 - It selects payout rows only where `recipient_type = 'platform_owner'`.
 - It does not provide a seller payout request, approval, transfer, or completion endpoint.
 
-Production currently has zero marketplace orders, order items, commission rows, and payout rows. No real seller payout has therefore been exercised.
+Snapshot Production read-only per 9 November 2026: 3 marketplace orders, 3 order-item rows, 5 payment-event rows, 1 marketplace commission row, and 0 payout rows. This includes two digital-license orders and one physical marketplace simulation order. No real seller payout has therefore been exercised; the simulation order is not evidence of a completed real-world seller transfer.
 
 ## Required design before seller payout is enabled
 
@@ -72,14 +72,14 @@ Rounding, seller release timing, minimum payout threshold, bank-transfer fees, a
 - No payout was created and no money was transferred.
 - This document is a verified gap assessment and design requirement, not an enabled payout feature.
 
-## Pembaruan audit read-only 8 November 2026
+## Pembaruan audit read-only 9 November 2026
 
-Snapshot Production setelah pemeriksaan terbaru:
-- 2 pesanan marketplace, 2 baris item, dan 4 event pembayaran tercatat.
-- Kedua pesanan tersebut merupakan pesanan lisensi digital KasUsaha Lite; keduanya memiliki catatan lisensi.
-- Tidak ada pesanan fisik marketplace berstatus paid/processing/completed.
-- Baris komisi marketplace fisik: 0.
-- Baris komisi mitra lisensi: 0.
-- Baris payout: 0.
+Snapshot Production terbaru yang diperiksa secara agregat:
+- 3 pesanan marketplace, 3 baris item, dan 5 event pembayaran tercatat.
+- Dua pesanan adalah lisensi digital KasUsaha Lite; satu pesanan barang fisik merupakan data simulasi lama yang tidak diubah.
+- Terdapat 1 baris komisi marketplace sebesar Rp300 pada item simulasi fisik, sesuai 2,5% dari subtotal barang Rp12.000 (ongkos kirim tidak menjadi dasar komisi).
+- Komisi mitra lisensi: 0.
+- Baris payout: 0; tidak ada bukti transfer seller.
+- Rekonsiliasi agregat menemukan pesanan berstatus paid/processing/completed memiliki jumlah item yang cocok dengan subtotal pesanan, dan semua pesanan tersebut memiliki event pembayaran terverifikasi yang telah diproses.
 
-Karena belum ada pesanan fisik berbayar, perhitungan komisi seller 2,5% belum mendapat bukti transaksi fisik Production. Karena payout ledger masih kosong dan belum ada workflow seller payout, **jangan mengaktifkan pembayaran marketplace barang fisik Production atau menjanjikan pencairan dana otomatis**. Tampilan pencairan yang ada hanya laporan platform-owner dan secara eksplisit menyatakan bahwa saldo tersedia bukan bukti transfer ke rekening.
+Komisi Rp300 tersebut berasal dari data simulasi lama dan **bukan bukti bahwa alur pembayaran/pencairan seller sungguhan telah diuji**. Karena payout ledger masih kosong dan workflow seller payout belum tersedia, **jangan mengaktifkan pembayaran marketplace barang fisik Production atau menjanjikan pencairan dana otomatis**. Tampilan pencairan yang ada hanya laporan platform-owner dan bukan bukti transfer ke rekening.
