@@ -698,3 +698,85 @@ test('pemulihan daftar barang mengarahkan Owner dan Karyawan ke menu sesuai pera
     { role: 'employee', opened: false, action: 'Buka Daftar Barang' },
   ]);
 });
+
+
+test('Kotak Saran Masuk menolak akses non-Owner walau handler dipanggil langsung', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    let suggestionReads = 0;
+    sb.auth.getUser = async () => ({
+      data: { user: { id: '10000000-0000-4000-8000-000000000201' } },
+      error: null,
+    });
+    sb.from = (table) => {
+      if (table === 'kasusaha_suggestions') suggestionReads += 1;
+      return {
+        select() { return this; },
+        eq() { return this; },
+        limit() { return Promise.resolve({ data: [], error: null }); },
+      };
+    };
+
+    const button = document.querySelector('#navKasUsahaSaranMasuk');
+    const panel = document.querySelector('#ksSuggestionInboxPanel');
+    await window.bukaKotakSaranMasuk(button);
+    return {
+      buttonHidden: button.hidden,
+      panelHidden: panel.hidden,
+      suggestionReads,
+    };
+  });
+
+  expect(result).toEqual({
+    buttonHidden: true,
+    panelHidden: true,
+    suggestionReads: 0,
+  });
+});
+
+test('Keuangan Marketplace tetap menyembunyikan rincian jika server menolak akses', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    sb.functions.invoke = async () => ({
+      data: { authorized: false, error: 'Platform Owner access denied' },
+      error: null,
+    });
+    await window.muatKeuanganMarketplace();
+    return {
+      contentHidden: document.querySelector('#platformFinanceContent').hidden,
+      status: document.querySelector('#platformFinanceStatus').textContent,
+      hasFinanceData: platformFinanceData !== null,
+    };
+  });
+
+  expect(result.contentHidden).toBe(true);
+  expect(result.status).toContain('Akses ditolak');
+  expect(result.hasFinanceData).toBe(false);
+});
+
+test('pemulihan cadangan menolak struktur tidak valid tanpa mengubah data lokal', async ({ page }) => {
+  await page.evaluate(() => {
+    localStorage.setItem('kasusaha_transaksi', JSON.stringify([{ id: 'existing-transaction' }]));
+    localStorage.setItem('kasusaha_produk', JSON.stringify([{ id: 'existing-product' }]));
+    localStorage.setItem('kasusaha_keranjang', JSON.stringify([{ id: 'existing-cart-item' }]));
+    localStorage.setItem('kasusaha_pesanan', JSON.stringify([{ id: 'existing-order' }]));
+  });
+
+  page.on('dialog', dialog => dialog.accept());
+  await page.locator('#fileCadangan').setInputFiles({
+    name: 'cadangan-tidak-valid.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(JSON.stringify({ transaksi: 'bukan-array', produk: [] })),
+  });
+  await page.evaluate(() => window.impor());
+
+  await expect.poll(() => page.evaluate(() => ({
+    transaksi: localStorage.getItem('kasusaha_transaksi'),
+    produk: localStorage.getItem('kasusaha_produk'),
+    keranjang: localStorage.getItem('kasusaha_keranjang'),
+    pesanan: localStorage.getItem('kasusaha_pesanan'),
+  }))).toEqual({
+    transaksi: JSON.stringify([{ id: 'existing-transaction' }]),
+    produk: JSON.stringify([{ id: 'existing-product' }]),
+    keranjang: JSON.stringify([{ id: 'existing-cart-item' }]),
+    pesanan: JSON.stringify([{ id: 'existing-order' }]),
+  });
+});
