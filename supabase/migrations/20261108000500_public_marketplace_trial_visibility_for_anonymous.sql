@@ -69,4 +69,4 @@ AS $function$
 $function$;
 
 COMMENT ON FUNCTION public.kasusaha_marketplace_product_is_public(bigint) IS
-  'Public marketplace product eligibility: active paid license with marketplace entitlement, or the active 31-day trial; evaluates eligibility without depending on the visitor auth.uid().';
+  'Public marketplace product eligibility: active paid license with marketplace entitlement, or the active 31-day trial; evaluates eligibility without depending on the visitor's login state.';
