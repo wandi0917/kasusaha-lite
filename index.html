@@ -2815,6 +2815,7 @@ async function buka(id,tombol,opsi={}){
             tampilTransaksi();
           }else if(chosen==='stock'){
             await loadStoreProducts();
+            await loadStoreStockMovements();
           }else if(chosen==='accounting'){
             await loadFinanceAccounting();
           }

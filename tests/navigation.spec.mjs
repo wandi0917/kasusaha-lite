@@ -182,9 +182,9 @@ test('alur Owner nyata mengarahkan ke Stok atau Kasir sesuai ketersediaan produk
   await page.evaluate(async () => {
     // Hanya mock lapisan server; fungsi pengarah dan pembuka panel produksi tetap dijalankan.
     document.querySelector('#transaksi')?.classList.add('active');
-    financeBusiness = { id: 'e2e-owner-business', owner_id: 'e2e-owner' };
+    financeBusiness = { id: '10000000-0000-4000-8000-000000000109', owner_id: '10000000-0000-4000-8000-000000000107' };
     financeMemberRole = 'owner';
-    financeMemberUserId = 'e2e-owner';
+    financeMemberUserId = '10000000-0000-4000-8000-000000000107';
     offlineTransactionMode = false;
     periksaLisensiWorkspace = async () => true;
     loadStoreProducts = async () => {};
@@ -296,9 +296,9 @@ test('tombol Periksa Status Aktivasi menjalankan pemeriksaan ulang ke server', a
 test('panduan login Owner mengikuti kondisi barang yang tersedia', async ({ page }) => {
   await page.evaluate(async () => {
     document.querySelector('#transaksi')?.classList.add('active');
-    financeBusiness = { id: 'e2e-owner-business', owner_id: 'e2e-owner' };
+    financeBusiness = { id: '10000000-0000-4000-8000-000000000109', owner_id: '10000000-0000-4000-8000-000000000107' };
     financeMemberRole = 'owner';
-    financeMemberUserId = 'e2e-owner';
+    financeMemberUserId = '10000000-0000-4000-8000-000000000107';
     document.body.classList.remove('employee-device-pending');
     window.arahkanKePekerjaanBerikutnya = async () => true;
 
@@ -334,9 +334,9 @@ test('panduan login Owner mengikuti kondisi barang yang tersedia', async ({ page
 test('navigasi Karyawan ke katalog tetap dinyatakan berhasil setelah daftar barang terbuka', async ({ page }) => {
   await page.evaluate(async () => {
     document.querySelector('#transaksi')?.classList.add('active');
-    financeBusiness = { id: 'e2e-employee-business', owner_id: 'e2e-owner' };
+    financeBusiness = { id: '10000000-0000-4000-8000-000000000110', owner_id: '10000000-0000-4000-8000-000000000107' };
     financeMemberRole = 'employee';
-    financeMemberUserId = 'e2e-employee';
+    financeMemberUserId = '10000000-0000-4000-8000-000000000108';
     offlineTransactionMode = false;
     periksaLisensiWorkspace = async () => true;
     loadStoreProducts = async () => {
@@ -358,8 +358,8 @@ test('navigasi Karyawan ke katalog tetap dinyatakan berhasil setelah daftar bara
 
 test('Muat pratinjau bulan ini memanggil pengarah otomatis setelah server mengembalikan pratinjau valid', async ({ page }) => {
   await page.evaluate(async () => {
-    const ownerId = 'e2e-owner-preview';
-    const businessId = 'e2e-preview-business';
+    const ownerId = '10000000-0000-4000-8000-000000000111';
+    const businessId = '10000000-0000-4000-8000-000000000112';
     document.querySelector('#transaksi')?.classList.add('active');
     financeBusiness = {
       id: businessId,
@@ -433,4 +433,228 @@ test('menu Produk Saya dan Cadangan mengarahkan pengguna tanpa sesi ke Akun Pemb
     await expect(page.locator('#produk')).not.toHaveClass(/active/);
     await expect(page.locator('#cadangan')).not.toHaveClass(/active/);
   }
+});
+
+
+test('seluruh modul Transaksi Owner membuka panel yang tepat tanpa menumpuk panel lama', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    document.querySelector('#transaksi')?.classList.add('active');
+    financeBusiness = { id: '10000000-0000-4000-8000-000000000101', owner_id: '10000000-0000-4000-8000-000000000107' };
+    financeMemberRole = 'owner';
+    financeMemberUserId = '10000000-0000-4000-8000-000000000107';
+    offlineTransactionMode = false;
+    document.body.classList.remove('employee-device-pending');
+    periksaLisensiWorkspace = async () => true;
+    loadStoreProducts = async () => { storeProductRows = []; };
+    window.loadQuickSaleOpenBills = async () => {};
+    loadAttendance = async () => {};
+    const cases = [
+      { target: 'kasir', visible: '#quickSaleForm' },
+      { target: 'absensi', visible: '#attendanceCard' },
+      { target: 'catat', visible: '#financeForm' },
+      { target: 'stok', visible: '#ownerStoreCatalog' },
+      { target: 'laporan', visible: '#reportCategoryChooser' },
+    ];
+    const results = [];
+    for (const item of cases) {
+      const opened = await bukaPanelTransaksi(item.target);
+      results.push({
+        target: item.target,
+        opened,
+        visible: !document.querySelector(item.visible)?.hidden,
+        otherPanelsHidden: ['quickSaleForm', 'attendanceCard', 'reportCategoryChooser', 'employeeProductCatalog']
+          .filter(id => id !== item.visible.slice(1))
+          .every(id => document.querySelector('#' + id)?.hidden),
+      });
+    }
+    return results;
+  });
+
+  expect(result).toEqual([
+    { target: 'kasir', opened: true, visible: true, otherPanelsHidden: true },
+    { target: 'absensi', opened: true, visible: true, otherPanelsHidden: true },
+    { target: 'catat', opened: true, visible: true, otherPanelsHidden: true },
+    { target: 'stok', opened: true, visible: true, otherPanelsHidden: true },
+    { target: 'laporan', opened: true, visible: true, otherPanelsHidden: true },
+  ]);
+});
+
+test('semua kategori laporan Owner memuat tujuan dan tombol cetak yang sesuai', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    document.querySelector('#transaksi')?.classList.add('active');
+    financeBusiness = { id: '10000000-0000-4000-8000-000000000102', owner_id: '10000000-0000-4000-8000-000000000107' };
+    financeMemberRole = 'owner';
+    financeMemberUserId = '10000000-0000-4000-8000-000000000107';
+    offlineTransactionMode = false;
+    periksaLisensiWorkspace = async () => true;
+    const calls = [];
+    window.muatDanTampilkanLaporan = async () => { calls.push('finance'); };
+    window.loadStoreProducts = async () => { calls.push('products'); };
+    window.loadStoreStockMovements = async () => { calls.push('stock-movements'); };
+    window.loadFinanceAccounting = async () => { calls.push('accounting'); };
+    window.tampilLaporanHarianUsaha = () => { calls.push('daily'); };
+    window.tampilTransaksi = () => { calls.push('history'); };
+    const cases = [
+      { category: 'sales', panel: '#financeTableSalesSummary', call: 'finance', print: true },
+      { category: 'stock', panel: '#stockReportTableCard', call: 'stock-movements', print: true },
+      { category: 'finance', panel: '#financeTransactionsTableCard', call: 'finance', print: true },
+      { category: 'accounting', panel: '#financeAccountingCard', call: 'accounting', print: false },
+      { category: 'daily', panel: '#localDailyReportCard', call: 'daily', print: true },
+      { category: 'history', panel: '#localTransactionHistoryCard', call: 'history', print: true },
+    ];
+    const results = [];
+    for (const item of cases) {
+      await pilihLaporanTransaksi(item.category);
+      const panel = document.querySelector(item.panel);
+      const printHost = ['sales', 'finance', 'income'].includes(item.category)
+        ? document.querySelector('#financeReportCard')
+        : panel;
+      const printButton = item.category === 'accounting'
+        ? document.querySelector('#financeAccountingCard button[onclick*="printFinanceAccounting"]')
+        : printHost?.querySelector(':scope > .report-print-action');
+      results.push({
+        category: item.category,
+        selected: document.querySelector('#reportCategorySelect')?.value,
+        visible: !!panel && !panel.hidden,
+        printAvailable: !!printButton,
+        callObserved: calls.includes(item.call),
+      });
+    }
+    return results;
+  });
+
+  expect(result).toEqual([
+    { category: 'sales', selected: 'sales', visible: true, printAvailable: true, callObserved: true },
+    { category: 'stock', selected: 'stock', visible: true, printAvailable: true, callObserved: true },
+    { category: 'finance', selected: 'finance', visible: true, printAvailable: true, callObserved: true },
+    { category: 'accounting', selected: 'accounting', visible: true, printAvailable: true, callObserved: true },
+    { category: 'daily', selected: 'daily', visible: true, printAvailable: true, callObserved: true },
+    { category: 'history', selected: 'history', visible: true, printAvailable: true, callObserved: true },
+  ]);
+});
+
+test('Karyawan hanya dapat membuka laporan pemasukan dan tidak melihat menu Owner', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    document.querySelector('#transaksi')?.classList.add('active');
+    financeBusiness = { id: '10000000-0000-4000-8000-000000000103', owner_id: '10000000-0000-4000-8000-000000000107' };
+    financeMemberRole = 'employee';
+    financeMemberUserId = '10000000-0000-4000-8000-000000000108';
+    offlineTransactionMode = false;
+    periksaLisensiWorkspace = async () => true;
+    window.muatDanTampilkanLaporan = async () => {};
+    let ownerDataCalls = 0;
+    window.loadStoreProducts = async () => { ownerDataCalls += 1; };
+    window.loadStoreStockMovements = async () => { ownerDataCalls += 1; };
+    window.loadFinanceAccounting = async () => { ownerDataCalls += 1; };
+    updateFinanceActivePerson();
+    await pilihLaporanTransaksi('sales');
+    const result = {
+      selected: document.querySelector('#reportCategorySelect')?.value,
+      incomeVisible: !document.querySelector('#financeReportCard')?.hidden,
+      ownerStockMenuHidden: document.querySelector('[data-transaction-role="owner"]')?.hidden,
+      expenseActionHidden: [...document.querySelectorAll('#transactionShortcuts .transaction-submenu button')]
+        .find(button => button.textContent.includes('Catat pengeluaran'))?.hidden,
+      ownerDataCalls,
+    };
+    return result;
+  });
+
+  expect(result).toEqual({
+    selected: 'income',
+    incomeVisible: true,
+    ownerStockMenuHidden: true,
+    expenseActionHidden: true,
+    ownerDataCalls: 0,
+  });
+});
+
+test('navigasi Transaksi tanpa usaha terhubung berhenti dengan petunjuk pengaturan, bukan panel kosong', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    document.querySelector('#transaksi')?.classList.add('active');
+    financeBusiness = null;
+    financeMemberRole = null;
+    financeMemberUserId = null;
+    offlineTransactionMode = false;
+    window.loadFinanceWorkspace = async () => {};
+    const opened = await bukaPanelTransaksi('kasir');
+    return {
+      opened,
+      setupVisible: !document.querySelector('#financeSetupForms')?.hidden,
+      cashierHidden: !!document.querySelector('#quickSaleForm')?.hidden,
+      status: document.querySelector('#financeStatus')?.textContent || '',
+    };
+  });
+
+  expect(result.opened).toBe(false);
+  expect(result.setupVisible).toBe(true);
+  expect(result.cashierHidden).toBe(true);
+  expect(result.status).toContain('Selesaikan login dan hubungkan akun ke usaha terlebih dahulu');
+});
+
+test('mode offline tidak mengaku berhasil membuka kasir atau absensi server', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    document.querySelector('#transaksi')?.classList.add('active');
+    financeBusiness = { id: '10000000-0000-4000-8000-000000000104', owner_id: '10000000-0000-4000-8000-000000000107' };
+    financeMemberRole = 'owner';
+    financeMemberUserId = '10000000-0000-4000-8000-000000000107';
+    offlineTransactionMode = true;
+    const cashier = await bukaPanelTransaksi('kasir');
+    const cashierStatus = document.querySelector('#financeStatus')?.textContent || '';
+    const attendance = await bukaPanelTransaksi('absensi');
+    const attendanceStatus = document.querySelector('#financeStatus')?.textContent || '';
+    return { cashier, cashierStatus, attendance, attendanceStatus };
+  });
+
+  expect(result.cashier).toBe(false);
+  expect(result.cashierStatus).toContain('Kasir dengan daftar barang dan pembaruan stok memerlukan koneksi');
+  expect(result.attendance).toBe(false);
+  expect(result.attendanceStatus).toContain('Absensi online memerlukan koneksi internet');
+});
+
+
+test('pemilih kategori Laporan Stok memuat daftar barang sekaligus riwayat pergerakan stok', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    financeBusiness = { id: '10000000-0000-4000-8000-000000000105', owner_id: '10000000-0000-4000-8000-000000000106' };
+    financeMemberRole = 'owner';
+    financeMemberUserId = '10000000-0000-4000-8000-000000000106';
+    financeSelectedBusinessId = null;
+    offlineTransactionMode = false;
+    document.body.classList.remove('employee-device-pending');
+    sb.auth.getSession = async () => ({
+      data: { session: { user: { id: '10000000-0000-4000-8000-000000000106' } } },
+      error: null,
+    });
+    const memberQuery = {
+      select() { return this; },
+      eq() { return this; },
+      then(resolve, reject) {
+        return Promise.resolve({
+          data: [{ business_id: '10000000-0000-4000-8000-000000000105', role: 'owner', active: true }],
+          error: null,
+        }).then(resolve, reject);
+      },
+    };
+    sb.from = () => memberQuery;
+    periksaLisensiWorkspace = async () => true;
+    const calls = [];
+    window.loadStoreProducts = async () => { calls.push('products'); };
+    window.loadStoreStockMovements = async () => { calls.push('stock-movements'); };
+    await buka('transaksi', document.querySelector('#navTransaksi'));
+    const selector = document.querySelector('#reportCategorySelect');
+    selector.value = 'stock';
+    await selector.onchange();
+    return {
+      selected: selector.value,
+      calls,
+      reportVisible: !document.querySelector('#stockReportTableCard')?.hidden,
+      movementRowsPresent: !!document.querySelector('#stockMovementRows'),
+    };
+  });
+
+  expect(result).toEqual({
+    selected: 'stock',
+    calls: ['products', 'stock-movements'],
+    reportVisible: true,
+    movementRowsPresent: true,
+  });
 });
