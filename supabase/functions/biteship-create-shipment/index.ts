@@ -142,6 +142,7 @@ Deno.serve(async (req) => {
   const { data: lock, error: lockError } = await admin.from("marketplace_orders")
     .update({ shipping_status: "creating", updated_at: new Date().toISOString() })
     .eq("id", orderId).in("status", ["paid", "processing"])
+    .is("shipping_status", null)
     .is("shipping_tracking_id", null).is("shipping_waybill_id", null).is("shipping_created_at", null)
     .select("id").maybeSingle();
   if (lockError || !lock) return reply({ success: false, error: "Pesanan sedang diproses pengiriman oleh proses lain. Periksa status pesanan." }, 409);
