@@ -506,9 +506,12 @@ test('semua kategori laporan Owner memuat tujuan dan tombol cetak yang sesuai', 
     for (const item of cases) {
       await pilihLaporanTransaksi(item.category);
       const panel = document.querySelector(item.panel);
+      const printHost = ['sales', 'finance', 'income'].includes(item.category)
+        ? document.querySelector('#financeReportCard')
+        : panel;
       const printButton = item.category === 'accounting'
         ? document.querySelector('#financeAccountingCard button[onclick*="printFinanceAccounting"]')
-        : panel?.querySelector(':scope > .report-print-action');
+        : printHost?.querySelector(':scope > .report-print-action');
       results.push({
         category: item.category,
         selected: document.querySelector('#reportCategorySelect')?.value,
