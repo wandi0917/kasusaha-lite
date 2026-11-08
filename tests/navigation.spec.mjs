@@ -90,6 +90,13 @@ test('petunjuk langkah kerja menyediakan tombol yang membuka modul tujuan secara
     window.bukaPanelTransaksi = async (target) => {
       window.__guidedNavigationTarget = target;
     };
+    // The report action intentionally uses the dedicated report-navigation
+    // helper rather than the generic transaction-module router.
+    window.arahkanKeLaporanSetelahSimpan = async (category) => {
+      window.__guidedNavigationTarget = 'laporan';
+      window.__guidedNavigationCategory = category;
+      return true;
+    };
   });
 
   for (const item of cases) {
@@ -399,6 +406,9 @@ test('Muat pratinjau bulan ini memanggil pengarah otomatis setelah server mengem
             net_sales_for_preview: 1250000,
             billable_amount: 0,
             estimated_fee: 0,
+            consent_recorded: true,
+            trial_completed_for_period: false,
+            warning: 'Pratinjau saja, bukan tagihan. Billing tetap nonaktif.',
           },
           error: null,
         };
@@ -420,6 +430,8 @@ test('Muat pratinjau bulan ini memanggil pengarah otomatis setelah server mengem
   await expect(page.locator('#serviceFeePreviewRefresh')).toBeAttached();
   await page.locator('#serviceFeePreviewRefresh').evaluate(button => button.click());
   await expect(page.locator('#serviceFeePreviewResult')).toContainText('Menyiapkan menu berikutnya');
+  await expect(page.locator('#serviceFeePreviewResult')).toContainText('Status uji coba periode ini: belum selesai');
+  await expect(page.locator('#serviceFeePreviewResult')).toContainText('Pratinjau saja, bukan tagihan. Billing tetap nonaktif.');
   await expect.poll(() => page.evaluate(() => window.__nextOwnerRouteCalls)).toBe(1);
 });
 

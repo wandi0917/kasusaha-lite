@@ -4420,8 +4420,8 @@ async function renderOwnerServiceFeePanel(){
    }
   });return;
  }
- const started=new Date(trial),ends=new Date(started.getTime()+30*24*60*60*1000);
- host.innerHTML='<p><strong>Status:</strong> Periode pratinjau aktif.</p><p><strong>Pratinjau dimulai:</strong> '+aman(started.toLocaleString('id-ID',{timeZone:'Asia/Jakarta'}))+'</p><p><strong>Pratinjau berakhir:</strong> '+aman(ends.toLocaleString('id-ID',{timeZone:'Asia/Jakarta'}))+'</p><p class="small">Ambang gratis Rp3.000.000 per bulan; tarif 0,1% hanya atas bagian di atas ambang. Pratinjau bukan tagihan. Billing dan pemotongan saldo tetap nonaktif.</p><button id="serviceFeePreviewRefresh" type="button" class="secondary">Muat pratinjau bulan ini</button><div id="serviceFeePreviewResult" class="status" role="status" aria-live="polite">Pratinjau belum dimuat.</div>';
+ const started=new Date(trial),ends=new Date(started.getTime()+30*24*60*60*1000); const trialStatus=Number.isFinite(ends.getTime())&&Date.now()<ends.getTime()?'Masa pratinjau masih berlangsung.':'Masa pratinjau 30 hari telah berakhir.';
+ host.innerHTML='<p><strong>Status:</strong> '+trialStatus+'</p><p><strong>Pratinjau dimulai:</strong> '+aman(started.toLocaleString('id-ID',{timeZone:'Asia/Jakarta'}))+'</p><p><strong>Perkiraan berakhir:</strong> '+aman(ends.toLocaleString('id-ID',{timeZone:'Asia/Jakarta'}))+'</p><p class="small">Ambang gratis Rp3.000.000 per bulan; tarif 0,1% hanya atas bagian di atas ambang. Kelayakan biaya dihitung server berdasarkan waktu penerimaan transaksi. Pratinjau bukan tagihan. Billing dan pemotongan saldo tetap nonaktif.</p><button id="serviceFeePreviewRefresh" type="button" class="secondary">Muat pratinjau bulan ini</button><div id="serviceFeePreviewResult" class="status" role="status" aria-live="polite">Pratinjau belum dimuat.</div>';
  const refresh=$('serviceFeePreviewRefresh'),result=$('serviceFeePreviewResult');
  refresh?.addEventListener('click',async()=>{
   refresh.disabled=true;if(result)result.textContent='Memverifikasi sesi Owner dan menghitung pratinjau dari server…';
@@ -4450,9 +4450,9 @@ async function renderOwnerServiceFeePanel(){
    financeMemberUserId=liveUserId;
    const month=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()).slice(0,7)+'-01';
    const {data,error}=await sb.rpc('kasusaha_owner_service_fee_preview',{p_business_id:targetBusinessId,p_month:month});if(error)throw error;
-   if(!data||data.billing_enabled!==false||data.preview_only!==true)throw new Error('Status server tidak memenuhi pengaman pratinjau. Jangan gunakan hasil ini sebagai tagihan.');
+   if(!data||data.billing_enabled!==false||data.preview_only!==true||data.consent_recorded!==true)throw new Error('Status server tidak memenuhi pengaman pratinjau atau persetujuan Owner belum tercatat. Jangan gunakan hasil ini sebagai tagihan.');
    const idr=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
-   result.innerHTML='<strong>Pratinjau '+aman(month.slice(0,7))+'</strong><br>Penjualan tercatat: '+idr(data.gross_recorded_sales)+'<br>Retur tercatat: '+idr(data.recognized_returns)+'<br>Omzet bersih: '+idr(data.net_sales_for_preview)+'<br>Bagian di atas ambang: '+idr(data.billable_amount)+'<br><strong>Estimasi biaya: '+idr(data.estimated_fee)+'</strong><p class="small">Ini hanya pratinjau, bukan tagihan. Billing aktif: tidak.</p>';
+   result.innerHTML='<strong>Pratinjau '+aman(month.slice(0,7))+'</strong><br>Penjualan tercatat: '+idr(data.gross_recorded_sales)+'<br>Retur tercatat: '+idr(data.recognized_returns)+'<br>Omzet bersih: '+idr(data.net_sales_for_preview)+'<br>Bagian di atas ambang: '+idr(data.billable_amount)+'<br><strong>Estimasi biaya: '+idr(data.estimated_fee)+'</strong><p class="small">Status uji coba periode ini: '+(data.trial_completed_for_period===true?'sudah selesai':'belum selesai')+'. Ini hanya pratinjau, bukan tagihan. Billing aktif: tidak.</p><p class="small">'+aman(data.warning||'Gunakan hasil ini sebagai informasi saja; bukan tagihan.')+'</p>';
    // Setelah hasil pratinjau berhasil diverifikasi server, lanjutkan alur Owner
    // ke pekerjaan nyata berikutnya: Produk & Stok bila belum ada barang, atau Kasir bila sudah ada.
    result.insertAdjacentHTML('beforeend','<p class="small"><strong>Berhasil.</strong> Menyiapkan menu berikutnya secara otomatis…</p>');
@@ -4539,7 +4539,7 @@ async function loadFinanceWorkspaceInternal(){
     financeEmployeeDirectory=new Map((directoryRows||[]).filter(row=>row&&row.user_id).map(row=>[String(row.user_id),{identity_id:row.identity_id?String(row.identity_id):String(row.user_id),employee_name:String(row.employee_name||'Karyawan')} ]));
    }catch(directoryError){console.warn('Nama karyawan belum dapat dimuat; laporan tetap dapat dibuka dengan ID akun.',directoryError);}
   }
-  saveOfflineWorkspace(business,member,sd.session.user);offlineTransactionMode=false;updateFinanceActivePerson();document.body.classList.toggle('employee-verified',member.role==='employee');document.body.classList.toggle('owner-verified',member.role==='owner');if($('attendanceCard'))$('attendanceCard').hidden=true;if($('attendancePayrollCard'))$('attendancePayrollCard').hidden=false;if($('attendanceHourlyWage'))$('attendanceHourlyWage').disabled=member.role!=='owner';if($('attendanceSaveWage')){$('attendanceSaveWage').hidden=member.role!=='owner';$('attendanceSaveWage').disabled=member.role!=='owner';}$('ownerStoreCatalog').hidden=true;$('financeForm').hidden=false;setup.hidden=true;info.hidden=false;entry.hidden=true;report.hidden=true;setTransactionBusinessSetupMode(false);
+  saveOfflineWorkspace(business,member,session.user);offlineTransactionMode=false;updateFinanceActivePerson();document.body.classList.toggle('employee-verified',member.role==='employee');document.body.classList.toggle('owner-verified',member.role==='owner');if($('attendanceCard'))$('attendanceCard').hidden=true;if($('attendancePayrollCard'))$('attendancePayrollCard').hidden=false;if($('attendanceHourlyWage'))$('attendanceHourlyWage').disabled=member.role!=='owner';if($('attendanceSaveWage')){$('attendanceSaveWage').hidden=member.role!=='owner';$('attendanceSaveWage').disabled=member.role!=='owner';}$('ownerStoreCatalog').hidden=true;$('financeForm').hidden=false;setup.hidden=true;info.hidden=false;entry.hidden=true;report.hidden=true;setTransactionBusinessSetupMode(false);
   info.innerHTML='<div class="workspace-info-card"><p><strong>Usaha:</strong> '+aman(business.business_name)+'<br><strong>Peran akun:</strong> '+financeRoleLabel(member.role)+(member.role==='owner'?'<br><strong>Akses karyawan:</strong> buat ID unik untuk setiap karyawan melalui Pengaturan Akun Karyawan. Kode undangan bersama lama tidak digunakan untuk aktivasi ID baru.':'')+'</p><p class="small workspace-cross-device"><strong>Akses lintas perangkat</strong><br>Buka situs KasUsaha Lite dari HP, komputer, atau tablet lain lalu login dengan akun yang sama dan pilih usaha ini. Laporan bersama dimuat dari server. Catatan lama yang hanya tersimpan di perangkat perlu diimpor satu kali oleh Owner; jangan hapus data lokal sebelum memeriksa hasilnya.</p></div>';
   if(member.role==='owner'){
    info.insertAdjacentHTML('beforeend','<details id="ownerEmployeeActivationPanel" class="card" style="margin-top:12px"><summary style="cursor:pointer;font-weight:700;padding:4px 0">Klik di sini: Pengaturan Akun Karyawan</summary><div style="margin-top:12px"><p class="small">Owner dapat membuat ID unik untuk setiap karyawan, memeriksa pembayaran aktivasi Rp10.000, serta mengaktifkan atau menonaktifkan akses. Karyawan masuk menggunakan nama dan ID unik yang sama dari HP atau komputer mana pun. Jangan membuat ID ganda untuk orang yang sama. Akses aktif setelah pembayaran diverifikasi server.</p><div id="ownerEmployeeActivationRows"><p class="small">Memuat daftar aktivasi…</p></div><button type="button" class="secondary wide" onclick="loadOwnerDeviceActivations()">Muat Ulang Daftar Karyawan</button></div></details>');
@@ -5855,8 +5855,16 @@ function tampilkanPanduanLangkahKerja(message,isError=false,nextTarget=''){
   action.setAttribute('aria-label',actions[nextTarget]+' sekarang');
   action.addEventListener('click',async()=>{
    action.disabled=true;
-   try{const opened=await bukaPanelTransaksi(nextTarget);if(!opened)setFinanceStatus('Menu belum berhasil dibuka. Periksa koneksi, status usaha, dan lisensi, lalu tekan tombol ini untuk mencoba lagi.',true);}
-   catch(e){setFinanceStatus('Menu belum berhasil dibuka: '+String(e.message||e).slice(0,160),true);}
+   try{
+    if(nextTarget==='laporan'){
+     const category=financeMemberRole==='employee'?'income':'sales';
+     const opened=await arahkanKeLaporanSetelahSimpan(category);
+     if(!opened)setFinanceStatus('Laporan belum berhasil dibuka. Pembayaran tetap tersimpan; jangan ulangi pembayaran. Periksa koneksi dan tekan Buka Laporan untuk mencoba lagi.',true);
+    }else{
+     const opened=await bukaPanelTransaksi(nextTarget);
+     if(!opened)setFinanceStatus('Menu belum berhasil dibuka. Periksa koneksi, status usaha, dan lisensi, lalu tekan tombol ini untuk mencoba lagi.',true);
+    }
+   }catch(e){setFinanceStatus((nextTarget==='laporan'?'Pembayaran tetap tersimpan; laporan belum berhasil dibuka. Jangan ulangi pembayaran. ':'Menu belum berhasil dibuka: ')+String(e.message||e).slice(0,160),true);}
    finally{action.disabled=false;}
   });
   notice.after(action);
