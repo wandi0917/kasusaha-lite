@@ -1143,4 +1143,20 @@ for (const [ok, message] of separateCashierNoteChecks) {
   else fail(message);
 }
 
+
+const paidOrderRetryMigration = fs.readFileSync(
+  "supabase/migrations/20261108101000_allow_processed_order_states_for_payment_retries.sql",
+  "utf8",
+);
+const paidOrderRetryChecks = [
+  [paidOrderRetryMigration.includes("v_order.status NOT IN ('paid', 'processing', 'completed')"), "license issuance must accept verified paid orders after Seller processing without changing order state"],
+  [(paidOrderRetryMigration.match(/o\.status IN \('paid', 'processing', 'completed'\)/g) || []).length === 2, "license partner attribution and reconciliation must include processed paid orders"],
+  [!paidOrderRetryMigration.includes("v_order.status <> 'paid'") && !paidOrderRetryMigration.includes("o.status = 'paid'"), "license retry migration must not retain paid-only status filters"],
+  [paidOrderRetryMigration.includes("SECURITY DEFINER") && paidOrderRetryMigration.includes("SET search_path TO ''"), "license issuance must retain its definer boundary and fixed search_path"],
+];
+for (const [ok, message] of paidOrderRetryChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 if (process.exitCode) process.exit(process.exitCode);
