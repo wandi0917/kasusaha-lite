@@ -23,6 +23,7 @@ const offlineTimestampMigration = fs.readFileSync("supabase/migrations/202611080
 const liteTrialMigration = fs.readFileSync("supabase/migrations/20261108000000_kasusaha_lite_31_day_trial_entitlements.sql", "utf8");
 const fullAppTrialMigration = fs.readFileSync("supabase/migrations/20261108000300_kasusaha_31_day_full_app_trial_features.sql", "utf8");
 const marketplaceTrialMigration = fs.readFileSync("supabase/migrations/20261108000400_kasusaha_marketplace_public_listing_trial_access.sql", "utf8");
+const anonymousMarketplaceTrialFix = fs.readFileSync("supabase/migrations/20261108000500_public_marketplace_trial_visibility_for_anonymous.sql", "utf8");
 
 const productShippingPrivacySql = fs.readFileSync("supabase/migrations/20261107141421_protect_public_product_shipping_and_write_paths.sql", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
@@ -48,6 +49,8 @@ const liteTrialChecks = [
   [liteTrialMigration.includes("private.kasusaha_business_license_is_verified") && liteTrialMigration.includes("trial.expires_at > now()"), "server entitlement checks must expire trial access automatically"],
   [fullAppTrialMigration.includes("'advanced_reports', true") && fullAppTrialMigration.includes("'priority_support', true"), "31-day trial must unlock all application feature flags including advanced reports"],
   [fullAppTrialMigration.includes("kasusaha_business_has_feature") && fullAppTrialMigration.includes("kasusaha_get_business_package_entitlements"), "server feature checks and returned entitlements must both grant the complete trial feature set"],
+  [(fullAppTrialMigration.match(/if position\(v_new in v_def\) = 0 then/g)||[]).length === 2, "trial feature and entitlement migration must safely no-op when the target definition is already installed"],
+
   [marketplaceTrialMigration.includes("kasusaha_marketplace_product_is_public") && marketplaceTrialMigration.includes("kasusaha_business_license_is_verified(w.id)"), "public marketplace product visibility must recognize the active 31-day trial"],
   [liteTrialMigration.includes("revoke all on table private.kasusaha_free_trials from public, anon, authenticated"), "trial records must not be exposed to client roles"],
 ];
@@ -1001,6 +1004,10 @@ const publicMarketplaceAnonymousEvaluationChecks = [
   [publicMarketplaceEntitlementFix.includes("o.payment_review_required IS NOT TRUE") && publicMarketplaceEntitlementFix.includes("l.cloud_expires_at > now()"), "public listing eligibility must reject review-held or expired licenses"],
   [publicMarketplaceEntitlementFix.includes("lp.features ->> 'marketplace'") && publicMarketplaceEntitlementFix.includes("ORDER BY l.activated_at DESC NULLS LAST, l.created_at DESC"), "public listing eligibility must use the latest verified license plan feature"],
   [!publicMarketplaceEntitlementFix.includes("private.kasusaha_business_license_is_verified") && !publicMarketplaceEntitlementFix.includes("private.kasusaha_business_has_feature"), "public listing helper must not call auth.uid-dependent private entitlement helpers"],
+  [anonymousMarketplaceTrialFix.includes("FROM private.kasusaha_free_trials") && anonymousMarketplaceTrialFix.includes("t.business_id = w.id") && anonymousMarketplaceTrialFix.includes("t.owner_id = w.owner_id"), "public anonymous marketplace visibility must recognize the active trial for the exact Owner workspace"],
+  [anonymousMarketplaceTrialFix.includes("t.started_at <= now()") && anonymousMarketplaceTrialFix.includes("t.expires_at > now()") && anonymousMarketplaceTrialFix.includes("t.plan_code = 'lite'"), "public trial marketplace access must be limited to the valid 31-day Lite trial period"],
+  [!anonymousMarketplaceTrialFix.includes("private.kasusaha_business_license_is_verified") && !anonymousMarketplaceTrialFix.includes("auth.uid()") && !anonymousMarketplaceTrialFix.includes("auth.jwt()"), "anonymous marketplace eligibility must not depend on an authenticated visitor identity"],
+
 ];
 for (const [ok, message] of publicMarketplaceAnonymousEvaluationChecks) {
   if (ok) pass(message);
