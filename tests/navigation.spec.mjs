@@ -915,3 +915,29 @@ test('semua ID DOM unik dan handler tombol inline merujuk fungsi yang tersedia',
   expect(result.missingHandlers).toEqual([]);
   expect(result.interactiveHandlerCount).toBeGreaterThan(50);
 });
+
+
+test('daftar tagihan kasir tidak memanggil API saat sesi login belum tersedia', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    document.querySelector('#transaksi')?.classList.add('active');
+    financeBusiness = { id: '10000000-0000-4000-8000-000000000113' };
+    window.__openBillReadCalls = 0;
+    const originalGetSession = sb.auth.getSession;
+    const originalFrom = sb.from;
+    sb.auth.getSession = async () => ({ data: { session: null }, error: null });
+    sb.from = () => {
+      window.__openBillReadCalls += 1;
+      throw new Error('API tidak boleh dipanggil tanpa sesi login');
+    };
+    await loadQuickSaleOpenBills();
+    sb.auth.getSession = originalGetSession;
+    sb.from = originalFrom;
+    return {
+      apiCalls: window.__openBillReadCalls,
+      status: document.querySelector('#quickSaleOpenBillsStatus')?.textContent || ''
+    };
+  });
+
+  expect(result.apiCalls).toBe(0);
+  expect(result.status).toContain('Silakan login kembali');
+});
