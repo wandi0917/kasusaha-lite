@@ -29,3 +29,18 @@ test('Production payment gates run before any Midtrans transaction reservation',
   expect(attemptCreation, 'transaction creation must precede reservation').toBeLessThan(reservation);
   expect(paymentSource.indexOf('if (!productionPaymentsEnabled(production))', generalGate + 1), 'no late duplicate gate should remain').toBe(-1);
 });
+
+test('verified Midtrans webhook accepts already-paid orders after seller processing', async () => {
+  const webhookSource = readFileSync(
+    new URL('../supabase/functions/midtrans-webhook/index.ts', import.meta.url),
+    'utf8',
+  );
+
+  expect(webhookSource).toContain(
+    'if (!["paid", "processing", "completed"].includes(paidOrder.status))',
+  );
+  expect(webhookSource).not.toContain('if (paidOrder.status !== "paid")');
+  expect(webhookSource).toContain(
+    '.in("status", ["paid", "processing", "completed"])',
+  );
+});

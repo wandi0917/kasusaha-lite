@@ -1156,9 +1156,10 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    if (paidOrder.status !== "paid") {
-      // Jangan ACK notifikasi pembayaran sebagai sukses bila status order
-      // belum konsisten. HTTP 500 meminta pengiriman ulang untuk pemulihan.
+    if (!["paid", "processing", "completed"].includes(paidOrder.status)) {
+      // Status paid, processing, dan completed sama-sama menandakan pembayaran
+      // telah diterima. Webhook duplikat tidak boleh gagal hanya karena Seller
+      // sudah memproses atau menyelesaikan pesanan; status tidak diturunkan.
       console.error(
         "Pembayaran terverifikasi tetapi status pesanan belum paid:",
         databaseOrderId,
@@ -1191,7 +1192,7 @@ Deno.serve(async (req: Request) => {
           updated_at: new Date().toISOString(),
         })
         .eq("id", databaseOrderId)
-        .eq("status", "paid")
+        .in("status", ["paid", "processing", "completed"])
         .eq("payment_review_required", true)
         .eq("payment_review_note", auditReviewNote)
         .select(orderSelect)
@@ -1242,7 +1243,7 @@ Deno.serve(async (req: Request) => {
         .from("marketplace_orders")
         .update({ paid_at: providerPaidAt, updated_at: new Date().toISOString() })
         .eq("id", databaseOrderId)
-        .eq("status", "paid")
+        .in("status", ["paid", "processing", "completed"])
         .eq("payment_review_required", false)
         .select(orderSelect)
         .maybeSingle();
