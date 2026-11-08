@@ -415,14 +415,12 @@ test('Muat pratinjau bulan ini memanggil pengarah otomatis setelah server mengem
       }
       return { data: null, error: new Error('RPC tidak diharapkan: ' + name) };
     };
-    window.__nextOwnerRouteCalls = 0;
-    window.arahkanKePekerjaanBerikutnya = async () => {
-      window.__nextOwnerRouteCalls += 1;
-      document.querySelector('#financeEntryCard').hidden = false;
-      document.querySelector('#ownerStoreCatalog').hidden = false;
-      window.tampilkanPanduanLangkahKerja('Langkah berikutnya siap.', false, 'stok');
-      return true;
-    };
+    // Keep the real automatic-navigation function and real transaction-panel
+    // router. Mock only server reads so this test proves the visible destination,
+    // rather than merely proving that a mocked callback was invoked.
+    periksaLisensiWorkspace = async () => true;
+    loadStoreProducts = async () => { storeProductRows = []; };
+    window.loadQuickSaleOpenBills = async () => {};
     await renderOwnerServiceFeePanel();
     document.querySelector('#serviceFeeOwnerPanel').hidden = false;
   });
@@ -432,7 +430,10 @@ test('Muat pratinjau bulan ini memanggil pengarah otomatis setelah server mengem
   await expect(page.locator('#serviceFeePreviewResult')).toContainText('Menyiapkan menu berikutnya');
   await expect(page.locator('#serviceFeePreviewResult')).toContainText('Status uji coba periode ini: belum selesai');
   await expect(page.locator('#serviceFeePreviewResult')).toContainText('Pratinjau saja, bukan tagihan. Billing tetap nonaktif.');
-  await expect.poll(() => page.evaluate(() => window.__nextOwnerRouteCalls)).toBe(1);
+  await expect(page.locator('#financeEntryCard')).toBeVisible();
+  await expect(page.locator('#ownerStoreCatalog')).toBeVisible();
+  await expect(page.locator('#quickSaleForm')).toBeHidden();
+  await expect(page.locator('#financeEntryTitle')).toContainText('Barang & Stok');
 });
 
 test('menu Produk Saya dan Cadangan mengarahkan pengguna tanpa sesi ke Akun Pembeli', async ({ page }) => {
