@@ -144,3 +144,15 @@ test('Biteship webhook guards against out-of-order status downgrades', async () 
   expect(source).toContain('return incomingRank >= currentRank;');
   expect(source).toContain('shouldApplyStatus(currentOrder.shipping_status, status)');
 });
+
+
+test('marketplace expiry rejects unmapped or invalid order items before restoring stock', async () => {
+  const migration = readFileSync(
+    new URL('../supabase/migrations/20261108170000_guard_marketplace_expiry_unmapped_items.sql', import.meta.url),
+    'utf8',
+  );
+  expect(migration).toContain('COUNT(*) FILTER (WHERE product_id IS NULL OR quantity <= 0)');
+  expect(migration).toContain('IF v_unmapped_count > 0 THEN');
+  expect(migration).toContain('REVOKE ALL ON FUNCTION public.expire_marketplace_order(uuid, text) FROM PUBLIC, anon, authenticated;');
+  expect(migration).toContain('GRANT EXECUTE ON FUNCTION public.expire_marketplace_order(uuid, text) TO service_role;');
+});
