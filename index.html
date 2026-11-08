@@ -4256,7 +4256,7 @@ function syncTransactionRoleMenus(){
   menu.style.display=menu.hidden?'none':'';
  });
 }
-function updateFinanceActivePerson(){syncTransactionRoleMenus();const name=financeCurrentUserName||'Belum login';const role=financeMemberRole?' ('+financeRoleLabel(financeMemberRole)+')':'';const business=financeBusiness?.business_name?' — Usaha: '+financeBusiness.business_name:'';const label='Petugas: '+name+role+business;['financeEntryActivePerson','financeReportActivePerson','attendanceActivePerson'].forEach(id=>{const el=$(id);if(el)el.textContent=label;});}
+function updateFinanceActivePerson(){perbaruiJudulLaporanDenganNamaUsaha();syncTransactionRoleMenus();const name=financeCurrentUserName||'Belum login';const role=financeMemberRole?' ('+financeRoleLabel(financeMemberRole)+')':'';const business=financeBusiness?.business_name?' — Usaha: '+financeBusiness.business_name:'';const label='Petugas: '+name+role+business;['financeEntryActivePerson','financeReportActivePerson','attendanceActivePerson'].forEach(id=>{const el=$(id);if(el)el.textContent=label;});}
 function setFinanceStatus(message,isError=false,nextTarget=''){
  const el=$('financeStatus');if(!el)return;
  el.className=isError?'status error':'status';el.textContent=message;
@@ -5422,6 +5422,7 @@ financeAccountingEl('financeSettlementForm')?.addEventListener('submit',async fu
  }finally{if(button)button.disabled=false;}
 });
 function applyReportCategory(category){
+ perbaruiJudulLaporanDenganNamaUsaha();
  const selector=$('reportCategorySelect'),isOwner=financeMemberRole==='owner',isEmployee=financeMemberRole==='employee';
  if(selector){
    Array.from(selector.options).forEach(option=>{
@@ -6618,6 +6619,7 @@ function setFinanceReportPreset(preset){
  renderFinanceReport();
 }
 function renderFinanceReport(){
+ perbaruiJudulLaporanDenganNamaUsaha();
  const tbody=$('financeReportRows');if(!tbody)return;
  const isEmployee=financeMemberRole==='employee';
  if(!financeBusiness){tbody.innerHTML='<tr><td colspan="8">Buat atau hubungkan usaha terlebih dahulu.</td></tr>';return;}
