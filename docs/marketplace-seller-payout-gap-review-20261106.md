@@ -71,3 +71,15 @@ Rounding, seller release timing, minimum payout threshold, bank-transfer fees, a
 - No production schema or data changes.
 - No payout was created and no money was transferred.
 - This document is a verified gap assessment and design requirement, not an enabled payout feature.
+
+## Pembaruan audit read-only 8 November 2026
+
+Snapshot Production setelah pemeriksaan terbaru:
+- 2 pesanan marketplace, 2 baris item, dan 4 event pembayaran tercatat.
+- Kedua pesanan tersebut merupakan pesanan lisensi digital KasUsaha Lite; keduanya memiliki catatan lisensi.
+- Tidak ada pesanan fisik marketplace berstatus paid/processing/completed.
+- Baris komisi marketplace fisik: 0.
+- Baris komisi mitra lisensi: 0.
+- Baris payout: 0.
+
+Karena belum ada pesanan fisik berbayar, perhitungan komisi seller 2,5% belum mendapat bukti transaksi fisik Production. Karena payout ledger masih kosong dan belum ada workflow seller payout, **jangan mengaktifkan pembayaran marketplace barang fisik Production atau menjanjikan pencairan dana otomatis**. Tampilan pencairan yang ada hanya laporan platform-owner dan secara eksplisit menyatakan bahwa saldo tersedia bukan bukti transfer ke rekening.
