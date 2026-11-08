@@ -206,7 +206,7 @@ BEGIN
     'cloud_expires_at', v_license.cloud_expires_at
   );
 END;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.record_license_partner_commission(p_order_id uuid, p_payment_event_id uuid)
@@ -565,5 +565,4 @@ BEGIN
     'manual_review_required', v_manual_review
   );
 END;
-$function$
-
+$function$;
