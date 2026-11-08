@@ -1031,6 +1031,10 @@ const openBillPaymentNavigationChecks = [
   [html.includes("if(paymentMatches&&!wasAlreadyPaid)") && html.includes("wasAlreadyPaid"), "a previously paid bill must not trigger a second report/payment flow"],
   [html.includes("PEMBAYARAN SUDAH DIKONFIRMASI SERVER") && html.includes("Jangan ulangi pembayaran"), "a payment snapshot mismatch must warn the user not to repeat a server-confirmed payment"],
 ];
+openBillPaymentNavigationChecks.push(
+  [html.includes("saveOfflineWorkspace(business,member,session.user);") && !html.includes("saveOfflineWorkspace(business,member,sd.session.user);"), "workspace loading must use the verified session object and never reference an out-of-scope sd variable"],
+);
+
 for (const [ok, message] of openBillPaymentNavigationChecks) {
   if (ok) pass(message);
   else fail(message);
