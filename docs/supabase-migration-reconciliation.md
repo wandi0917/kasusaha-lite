@@ -91,3 +91,13 @@ Untuk mencegah migrasi yang sudah diterapkan dianggap pending, enam file hanya d
 Perubahan ini hanya rename file: isi SQL tidak diubah, tidak ada migrasi dijalankan ulang, dan tidak ada data atau skema database yang diubah. Verifikasi read-only mengonfirmasi tabel pergerakan stok, RPC kasir dengan validasi uang diterima, RPC profil pengiriman penjual, RPC penyelesaian tagihan, kolom workspace produk marketplace, RPC penetapan produk ke usaha, helper entitlement listing publik, dan policy listing publik tersedia.
 
 Setelah penyelarasan, seluruh 41 file lokal memiliki versi yang cocok dengan riwayat remote. Sebanyak 80 migrasi historis remote tetap belum memiliki file SQL lokal. Karena itu, **jangan jalankan `supabase db push`, reset, atau rekonstruksi database hanya dari folder ini** sampai arsip SQL historis dipulihkan atau baseline skema terkontrol dibuat dan diuji. Jangan menghapus atau mengedit riwayat migrasi remote secara manual.
+
+## Pembaruan audit 8 November 2026 — retry pembayaran setelah status Seller
+
+- Remote migration history kini mencatat 141 versi; versi terbaru adalah `20261108100705`, `allow_processed_order_states_for_payment_retries`.
+- File SQL yang cocok telah diselaraskan menjadi `supabase/migrations/20261108100705_allow_processed_order_states_for_payment_retries.sql`.
+- Migrasi ini hanya menjalankan `CREATE OR REPLACE FUNCTION` pada `issue_kasusaha_license` dan `record_license_partner_commission`; tidak mengubah atau menghapus baris transaksi, saldo, komisi, referral, maupun lisensi.
+- Kedua fungsi mempertahankan pemeriksaan `paid_at`, provider Midtrans, penanda pemeriksaan pembayaran, dan event pembayaran terverifikasi. Status `processing` dan `completed` hanya diterima sebagai kelanjutan dari pembayaran yang sudah diverifikasi.
+- Versi remote dan nama file repo sudah diverifikasi cocok setelah penerapan.
+
+**Peringatan tetap berlaku:** rekonstruksi seluruh migrasi historis yang hilang belum selesai. Jangan menjalankan `supabase db push`, reset, atau menerapkan migrasi DDL baru sebelum arsip historis dipulihkan atau baseline schema terkontrol dibuat dan diuji. Periksa ulang riwayat remote dan file lokal sebelum migrasi berikutnya.
