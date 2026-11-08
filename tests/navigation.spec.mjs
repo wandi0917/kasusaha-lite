@@ -771,3 +771,35 @@ test('pemulihan cadangan menolak struktur tidak valid tanpa mengubah data lokal'
     pesanan: JSON.stringify([{ id: 'existing-order' }]),
   });
 });
+
+
+test('alamat GitHub Pages lama dialihkan ke domain resmi tanpa membuang parameter dan hash login', async ({ page }) => {
+  const result = await page.evaluate(() => {
+    const redirectScript = [...document.scripts].find(script =>
+      script.textContent.includes('wandi0917.github.io') &&
+      script.textContent.includes('kasusaha-lite.pages.dev')
+    );
+    if (!redirectScript) return { found: false };
+
+    const run = (hostname, pathname, search, hash) => {
+      let destination = null;
+      const fakeWindow = {
+        location: { hostname, pathname, search, hash, replace(value) { destination = value; } },
+      };
+      new Function('window', 'URL', redirectScript.textContent)(fakeWindow, URL);
+      return destination;
+    };
+
+    return {
+      found: true,
+      root: run('wandi0917.github.io', '/kasusaha-lite/', '', ''),
+      nested: run('wandi0917.github.io', '/kasusaha-lite/panduan', '?from=legacy', '#access_token=sample&token_type=bearer'),
+      canonical: run('kasusaha-lite.pages.dev', '/', '', ''),
+    };
+  });
+
+  expect(result.found).toBe(true);
+  expect(result.root).toBe('https://kasusaha-lite.pages.dev/');
+  expect(result.nested).toBe('https://kasusaha-lite.pages.dev/panduan?from=legacy#access_token=sample&token_type=bearer');
+  expect(result.canonical).toBe(null);
+});
