@@ -375,6 +375,7 @@ test('Muat pratinjau bulan ini memanggil pengarah otomatis setelah server mengem
   await page.evaluate(async () => {
     const ownerId = '10000000-0000-4000-8000-000000000111';
     const businessId = '10000000-0000-4000-8000-000000000112';
+    document.body.classList.remove('employee-device-pending');
     const transactionPanel = document.querySelector('#transaksi');
     if (transactionPanel) {
       transactionPanel.classList.add('active');
