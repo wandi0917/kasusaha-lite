@@ -5271,10 +5271,24 @@ function renderFinanceAccountingReport(){
   host.innerHTML='<h4>Daftar akun perkiraan usaha</h4>'+financeAccountingTable(['Kode','Nama akun','Kelompok','Saldo normal','Jenis'],rows);
  }
 }
+function namaUsahaUntukJudulLaporan(){
+ const name=String(financeBusiness?.business_name||financeBusiness?.name||'').trim();
+ return name||'Usaha belum dipilih';
+}
+function perbaruiJudulLaporanDenganNamaUsaha(){
+ const name=namaUsahaUntukJudulLaporan();
+ if(!name||name==='Usaha belum dipilih')return;
+ const selectors=['#localDailyReportCard h3','#ownerHomeReports .card h3','#employeeHomeReport h3','#stockReportCard h3','#stockReportTableCard h3','#financeReportCard h3','#financeTableSalesSummary h3','#financeTransactionsTableCard h3','#financeAccountingCard .ks-accounting-head h3'];
+ document.querySelectorAll(selectors.join(',')).forEach(function(el){
+  if(!el.dataset.baseReportTitle)el.dataset.baseReportTitle=el.textContent.trim();
+  const base=el.dataset.baseReportTitle;
+  if(base&&!base.includes('— '+name))el.textContent=base+' — '+name;
+ });
+}
 function printFinanceAccounting(){
  const host=financeAccountingEl('financeAccountingReport');if(!host||!host.innerHTML.trim()){alert('Tampilkan laporan terlebih dahulu.');return;}
- const title=financeAccountingEl('financeAccountingReportType').selectedOptions[0].textContent,w=window.open('','_blank');if(!w){alert('Izinkan pop-up untuk mencetak laporan.');return;}
- w.document.write('<!doctype html><html><head><title>'+financeAccountingEscape(title)+'</title><style>body{font:14px Arial;padding:24px;color:#222}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:7px;text-align:left}.num{text-align:right}.report-total{font-weight:bold;background:#eee}</style></head><body><h2>KasUsaha Lite — '+financeAccountingEscape(title)+'</h2><p>'+financeAccountingEscape(financeBusiness.business_name)+'</p>'+host.innerHTML+'</body></html>');
+ const title=financeAccountingEl('financeAccountingReportType').selectedOptions[0].textContent,businessName=namaUsahaUntukJudulLaporan(),w=window.open('','_blank');if(!w){alert('Izinkan pop-up untuk mencetak laporan.');return;}
+ w.document.write('<!doctype html><html><head><title>'+financeAccountingEscape(businessName+' — '+title)+'</title><style>body{font:14px Arial;padding:24px;color:#222}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:7px;text-align:left}.num{text-align:right}.report-total{font-weight:bold;background:#eee}</style></head><body><h2>'+financeAccountingEscape(businessName)+'</h2><h3>'+financeAccountingEscape(title)+'</h3>'+host.innerHTML+'</body></html>');
  w.document.close();w.focus();setTimeout(function(){w.print();},300);
 }
 financeAccountingEl('financeOpenDirection')?.addEventListener('change',financeAccountingPopulateControls);
@@ -5559,8 +5573,8 @@ async function printSelectedReport(){
  clone.querySelectorAll('[hidden]').forEach(el=>el.remove());
  clone.querySelectorAll('.report-category-view').forEach(el=>{if(el.hidden||el.style.display==='none')el.remove();});
  clone.querySelectorAll('.table-wrap').forEach(el=>{el.style.overflow='visible';el.style.display='block';});
- const titleMap={sales:'Laporan Penjualan',stock:'Tabel Laporan Stok Barang',finance:'Laporan Keuangan Lengkap (Owner)',income:'Laporan Pemasukan (Karyawan)',daily:'Laporan Keuangan Harian (Lokal)',history:'Riwayat Transaksi (Lokal)'};
- target.innerHTML='<h2>KasUsaha Lite — '+(titleMap[category]||'Laporan')+'</h2><p>Dicetak: '+new Date().toLocaleString('id-ID')+'</p>';
+ const titleMap={sales:'Laporan Penjualan',stock:'Tabel Laporan Stok Barang',finance:'Laporan Keuangan Lengkap (Owner)',accounting:'Akuntansi Lengkap',income:'Laporan Pemasukan (Karyawan)',daily:'Laporan Keuangan Harian (Lokal)',history:'Riwayat Transaksi (Lokal)'},businessName=namaUsahaUntukJudulLaporan();
+ target.innerHTML='<h2>'+aman(businessName)+'</h2><h3>'+aman(titleMap[category]||'Laporan')+'</h3><p>Dicetak: '+new Date().toLocaleString('id-ID')+'</p>';
  target.appendChild(clone);
  // Area cetak harus terlihat dan tidak berstatus hidden agar browser tidak mencetak halaman kosong.
  target.hidden=false;target.removeAttribute('hidden');target.style.display='block';target.style.visibility='visible';
@@ -6873,10 +6887,11 @@ function printFinanceReport(){
  if(!financeBusiness){setFinanceStatus('Hubungkan usaha dahulu sebelum mencetak laporan.',true);return;}
  renderFinanceReport();
  const isEmployee=financeMemberRole==='employee';
- const filter=$('financeRoleFilter'), title=$('financeReportCard').dataset.reportTitle||'Laporan Keuangan';
+ perbaruiJudulLaporanDenganNamaUsaha();
+ const businessName=namaUsahaUntukJudulLaporan(),filter=$('financeRoleFilter'), title=$('financeReportCard').dataset.reportTitle||'Laporan Keuangan';
  const summary=$('financeReportSummary').innerHTML, table=$('financeReportRows').innerHTML;
  const headings=isEmployee?'<tr><th>Hari, Tanggal &amp; Jam</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th></tr>':'<tr><th>Hari, Tanggal &amp; Jam</th><th>Pencatat</th><th>Keterangan</th><th>Kategori</th><th>Pemasukan</th><th>Pengeluaran</th><th>Saldo periode</th></tr>';
- $('areaLaporanCetak').innerHTML='<h2>KasUsaha Lite — '+aman(title)+'</h2><p>Usaha: '+aman(financeBusiness.business_name)+'</p><p>Petugas login: '+aman(financeCurrentUserName)+' ('+aman(financeRoleLabel(financeMemberRole))+')</p><p>Dicetak: '+aman(new Date().toLocaleString('id-ID'))+'</p>'+(isEmployee?'':'<p>Filter pencatat: '+aman(filter.selectedOptions[0]?.textContent||'Semua')+'</p>')+'<div class="grid">'+summary+'</div><table class="report-table"><thead>'+headings+'</thead><tbody>'+table+'</tbody></table>';
+ $('areaLaporanCetak').innerHTML='<h2>'+aman(businessName)+'</h2><h3>'+aman(title)+'</h3><p>Petugas login: '+aman(financeCurrentUserName)+' ('+aman(financeRoleLabel(financeMemberRole))+')</p><p>Dicetak: '+aman(new Date().toLocaleString('id-ID'))+'</p>'+(isEmployee?'':'<p>Filter pencatat: '+aman(filter.selectedOptions[0]?.textContent||'Semua')+'</p>')+'<div class="grid">'+summary+'</div><table class="report-table"><thead>'+headings+'</thead><tbody>'+table+'</tbody></table>';
  window.print();
 }
 
