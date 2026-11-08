@@ -182,7 +182,7 @@ test('alur Owner nyata mengarahkan ke Stok atau Kasir sesuai ketersediaan produk
   await page.evaluate(async () => {
     // Hanya mock lapisan server; fungsi pengarah dan pembuka panel produksi tetap dijalankan.
     document.querySelector('#transaksi')?.classList.add('active');
-    financeBusiness = { id: '10000000-0000-4000-8000-000000000107-business', owner_id: '10000000-0000-4000-8000-000000000107' };
+    financeBusiness = { id: '10000000-0000-4000-8000-000000000109', owner_id: '10000000-0000-4000-8000-000000000107' };
     financeMemberRole = 'owner';
     financeMemberUserId = '10000000-0000-4000-8000-000000000107';
     offlineTransactionMode = false;
@@ -296,7 +296,7 @@ test('tombol Periksa Status Aktivasi menjalankan pemeriksaan ulang ke server', a
 test('panduan login Owner mengikuti kondisi barang yang tersedia', async ({ page }) => {
   await page.evaluate(async () => {
     document.querySelector('#transaksi')?.classList.add('active');
-    financeBusiness = { id: '10000000-0000-4000-8000-000000000107-business', owner_id: '10000000-0000-4000-8000-000000000107' };
+    financeBusiness = { id: '10000000-0000-4000-8000-000000000109', owner_id: '10000000-0000-4000-8000-000000000107' };
     financeMemberRole = 'owner';
     financeMemberUserId = '10000000-0000-4000-8000-000000000107';
     document.body.classList.remove('employee-device-pending');
@@ -334,7 +334,7 @@ test('panduan login Owner mengikuti kondisi barang yang tersedia', async ({ page
 test('navigasi Karyawan ke katalog tetap dinyatakan berhasil setelah daftar barang terbuka', async ({ page }) => {
   await page.evaluate(async () => {
     document.querySelector('#transaksi')?.classList.add('active');
-    financeBusiness = { id: '10000000-0000-4000-8000-000000000108-business', owner_id: '10000000-0000-4000-8000-000000000107' };
+    financeBusiness = { id: '10000000-0000-4000-8000-000000000110', owner_id: '10000000-0000-4000-8000-000000000107' };
     financeMemberRole = 'employee';
     financeMemberUserId = '10000000-0000-4000-8000-000000000108';
     offlineTransactionMode = false;
@@ -358,8 +358,8 @@ test('navigasi Karyawan ke katalog tetap dinyatakan berhasil setelah daftar bara
 
 test('Muat pratinjau bulan ini memanggil pengarah otomatis setelah server mengembalikan pratinjau valid', async ({ page }) => {
   await page.evaluate(async () => {
-    const ownerId = '10000000-0000-4000-8000-000000000107-preview';
-    const businessId = 'e2e-preview-business';
+    const ownerId = '10000000-0000-4000-8000-000000000111';
+    const businessId = '10000000-0000-4000-8000-000000000112';
     document.querySelector('#transaksi')?.classList.add('active');
     financeBusiness = {
       id: businessId,
