@@ -223,9 +223,12 @@ Deno.serve(async (req: Request): Promise<Response> => {
         503,
       );
     }
-    const serverKey = production
+    const configuredServerKey = production
       ? Deno.env.get("MIDTRANS_SERVER_KEY_PRODUCTION")
       : (Deno.env.get("MIDTRANS_SERVER_KEY_SANDBOX") || Deno.env.get("MIDTRANS_SERVER_KEY"));
+    // Buang hanya spasi/baris baru di tepi secret. Jangan mengubah karakter
+    // internal karena itu akan menghasilkan credential berbeda dan tetap 401.
+    const serverKey = configuredServerKey?.trim();
     if (production && !serverKey) {
       return reply(
         {

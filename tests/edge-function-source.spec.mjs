@@ -92,3 +92,16 @@ test('Midtrans webhook bounds Status API wait and keeps provider response bodies
   expect(webhookSource).toContain('"Status API Midtrans gagal:",\n        statusResponse.status,');
   expect(webhookSource).not.toContain('"Status API Midtrans gagal:",\n        statusResponse.status,\n        responseText');
 });
+
+
+test('Midtrans server key is trimmed and encoded using HTTP Basic authentication', async () => {
+  const paymentSource = readFileSync(
+    new URL('../supabase/functions/create-midtrans-payment/index.ts', import.meta.url),
+    'utf8',
+  );
+
+  expect(paymentSource).toContain('const serverKey = configuredServerKey?.trim();');
+  expect(paymentSource).toContain('const authHeader = "Basic " + btoa(serverKey + ":");');
+  expect(paymentSource).toContain('https://api.sandbox.midtrans.com');
+  expect(paymentSource).toContain('https://app.sandbox.midtrans.com');
+});
