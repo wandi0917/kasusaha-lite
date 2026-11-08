@@ -803,3 +803,52 @@ test('alamat GitHub Pages lama dialihkan ke domain resmi tanpa membuang paramete
   expect(result.nested).toBe('https://kasusaha-lite.pages.dev/panduan?from=legacy#access_token=sample&token_type=bearer');
   expect(result.canonical).toBe(null);
 });
+
+
+
+test('navigasi laporan setelah transaksi hanya berhasil jika laporan selesai dimuat', async ({ page }) => {
+  await page.evaluate(() => {
+    financeBusiness = { id: '10000000-0000-4000-8000-000000000109', business_name: 'Usaha Uji' };
+    financeMemberRole = 'owner';
+    financeMemberUserId = '10000000-0000-4000-8000-000000000107';
+    window.bukaPanelTransaksi = async () => true;
+    document.getElementById('transaksi')?.classList.add('active');
+    const chooser = document.getElementById('reportCategoryChooser');
+    if (chooser) { chooser.hidden = false; chooser.style.display = 'block'; }
+    window.muatDanTampilkanLaporan = async () => false;
+    window.__reportRecovery = null;
+    window.tampilkanPanduanLangkahKerja = (message, isError, target) => {
+      window.__reportRecovery = { message, isError, target };
+    };
+  });
+
+  const result = await page.evaluate(() => arahkanKeLaporanSetelahSimpan('sales'));
+  expect(result).toBe(false);
+  await expect.poll(() => page.evaluate(() => window.__reportRecovery)).toMatchObject({
+    isError: true,
+    target: 'laporan',
+  });
+  await expect.poll(() => page.evaluate(() => window.__reportRecovery.message)).toContain('Transaksi sudah tersimpan');
+});
+
+test('navigasi laporan setelah transaksi berhasil hanya setelah laporan terkonfirmasi dimuat', async ({ page }) => {
+  await page.evaluate(() => {
+    financeBusiness = { id: '10000000-0000-4000-8000-000000000109', business_name: 'Usaha Uji' };
+    financeMemberRole = 'owner';
+    financeMemberUserId = '10000000-0000-4000-8000-000000000107';
+    window.bukaPanelTransaksi = async () => true;
+    document.getElementById('transaksi')?.classList.add('active');
+    const chooser = document.getElementById('reportCategoryChooser');
+    if (chooser) { chooser.hidden = false; chooser.style.display = 'block'; }
+    window.muatDanTampilkanLaporan = async () => true;
+    window.__reportRecovery = null;
+    window.tampilkanPanduanLangkahKerja = (message, isError, target) => {
+      window.__reportRecovery = { message, isError, target };
+    };
+    window.applyReportCategory = () => {};
+  });
+
+  const result = await page.evaluate(() => arahkanKeLaporanSetelahSimpan('sales'));
+  expect(result).toBe(true);
+  expect(await page.evaluate(() => window.__reportRecovery)).toBeNull();
+});
