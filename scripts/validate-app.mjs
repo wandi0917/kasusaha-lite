@@ -1083,6 +1083,9 @@ const cashierReceiptPrintChecks = [
   [html.includes("LUNAS / SUDAH DIBAYAR") && html.includes("TAGIHAN — BELUM DIBAYAR"), "printed documents must distinguish paid receipts from unpaid bills"],
   [html.includes('value="58"') && html.includes('value="80"'), "thermal receipt must support 58 mm and 80 mm paper widths"],
   [html.includes("paymentMatches") && html.includes("setQuickSaleLastReceipt"), "paid receipt must only be stored after verified server payment values match"],
+  [html.includes("quickSaleOpenBillsTable") && html.includes("quickSaleOpenBillsList") && html.includes("<th>No.</th>") && html.includes("<th>Aksi</th>"), "unpaid open bills must render as a structured table"],
+  [html.includes(".employee-management-table th,.employee-management-table td{border:1px solid #000") && html.includes(".report-table th,.report-table td{border:1px solid #000"), "all employee and report table grid lines must be black"],
+  [html.includes("receiptPanel.scrollIntoView") && html.includes("quickSaleLastReceipt"), "verified bill settlement must surface the paid receipt print panel"],
 ];
 for (const [ok, message] of cashierReceiptPrintChecks) {
   if (ok) pass(message);
