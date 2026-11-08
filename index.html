@@ -8616,6 +8616,32 @@ html body>header.ks-brand-header .kasusaha-banner-image-button{
 })();
 </script>
 
+<style id="kasusaha-black-borders-final-override">
+/* Override tema komponen yang memakai selector ID dan !important. */
+html body main #transaksi table.report-table th,
+html body main #transaksi table.report-table td,
+html body main #quickSaleOpenBillsTable th,
+html body main #quickSaleOpenBillsTable td,
+html body main #areaLaporanCetak table.report-table th,
+html body main #areaLaporanCetak table.report-table td,
+html body main table.employee-management-table th,
+html body main table.employee-management-table td,
+html body main .finance-accounting-report table th,
+html body main .finance-accounting-report table td{
+ border:1px solid #000!important;
+ border-color:#000!important;
+}
+html body main #transaksi .table-wrap,
+html body main #quickSaleOpenBills,
+html body main #areaLaporanCetak .table-wrap,
+html body main .employee-management-wrap,
+html body main .finance-accounting-report,
+html body main hr{border-color:#000!important}
+@media print{
+ html body main #areaLaporanCetak table.report-table th,
+ html body main #areaLaporanCetak table.report-table td{border:1px solid #000!important;border-color:#000!important}
+}
+</style>
 </body>
 </html>
 
