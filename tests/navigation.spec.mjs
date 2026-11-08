@@ -941,3 +941,38 @@ test('daftar tagihan kasir tidak memanggil API saat sesi login belum tersedia', 
   expect(result.apiCalls).toBe(0);
   expect(result.status).toContain('Silakan login kembali');
 });
+
+
+test('catatan offline hanya terlihat oleh akun dan usaha pembuatnya sesuai peran', async ({ page }) => {
+  const result = await page.evaluate(() => {
+    const businessId = '10000000-0000-4000-8000-000000000201';
+    const otherBusinessId = '10000000-0000-4000-8000-000000000202';
+    const ownerId = '10000000-0000-4000-8000-000000000203';
+    const employeeA = '10000000-0000-4000-8000-000000000204';
+    const employeeB = '10000000-0000-4000-8000-000000000205';
+
+    transaksi = [
+      { id: 'employee-a-income', jenis: 'masuk', offline_pending: true, offline_user_id: employeeA, offline_business_id: businessId, offline_role: 'employee' },
+      { id: 'employee-b-income', jenis: 'masuk', offline_pending: true, offline_user_id: employeeB, offline_business_id: businessId, offline_role: 'employee' },
+      { id: 'employee-a-other-business', jenis: 'masuk', offline_pending: true, offline_user_id: employeeA, offline_business_id: otherBusinessId, offline_role: 'employee' },
+      { id: 'employee-a-expense', jenis: 'keluar', offline_pending: true, offline_user_id: employeeA, offline_business_id: businessId, offline_role: 'employee' },
+      { id: 'owner-income', jenis: 'masuk', offline_pending: true, offline_user_id: ownerId, offline_business_id: businessId, offline_role: 'owner' },
+      { id: 'legacy-unattributed', jenis: 'keluar' },
+      { id: 'already-synced', jenis: 'masuk', offline_pending: false, offline_synced_at: '2026-11-08T00:00:00.000Z', offline_user_id: employeeA, offline_business_id: businessId, offline_role: 'employee' },
+    ];
+
+    financeBusiness = { id: businessId };
+    financeMemberRole = 'employee';
+    financeMemberUserId = employeeA;
+    const employeeVisible = transaksiLokalTerlihat().map(row => row.id);
+
+    financeMemberRole = 'owner';
+    financeMemberUserId = ownerId;
+    const ownerVisible = transaksiLokalTerlihat().map(row => row.id);
+
+    return { employeeVisible, ownerVisible };
+  });
+
+  expect(result.employeeVisible).toEqual(['employee-a-income']);
+  expect(result.ownerVisible).toEqual(['owner-income', 'legacy-unattributed']);
+});
