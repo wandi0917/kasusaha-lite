@@ -874,7 +874,7 @@ for (const [ok, message] of automaticNextNavigationChecks) {
 }
 
 const completeNextNavigationChecks = [
-  [html.includes("async function arahkanKeLaporanSetelahSimpan(category)") && html.includes("applyReportCategory(selectedCategory)") && html.includes("await muatDanTampilkanLaporan();"), "successful saved workflows open and load the appropriate next report"],
+  [html.includes("async function arahkanKeLaporanSetelahSimpan(category)") && html.includes("applyReportCategory(selectedCategory)") && html.includes("const reportLoaded=await muatDanTampilkanLaporan();") && html.includes("if(reportLoaded!==true)") && html.includes("Transaksi sudah tersimpan di server, tetapi laporan belum berhasil dimuat"), "successful saved workflows open and load the appropriate next report"],
   [html.includes("await arahkanKeLaporanSetelahSimpan(financeMemberRole==='employee'?'income':'sales');"), "cashier sales automatically continue to the role-appropriate sales/income report"],
   [html.includes("await arahkanKeLaporanSetelahSimpan(financeMemberRole==='employee'?'income':'finance');"), "manual finance entries automatically continue to the role-appropriate report"],
   [html.includes("try{await arahkanSetelahLoginFinance();}catch(routeError)") && html.includes("Perubahan stok sudah tersimpan dan diverifikasi"), "successful stock adjustment continues through attendance verification to the next work menu"],
