@@ -868,15 +868,15 @@ test('semua ID DOM unik dan handler tombol inline merujuk fungsi yang tersedia',
       .map(([id]) => id)
       .sort();
 
-    const source = [...document.scripts].map(script => script.textContent || '').join('\\n');
+    const source = [...document.scripts].map(script => script.textContent || '').join('\n');
     const declared = new Set();
-    for (const match of source.matchAll(/\\b(?:async\\s+)?function\\s+([A-Za-z_$][\\w$]*)\\s*\\(/g)) {
+    for (const match of source.matchAll(/\b(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/g)) {
       declared.add(match[1]);
     }
-    for (const match of source.matchAll(/\\b(?:const|let|var)\\s+([A-Za-z_$][\\w$]*)\\s*=\\s*(?:async\\s*)?(?:function|\\([^)]*\\)\\s*=>|[A-Za-z_$][\\w$]*\\s*=>)/g)) {
+    for (const match of source.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?(?:function|\([^)]*\)\s*=>|[A-Za-z_$][\w$]*\s*=>)/g)) {
       declared.add(match[1]);
     }
-    for (const match of source.matchAll(/\\bwindow\\.([A-Za-z_$][\\w$]*)\\s*=/g)) {
+    for (const match of source.matchAll(/\bwindow\.([A-Za-z_$][\w$]*)\s*=/g)) {
       declared.add(match[1]);
     }
 
@@ -896,7 +896,7 @@ test('semua ID DOM unik dan handler tombol inline merujuk fungsi yang tersedia',
       for (const attribute of ['onclick', 'onchange', 'oninput', 'onsubmit', 'onkeyup', 'onkeydown']) {
         const expression = element.getAttribute(attribute);
         if (!expression) continue;
-        for (const match of expression.matchAll(/(?:^|[^\\w$.])([A-Za-z_$][\\w$]*)\\s*\\(/g)) {
+        for (const match of expression.matchAll(/(?:^|[^\w$.])([A-Za-z_$][\w$]*)\s*\(/g)) {
           const name = match[1];
           if (!ignored.has(name) && !declared.has(name) && typeof window[name] !== 'function') {
             missingHandlers.add(name);
