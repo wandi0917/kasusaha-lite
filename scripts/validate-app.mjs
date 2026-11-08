@@ -1150,7 +1150,7 @@ const paidOrderRetryMigration = fs.readFileSync(
 );
 const paidOrderRetryChecks = [
   [paidOrderRetryMigration.includes("v_order.status NOT IN ('paid', 'processing', 'completed')"), "license issuance must accept verified paid orders after Seller processing without changing order state"],
-  [(paidOrderRetryMigration.match(/o\\.status IN \\('paid', 'processing', 'completed'\\)/g) || []).length === 2, "license partner attribution and reconciliation must include processed paid orders"],
+  [(paidOrderRetryMigration.match(/o\.status IN \('paid', 'processing', 'completed'\)/g) || []).length === 2, "license partner attribution and reconciliation must include processed paid orders"],
   [!paidOrderRetryMigration.includes("v_order.status <> 'paid'") && !paidOrderRetryMigration.includes("o.status = 'paid'"), "license retry migration must not retain paid-only status filters"],
   [paidOrderRetryMigration.includes("SECURITY DEFINER") && paidOrderRetryMigration.includes("SET search_path TO ''"), "license issuance must retain its definer boundary and fixed search_path"],
 ];
