@@ -121,3 +121,15 @@ test('physical marketplace checkout blocks incomplete seller sender profile befo
     checkoutSource.indexOf('create_marketplace_order_secure'),
   );
 });
+
+
+test('Midtrans webhook returns retryable failure when an attempted physical shipment booking fails', async () => {
+  const webhookSource = readFileSync(
+    new URL('../supabase/functions/midtrans-webhook/index.ts', import.meta.url),
+    'utf8',
+  );
+
+  expect(webhookSource).toContain('shipmentBooking?.attempted === true && shipmentBooking?.success !== true');
+  expect(webhookSource).toContain('retry_required: true');
+  expect(webhookSource).toContain('}, 502);');
+});
