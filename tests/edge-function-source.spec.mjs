@@ -81,3 +81,14 @@ test('platform finance endpoint allows the configured Playwright preview origin 
   );
   expect(financeSource).toContain('if (req.method === "OPTIONS")');
 });
+
+test('Midtrans webhook bounds Status API wait and keeps provider response bodies out of logs', async () => {
+  const webhookSource = readFileSync(
+    new URL('../supabase/functions/midtrans-webhook/index.ts', import.meta.url),
+    'utf8',
+  );
+
+  expect(webhookSource).toContain('signal: AbortSignal.timeout(12_000)');
+  expect(webhookSource).toContain('"Status API Midtrans gagal:",\n        statusResponse.status,');
+  expect(webhookSource).not.toContain('"Status API Midtrans gagal:",\n        statusResponse.status,\n        responseText');
+});
