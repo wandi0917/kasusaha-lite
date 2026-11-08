@@ -5855,8 +5855,16 @@ function tampilkanPanduanLangkahKerja(message,isError=false,nextTarget=''){
   action.setAttribute('aria-label',actions[nextTarget]+' sekarang');
   action.addEventListener('click',async()=>{
    action.disabled=true;
-   try{const opened=await bukaPanelTransaksi(nextTarget);if(!opened)setFinanceStatus('Menu belum berhasil dibuka. Periksa koneksi, status usaha, dan lisensi, lalu tekan tombol ini untuk mencoba lagi.',true);}
-   catch(e){setFinanceStatus('Menu belum berhasil dibuka: '+String(e.message||e).slice(0,160),true);}
+   try{
+    if(nextTarget==='laporan'){
+     const category=financeMemberRole==='employee'?'income':'sales';
+     const opened=await arahkanKeLaporanSetelahSimpan(category);
+     if(!opened)setFinanceStatus('Laporan belum berhasil dibuka. Pembayaran tetap tersimpan; jangan ulangi pembayaran. Periksa koneksi dan tekan Buka Laporan untuk mencoba lagi.',true);
+    }else{
+     const opened=await bukaPanelTransaksi(nextTarget);
+     if(!opened)setFinanceStatus('Menu belum berhasil dibuka. Periksa koneksi, status usaha, dan lisensi, lalu tekan tombol ini untuk mencoba lagi.',true);
+    }
+   }catch(e){setFinanceStatus((nextTarget==='laporan'?'Pembayaran tetap tersimpan; laporan belum berhasil dibuka. Jangan ulangi pembayaran. ':'Menu belum berhasil dibuka: ')+String(e.message||e).slice(0,160),true);}
    finally{action.disabled=false;}
   });
   notice.after(action);
