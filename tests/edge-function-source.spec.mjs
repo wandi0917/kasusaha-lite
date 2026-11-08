@@ -144,3 +144,15 @@ test('Biteship webhook guards against out-of-order status downgrades', async () 
   expect(source).toContain('return incomingRank >= currentRank;');
   expect(source).toContain('shouldApplyStatus(currentOrder.shipping_status, status)');
 });
+
+
+test('Midtrans refund and chargeback flags marketplace commission rows for manual review', async () => {
+  const source = readFileSync(
+    new URL('../supabase/functions/midtrans-webhook/index.ts', import.meta.url),
+    'utf8',
+  );
+  expect(source).toContain('from("marketplace_order_items")');
+  expect(source).toContain('from("marketplace_commission_ledger")');
+  expect(source).toContain('REVIEW REFUND/CHARGEBACK:');
+  expect(source).toContain('commissionNoteError');
+});
