@@ -307,6 +307,14 @@ for (const [ok, message] of failClosedEntitlementChecks) {
 }
 
 const biteshipAmbiguousBookingChecks = [
+  [(() => {
+    const lockStart = biteshipShipmentSource.indexOf('.update({ shipping_status: "creating"');
+    const lockEnd = biteshipShipmentSource.indexOf("const [originLatitude", lockStart);
+    const lockSource = lockStart >= 0 && lockEnd > lockStart
+      ? biteshipShipmentSource.slice(lockStart, lockEnd)
+      : "";
+    return lockSource.includes('.is("shipping_status", null)');
+  })(), "Biteship shipment lock must atomically compare-and-set from a null shipping status"],
   [biteshipShipmentSource.includes("const definitelyRejected = response.status >= 400") &&
    biteshipShipmentSource.includes("obj(result) && result.success === false"),
    "Biteship booking lock may be released only on an explicit provider rejection"],
