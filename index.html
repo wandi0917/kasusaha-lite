@@ -4421,7 +4421,8 @@ async function renderOwnerServiceFeePanel(){
   });return;
  }
  const started=new Date(trial),ends=new Date(started.getTime()+30*24*60*60*1000);
- host.innerHTML='<p><strong>Status:</strong> Periode pratinjau aktif.</p><p><strong>Pratinjau dimulai:</strong> '+aman(started.toLocaleString('id-ID',{timeZone:'Asia/Jakarta'}))+'</p><p><strong>Pratinjau berakhir:</strong> '+aman(ends.toLocaleString('id-ID',{timeZone:'Asia/Jakarta'}))+'</p><p class="small">Ambang gratis Rp3.000.000 per bulan; tarif 0,1% hanya atas bagian di atas ambang. Pratinjau bukan tagihan. Billing dan pemotongan saldo tetap nonaktif.</p><button id="serviceFeePreviewRefresh" type="button" class="secondary">Muat pratinjau bulan ini</button><div id="serviceFeePreviewResult" class="status" role="status" aria-live="polite">Pratinjau belum dimuat.</div>';
+ const trialStatus=Number.isFinite(ends.getTime())&&Date.now()<ends.getTime()?'Masa pratinjau masih berlangsung.':'Masa pratinjau 30 hari telah berakhir.';
+ host.innerHTML='<p><strong>Status:</strong> '+trialStatus+'</p><p><strong>Pratinjau dimulai:</strong> '+aman(started.toLocaleString('id-ID',{timeZone:'Asia/Jakarta'}))+'</p><p><strong>Perkiraan berakhir:</strong> '+aman(ends.toLocaleString('id-ID',{timeZone:'Asia/Jakarta'}))+'</p><p class="small">Ambang gratis Rp3.000.000 per bulan; tarif 0,1% hanya atas bagian di atas ambang. Kelayakan biaya dihitung server berdasarkan waktu penerimaan transaksi. Pratinjau bukan tagihan. Billing dan pemotongan saldo tetap nonaktif.</p><button id="serviceFeePreviewRefresh" type="button" class="secondary">Muat pratinjau bulan ini</button><div id="serviceFeePreviewResult" class="status" role="status" aria-live="polite">Pratinjau belum dimuat.</div>';
  const refresh=$('serviceFeePreviewRefresh'),result=$('serviceFeePreviewResult');
  refresh?.addEventListener('click',async()=>{
   refresh.disabled=true;if(result)result.textContent='Memverifikasi sesi Owner dan menghitung pratinjau dari server…';
@@ -4450,9 +4451,9 @@ async function renderOwnerServiceFeePanel(){
    financeMemberUserId=liveUserId;
    const month=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()).slice(0,7)+'-01';
    const {data,error}=await sb.rpc('kasusaha_owner_service_fee_preview',{p_business_id:targetBusinessId,p_month:month});if(error)throw error;
-   if(!data||data.billing_enabled!==false||data.preview_only!==true)throw new Error('Status server tidak memenuhi pengaman pratinjau. Jangan gunakan hasil ini sebagai tagihan.');
+   if(!data||data.billing_enabled!==false||data.preview_only!==true||data.consent_recorded!==true)throw new Error('Status server tidak memenuhi pengaman pratinjau atau persetujuan Owner belum tercatat. Jangan gunakan hasil ini sebagai tagihan.');
    const idr=n=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
-   result.innerHTML='<strong>Pratinjau '+aman(month.slice(0,7))+'</strong><br>Penjualan tercatat: '+idr(data.gross_recorded_sales)+'<br>Retur tercatat: '+idr(data.recognized_returns)+'<br>Omzet bersih: '+idr(data.net_sales_for_preview)+'<br>Bagian di atas ambang: '+idr(data.billable_amount)+'<br><strong>Estimasi biaya: '+idr(data.estimated_fee)+'</strong><p class="small">Ini hanya pratinjau, bukan tagihan. Billing aktif: tidak.</p>';
+   result.innerHTML='<strong>Pratinjau '+aman(month.slice(0,7))+'</strong><br>Penjualan tercatat: '+idr(data.gross_recorded_sales)+'<br>Retur tercatat: '+idr(data.recognized_returns)+'<br>Omzet bersih: '+idr(data.net_sales_for_preview)+'<br>Bagian di atas ambang: '+idr(data.billable_amount)+'<br><strong>Estimasi biaya: '+idr(data.estimated_fee)+'</strong><p class="small">Status uji coba periode ini: '+(data.trial_completed_for_period===true?'sudah selesai':'belum selesai')+'. Ini hanya pratinjau, bukan tagihan. Billing aktif: tidak.</p><p class="small">'+aman(data.warning||'Gunakan hasil ini sebagai informasi saja; bukan tagihan.')+'</p>';
    // Setelah hasil pratinjau berhasil diverifikasi server, lanjutkan alur Owner
    // ke pekerjaan nyata berikutnya: Produk & Stok bila belum ada barang, atau Kasir bila sudah ada.
    result.insertAdjacentHTML('beforeend','<p class="small"><strong>Berhasil.</strong> Menyiapkan menu berikutnya secara otomatis…</p>');
