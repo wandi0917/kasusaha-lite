@@ -60,9 +60,11 @@ Deno.serve(async (req: Request) => {
         503,
       );
     }
-    const serverKey = production
+    const configuredServerKey = production
       ? Deno.env.get("MIDTRANS_SERVER_KEY_PRODUCTION")
       : (Deno.env.get("MIDTRANS_SERVER_KEY_SANDBOX") || Deno.env.get("MIDTRANS_SERVER_KEY"));
+    // Match the normalization used by payment creation and webhook verification.
+    const serverKey = configuredServerKey?.trim() || "";
     if (production && !serverKey) {
       return reply({ success: false, code: "PRODUCTION_KEY_MISSING", message: "Kunci server Midtrans Production belum dikonfigurasi." }, 503);
     }
