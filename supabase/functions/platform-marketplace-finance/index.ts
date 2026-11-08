@@ -3,6 +3,8 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const ALLOWED_ORIGINS = new Set([
   "https://kasusaha-lite.pages.dev",
   "https://wandi0917.github.io",
+  // Preview host yang dipakai Playwright untuk menguji akses server-side.
+  "https://fix-navigation-serialization.kasusaha-lite.pages.dev",
 ]);
 
 const baseHeaders = {
