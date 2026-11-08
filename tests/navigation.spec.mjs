@@ -449,6 +449,11 @@ test('Muat pratinjau bulan ini memanggil pengarah otomatis setelah server mengem
     ownerCatalogHidden: document.querySelector('#ownerStoreCatalog')?.hidden,
     quickSaleHidden: document.querySelector('#quickSaleForm')?.hidden,
     products: storeProductRows?.length,
+    ownerCatalogDisplay: getComputedStyle(document.querySelector('#ownerStoreCatalog')).display,
+    entryDisplay: getComputedStyle(document.querySelector('#financeEntryCard')).display,
+    transactionDisplay: getComputedStyle(document.querySelector('#transaksi')).display,
+    ownerCatalogInlineDisplay: document.querySelector('#ownerStoreCatalog')?.style.display,
+    ancestorVisibility: (() => { const out = []; let n = document.querySelector('#ownerStoreCatalog'); while (n && out.length < 6) { const s = getComputedStyle(n); out.push({id:n.id,tag:n.tagName,hidden:n.hidden,display:s.display,visibility:s.visibility}); n=n.parentElement; } return out; })(),
   }));
   expect(routeDiagnostics.entryHidden, JSON.stringify(routeDiagnostics)).toBe(false);
   await expect(page.locator('#ownerStoreCatalog'), JSON.stringify(routeDiagnostics)).toBeVisible();
