@@ -406,7 +406,7 @@ Deno.serve(async (req: Request): Promise<Response> => {
         const senderContact = readText(p.nama_kontak_pengirim) || readText(p.nama_penjual);
         return !senderAddress || senderAddress.length > 1000 ||
           !senderPhone || senderPhone.length > 30 ||
-          !/^[0-9+().\\-\\s]+$/.test(senderPhone) ||
+          !/^[0-9+().\-\s]+$/.test(senderPhone) ||
           !senderContact || senderContact.length > 120;
       });
       if (invalidSenderProfile) {
