@@ -45,6 +45,24 @@ test('verified Midtrans webhook accepts already-paid orders after seller process
   );
 });
  
+test('license activation accepts processed paid orders only with verified Midtrans events', async () => {
+  const activationSource = readFileSync(
+    new URL('../supabase/functions/activate-kasusaha-license/index.ts', import.meta.url),
+    'utf8',
+  );
+
+  expect(activationSource).toContain(
+    '.in("status", ["paid", "processing", "completed"])',
+  );
+  expect(activationSource).toContain(
+    '!["paid", "processing", "completed"].includes(order.status)',
+  );
+  expect(activationSource.match(/\.eq\("payment_provider", "midtrans"\)/g)).toHaveLength(1);
+  expect(activationSource.match(/\.eq\("provider", "midtrans"\)/g)).toHaveLength(2);
+  expect(activationSource.match(/\.eq\("verification_status", "verified"\)/g)).toHaveLength(2);
+  expect(activationSource.match(/\.not\("processed_at", "is", null\)/g)).toHaveLength(2);
+});
+
 test('platform finance endpoint allows the configured Playwright preview origin for CORS preflight', async () => {
   const financeSource = readFileSync(
     new URL('../supabase/functions/platform-marketplace-finance/index.ts', import.meta.url),
