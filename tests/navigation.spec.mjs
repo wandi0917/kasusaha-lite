@@ -188,7 +188,13 @@ test('pengaturan Owner menjelaskan ID unik lintas perangkat dan biaya aktivasi p
 test('alur Owner nyata mengarahkan ke Stok atau Kasir sesuai ketersediaan produk', async ({ page }) => {
   await page.evaluate(async () => {
     // Hanya mock lapisan server; fungsi pengarah dan pembuka panel produksi tetap dijalankan.
-    document.querySelector('#transaksi')?.classList.add('active');
+    const transactionPanel = document.querySelector('#transaksi');
+    transactionPanel?.classList.add('active');
+    if (transactionPanel) {
+      transactionPanel.hidden = false;
+      transactionPanel.removeAttribute('hidden');
+      transactionPanel.style.display = 'block';
+    }
     financeBusiness = { id: '10000000-0000-4000-8000-000000000109', owner_id: '10000000-0000-4000-8000-000000000107' };
     financeMemberRole = 'owner';
     financeMemberUserId = '10000000-0000-4000-8000-000000000107';
@@ -369,7 +375,15 @@ test('Muat pratinjau bulan ini memanggil pengarah otomatis setelah server mengem
   await page.evaluate(async () => {
     const ownerId = '10000000-0000-4000-8000-000000000111';
     const businessId = '10000000-0000-4000-8000-000000000112';
-    document.querySelector('#transaksi')?.classList.add('active');
+    document.body.classList.remove('employee-device-pending');
+    // Model the authenticated Owner state used by the production CSS access gate.
+    document.body.classList.add('owner-verified');
+    const transactionPanel = document.querySelector('#transaksi');
+    if (transactionPanel) {
+      transactionPanel.classList.add('active');
+      transactionPanel.hidden = false;
+      transactionPanel.removeAttribute('hidden');
+    }
     financeBusiness = {
       id: businessId,
       owner_id: ownerId,
@@ -415,24 +429,57 @@ test('Muat pratinjau bulan ini memanggil pengarah otomatis setelah server mengem
       }
       return { data: null, error: new Error('RPC tidak diharapkan: ' + name) };
     };
-    window.__nextOwnerRouteCalls = 0;
-    window.arahkanKePekerjaanBerikutnya = async () => {
-      window.__nextOwnerRouteCalls += 1;
-      document.querySelector('#financeEntryCard').hidden = false;
-      document.querySelector('#ownerStoreCatalog').hidden = false;
-      window.tampilkanPanduanLangkahKerja('Langkah berikutnya siap.', false, 'stok');
-      return true;
-    };
+    // Keep the real automatic-navigation function and real transaction-panel
+    // router. Mock only server reads so this test proves the visible destination,
+    // rather than merely proving that a mocked callback was invoked.
+    periksaLisensiWorkspace = async () => true;
+    // Set the global function property explicitly so the production router uses the
+    // isolated server-read stub rather than making a real Supabase product query.
+    window.loadStoreProducts = async () => { storeProductRows = []; };
+    window.loadQuickSaleOpenBills = async () => {};
     await renderOwnerServiceFeePanel();
     document.querySelector('#serviceFeeOwnerPanel').hidden = false;
   });
 
   await expect(page.locator('#serviceFeePreviewRefresh')).toBeAttached();
-  await page.locator('#serviceFeePreviewRefresh').evaluate(button => button.click());
+  await page.evaluate(() => {
+    // The page's initial logged-out redirect can hide this gated tab after setup.
+    // Re-establish the already-open Owner tab immediately before the user action.
+    document.body.classList.remove('employee-device-pending');
+    const transactionPanel = document.querySelector('#transaksi');
+    if (transactionPanel) {
+      transactionPanel.classList.add('active');
+      transactionPanel.hidden = false;
+      transactionPanel.removeAttribute('hidden');
+      transactionPanel.style.display = 'block';
+    }
+    document.querySelector('#serviceFeePreviewRefresh')?.click();
+  });
   await expect(page.locator('#serviceFeePreviewResult')).toContainText('Menyiapkan menu berikutnya');
   await expect(page.locator('#serviceFeePreviewResult')).toContainText('Status uji coba periode ini: belum selesai');
   await expect(page.locator('#serviceFeePreviewResult')).toContainText('Pratinjau saja, bukan tagihan. Billing tetap nonaktif.');
-  await expect.poll(() => page.evaluate(() => window.__nextOwnerRouteCalls)).toBe(1);
+  const routeDiagnostics = await page.evaluate(() => ({
+    preview: document.querySelector('#serviceFeePreviewResult')?.textContent,
+    financeStatus: document.querySelector('#financeStatus')?.textContent,
+    transactionActive: document.querySelector('#transaksi')?.classList.contains('active'),
+    bodyClass: document.body.className,
+    businessId: financeBusiness?.id || null,
+    role: financeMemberRole,
+    userId: financeMemberUserId,
+    entryHidden: document.querySelector('#financeEntryCard')?.hidden,
+    ownerCatalogHidden: document.querySelector('#ownerStoreCatalog')?.hidden,
+    quickSaleHidden: document.querySelector('#quickSaleForm')?.hidden,
+    products: storeProductRows?.length,
+    ownerCatalogDisplay: getComputedStyle(document.querySelector('#ownerStoreCatalog')).display,
+    entryDisplay: getComputedStyle(document.querySelector('#financeEntryCard')).display,
+    transactionDisplay: getComputedStyle(document.querySelector('#transaksi')).display,
+    ownerCatalogInlineDisplay: document.querySelector('#ownerStoreCatalog')?.style.display,
+    ancestorVisibility: (() => { const out = []; let n = document.querySelector('#ownerStoreCatalog'); while (n && out.length < 6) { const s = getComputedStyle(n); out.push({id:n.id,tag:n.tagName,hidden:n.hidden,display:s.display,visibility:s.visibility}); n=n.parentElement; } return out; })(),
+  }));
+  expect(routeDiagnostics.entryHidden, JSON.stringify(routeDiagnostics)).toBe(false);
+  await expect(page.locator('#ownerStoreCatalog'), JSON.stringify(routeDiagnostics)).toBeVisible();
+  await expect(page.locator('#quickSaleForm')).toBeHidden();
+  await expect(page.locator('#financeEntryTitle')).toContainText('Barang & Stok');
 });
 
 test('menu Produk Saya dan Cadangan mengarahkan pengguna tanpa sesi ke Akun Pembeli', async ({ page }) => {
