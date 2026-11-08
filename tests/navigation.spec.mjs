@@ -811,6 +811,9 @@ test('navigasi laporan setelah transaksi hanya berhasil jika laporan selesai dim
     financeMemberRole = 'owner';
     financeMemberUserId = '10000000-0000-4000-8000-000000000107';
     window.bukaPanelTransaksi = async () => true;
+    document.getElementById('transaksi')?.classList.add('active');
+    const chooser = document.getElementById('reportCategoryChooser');
+    if (chooser) { chooser.hidden = false; chooser.style.display = 'block'; }
     window.muatDanTampilkanLaporan = async () => false;
     window.__reportRecovery = null;
     window.tampilkanPanduanLangkahKerja = (message, isError, target) => {
@@ -833,6 +836,9 @@ test('navigasi laporan setelah transaksi berhasil hanya setelah laporan terkonfi
     financeMemberRole = 'owner';
     financeMemberUserId = '10000000-0000-4000-8000-000000000107';
     window.bukaPanelTransaksi = async () => true;
+    document.getElementById('transaksi')?.classList.add('active');
+    const chooser = document.getElementById('reportCategoryChooser');
+    if (chooser) { chooser.hidden = false; chooser.style.display = 'block'; }
     window.muatDanTampilkanLaporan = async () => true;
     window.__reportRecovery = null;
     window.tampilkanPanduanLangkahKerja = (message, isError, target) => {
