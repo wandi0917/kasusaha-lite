@@ -73,10 +73,11 @@ Deno.serve(async (req: Request) => {
       const orderIds = validLicenses.map((l) => l.order_id).filter(Boolean);
       const { data: orders, error: oe } = await admin
         .from("marketplace_orders")
-        .select("id, buyer_id, status, paid_at, payment_review_required")
+        .select("id, buyer_id, status, payment_provider, paid_at, payment_review_required")
         .in("id", orderIds)
         .eq("buyer_id", userId)
-        .eq("status", "paid")
+        .eq("payment_provider", "midtrans")
+        .in("status", ["paid", "processing", "completed"])
         .not("paid_at", "is", null);
 
       if (oe) {
@@ -93,6 +94,7 @@ Deno.serve(async (req: Request) => {
           .from("marketplace_payment_events")
           .select("order_id")
           .in("order_id", paidOrderIds)
+          .eq("provider", "midtrans")
           .eq("verification_status", "verified")
           .not("processed_at", "is", null);
         if (verifiedEventError) {
@@ -152,7 +154,7 @@ Deno.serve(async (req: Request) => {
 
     const { data: order, error: orderError } = await admin
       .from("marketplace_orders")
-      .select("id, buyer_id, status, paid_at, payment_review_required")
+      .select("id, buyer_id, status, payment_provider, paid_at, payment_review_required")
       .eq("id", license.order_id)
       .eq("buyer_id", userId)
       .maybeSingle();
@@ -161,7 +163,8 @@ Deno.serve(async (req: Request) => {
       console.error("Order lookup:", orderError.message);
       return respond({ success: false, active: false, message: "Pembayaran belum dapat diperiksa." }, 500);
     }
-    if (!order || order.status !== "paid" || !order.paid_at || order.payment_review_required === true) {
+    if (!order || !["paid", "processing", "completed"].includes(order.status) ||
+        order.payment_provider !== "midtrans" || !order.paid_at || order.payment_review_required === true) {
       return respond({ success: false, active: false, message: "Pesanan belum memenuhi syarat aktivasi." }, 403);
     }
 
@@ -169,6 +172,7 @@ Deno.serve(async (req: Request) => {
       .from("marketplace_payment_events")
       .select("id")
       .eq("order_id", license.order_id)
+      .eq("provider", "midtrans")
       .eq("verification_status", "verified")
       .not("processed_at", "is", null)
       .limit(1)
