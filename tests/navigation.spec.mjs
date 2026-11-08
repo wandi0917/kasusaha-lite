@@ -188,6 +188,8 @@ test('alur Owner nyata mengarahkan ke Stok atau Kasir sesuai ketersediaan produk
     offlineTransactionMode = false;
     periksaLisensiWorkspace = async () => true;
     loadStoreProducts = async () => {};
+    // Keep this UI-only navigation test isolated from the production Supabase project.
+    window.loadQuickSaleOpenBills = async () => {};
     storeProductRows = [];
     window.__ownerRouteResults = {};
     window.__ownerRouteResults.noProducts = await arahkanKePekerjaanBerikutnya();
@@ -657,4 +659,30 @@ test('pemilih kategori Laporan Stok memuat daftar barang sekaligus riwayat perge
     reportVisible: true,
     movementRowsPresent: true,
   });
+});
+
+
+test('pemulihan daftar barang mengarahkan Owner dan Karyawan ke menu sesuai peran', async ({ page }) => {
+  const result = await page.evaluate(async () => {
+    document.querySelector('#transaksi')?.classList.add('active');
+    const cases = [
+      { role: 'owner', userId: '10000000-0000-4000-8000-000000000107', target: 'Buka formulir Tambah Barang' },
+      { role: 'employee', userId: '10000000-0000-4000-8000-000000000108', target: 'Buka Daftar Barang' },
+    ];
+    const output = [];
+    for (const item of cases) {
+      financeBusiness = { id: '10000000-0000-4000-8000-000000000109', owner_id: '10000000-0000-4000-8000-000000000107' };
+      financeMemberRole = item.role;
+      financeMemberUserId = item.userId;
+      offlineTransactionMode = false;
+      loadStoreProducts = async () => { throw new Error('simulated catalog read failure'); };
+      const opened = await arahkanKePekerjaanBerikutnya();
+      output.push({ role: item.role, opened, action: document.querySelector('#financeLoginWorkAction')?.textContent || '' });
+    }
+    return output;
+  });
+  expect(result).toEqual([
+    { role: 'owner', opened: false, action: 'Buka formulir Tambah Barang' },
+    { role: 'employee', opened: false, action: 'Buka Daftar Barang' },
+  ]);
 });

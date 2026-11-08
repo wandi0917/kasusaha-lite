@@ -5872,7 +5872,9 @@ async function arahkanKePekerjaanBerikutnya(){
  if(!$('transaksi')?.classList.contains('active'))return false;
  if(!offlineTransactionMode&&(!financeBusiness||!financeMemberUserId||!['owner','employee'].includes(financeMemberRole)))return false;
  try{await loadStoreProducts();}catch(e){
-  tampilkanPanduanLangkahKerja('Absensi sudah tercatat. Daftar barang belum dapat dimuat. Buka Daftar Barang untuk mencoba memuat katalog kembali atau hubungi Owner.',true,'katalog');
+  const recoveryTarget=financeMemberRole==='owner'?'stok':'katalog';
+  const recoveryMenu=financeMemberRole==='owner'?'Barang & Stok':'Daftar Barang';
+  tampilkanPanduanLangkahKerja('Daftar barang belum dapat dimuat. Periksa koneksi, lalu buka kembali menu '+recoveryMenu+' atau hubungi Owner.',true,recoveryTarget);
   return false;
  }
  const activeProducts=storeProductRows.filter(row=>row.active===true&&row.item_type==='product');
