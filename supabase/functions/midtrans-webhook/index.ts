@@ -839,16 +839,20 @@ Deno.serve(async (req: Request) => {
           "Authorization": `Basic ${btoa(serverKey + ":")}`,
           "Accept": "application/json",
         },
+        // Webhook harus cepat gagal-terkendali jika Status API lambat.
+        // Midtrans dapat mengirim ulang notifikasi setelah menerima 502.
+        signal: AbortSignal.timeout(12_000),
       },
     );
 
     const responseText = await statusResponse.text();
 
     if (!statusResponse.ok) {
+      // Jangan menulis body Status API ke log; cukup metadata HTTP agar
+      // data transaksi/pelanggan dari provider tidak tersebar di log.
       console.error(
         "Status API Midtrans gagal:",
         statusResponse.status,
-        responseText,
       );
 
       return reply({
