@@ -188,7 +188,13 @@ test('pengaturan Owner menjelaskan ID unik lintas perangkat dan biaya aktivasi p
 test('alur Owner nyata mengarahkan ke Stok atau Kasir sesuai ketersediaan produk', async ({ page }) => {
   await page.evaluate(async () => {
     // Hanya mock lapisan server; fungsi pengarah dan pembuka panel produksi tetap dijalankan.
-    document.querySelector('#transaksi')?.classList.add('active');
+    const transactionPanel = document.querySelector('#transaksi');
+    transactionPanel?.classList.add('active');
+    if (transactionPanel) {
+      transactionPanel.hidden = false;
+      transactionPanel.removeAttribute('hidden');
+      transactionPanel.style.display = 'block';
+    }
     financeBusiness = { id: '10000000-0000-4000-8000-000000000109', owner_id: '10000000-0000-4000-8000-000000000107' };
     financeMemberRole = 'owner';
     financeMemberUserId = '10000000-0000-4000-8000-000000000107';
