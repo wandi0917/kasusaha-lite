@@ -17,6 +17,7 @@ const openBillAttributionMigration = fs.readFileSync("supabase/migrations/202611
 const cashierItemNotesSettlementMigration = fs.readFileSync("supabase/migrations/20261107144500_preserve_cashier_item_notes_after_payment.sql", "utf8");
 const cashierItemNotesLengthMigration = fs.readFileSync("supabase/migrations/20261107170500_cap_paid_sale_note_description_length.sql", "utf8");
 const idempotentOpenBillMigration = fs.readFileSync("supabase/migrations/20261107171500_idempotent_open_bill_creation.sql", "utf8");
+const storeOpenBillWriteGrantsMigration = fs.readFileSync("supabase/migrations/20261108031820_grant_least_privilege_store_open_bill_writes.sql", "utf8");
 const separateCashierNoteMigration = fs.readFileSync("supabase/migrations/20261107172000_store_cashier_customer_note_separately.sql", "utf8");
 const financePartyIdempotencyMigration = fs.readFileSync("supabase/migrations/20261108000100_idempotent_finance_party_creation.sql", "utf8");
 const offlineTimestampMigration = fs.readFileSync("supabase/migrations/20261108000200_preserve_offline_client_recorded_at.sql", "utf8");
@@ -1089,6 +1090,15 @@ for (const [ok, message] of openBillCreationIdempotencyChecks) {
   else fail(message);
 }
 
+const openBillColumnGrantChecks = [
+  [storeOpenBillWriteGrantsMigration.includes("GRANT INSERT (") && ["business_id", "created_by", "created_by_role", "table_number", "customer_name", "lines", "total_amount", "client_request_id"].every(column => storeOpenBillWriteGrantsMigration.includes(column)), "open-bill creation must receive only the required insert columns"],
+  [storeOpenBillWriteGrantsMigration.includes("GRANT UPDATE (") && ["table_number", "customer_name", "lines", "total_amount", "updated_at", "version", "status"].every(column => storeOpenBillWriteGrantsMigration.includes(column)), "open-bill editing and cancellation must receive only the required update columns"],
+  [!(/GRANT\\s+INSERT\\s+ON\\s+TABLE\\s+public\\.store_open_bills/i.test(storeOpenBillWriteGrantsMigration)) && !(/GRANT\\s+UPDATE\\s+ON\\s+TABLE\\s+public\\.store_open_bills/i.test(storeOpenBillWriteGrantsMigration)), "open-bill privileges must not be broadened to table-wide writes"],
+];
+for (const [ok, message] of openBillColumnGrantChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
 
 const offlineTimestampIntegrityChecks = [
   [offlineTimestampMigration.includes("ADD COLUMN IF NOT EXISTS client_recorded_at timestamptz"), "offline sync must have a separate nullable device timestamp column"],
