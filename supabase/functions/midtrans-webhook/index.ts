@@ -1504,6 +1504,21 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // Jangan mengembalikan HTTP 200 bila booking Biteship benar-benar dicoba
+    // tetapi gagal. HTTP 5xx memberi kesempatan notifikasi provider dicoba ulang.
+    // Fungsi booking tetap idempotent dan menolak duplikasi/hasil yang belum pasti.
+    if (hasPhysicalItems && shipmentBooking?.attempted === true && shipmentBooking?.success !== true) {
+      return reply({
+        success: false,
+        message: "Pembayaran terverifikasi dan komisi tercatat, tetapi booking pengiriman gagal. Periksa profil pengirim dan dashboard Biteship sebelum percobaan ulang.",
+        order_id: databaseOrderId,
+        order_status: "paid",
+        commission_recorded: true,
+        shipment_booking: shipmentBooking,
+        retry_required: true,
+      }, 502);
+    }
+
     return reply({
       success: true,
       message:
