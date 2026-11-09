@@ -1204,6 +1204,7 @@ const openBillEditingChecks = [
   [html.includes("const addItemButton=$('quickSaleAddItem');if(addItemButton)addItemButton.disabled=false;"), "cashiers must be able to add missing products to an unpaid bill"],
   [html.includes("if(quantityField){quantityField.disabled=false;quantityField.readOnly=false;quantityField.value=String(line.quantity);}") && html.includes("if(noteField){noteField.disabled=false;noteField.readOnly=false;"), "unpaid bill quantities and customer notes must be editable"],
   [html.includes("if(priceField){priceField.disabled=false;priceField.readOnly=true;priceField.setAttribute('readonly','');}") && html.includes("updateQuickSalePreview(true);"), "unpaid bill prices must remain synchronized with the server-verified product catalog"],
+  [html.includes("Produk tidak aktif") && html.includes("Keep legacy/inactive product lines visible") && !html.includes("if(!product)throw new Error('Produk pada tagihan tidak ditemukan pada daftar barang aktif."), "unpaid bills with inactive legacy products must still open so the cashier can replace the affected item"],
 ];
 for (const [ok, message] of openBillEditingChecks) {
   if (ok) pass(message);
