@@ -25,6 +25,7 @@ const liteTrialMigration = fs.readFileSync("supabase/migrations/20261108000000_k
 const fullAppTrialMigration = fs.readFileSync("supabase/migrations/20261108000300_kasusaha_31_day_full_app_trial_features.sql", "utf8");
 const marketplaceTrialMigration = fs.readFileSync("supabase/migrations/20261108000400_kasusaha_marketplace_public_listing_trial_access.sql", "utf8");
 const anonymousMarketplaceTrialFix = fs.readFileSync("supabase/migrations/20261108000500_public_marketplace_trial_visibility_for_anonymous.sql", "utf8");
+const legacyPackageCheckoutWrapperMigration = fs.readFileSync("supabase/migrations/20261109110000_wrap_legacy_license_package_checkout_rpc.sql", "utf8");
 
 const productShippingPrivacySql = fs.readFileSync("supabase/migrations/20261107141421_protect_public_product_shipping_and_write_paths.sql", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
@@ -716,6 +717,14 @@ if (!packageCheckoutBlock.includes("if(createdPackageOrderId)") ||
 if (packageCheckoutBlock.includes("legacyArgs")) {
   fail("package checkout must not fall back to the legacy 4-argument RPC without buyer-level locking");
 } else pass("package checkout fails closed instead of calling the unsafe legacy package-order RPC");
+const legacyPackageCheckoutWrapperSafe =
+  /CREATE OR REPLACE FUNCTION public\\.create_kasusaha_package_order\\([\\s\\S]*?p_shipping_address text[\\s\\S]*?\\)\\s*RETURNS jsonb[\\s\\S]*?SECURITY INVOKER/i.test(legacyPackageCheckoutWrapperMigration) &&
+  /SELECT public\\.create_kasusaha_package_order\\([\\s\\S]*?NULL::text[\\s\\]*\\)/i.test(legacyPackageCheckoutWrapperMigration) &&
+  /REVOKE ALL ON FUNCTION public\\.create_kasusaha_package_order\\(text, text, text, text\\)[\\s\\S]*?FROM PUBLIC, anon/i.test(legacyPackageCheckoutWrapperMigration);
+if (!legacyPackageCheckoutWrapperSafe) {
+  fail("legacy four-argument package checkout RPC must delegate to the serialized five-argument RPC and must not remain SECURITY DEFINER");
+} else pass("legacy four-argument package checkout RPC delegates to the serialized five-argument RPC without SECURITY DEFINER");
+
 
 const employeeMarkPaidStart = employeeActivation.indexOf("async function markPaid()");
 const employeeMarkPaidEnd = employeeActivation.indexOf('if (action === "owner_check")', employeeMarkPaidStart);
