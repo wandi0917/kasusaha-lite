@@ -14,17 +14,17 @@ const marketplaceWorkspaceMigration = fs.readFileSync("supabase/migrations/20261
 
 const stockLedgerMigration = fs.readFileSync("supabase/migrations/20261107104118_transaction_cash_validation_and_stock_movement_ledger_20261107.sql", "utf8");
 const openBillAttributionMigration = fs.readFileSync("supabase/migrations/20261107142427_preserve_customer_and_table_labels_for_open_bill_settlement.sql", "utf8");
-const cashierItemNotesSettlementMigration = fs.readFileSync("supabase/migrations/20261107144500_preserve_cashier_item_notes_after_payment.sql", "utf8");
-const cashierItemNotesLengthMigration = fs.readFileSync("supabase/migrations/20261107170500_cap_paid_sale_note_description_length.sql", "utf8");
-const idempotentOpenBillMigration = fs.readFileSync("supabase/migrations/20261107171500_idempotent_open_bill_creation.sql", "utf8");
+const cashierItemNotesSettlementMigration = fs.readFileSync("supabase/migrations/20261107165936_preserve_cashier_item_notes_after_payment.sql", "utf8");
+const cashierItemNotesLengthMigration = fs.readFileSync("supabase/migrations/20261107170237_cap_paid_sale_note_description_length.sql", "utf8");
+const idempotentOpenBillMigration = fs.readFileSync("supabase/migrations/20261107171720_idempotent_open_bill_creation.sql", "utf8");
 const storeOpenBillWriteGrantsMigration = fs.readFileSync("supabase/migrations/20261108031820_grant_least_privilege_store_open_bill_writes.sql", "utf8");
-const separateCashierNoteMigration = fs.readFileSync("supabase/migrations/20261107172000_store_cashier_customer_note_separately.sql", "utf8");
-const financePartyIdempotencyMigration = fs.readFileSync("supabase/migrations/20261108000100_idempotent_finance_party_creation.sql", "utf8");
-const offlineTimestampMigration = fs.readFileSync("supabase/migrations/20261108000200_preserve_offline_client_recorded_at.sql", "utf8");
+const separateCashierNoteMigration = fs.readFileSync("supabase/migrations/20261107172103_store_cashier_customer_note_separately.sql", "utf8");
+const financePartyIdempotencyMigration = fs.readFileSync("supabase/migrations/20261107173033_idempotent_finance_party_creation.sql", "utf8");
+const offlineTimestampMigration = fs.readFileSync("supabase/migrations/20261107173948_preserve_offline_client_recorded_at.sql", "utf8");
 const liteTrialMigration = fs.readFileSync("supabase/migrations/20261108000000_kasusaha_lite_31_day_trial_entitlements.sql", "utf8");
-const fullAppTrialMigration = fs.readFileSync("supabase/migrations/20261108000300_kasusaha_31_day_full_app_trial_features.sql", "utf8");
-const marketplaceTrialMigration = fs.readFileSync("supabase/migrations/20261108000400_kasusaha_marketplace_public_listing_trial_access.sql", "utf8");
-const anonymousMarketplaceTrialFix = fs.readFileSync("supabase/migrations/20261108000500_public_marketplace_trial_visibility_for_anonymous.sql", "utf8");
+const fullAppTrialMigration = fs.readFileSync("supabase/migrations/20261107193416_kasusaha_31_day_full_app_trial_features.sql", "utf8");
+const marketplaceTrialMigration = fs.readFileSync("supabase/migrations/20261107194352_kasusaha_marketplace_public_listing_trial_access.sql", "utf8");
+const anonymousMarketplaceTrialFix = fs.readFileSync("supabase/migrations/20261108010418_public_marketplace_trial_visibility_for_anonymous.sql", "utf8");
 const legacyPackageCheckoutWrapperMigration = fs.readFileSync("supabase/migrations/20261109143410_wrap_legacy_license_package_checkout_rpc.sql", "utf8");
 
 const productShippingPrivacySql = fs.readFileSync("supabase/migrations/20261107141421_protect_public_product_shipping_and_write_paths.sql", "utf8");
@@ -37,7 +37,7 @@ const biteshipShipmentSource = fs.readFileSync("supabase/functions/biteship-crea
 const marketplaceFinance = fs.readFileSync("supabase/functions/platform-marketplace-finance/index.ts", "utf8");
 const failClosedStoreCostMigration = fs.readFileSync("supabase/migrations/20261106113748_fail_closed_store_product_cost_entitlement.sql", "utf8");
 const failClosedFinanceMigration = fs.readFileSync("supabase/migrations/20261106113750_fail_closed_package_entitlement_helper_and_finance_rpcs.sql", "utf8");
-const idempotentFinanceSettlementMigration = fs.readFileSync("supabase/migrations/20261107171000_idempotent_finance_open_item_settlement.sql", "utf8");
+const idempotentFinanceSettlementMigration = fs.readFileSync("supabase/migrations/20261107170912_idempotent_finance_open_item_settlement.sql", "utf8");
 const manifestText = fs.readFileSync("manifest.webmanifest", "utf8");
 
 const liteTrialChecks = [

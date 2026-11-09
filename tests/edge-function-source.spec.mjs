@@ -178,7 +178,7 @@ test('Midtrans refund and chargeback flags marketplace commission rows for manua
 
 test('marketplace expiry rejects unmapped or invalid order items before restoring stock', async () => {
   const migration = readFileSync(
-    new URL('../supabase/migrations/20261108170000_guard_marketplace_expiry_unmapped_items.sql', import.meta.url),
+    new URL('../supabase/migrations/20261108164528_guard_marketplace_expiry_unmapped_items.sql', import.meta.url),
     'utf8',
   );
   expect(migration).toContain('COUNT(*) FILTER (WHERE product_id IS NULL OR quantity <= 0)');
