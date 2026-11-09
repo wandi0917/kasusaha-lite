@@ -31,15 +31,21 @@ const statusRank: Record<string, number> = {
   picking_up: 40, pickingUp: 40, picked: 50,
   in_transit: 60, inTransit: 60,
   dropping_off: 70, droppingOff: 70,
+  on_hold: 75, onHold: 75,
   delivered: 80,
+  return_in_transit: 90, returnInTransit: 90,
+  returned: 95,
+  rejected: 100, courier_not_found: 100, courierNotFound: 100,
+  cancelled: 100, disposed: 100,
 };
 function shouldApplyStatus(current: unknown, incoming: string): boolean {
   const currentStatus = text(current);
   if (!currentStatus || currentStatus === incoming) return true;
   const currentRank = statusRank[currentStatus];
   const incomingRank = statusRank[incoming];
-  if (currentRank === undefined || incomingRank === undefined) return true;
-  return incomingRank >= currentRank;
+  // Unknown states fail closed; only explicitly ordered transitions are accepted.
+  if (currentRank === undefined || incomingRank === undefined) return false;
+  return incomingRank > currentRank;
 }
 
 Deno.serve(async (req: Request) => {
@@ -94,8 +100,8 @@ Deno.serve(async (req: Request) => {
     if (!status || !allowedStatuses.has(status)) {
       return reply({ success: false, error: "Status pengiriman tidak dikenal." }, 400);
     }
-    // Preserve terminal/exception events, but ignore stale lower-rank movement events.
-    // The read is advisory; database write remains scoped to the matched Biteship order.
+    // Compare-and-set the exact state observed below to prevent a stale webhook
+    // from overwriting a newer status after this read.
     const { data: currentOrder, error: currentOrderError } = await admin.from("marketplace_orders")
       .select("id,shipping_status")
       .eq("biteship_order_id", biteshipOrderId)
@@ -106,7 +112,10 @@ Deno.serve(async (req: Request) => {
       return reply({ success: false, error: "Status pengiriman belum dapat diperiksa." }, 500);
     }
     if (!currentOrder) return reply({ success: false, error: "Pesanan Biteship tidak ditemukan." }, 404);
-    if (shouldApplyStatus(currentOrder.shipping_status, status)) patch.shipping_status = status;
+    if (shouldApplyStatus(currentOrder.shipping_status, status)) {
+      patch.shipping_status = status;
+      patch.__expected_shipping_status = currentOrder.shipping_status;
+    }
   }
   const trackingId = text(body.courier_tracking_id);
   const waybillId = text(body.courier_waybill_id);
@@ -122,16 +131,39 @@ Deno.serve(async (req: Request) => {
     } catch { /* Abaikan URL tracking yang tidak valid. */ }
   }
 
-  const { data, error } = await admin.from("marketplace_orders")
+  const expectedStatus = patch.__expected_shipping_status;
+  delete patch.__expected_shipping_status;
+  let updateQuery = admin.from("marketplace_orders")
     .update(patch)
     .eq("biteship_order_id", biteshipOrderId)
-    .eq("shipping_provider", "Biteship")
+    .eq("shipping_provider", "Biteship");
+  if (patch.shipping_status !== undefined) {
+    updateQuery = expectedStatus === null
+      ? updateQuery.is("shipping_status", null)
+      : updateQuery.eq("shipping_status", expectedStatus);
+  }
+  const { data, error } = await updateQuery
     .select("id,shipping_status,shipping_tracking_id,shipping_waybill_id")
     .maybeSingle();
 
   if (error) {
     console.error("Gagal menyimpan webhook Biteship.", error.message);
     return reply({ success: false, error: "Status pengiriman belum dapat disimpan." }, 500);
+  }
+  if (!data && patch.shipping_status !== undefined) {
+    // A competing webhook already advanced the status. Acknowledge this event
+    // without retrying a stale status update over the newer state.
+    const { data: latestOrder, error: latestError } = await admin.from("marketplace_orders")
+      .select("id,shipping_status,shipping_tracking_id,shipping_waybill_id")
+      .eq("biteship_order_id", biteshipOrderId)
+      .eq("shipping_provider", "Biteship")
+      .maybeSingle();
+    if (latestError) {
+      console.error("Gagal membaca status terbaru setelah konflik webhook Biteship.", latestError.message);
+      return reply({ success: false, error: "Status pengiriman terbaru belum dapat diperiksa." }, 500);
+    }
+    if (!latestOrder) return reply({ success: false, error: "Pesanan Biteship tidak ditemukan." }, 404);
+    return reply({ success: true, ignored: true, reason: "Status lebih baru telah diterapkan oleh notifikasi lain.", order_id: latestOrder.id, status: latestOrder.shipping_status, waybill_id: latestOrder.shipping_waybill_id });
   }
   if (!data) return reply({ success: false, error: "Pesanan Biteship tidak ditemukan." }, 404);
   return reply({ success: true, order_id: data.id, status: data.shipping_status, waybill_id: data.shipping_waybill_id });

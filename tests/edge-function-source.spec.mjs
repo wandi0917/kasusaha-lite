@@ -141,7 +141,12 @@ test('Biteship webhook guards against out-of-order status downgrades', async () 
     'utf8',
   );
   expect(source).toContain('function shouldApplyStatus(current: unknown, incoming: string)');
-  expect(source).toContain('return incomingRank >= currentRank;');
+  expect(source).toContain('return incomingRank > currentRank;');
+  expect(source).toContain('if (currentRank === undefined || incomingRank === undefined) return false;');
+  expect(source).toContain('on_hold: 75');
+  expect(source).toContain('return_in_transit: 90');
+  expect(source).toContain('.eq("shipping_status", expectedStatus)');
+  expect(source).toContain('Status lebih baru telah diterapkan oleh notifikasi lain.');
   expect(source).toContain('shouldApplyStatus(currentOrder.shipping_status, status)');
 });
 
