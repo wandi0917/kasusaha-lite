@@ -124,3 +124,28 @@ Perbedaan ini tidak boleh ditafsirkan sebagai bukti bahwa objek database hilang.
 5. Sebelum migrasi baru, ambil snapshot ulang daftar versi remote dan file lokal; perubahan setelah snapshot ini dapat mengubah angka.
 
 **Status per 9 November 2026:** rekonsiliasi belum selesai; tidak ada perubahan skema atau data Production pada pemeriksaan ini. Angka pada bagian historis di atas adalah snapshot tanggal pemeriksaan masing-masing dan tidak boleh dianggap sebagai angka terkini setelah tanggal tersebut.
+
+
+## Batas cakupan pengujian otomatis — 9 November 2026
+
+Commit `54414606d0f9b8b32ef7cfc290860923bc2d4a94` menjalankan workflow validasi statis dan browser test. Log workflow browser menunjukkan **98 pengujian lulus** pada desktop Chromium dan mobile Chromium. Pengujian ini bernilai untuk regresi UI dan pemeriksaan source, tetapi cakupannya perlu dibaca secara tepat:
+
+- Workflow menjalankan server HTTP lokal dari checkout commit, bukan melakukan transaksi langsung pada website Production.
+- Sebagian skenario Owner/Karyawan menggunakan fixture dan mock pada lapisan server/Supabase untuk menguji fungsi navigasi dan tampilan; itu bukan login dengan akun nyata.
+- `tests/edge-function-source.spec.mjs` memeriksa pola/isi source Edge Function. Kelulusan tes tersebut bukan bukti bahwa webhook berhasil dipanggil oleh Midtrans atau Biteship pada lingkungan Production.
+- Pengujian struk memeriksa HTML/layout dan escaping teks. Printer thermal fisik, koneksi Bluetooth/USB, pemotongan kertas, dan hasil cetak perangkat belum terverifikasi.
+- Pengujian barcode memeriksa implementasi UI/kode dan alur yang disimulasikan; kamera fisik, izin browser, serta scanner Bluetooth/USB belum dibuktikan pada perangkat nyata.
+- Backup restore yang diuji menolak berkas lokal dengan struktur tidak valid; itu bukan uji pemulihan backup Production ke database terisolasi.
+- Belum ada workflow integrasi otomatis yang menjalankan skenario transaksi end-to-end terhadap Supabase staging dengan akun sintetis, pembayaran Sandbox, webhook, pengiriman, dan verifikasi ledger.
+
+### Gerbang pengujian sebelum penjualan umum
+
+1. Sediakan Supabase staging terpisah dan akun sintetis Owner, Employee, buyer, dan seller.
+2. Tambahkan E2E integrasi yang benar-benar mengautentikasi dan menguji RLS/Edge Functions di staging; jangan gunakan data pelanggan Production.
+3. Uji Midtrans Sandbox untuk settlement, pending, deny, expire, duplicate/out-of-order notification, refund, dan signature rejection.
+4. Uji Biteship dengan alamat dan produk sintetis, termasuk quote, create shipment, webhook, status monotonik, dan kegagalan saldo/provider.
+5. Uji laporan, stok, transaksi terbuka, idempotensi, dan rekonsiliasi ledger setelah setiap skenario.
+6. Uji printer/scanner fisik dan pemulihan backup ke database terisolasi, lalu simpan bukti hasil.
+7. Baru setelah seluruh gerbang lulus, pertimbangkan uji Production dengan nilai transaksi terkendali dan persetujuan eksplisit.
+
+**Kesimpulan:** 98/98 browser tests lulus untuk cakupan lokal yang tercantum, tetapi tidak boleh dilaporkan sebagai 98 tes transaksi Production. Integrasi staging dan pengujian perangkat nyata tetap menjadi blocker.
