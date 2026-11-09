@@ -1198,4 +1198,17 @@ for (const [ok, message] of paidOrderRetryChecks) {
   else fail(message);
 }
 
+const openBillEditingChecks = [
+  [html.includes("const saleForm=$('quickSaleForm')") && html.includes("saleForm.hidden=false") && html.includes("saleForm.style.display='block'"), "opening an unpaid bill must explicitly reveal the cashier editor"],
+  [html.includes("[input,quantityField,noteField,row.querySelector('.quick-sale-remove')].forEach(el=>{if(el)el.disabled=false;})"), "unpaid bill product, quantity, notes and remove controls must be enabled for correction"],
+  [html.includes("const addItemButton=$('quickSaleAddItem');if(addItemButton)addItemButton.disabled=false;"), "cashiers must be able to add missing products to an unpaid bill"],
+  [html.includes("if(quantityField){quantityField.disabled=false;quantityField.readOnly=false;quantityField.value=String(line.quantity);}") && html.includes("if(noteField){noteField.disabled=false;noteField.readOnly=false;"), "unpaid bill quantities and customer notes must be editable"],
+  [html.includes("if(priceField){priceField.disabled=false;priceField.readOnly=true;priceField.setAttribute('readonly','');}") && html.includes("updateQuickSalePreview(true);"), "unpaid bill prices must remain synchronized with the server-verified product catalog"],
+  [html.includes("Produk tidak aktif") && html.includes("Keep legacy/inactive product lines visible") && !html.includes("if(!product)throw new Error('Produk pada tagihan tidak ditemukan pada daftar barang aktif."), "unpaid bills with inactive legacy products must still open so the cashier can replace the affected item"],
+];
+for (const [ok, message] of openBillEditingChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 if (process.exitCode) process.exit(process.exitCode);

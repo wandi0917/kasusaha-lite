@@ -6375,17 +6375,33 @@ async function openQuickSaleBill(id){
  try{
   const {data:b,error}=await sb.from('store_open_bills').select('*').eq('id',id).eq('business_id',financeBusiness.id).eq('status','open').single();if(error)throw error;
   if(!Array.isArray(b.lines)||!b.lines.length)throw new Error('Rincian tagihan kosong atau rusak.');
+  // Re-open the cashier editor explicitly: navigation/role transitions may leave the form or
+  // controls hidden/disabled. An unpaid bill must remain correctable before settlement.
+  const saleForm=$('quickSaleForm');
+  if(saleForm){saleForm.hidden=false;saleForm.removeAttribute('hidden');saleForm.style.display='block';}
+  ['quickSaleTableNumber','quickSaleCustomerName','quickSaleCashReceived','quickSaleAddItem','quickSaleSaveDraft','quickSalePayDraft'].forEach(id=>{const el=$(id);if(el)el.disabled=false;});
   $('quickSaleItems').replaceChildren();
   for(const line of b.lines){
    const product=storeProductRows.find(p=>String(p.id)===String(line.product_id));
-   if(!product)throw new Error('Produk pada tagihan tidak ditemukan pada daftar barang aktif. Periksa produk sebelum mengedit.');
    addQuickSaleLine();
    const row=quickSaleItemRows().at(-1),input=row.querySelector('.quick-sale-product');
-   input.value=product.product_code+' — '+product.product_name;input.dataset.productId=product.id;
-   row.querySelector('.quick-sale-qty').value=String(line.quantity);
-   const noteField=row.querySelector('.quick-sale-item-note');if(noteField)noteField.value=String(line.note||'').slice(0,300);
+   // Keep legacy/inactive product lines visible so the cashier can replace them instead of
+   // the entire bill becoming impossible to open for editing.
+   input.value=product?(product.product_code+' — '+product.product_name):((line.product_code?line.product_code+' — ':'')+(line.product_name||'Produk tidak aktif'));
+   input.dataset.productId=product?product.id:String(line.product_id||'');
+   const quantityField=row.querySelector('.quick-sale-qty');
+   const priceField=row.querySelector('.quick-sale-price');
+   const noteField=row.querySelector('.quick-sale-item-note');
+   // Product, quantity and customer instructions can be corrected while unpaid.
+   // Unit price remains tied to the product catalog; the settlement RPC verifies that price.
+   [input,quantityField,noteField,row.querySelector('.quick-sale-remove')].forEach(el=>{if(el)el.disabled=false;});
+   if(input)input.readOnly=false;
+   if(quantityField){quantityField.disabled=false;quantityField.readOnly=false;quantityField.value=String(line.quantity);}
+   if(priceField){priceField.disabled=false;priceField.readOnly=true;priceField.setAttribute('readonly','');}
+   if(noteField){noteField.disabled=false;noteField.readOnly=false;noteField.value=String(line.note||'').slice(0,300);}
    updateQuickSalePreview(true);
   }
+  const addItemButton=$('quickSaleAddItem');if(addItemButton)addItemButton.disabled=false;
   $('quickSaleTableNumber').value=b.table_number||'';
   $('quickSaleCustomerName').value=b.customer_name||'';
   activeOpenBillId=b.id;
