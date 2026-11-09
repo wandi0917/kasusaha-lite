@@ -600,9 +600,11 @@ Deno.serve(async (req: Request) => {
     }, 503);
   }
   const isProduction = configuredMode === "true";
-  const serverKey = isProduction
+  const configuredServerKey = isProduction
     ? Deno.env.get("MIDTRANS_SERVER_KEY_PRODUCTION")
     : (Deno.env.get("MIDTRANS_SERVER_KEY_SANDBOX") || Deno.env.get("MIDTRANS_SERVER_KEY"));
+  // Normalize surrounding whitespace consistently with payment creation.
+  const serverKey = configuredServerKey?.trim() || "";
   if (isProduction && !serverKey) {
     return reply({
       success: false,
