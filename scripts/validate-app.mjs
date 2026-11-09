@@ -703,6 +703,17 @@ if (paymentWebhook.includes("MIDTRANS_PRODUCTION_PAYMENTS_ENABLED")) {
   fail("Midtrans webhook must remain available for authentic in-flight settlement and refund notifications");
 } else pass("Midtrans webhook is not blocked by the new-payment cutover gate");
 
+const packageCheckoutStart = html.indexOf("(function initKasUsahaPackageCheckout(){");
+const packageCheckoutEnd = html.indexOf("async function mulaiPembayaranMidtrans", packageCheckoutStart);
+const packageCheckoutBlock = packageCheckoutStart >= 0 && packageCheckoutEnd > packageCheckoutStart
+  ? html.slice(packageCheckoutStart, packageCheckoutEnd)
+  : "";
+if (!packageCheckoutBlock.includes("if(createdPackageOrderId)") ||
+    !packageCheckoutBlock.includes("submit.disabled=true") ||
+    !packageCheckoutBlock.includes("gunakan tombol pembayaran untuk order yang sama")) {
+  fail("package checkout must lock the order form after server order creation to prevent duplicate license orders");
+} else pass("package checkout locks duplicate order creation and keeps retry on the same order");
+
 const employeeMarkPaidStart = employeeActivation.indexOf("async function markPaid()");
 const employeeMarkPaidEnd = employeeActivation.indexOf('if (action === "owner_check")', employeeMarkPaidStart);
 const employeeMarkPaidBlock = employeeMarkPaidStart >= 0 && employeeMarkPaidEnd > employeeMarkPaidStart
