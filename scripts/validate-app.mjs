@@ -25,7 +25,7 @@ const liteTrialMigration = fs.readFileSync("supabase/migrations/20261108000000_k
 const fullAppTrialMigration = fs.readFileSync("supabase/migrations/20261108000300_kasusaha_31_day_full_app_trial_features.sql", "utf8");
 const marketplaceTrialMigration = fs.readFileSync("supabase/migrations/20261108000400_kasusaha_marketplace_public_listing_trial_access.sql", "utf8");
 const anonymousMarketplaceTrialFix = fs.readFileSync("supabase/migrations/20261108000500_public_marketplace_trial_visibility_for_anonymous.sql", "utf8");
-const legacyPackageCheckoutWrapperMigration = fs.readFileSync("supabase/migrations/20261109110000_wrap_legacy_license_package_checkout_rpc.sql", "utf8");
+const legacyPackageCheckoutWrapperMigration = fs.readFileSync("supabase/migrations/20261109143410_wrap_legacy_license_package_checkout_rpc.sql", "utf8");
 
 const productShippingPrivacySql = fs.readFileSync("supabase/migrations/20261107141421_protect_public_product_shipping_and_write_paths.sql", "utf8");
 const sw = fs.readFileSync("sw.js", "utf8");
