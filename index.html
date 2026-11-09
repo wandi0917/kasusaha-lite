@@ -6379,12 +6379,14 @@ async function openQuickSaleBill(id){
    const quantityField=row.querySelector('.quick-sale-qty');
    const priceField=row.querySelector('.quick-sale-price');
    const noteField=row.querySelector('.quick-sale-item-note');
-   // Product, quantity, price and customer instructions can all be corrected while unpaid.
-   [input,quantityField,priceField,noteField,row.querySelector('.quick-sale-remove')].forEach(el=>{if(el){el.disabled=false;el.readOnly=false;}});
-   if(quantityField)quantityField.value=String(line.quantity);
-   if(priceField){priceField.readOnly=false;priceField.removeAttribute('readonly');priceField.value=String(line.unit_price);}
-   if(noteField)noteField.value=String(line.note||'').slice(0,300);
-   updateQuickSalePreview(false);
+   // Product, quantity and customer instructions can be corrected while unpaid.
+   // Unit price remains tied to the product catalog; the settlement RPC verifies that price.
+   [input,quantityField,noteField,row.querySelector('.quick-sale-remove')].forEach(el=>{if(el)el.disabled=false;});
+   if(input)input.readOnly=false;
+   if(quantityField){quantityField.disabled=false;quantityField.readOnly=false;quantityField.value=String(line.quantity);}
+   if(priceField){priceField.disabled=false;priceField.readOnly=true;priceField.setAttribute('readonly','');}
+   if(noteField){noteField.disabled=false;noteField.readOnly=false;noteField.value=String(line.note||'').slice(0,300);}
+   updateQuickSalePreview(true);
   }
   const addItemButton=$('quickSaleAddItem');if(addItemButton)addItemButton.disabled=false;
   $('quickSaleTableNumber').value=b.table_number||'';
