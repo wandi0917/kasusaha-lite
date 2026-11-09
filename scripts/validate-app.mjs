@@ -1198,4 +1198,16 @@ for (const [ok, message] of paidOrderRetryChecks) {
   else fail(message);
 }
 
+const openBillEditingChecks = [
+  [html.includes("const saleForm=$('quickSaleForm')") && html.includes("saleForm.hidden=false") && html.includes("saleForm.style.display='block'"), "opening an unpaid bill must explicitly reveal the cashier editor"],
+  [html.includes("priceField.readOnly=false") && html.includes("priceField.removeAttribute('readonly')"), "unpaid bill unit prices must be editable before payment"],
+  [html.includes("[input,quantityField,priceField,noteField,row.querySelector('.quick-sale-remove')].forEach(el=>{if(el){el.disabled=false;el.readOnly=false;}})"), "unpaid bill product, quantity, price, notes and remove controls must be enabled for correction"],
+  [html.includes("const addItemButton=$('quickSaleAddItem');if(addItemButton)addItemButton.disabled=false;"), "cashiers must be able to add missing products to an unpaid bill"],
+  [html.includes("if(priceField){priceField.readOnly=false;priceField.removeAttribute('readonly');priceField.value=String(line.unit_price);}"), "editing an existing bill must preserve its saved unit price while enabling correction"],
+];
+for (const [ok, message] of openBillEditingChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 if (process.exitCode) process.exit(process.exitCode);
