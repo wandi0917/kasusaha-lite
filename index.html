@@ -3605,16 +3605,15 @@ function pilihPaketKasUsaha(code) {
         p_shipping_address:'Lisensi digital KasUsaha Lite — tidak memerlukan pengiriman.',
         p_referral_code:referralCode||null
       };
-      let {data,error}=await sb.rpc('create_kasusaha_package_order',packageOrderArgs);
-      const missingReferralRpc=error&&(/PGRST202|Could not find the function|schema cache/i.test(String(error.code||'')+' '+String(error.message||'')));
-      if(missingReferralRpc&&!referralCode){
-        const legacyArgs={...packageOrderArgs};
-        delete legacyArgs.p_referral_code;
-        ({data,error}=await sb.rpc('create_kasusaha_package_order',legacyArgs));
-      }else if(missingReferralRpc&&referralCode){
-        throw new Error('Pencatatan kode referral belum aktif di server. Kode referral tidak dikirim dan pesanan belum dibuat. Coba lagi setelah pembaruan server selesai.');
+      // Fail closed: never fall back to the legacy 4-argument RPC.
+      // That overload is still executable in production but lacks the buyer-level
+      // advisory lock and referral attribution checks used by the 5-argument RPC.
+      const {data,error}=await sb.rpc('create_kasusaha_package_order',packageOrderArgs);
+      if(error){
+        const missingReferralRpc=/PGRST202|Could not find the function|schema cache/i.test(String(error.code||'')+' '+String(error.message||''));
+        if(missingReferralRpc)throw new Error('Checkout paket sedang menunggu pembaruan fungsi server yang aman. Pesanan belum dibuat. Silakan coba kembali setelah pembaruan selesai.');
+        throw error;
       }
-      if(error)throw error;
       const order=Array.isArray(data)?data[0]:data;
       if(!order||order.success!==true||!order.order_id)throw new Error('Server tidak mengembalikan nomor pesanan yang valid.');
       createdPackageOrderId=order.order_id;
