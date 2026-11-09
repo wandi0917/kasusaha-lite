@@ -713,8 +713,7 @@ if (!packageCheckoutBlock.includes("if(createdPackageOrderId)") ||
     !packageCheckoutBlock.includes("gunakan tombol pembayaran untuk order yang sama")) {
   fail("package checkout must lock the order form after server order creation to prevent duplicate license orders");
 } else pass("package checkout locks duplicate order creation and keeps retry on the same order");
-if (packageCheckoutBlock.includes("legacyArgs") ||
-    /sb\\.rpc\\(['"]create_kasusaha_package_order['"],\\s*legacyArgs\\)/.test(packageCheckoutBlock)) {
+if (packageCheckoutBlock.includes("legacyArgs")) {
   fail("package checkout must not fall back to the legacy 4-argument RPC without buyer-level locking");
 } else pass("package checkout fails closed instead of calling the unsafe legacy package-order RPC");
 
