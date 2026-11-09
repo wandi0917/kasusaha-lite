@@ -718,9 +718,9 @@ if (packageCheckoutBlock.includes("legacyArgs")) {
   fail("package checkout must not fall back to the legacy 4-argument RPC without buyer-level locking");
 } else pass("package checkout fails closed instead of calling the unsafe legacy package-order RPC");
 const legacyPackageCheckoutWrapperSafe =
-  /CREATE OR REPLACE FUNCTION public\\.create_kasusaha_package_order\\([\\s\\S]*?p_shipping_address text[\\s\\S]*?\\)\\s*RETURNS jsonb[\\s\\S]*?SECURITY INVOKER/i.test(legacyPackageCheckoutWrapperMigration) &&
-  /SELECT public\\.create_kasusaha_package_order\\([\\s\\S]*?NULL::text[\\s\\]*\\)/i.test(legacyPackageCheckoutWrapperMigration) &&
-  /REVOKE ALL ON FUNCTION public\\.create_kasusaha_package_order\\(text, text, text, text\\)[\\s\\S]*?FROM PUBLIC, anon/i.test(legacyPackageCheckoutWrapperMigration);
+  /CREATE OR REPLACE FUNCTION public\.create_kasusaha_package_order\([\s\S]*?p_shipping_address text[\s\S]*?\)\s*RETURNS jsonb[\s\S]*?SECURITY INVOKER/i.test(legacyPackageCheckoutWrapperMigration) &&
+  /SELECT public\.create_kasusaha_package_order\([\s\S]*?NULL::text\s*\)/i.test(legacyPackageCheckoutWrapperMigration) &&
+  /REVOKE ALL ON FUNCTION public\.create_kasusaha_package_order\(text, text, text, text\)[\s\S]*?FROM PUBLIC, anon/i.test(legacyPackageCheckoutWrapperMigration);
 if (!legacyPackageCheckoutWrapperSafe) {
   fail("legacy four-argument package checkout RPC must delegate to the serialized five-argument RPC and must not remain SECURITY DEFINER");
 } else pass("legacy four-argument package checkout RPC delegates to the serialized five-argument RPC without SECURITY DEFINER");
