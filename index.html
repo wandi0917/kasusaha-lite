@@ -3636,8 +3636,15 @@ function pilihPaketKasUsaha(code) {
         status.className='status error';status.textContent='Checkout paket belum berhasil dibuat: '+message+'. Jika respons server tidak pasti, periksa Pesanan Saya sebelum mencoba ulang.';
       }
     }finally{
-      submit.disabled=false;
-      submit.textContent='Buat pesanan dan lanjutkan pembayaran';
+      if(createdPackageOrderId){
+        // Pesanan sudah tercatat di server. Jangan izinkan submit ulang yang membuat
+        // order kedua ketika penyiapan/pembayaran order pertama masih perlu dicoba.
+        submit.disabled=true;
+        submit.textContent='Pesanan sudah dibuat — gunakan tombol pembayaran untuk order yang sama';
+      }else{
+        submit.disabled=false;
+        submit.textContent='Buat pesanan dan lanjutkan pembayaran';
+      }
     }
   });
 })();
