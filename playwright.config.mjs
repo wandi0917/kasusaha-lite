@@ -7,7 +7,7 @@ export default defineConfig({
   timeout: 30_000,
   reporter: 'list',
   use: {
-    baseURL: process.env.KASUSAHA_BASE_URL || 'https://fix-navigation-serialization.kasusaha-lite.pages.dev',
+    baseURL: process.env.KASUSAHA_BASE_URL || 'https://kasusaha-lite.pages.dev',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
