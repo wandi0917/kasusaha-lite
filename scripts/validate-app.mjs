@@ -1200,10 +1200,10 @@ for (const [ok, message] of paidOrderRetryChecks) {
 
 const openBillEditingChecks = [
   [html.includes("const saleForm=$('quickSaleForm')") && html.includes("saleForm.hidden=false") && html.includes("saleForm.style.display='block'"), "opening an unpaid bill must explicitly reveal the cashier editor"],
-  [html.includes("priceField.readOnly=false") && html.includes("priceField.removeAttribute('readonly')"), "unpaid bill unit prices must be editable before payment"],
-  [html.includes("[input,quantityField,priceField,noteField,row.querySelector('.quick-sale-remove')].forEach(el=>{if(el){el.disabled=false;el.readOnly=false;}})"), "unpaid bill product, quantity, price, notes and remove controls must be enabled for correction"],
+  [html.includes("[input,quantityField,noteField,row.querySelector('.quick-sale-remove')].forEach(el=>{if(el)el.disabled=false;})"), "unpaid bill product, quantity, notes and remove controls must be enabled for correction"],
   [html.includes("const addItemButton=$('quickSaleAddItem');if(addItemButton)addItemButton.disabled=false;"), "cashiers must be able to add missing products to an unpaid bill"],
-  [html.includes("if(priceField){priceField.readOnly=false;priceField.removeAttribute('readonly');priceField.value=String(line.unit_price);}"), "editing an existing bill must preserve its saved unit price while enabling correction"],
+  [html.includes("if(quantityField){quantityField.disabled=false;quantityField.readOnly=false;quantityField.value=String(line.quantity);}") && html.includes("if(noteField){noteField.disabled=false;noteField.readOnly=false;"), "unpaid bill quantities and customer notes must be editable"],
+  [html.includes("if(priceField){priceField.disabled=false;priceField.readOnly=true;priceField.setAttribute('readonly','');}") && html.includes("updateQuickSalePreview(true);"), "unpaid bill prices must remain synchronized with the server-verified product catalog"],
 ];
 for (const [ok, message] of openBillEditingChecks) {
   if (ok) pass(message);
