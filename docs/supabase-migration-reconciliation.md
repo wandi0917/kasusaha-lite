@@ -101,3 +101,26 @@ Setelah penyelarasan, seluruh 41 file lokal memiliki versi yang cocok dengan riw
 - Versi remote dan nama file repo sudah diverifikasi cocok setelah penerapan.
 
 **Peringatan tetap berlaku:** rekonstruksi seluruh migrasi historis yang hilang belum selesai. Jangan menjalankan `supabase db push`, reset, atau menerapkan migrasi DDL baru sebelum arsip historis dipulihkan atau baseline schema terkontrol dibuat dan diuji. Periksa ulang riwayat remote dan file lokal sebelum migrasi berikutnya.
+
+
+## Snapshot rekonsiliasi terbaru — 9 November 2026 (read-only)
+
+Pemeriksaan ulang langsung terhadap branch `main` dan migration history Supabase Production pada 9 November 2026 menghasilkan:
+
+- Supabase Production mencatat **146 versi migrasi**.
+- Branch `main` berisi **59 file SQL** pada `supabase/migrations`.
+- **58 dari 59** file lokal memiliki prefix versi yang cocok persis dengan migration history Production.
+- **88 versi remote** belum memiliki file lokal dengan prefix versi yang sama.
+- Satu file lokal yang belum memiliki pasangan versi remote persis adalah `20261108000000_kasusaha_lite_31_day_trial_entitlements.sql`.
+
+Perbedaan ini tidak boleh ditafsirkan sebagai bukti bahwa objek database hilang. Migration history menyimpan nama migrasi, sedangkan file lokal menyimpan SQL; kesamaan fungsi atau objek tidak membuktikan bahwa isi SQL historis identik. File trial lokal tersebut membuat tabel `private.kasusaha_free_trials` dan beberapa fungsi terkait. Riwayat remote juga mencatat beberapa migrasi trial terpisah pada 7 November 2026. Hubungan antara file gabungan lokal dan rangkaian migrasi remote **belum dibuktikan secara byte-for-byte atau melalui arsip commit tepercaya**.
+
+### Keputusan operasional
+
+1. Tidak menjalankan `db push`, `db reset`, `migration repair`, atau DDL Production untuk mencoba menutup selisih ini.
+2. Tidak mengganti prefix file trial `20261108000000` dengan versi migrasi trial remote berdasarkan kemiripan nama/fungsi saja.
+3. Tidak membuat SQL historis pengganti berdasarkan nama migrasi.
+4. Lanjutkan pencarian sumber historis tepercaya: commit/branch/tag lama, backup repository, atau arsip deployment. Jika tidak ditemukan, siapkan baseline schema terkontrol sebagai proyek terpisah dan validasi pada database staging kosong sebelum digunakan.
+5. Sebelum migrasi baru, ambil snapshot ulang daftar versi remote dan file lokal; perubahan setelah snapshot ini dapat mengubah angka.
+
+**Status per 9 November 2026:** rekonsiliasi belum selesai; tidak ada perubahan skema atau data Production pada pemeriksaan ini. Angka pada bagian historis di atas adalah snapshot tanggal pemeriksaan masing-masing dan tidak boleh dianggap sebagai angka terkini setelah tanggal tersebut.
