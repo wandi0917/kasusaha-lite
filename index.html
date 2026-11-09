@@ -6372,10 +6372,12 @@ async function openQuickSaleBill(id){
   $('quickSaleItems').replaceChildren();
   for(const line of b.lines){
    const product=storeProductRows.find(p=>String(p.id)===String(line.product_id));
-   if(!product)throw new Error('Produk pada tagihan tidak ditemukan pada daftar barang aktif. Periksa produk sebelum mengedit.');
    addQuickSaleLine();
    const row=quickSaleItemRows().at(-1),input=row.querySelector('.quick-sale-product');
-   input.value=product.product_code+' — '+product.product_name;input.dataset.productId=product.id;
+   // Keep legacy/inactive product lines visible so the cashier can replace them instead of
+   // the entire bill becoming impossible to open for editing.
+   input.value=product?(product.product_code+' — '+product.product_name):((line.product_code?line.product_code+' — ':'')+(line.product_name||'Produk tidak aktif'));
+   input.dataset.productId=product?product.id:String(line.product_id||'');
    const quantityField=row.querySelector('.quick-sale-qty');
    const priceField=row.querySelector('.quick-sale-price');
    const noteField=row.querySelector('.quick-sale-item-note');
