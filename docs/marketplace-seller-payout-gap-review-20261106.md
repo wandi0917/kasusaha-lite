@@ -83,3 +83,40 @@ Snapshot Production terbaru yang diperiksa secara agregat:
 - Rekonsiliasi agregat menemukan pesanan berstatus paid/processing/completed memiliki jumlah item yang cocok dengan subtotal pesanan, dan semua pesanan tersebut memiliki event pembayaran terverifikasi yang telah diproses.
 
 Komisi Rp300 tersebut berasal dari data simulasi lama dan **bukan bukti bahwa alur pembayaran/pencairan seller sungguhan telah diuji**. Karena payout ledger masih kosong dan workflow seller payout belum tersedia, **jangan mengaktifkan pembayaran marketplace barang fisik Production atau menjanjikan pencairan dana otomatis**. Tampilan pencairan yang ada hanya laporan platform-owner dan bukan bukti transfer ke rekening.
+
+
+## Keputusan pemilik — aturan pelepasan dana seller (disetujui 9 November 2026)
+
+Pemilik menyetujui aturan berikut:
+- Dana item seller baru eligible setelah pesanan memiliki status pembayaran `paid` yang sah, event Midtrans untuk pesanan tersebut berstatus `verified` dan sudah diproses, `payment_review_required = false`, dan status pengiriman Biteship item/pesanan adalah `delivered`.
+- Masa tahan adalah **7 × 24 jam sejak waktu event delivered yang tervalidasi**, bukan sejak tanggal checkout, pembayaran, atau status yang dikirim browser.
+- Item yang sedang terkena refund, chargeback, komplain/dispute, atau status pengembalian/retur harus tetap ditahan sampai pemeriksaan manual selesai.
+- Komisi platform tetap 2,5% dari subtotal produk per item; ongkos kirim dikecualikan dari dasar komisi.
+- Nilai bersih seller per item pada tahap awal = subtotal item dikurangi komisi 2,5%, dikurangi hanya penyesuaian/refund yang tercatat dan disetujui. Jangan membuat potongan tersembunyi.
+
+## Desain implementasi yang wajib dipertahankan
+
+1. Buat relasi payout-batch-item yang unik agar satu item pesanan tidak dapat dialokasikan ke dua batch.
+2. Pembuatan batch harus server-side, atomik, menggunakan row lock dan idempotency key. Request ulang tidak boleh membuat transfer kedua.
+3. Seller hanya dapat melihat statement miliknya; seller tidak boleh mengubah nominal, status, atau bukti transfer.
+4. Platform Owner dapat meninjau, mengirim transfer manual, dan mencatat referensi/bukti. Status `paid` hanya boleh dicatat setelah transfer benar-benar dikonfirmasi; permintaan seller tidak boleh menandai dirinya paid.
+5. Jangan menyimpan nomor rekening mentah di tabel publik, log, atau Edge Function response. Untuk tahap manual, detail rekening dikumpulkan melalui kanal operasional privat yang disetujui pemilik; desain penyimpanan rekening terproteksi/provider recipient token perlu review terpisah.
+6. Status transfer harus mendukung retry aman untuk gagal; kegagalan transfer tidak menghapus hak seller dan tidak membuka alokasi ganda.
+7. Semua perubahan ledger harus dapat direkonsiliasi dengan item order, event pembayaran, komisi, refund, dan bukti transfer.
+8. Jangan aktifkan pembayaran marketplace barang fisik Production sampai workflow diuji pada staging terisolasi dengan synthetic users/orders, duplicate/concurrent requests, dispute/refund, failed transfer, dan retry.
+
+## Keputusan operasional yang belum disepakati
+
+Persetujuan aturan delivered + 7 hari **tidak** menentukan hal-hal berikut; jangan menebak:
+- minimum nominal pencairan;
+- siapa menanggung biaya transfer bank;
+- kanal transfer (manual bank transfer atau penyedia disbursement);
+- prosedur dan batas waktu sengketa/refund serta siapa yang mengesahkan penyesuaian;
+- apakah akun Owner tunggal cukup untuk maker/checker, atau perlu admin kedua.
+
+## Status implementasi setelah persetujuan
+
+- Kebijakan release: **disetujui**.
+- Perubahan skema/fungsi payout di Production: **belum diterapkan**.
+- Alasan: migration baseline Production masih belum direkonsiliasi (88 versi remote belum memiliki pasangan file lokal dan satu file lokal belum cocok). Menambahkan migration baru lalu menjalankan `db push` saat ini berisiko mengeksekusi migration lama yang belum terpetakan.
+- Tidak ada payout, transfer, perubahan saldo, atau data pesanan yang dibuat/diubah selama audit ini.
