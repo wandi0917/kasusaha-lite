@@ -75,7 +75,7 @@ const quickSaleNotesChecks = [
   [html.includes("note:String(row.querySelector('.quick-sale-item-note')?.value||'').trim().slice(0,300)"), "cashier line notes must be trimmed and limited to 300 characters"],
   [html.includes("unit_price:d.price,note:d.note"), "unpaid bill JSON must persist each item's note"],
   [html.includes("noteField.value=String(line.note||'').slice(0,300)"), "reopening an unpaid bill must restore each item's note"],
-  [html.includes("line.note?' | Catatan: '+String(line.note):''"), "unpaid bill list must display saved item notes"],
+  [(html.includes("line.note?' | Catatan: '+String(line.note):''") || html.includes("if(line.note){const note=document.createElement('div');note.textContent='Catatan: '+String(line.note)")), "unpaid bill list must display saved item notes as a separate safe text row"],
   [html.includes("const note=document.createElement('td');note.textContent=d.note||'—'"), "cashier bill preview must show item notes as text, not executable HTML"],
   [html.includes("quick-sale-item-note').addEventListener('input',()=>updateQuickSalePreview(false))"), "editing an item note must immediately refresh the bill preview"],
 ];

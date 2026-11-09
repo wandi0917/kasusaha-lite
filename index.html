@@ -6343,8 +6343,19 @@ async function loadQuickSaleOpenBills(){
    tr.appendChild(cell(String(index+1)));
    tr.appendChild(cell((b.table_number?'Meja '+b.table_number:'Kasir')+(b.customer_name?' • '+b.customer_name:'')));
    tr.appendChild(cell(new Date(b.created_at).toLocaleString('id-ID')));
-   const detail=document.createElement('td');
-   (b.lines||[]).forEach(line=>{const row=document.createElement('div');row.textContent=(line.product_name||'Produk')+(line.product_code?' ['+line.product_code+']':'')+' × '+Number(line.quantity||0)+' = '+formatStoreRupiah(Number(line.quantity||0)*Number(line.unit_price||0))+(line.note?' | Catatan: '+String(line.note):'');detail.appendChild(row);});
+   const detail=document.createElement('td');detail.style.minWidth='240px';detail.style.padding='8px 10px';
+   const detailList=document.createElement('div');detailList.style.display='grid';detailList.style.gap='6px';
+   (b.lines||[]).forEach(line=>{
+    const row=document.createElement('div');row.style.display='flex';row.style.alignItems='center';row.style.justifyContent='space-between';row.style.gap='12px';row.style.padding='6px 8px';row.style.borderBottom='1px solid var(--border-color, #e5e7eb)';row.style.borderRadius='6px';
+    const info=document.createElement('div');info.style.minWidth='0';info.style.flex='1';
+    const name=document.createElement('div');name.textContent=(line.product_name||'Produk')+(line.product_code?' ['+line.product_code+']':'');name.style.fontWeight='600';name.style.overflowWrap='anywhere';
+    const meta=document.createElement('div');meta.textContent=Number(line.quantity||0)+' × '+formatStoreRupiah(Number(line.unit_price||0))+'/unit';meta.style.fontSize='12px';meta.style.color='var(--muted, #64748b)';meta.style.marginTop='2px';
+    info.append(name,meta);
+    const subtotal=document.createElement('strong');subtotal.textContent=formatStoreRupiah(Number(line.quantity||0)*Number(line.unit_price||0));subtotal.style.whiteSpace='nowrap';subtotal.style.textAlign='right';
+    row.append(info,subtotal);detailList.appendChild(row);
+    if(line.note){const note=document.createElement('div');note.textContent='Catatan: '+String(line.note);note.style.fontSize='12px';note.style.color='var(--muted, #64748b)';note.style.padding='0 8px 4px';detailList.appendChild(note);}
+   });
+   detail.appendChild(detailList);
    tr.appendChild(detail);
    const amount=cell(formatStoreRupiah(b.total_amount));amount.className='amount';tr.appendChild(amount);
    const actions=document.createElement('td'),wrap=document.createElement('div');wrap.className='row-actions';
