@@ -6404,6 +6404,8 @@ async function openQuickSaleBill(id){
   const addItemButton=$('quickSaleAddItem');if(addItemButton)addItemButton.disabled=false;
   $('quickSaleTableNumber').value=b.table_number||'';
   $('quickSaleCustomerName').value=b.customer_name||'';
+  // Never carry cash received from a previous bill into a different unpaid bill.
+  $('quickSaleCashReceived').value='';
   activeOpenBillId=b.id;
   $('quickSaleSaveDraft').textContent='Simpan perubahan tagihan';
   $('quickSalePayDraft').hidden=false;
