@@ -33,6 +33,7 @@ const checks = [
   [migration.includes("Payout ditahan karena item tidak lagi memenuhi syarat") && migration.includes("File bukti transfer tidak lagi tersedia"), "payout is revalidated again at final paid confirmation"],
   [migration.includes("revoke all on function private.platform_owner_update_seller_payout") && migration.includes("role='platform_owner'"), "admin transition is restricted to active Platform Owner"],
   [migration.includes("marketplace-payout-evidence") && migration.includes("public = false"), "transfer evidence bucket is private"],
+  [migration.includes("file_size_limit = 5242880") && migration.includes("application/pdf','image/png','image/jpeg"), "evidence uploads are capped at 5 MiB and restricted to PDF, PNG or JPEG"],
   [edge.includes('authData.user?.email_confirmed_at') && edge.includes("platform_admins"), "edge endpoint verifies user and Platform Owner"],
   [edge.includes('eq("recipient_user_id", userId)'), "seller statement is scoped to the authenticated seller"],
   [edge.includes('createSignedUploadUrl') && edge.includes('createSignedUrl'), "evidence access uses short-lived signed URLs"],
