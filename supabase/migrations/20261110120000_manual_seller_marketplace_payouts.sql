@@ -513,4 +513,4 @@ revoke all on function private.platform_owner_set_seller_payout_hold(uuid,boolea
 revoke all on function public.platform_owner_set_seller_payout_hold(uuid,boolean,text) from public, anon;
 grant execute on function private.platform_owner_set_seller_payout_hold(uuid,boolean,text) to authenticated;
 grant execute on function public.platform_owner_set_seller_payout_hold(uuid,boolean,text) to authenticated;
-\n
+
