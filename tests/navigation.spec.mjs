@@ -21,7 +21,7 @@ test('menu publik membuka panel yang benar dan menandai menu aktif', async ({ pa
     await expect(button).toBeVisible();
     await button.click();
     await expect(page.locator(item.panel)).toHaveClass(/active/);
-    await expect(button).toHaveClass(/active/);
+    await expect(nav.locator(item.activeButton || item.button)).toHaveClass(/active/);
   }
 });
 
@@ -29,6 +29,10 @@ test('seluruh menu publik utama membuka panel tujuan yang benar', async ({ page 
   const nav = page.locator('nav[aria-label="Navigasi utama"]');
   const cases = [
     { button: '#navCompleteGuide', panel: '#panduanLengkap' },
+    // Produk Saya dan Cadangan adalah fitur berlisensi; tanpa sesi keduanya
+    // harus mengarahkan ke Akun Pembeli, bukan membuka panel fitur secara langsung.
+    { button: `button[onclick*="buka('produk'"]`, panel: '#akunPembeli', activeButton: '#navAkunPembeli' },
+    { button: `button[onclick*="buka('cadangan'"]`, panel: '#akunPembeli', activeButton: '#navAkunPembeli' },
     { button: '#navPasarOnline', panel: '#pasar' },
     { button: 'button[onclick*="paketKasUsaha"]', panel: '#paketKasUsaha' },
     { button: 'button[onclick*="buka(\'keranjang\'"]', panel: '#keranjang' },
@@ -42,7 +46,7 @@ test('seluruh menu publik utama membuka panel tujuan yang benar', async ({ page 
     await expect(button).toBeVisible();
     await button.click();
     await expect(page.locator(item.panel)).toHaveClass(/active/);
-    await expect(button).toHaveClass(/active/);
+    await expect(nav.locator(item.activeButton || item.button)).toHaveClass(/active/);
   }
 });
 
