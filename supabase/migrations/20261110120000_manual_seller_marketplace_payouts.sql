@@ -42,6 +42,10 @@ create index if not exists marketplace_payout_ledger_seller_status_idx
   on public.marketplace_payout_ledger(recipient_user_id,status,requested_at desc)
   where recipient_type = 'seller';
 
+create unique index if not exists marketplace_payout_ledger_seller_transfer_reference_unique
+  on public.marketplace_payout_ledger(transfer_reference)
+  where recipient_type = 'seller' and transfer_reference is not null;
+
 alter table public.marketplace_payout_items enable row level security;
 revoke all on public.marketplace_payout_items from public, anon, authenticated;
 grant select, insert, update on table public.marketplace_payout_items to service_role;
@@ -105,7 +109,7 @@ begin
   with commission_rollup as (
     select c.order_item_id,
       count(*) filter (where c.entry_type = 'commission') as commission_count,
-      max(c.id) filter (where c.entry_type = 'commission') as commission_ledger_id,
+      (array_agg(c.id order by c.id) filter (where c.entry_type = 'commission'))[1] as commission_ledger_id,
       max(c.amount) filter (where c.entry_type = 'commission') as commission_amount,
       bool_or(c.entry_type <> 'commission') as has_adjustment
     from public.marketplace_commission_ledger c
@@ -172,7 +176,7 @@ begin
 
   with commission_rollup as (
     select c.order_item_id,
-      max(c.id) filter (where c.entry_type = 'commission') as commission_ledger_id,
+      (array_agg(c.id order by c.id) filter (where c.entry_type = 'commission'))[1] as commission_ledger_id,
       max(c.amount) filter (where c.entry_type = 'commission') as commission_amount
     from public.marketplace_commission_ledger c
     group by c.order_item_id
