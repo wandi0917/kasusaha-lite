@@ -128,6 +128,11 @@ Deno.serve(async (req: Request) => {
     if (!payoutId || !/^[0-9a-f-]{36}$/i.test(payoutId) || !fileName || !/\.(pdf|png|jpe?g)$/i.test(fileName)) {
       return reply({ error: "payout_id atau nama bukti PDF/JPG/PNG tidak valid." }, 400, origin);
     }
+    const { data: payout, error: payoutError } = await admin.from("marketplace_payout_ledger")
+      .select("id,status,recipient_user_id")
+      .eq("id", payoutId).eq("recipient_type", "seller").maybeSingle();
+    if (payoutError) return reply({ error: "Status payout belum dapat diperiksa." }, 500, origin);
+    if (!payout || !["pending", "failed"].includes(payout.status)) return reply({ error: "Bukti hanya dapat disiapkan untuk payout pending atau failed." }, 409, origin);
     const path = userId + "/" + payoutId + "/" + crypto.randomUUID() + "-" + fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
     const { data, error } = await admin.storage.from("marketplace-payout-evidence").createSignedUploadUrl(path);
     if (error || !data) return reply({ error: "Tautan unggah bukti belum dapat dibuat. Pastikan migration dan bucket sudah diterapkan." }, 503, origin);
