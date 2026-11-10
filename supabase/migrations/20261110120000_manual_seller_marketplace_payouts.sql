@@ -242,7 +242,9 @@ begin
        or nullif(trim(p_note),'') is null then
       raise exception 'Referensi transfer, bukti transfer, dan catatan wajib diisi.';
     end if;
-    if p_evidence_path !~ ('^' || v_admin::text || '/' || p_payout_id::text || '/[^/]+
+    if split_part(trim(p_evidence_path), '/', 1) <> p_payout_id::text
+       or split_part(trim(p_evidence_path), '/', 2) = ''
+       or split_part(trim(p_evidence_path), '/', 3) <> '' then
     set status='submitted',provider='manual_bank_transfer',
         transfer_reference=left(trim(p_transfer_reference),160),
         transfer_evidence_path=left(trim(p_evidence_path),500),
