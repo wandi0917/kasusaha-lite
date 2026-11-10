@@ -103,7 +103,7 @@ Deno.serve(async (req: Request) => {
     // Compare-and-set the exact state observed below to prevent a stale webhook
     // from overwriting a newer status after this read.
     const { data: currentOrder, error: currentOrderError } = await admin.from("marketplace_orders")
-      .select("id,shipping_status")
+      .select("id,shipping_status,shipping_delivered_at")
       .eq("biteship_order_id", biteshipOrderId)
       .eq("shipping_provider", "Biteship")
       .maybeSingle();
@@ -115,6 +115,9 @@ Deno.serve(async (req: Request) => {
     if (shouldApplyStatus(currentOrder.shipping_status, status)) {
       patch.shipping_status = status;
       patch.__expected_shipping_status = currentOrder.shipping_status;
+      if (status === "delivered" && !currentOrder.shipping_delivered_at) {
+        patch.shipping_delivered_at = new Date().toISOString();
+      }
     }
   }
   const trackingId = text(body.courier_tracking_id);
