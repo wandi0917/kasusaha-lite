@@ -54,29 +54,6 @@ insert into storage.buckets (id, name, public)
 values ('marketplace-payout-evidence', 'marketplace-payout-evidence', false)
 on conflict (id) do update set public = false;
 
-create policy "platform owners manage marketplace payout evidence"
-on storage.objects
-for all
-to authenticated
-using (
-  bucket_id = 'marketplace-payout-evidence'
-  and exists (
-    select 1 from public.platform_admins a
-    where a.user_id = (select auth.uid())
-      and a.active = true
-      and a.role = 'platform_owner'
-  )
-)
-with check (
-  bucket_id = 'marketplace-payout-evidence'
-  and exists (
-    select 1 from public.platform_admins a
-    where a.user_id = (select auth.uid())
-      and a.active = true
-      and a.role = 'platform_owner'
-  )
-);
-
 create or replace function private.request_seller_marketplace_payout(p_request_id uuid)
 returns jsonb
 language plpgsql
@@ -123,7 +100,7 @@ begin
     join commission_rollup cr on cr.order_item_id = oi.id
     where oi.seller_id = v_seller
       and oi.item_subtotal > 0
-      and (oi.product_id is null or oi.product_id not in (7,8,9,10))
+      and oi.package_code is null
       and oi.payout_hold = false
       and cr.commission_count = 1
       and cr.has_adjustment is distinct from true
@@ -247,6 +224,14 @@ begin
        or split_part(trim(p_evidence_path), '/', 3) <> '' then
       raise exception 'Lokasi bukti transfer tidak sesuai folder payout.';
     end if;
+    if not exists (
+      select 1 from storage.objects so
+      where so.bucket_id='marketplace-payout-evidence'
+        and so.name=trim(p_evidence_path)
+    ) then
+      raise exception 'File bukti transfer belum ditemukan di bucket privat.';
+    end if;
+    update public.marketplace_payout_ledger
     set status='submitted',provider='manual_bank_transfer',
         transfer_reference=left(trim(p_transfer_reference),160),
         transfer_evidence_path=left(trim(p_evidence_path),500),
@@ -298,165 +283,6 @@ begin
         and so.name=v_payout.transfer_evidence_path
     ) then
       raise exception 'File bukti transfer tidak lagi tersedia di bucket privat.';
-    end if;
-    update public.marketplace_payout_ledger
-    set status='paid',paid_by=v_admin,completed_at=now(),
-        notes=left(trim(p_note),1000),updated_at=now()
-    where id=p_payout_id;
-  elsif p_action='mark_failed' then
-    if v_payout.status not in ('pending','submitted') then
-      raise exception 'Pencairan hanya dapat dinyatakan gagal dari pending atau submitted.';
-    end if;
-    if nullif(trim(p_note),'') is null then
-      raise exception 'Alasan kegagalan wajib diisi.';
-    end if;
-    update public.marketplace_payout_ledger
-    set status='failed',failed_by=v_admin,notes=left(trim(p_note),1000),updated_at=now()
-    where id=p_payout_id;
-  else
-    raise exception 'Aksi pencairan tidak dikenal.';
-  end if;
-
-  return jsonb_build_object('ok',true,'payout_id',p_payout_id,'status',
-    (select status from public.marketplace_payout_ledger where id=p_payout_id));
-end;
-$function$;
-
-create or replace function public.platform_owner_update_seller_payout(
-  p_payout_id uuid,
-  p_action text,
-  p_transfer_reference text default null,
-  p_evidence_path text default null,
-  p_note text default null
-)
-returns jsonb
-language sql
-security invoker
-set search_path = ''
-as $function$
-  select private.platform_owner_update_seller_payout(
-    p_payout_id,p_action,p_transfer_reference,p_evidence_path,p_note
-  );
-$function$;
-
-create or replace function private.platform_owner_set_seller_payout_hold(
-  p_order_item_id uuid,
-  p_hold boolean,
-  p_reason text
-)
-returns jsonb
-language plpgsql
-security definer
-set search_path = ''
-as $function$
-declare
-  v_admin uuid := auth.uid();
-begin
-  if v_admin is null or not exists (
-    select 1 from public.platform_admins a
-    where a.user_id=v_admin and a.active=true and a.role='platform_owner'
-  ) then raise exception 'Hanya Platform Owner aktif yang dapat mengubah penahanan item.'; end if;
-  if p_order_item_id is null or p_hold is null then raise exception 'Rincian penahanan tidak valid.'; end if;
-  if p_hold and nullif(trim(p_reason),'') is null then raise exception 'Alasan penahanan wajib diisi.'; end if;
-  if exists (select 1 from public.marketplace_payout_items pi
-    join public.marketplace_payout_ledger pl on pl.id=pi.payout_id
-    where pi.order_item_id=p_order_item_id and pl.status in ('submitted','paid')) then
-    raise exception 'Item yang sudah dikirim untuk transfer atau dibayar tidak dapat diubah status penahanannya.';
-  end if;
-  update public.marketplace_order_items
-  set payout_hold=p_hold,
-      payout_hold_reason=case when p_hold then left(trim(p_reason),1000) else null end,
-      payout_hold_set_by=case when p_hold then v_admin else null end,
-      payout_hold_set_at=case when p_hold then now() else null end
-  where id=p_order_item_id;
-  if not found then raise exception 'Item pesanan tidak ditemukan.'; end if;
-  return jsonb_build_object('ok',true,'order_item_id',p_order_item_id,'payout_hold',p_hold);
-end;
-$function$;
-
-create or replace function public.platform_owner_set_seller_payout_hold(
-  p_order_item_id uuid,p_hold boolean,p_reason text default null
-)
-returns jsonb
-language sql
-security invoker
-set search_path = ''
-as $function$
-  select private.platform_owner_set_seller_payout_hold(p_order_item_id,p_hold,p_reason);
-$function$;
-
-revoke all on function private.request_seller_marketplace_payout(uuid) from public, anon;
-revoke all on function public.request_seller_marketplace_payout(uuid) from public, anon;
-grant usage on schema private to authenticated;
-grant execute on function private.request_seller_marketplace_payout(uuid) to authenticated;
-grant execute on function public.request_seller_marketplace_payout(uuid) to authenticated;
-
-revoke all on function private.platform_owner_update_seller_payout(uuid,text,text,text,text) from public, anon;
-revoke all on function public.platform_owner_update_seller_payout(uuid,text,text,text,text) from public, anon;
-grant execute on function private.platform_owner_update_seller_payout(uuid,text,text,text,text) to authenticated;
-grant execute on function public.platform_owner_update_seller_payout(uuid,text,text,text,text) to authenticated;
-
-revoke all on function private.platform_owner_set_seller_payout_hold(uuid,boolean,text) from public, anon;
-revoke all on function public.platform_owner_set_seller_payout_hold(uuid,boolean,text) from public, anon;
-grant execute on function private.platform_owner_set_seller_payout_hold(uuid,boolean,text) to authenticated;
-grant execute on function public.platform_owner_set_seller_payout_hold(uuid,boolean,text) to authenticated;
-
-drop policy if exists "platform owners manage marketplace payout evidence" on storage.objects;
-) then
-      raise exception 'Lokasi bukti transfer tidak sesuai folder aman Platform Owner.';
-    end if;
-    if exists (
-      select 1
-      from public.marketplace_payout_items pi
-      join public.marketplace_order_items oi on oi.id=pi.order_item_id
-      join public.marketplace_orders o on o.id=oi.order_id
-      where pi.payout_id=p_payout_id
-        and (
-          oi.payout_hold = true
-          or o.status not in ('paid','processing','completed')
-          or o.payment_review_required = true
-          or o.shipping_status <> 'delivered'
-          or o.shipping_delivered_at is null
-          or o.shipping_delivered_at > now() - interval '7 days'
-          or not exists (
-            select 1 from public.marketplace_payment_events e
-            where e.order_id=o.id and e.provider='midtrans'
-              and e.event_type in ('capture','settlement')
-              and e.verification_status='verified' and e.processed_at is not null
-          )
-          or exists (
-            select 1 from public.marketplace_payment_events e
-            where e.order_id=o.id and (
-              lower(e.event_type) like '%refund%'
-              or lower(e.event_type) like '%chargeback%'
-              or lower(e.event_type) like '%dispute%'
-            )
-          )
-        )
-    ) then
-      raise exception 'Item payout ditahan atau tidak lagi memenuhi syarat. Periksa status pembayaran, pengiriman, masa tahan, refund, dan sengketa.';
-    end if;
-    if not exists (
-      select 1 from storage.objects so
-      where so.bucket_id='marketplace-payout-evidence'
-        and so.name=trim(p_evidence_path)
-    ) then
-      raise exception 'File bukti transfer belum ditemukan di bucket privat.';
-    end if;
-    update public.marketplace_payout_ledger
-    set status='submitted',provider='manual_bank_transfer',
-        transfer_reference=left(trim(p_transfer_reference),160),
-        transfer_evidence_path=left(trim(p_evidence_path),500),
-        submitted_by=v_admin,notes=left(trim(p_note),1000),updated_at=now()
-    where id=p_payout_id;
-  elsif p_action='mark_paid' then
-    if v_payout.status <> 'submitted' then
-      raise exception 'Status harus submitted sebelum dikonfirmasi paid.';
-    end if;
-    if nullif(trim(v_payout.transfer_reference),'') is null
-       or nullif(trim(v_payout.transfer_evidence_path),'') is null
-       or nullif(trim(p_note),'') is null then
-      raise exception 'Referensi, bukti transfer, dan konfirmasi tertulis wajib tersedia.';
     end if;
     update public.marketplace_payout_ledger
     set status='paid',paid_by=v_admin,completed_at=now(),
