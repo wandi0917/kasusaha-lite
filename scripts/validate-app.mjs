@@ -39,6 +39,10 @@ const failClosedStoreCostMigration = fs.readFileSync("supabase/migrations/202611
 const failClosedFinanceMigration = fs.readFileSync("supabase/migrations/20261106113750_fail_closed_package_entitlement_helper_and_finance_rpcs.sql", "utf8");
 const idempotentFinanceSettlementMigration = fs.readFileSync("supabase/migrations/20261107170912_idempotent_finance_open_item_settlement.sql", "utf8");
 const manifestText = fs.readFileSync("manifest.webmanifest", "utf8");
+const financeSessionGuard = html.includes("const financeSessionCheck=await getVerifiedAppSession();\n  if(!financeSessionCheck?.user||financeSessionCheck.user.id!==financeMemberUserId)throw new Error('Sesi login berubah saat workspace dimuat. Silakan login kembali.');\n  const rows=await financeFetchAllRows");
+if (financeSessionGuard) pass("finance workspace must revalidate the same authenticated user immediately before loading financial transactions");
+else fail("finance workspace must revalidate the same authenticated user immediately before loading financial transactions");
+
 
 const liteTrialChecks = [
   [html.includes("async function mulaiUjiCobaKasUsaha") && html.includes("kasusaha_start_free_trial"), "Owner onboarding must request the server-side one-time Lite trial"],
