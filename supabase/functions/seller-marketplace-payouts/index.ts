@@ -133,7 +133,7 @@ Deno.serve(async (req: Request) => {
       .eq("id", payoutId).eq("recipient_type", "seller").maybeSingle();
     if (payoutError) return reply({ error: "Status payout belum dapat diperiksa." }, 500, origin);
     if (!payout || !["pending", "failed"].includes(payout.status)) return reply({ error: "Bukti hanya dapat disiapkan untuk payout pending atau failed." }, 409, origin);
-    const path = userId + "/" + payoutId + "/" + crypto.randomUUID() + "-" + fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = payoutId + "/" + crypto.randomUUID() + "-" + fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
     const { data, error } = await admin.storage.from("marketplace-payout-evidence").createSignedUploadUrl(path);
     if (error || !data) return reply({ error: "Tautan unggah bukti belum dapat dibuat. Pastikan migration dan bucket sudah diterapkan." }, 503, origin);
     return reply({ success: true, path, signed_url: data.signedUrl, token: data.token }, 200, origin);
@@ -141,7 +141,11 @@ Deno.serve(async (req: Request) => {
 
   if (action === "owner_get_evidence") {
     const path = clean(body.evidence_path, 500);
-    if (!path || !path.startsWith(userId + "/")) return reply({ error: "Bukti hanya dapat dibuka oleh pemiliknya." }, 403, origin);
+    if (!path || !/^[0-9a-f-]{36}\\/[^/]+$/i.test(path)) return reply({ error: "Lokasi bukti tidak valid." }, 400, origin);
+    const { data: linkedPayout, error: linkedError } = await admin.from("marketplace_payout_ledger")
+      .select("id").eq("recipient_type", "seller").eq("transfer_evidence_path", path).maybeSingle();
+    if (linkedError) return reply({ error: "Keterkaitan bukti belum dapat diperiksa." }, 500, origin);
+    if (!linkedPayout) return reply({ error: "Bukti tidak terhubung dengan payout seller." }, 404, origin);
     const { data, error } = await admin.storage.from("marketplace-payout-evidence").createSignedUrl(path, 60);
     if (error || !data) return reply({ error: "Bukti transfer tidak ditemukan." }, 404, origin);
     return reply({ success: true, signed_url: data.signedUrl, expires_in: 60 }, 200, origin);
