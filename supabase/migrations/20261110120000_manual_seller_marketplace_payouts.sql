@@ -225,10 +225,10 @@ as $function$
             )
             or o.status not in ('paid','processing','completed')
             or o.payment_review_required = true
-            or o.payment_provider <> 'midtrans'
+            or o.payment_provider is distinct from 'midtrans'
             or o.paid_at is null
-            or o.shipping_provider <> 'Biteship'
-            or o.shipping_status <> 'delivered'
+            or o.shipping_provider is distinct from 'Biteship'
+            or o.shipping_status is distinct from 'delivered'
             or o.shipping_delivered_at is null
             or o.shipping_delivered_at > now() - interval '7 days'
             or not exists (
