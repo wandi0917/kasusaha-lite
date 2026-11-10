@@ -245,6 +245,8 @@ begin
     if split_part(trim(p_evidence_path), '/', 1) <> p_payout_id::text
        or split_part(trim(p_evidence_path), '/', 2) = ''
        or split_part(trim(p_evidence_path), '/', 3) <> '' then
+      raise exception 'Lokasi bukti transfer tidak sesuai folder payout.';
+    end if;
     set status='submitted',provider='manual_bank_transfer',
         transfer_reference=left(trim(p_transfer_reference),160),
         transfer_evidence_path=left(trim(p_evidence_path),500),
