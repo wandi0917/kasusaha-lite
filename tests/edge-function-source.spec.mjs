@@ -63,7 +63,7 @@ test('license activation accepts processed paid orders only with verified Midtra
   expect(activationSource.match(/\.not\("processed_at", "is", null\)/g)).toHaveLength(2);
 });
 
-test('platform finance endpoint allows the configured Playwright preview origin for CORS preflight', async () => {
+test('platform finance endpoint allows the canonical production origin for CORS preflight', async () => {
   const financeSource = readFileSync(
     new URL('../supabase/functions/platform-marketplace-finance/index.ts', import.meta.url),
     'utf8',
@@ -74,10 +74,10 @@ test('platform finance endpoint allows the configured Playwright preview origin 
   );
 
   expect(playwrightConfig).toContain(
-    'https://fix-navigation-serialization.kasusaha-lite.pages.dev',
+    'https://kasusaha-lite.pages.dev',
   );
   expect(financeSource).toContain(
-    '"https://fix-navigation-serialization.kasusaha-lite.pages.dev"',
+    '"https://kasusaha-lite.pages.dev"',
   );
   expect(financeSource).toContain('if (req.method === "OPTIONS")');
 });
