@@ -215,7 +215,7 @@ as $function$
         join public.marketplace_orders o on o.id = oi.order_id
         where pi.payout_id = pl.id
           and (
-            oi.seller_id <> pl.recipient_user_id
+            oi.seller_id is distinct from pl.recipient_user_id
             or oi.item_subtotal <> pi.item_subtotal
             or oi.payout_hold = true
             or oi.package_code is not null
@@ -223,8 +223,9 @@ as $function$
               select 1 from public.kasusaha_license_plans lp
               where lp.product_id = oi.product_id
             )
+            or o.status is null
             or o.status not in ('paid','processing','completed')
-            or o.payment_review_required = true
+            or o.payment_review_required is distinct from false
             or o.payment_provider is distinct from 'midtrans'
             or o.paid_at is null
             or o.shipping_provider is distinct from 'Biteship'
@@ -349,8 +350,8 @@ begin
         notes=left(trim(p_note),1000),updated_at=now()
     where id=p_payout_id;
   elsif p_action='mark_failed' then
-    if v_payout.status not in ('pending','submitted') then
-      raise exception 'Pencairan hanya dapat dinyatakan gagal dari pending atau submitted.';
+    if v_payout.status <> 'pending' then
+      raise exception 'Status submitted tidak boleh ditandai gagal otomatis. Rekonsiliasi mutasi bank terlebih dahulu untuk mencegah transfer ganda.';
     end if;
     if nullif(trim(p_note),'') is null then
       raise exception 'Alasan kegagalan wajib diisi.';
