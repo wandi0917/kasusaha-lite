@@ -141,7 +141,7 @@ Deno.serve(async (req: Request) => {
 
   if (action === "owner_get_evidence") {
     const path = clean(body.evidence_path, 500);
-    if (!path || !/^[0-9a-f-]{36}\\/[^/]+$/i.test(path)) return reply({ error: "Lokasi bukti tidak valid." }, 400, origin);
+    if (!path || !/^[0-9a-f-]{36}\/[^/]+$/i.test(path)) return reply({ error: "Lokasi bukti tidak valid." }, 400, origin);
     const { data: linkedPayout, error: linkedError } = await admin.from("marketplace_payout_ledger")
       .select("id").eq("recipient_type", "seller").eq("transfer_evidence_path", path).maybeSingle();
     if (linkedError) return reply({ error: "Keterkaitan bukti belum dapat diperiksa." }, 500, origin);
