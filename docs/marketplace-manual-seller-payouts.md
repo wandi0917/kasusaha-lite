@@ -17,7 +17,7 @@ Draft implementasi di branch `feat/manual-seller-payout-workflow`. Tidak diterap
 3. Platform Owner memeriksa penerima dan jumlah, lalu melakukan transfer bank di kanal bank di luar aplikasi.
 4. Setelah transfer dimulai, Owner mencatat referensi, mengunggah bukti ke bucket privat, lalu mengubah status menjadi submitted.
 5. Setelah bukti bank benar-benar dikonfirmasi, Owner mengubah status submitted menjadi paid. Permintaan seller tidak dapat mengubah status ini.
-6. Transfer gagal dapat ditandai failed. Item tetap terikat pada batch lama; Owner dapat melakukan retry ke submitted pada batch yang sama, bukan membuat alokasi baru.
+6. Transfer hanya boleh ditandai failed jika belum pernah berstatus submitted. Setelah submitted, transfer dianggap mungkin sudah terkirim; status tidak boleh diubah menjadi failed sebelum rekonsiliasi mutasi bank dilakukan di luar aplikasi. Jika transfer dipastikan gagal oleh bank, Owner dapat menyiapkan retry pada batch yang sama setelah rekonsiliasi dan pencatatan bukti kegagalan. Ini mencegah payout ganda ketika status bank belum pasti.
 
 ## Keamanan
 - Service-role key hanya berada di Edge Function.
