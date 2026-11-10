@@ -10,6 +10,7 @@ const checks = [
   [migration.includes("unique references public.marketplace_order_items(id)"), "each order item can be allocated to only one payout"],
   [migration.includes("(array_agg(c.id order by c.id) filter (where c.entry_type = 'commission'))[1]"), "commission UUID selection uses ordered aggregation without unsupported UUID max"],
   [migration.includes("marketplace_payout_ledger_seller_transfer_reference_unique"), "a bank transfer reference cannot be reused for another seller payout"],
+  [migration.includes("split_part(trim(p_evidence_path), '/', 1) <> p_payout_id::text"), "evidence path is restricted to the payout folder"],
   [migration.includes("interval '7 days'"), "seller payout hold is 7x24h from validated delivered time"],
   [migration.includes("o.payment_review_required = false"), "payment review blocks payout"],
   [migration.includes("e.verification_status = 'verified'") && migration.includes("e.processed_at is not null"), "payout requires processed verified Midtrans event"],
