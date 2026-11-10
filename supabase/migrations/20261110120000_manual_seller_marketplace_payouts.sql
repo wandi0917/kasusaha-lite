@@ -44,6 +44,7 @@ create index if not exists marketplace_payout_ledger_seller_status_idx
 
 alter table public.marketplace_payout_items enable row level security;
 revoke all on public.marketplace_payout_items from public, anon, authenticated;
+grant select, insert, update on table public.marketplace_payout_items to service_role;
 
 insert into storage.buckets (id, name, public)
 values ('marketplace-payout-evidence', 'marketplace-payout-evidence', false)
@@ -512,5 +513,4 @@ revoke all on function private.platform_owner_set_seller_payout_hold(uuid,boolea
 revoke all on function public.platform_owner_set_seller_payout_hold(uuid,boolean,text) from public, anon;
 grant execute on function private.platform_owner_set_seller_payout_hold(uuid,boolean,text) to authenticated;
 grant execute on function public.platform_owner_set_seller_payout_hold(uuid,boolean,text) to authenticated;
-
-drop policy if exists "platform owners manage marketplace payout evidence" on storage.objects;
+\n
