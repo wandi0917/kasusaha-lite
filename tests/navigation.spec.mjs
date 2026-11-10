@@ -29,8 +29,8 @@ test('seluruh menu publik utama membuka panel tujuan yang benar', async ({ page 
   const nav = page.locator('nav[aria-label="Navigasi utama"]');
   const cases = [
     { button: '#navCompleteGuide', panel: '#panduanLengkap' },
-    { button: 'button[onclick*="buka(\\'produk\\'"]', panel: '#produk' },
-    { button: 'button[onclick*="buka(\\'cadangan\\'"]', panel: '#cadangan' },
+    { button: `button[onclick*="buka('produk'"]`, panel: '#produk' },
+    { button: `button[onclick*="buka('cadangan'"]`, panel: '#cadangan' },
     { button: '#navPasarOnline', panel: '#pasar' },
     { button: 'button[onclick*="paketKasUsaha"]', panel: '#paketKasUsaha' },
     { button: 'button[onclick*="buka(\'keranjang\'"]', panel: '#keranjang' },
