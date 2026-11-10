@@ -77,7 +77,7 @@ Deno.serve(async (req: Request) => {
 
   if (action === "seller_statement") {
     const { data: payouts, error } = await admin.from("marketplace_payout_ledger")
-      .select("id,amount,currency,status,provider,provider_payout_id,requested_at,completed_at,transfer_reference,transfer_evidence_path,notes,updated_at")
+      .select("id,amount,currency,status,provider,provider_payout_id,requested_at,completed_at,transfer_reference,notes,updated_at")
       .eq("recipient_type", "seller").eq("recipient_user_id", userId)
       .order("requested_at", { ascending: false }).limit(100);
     if (error) return reply({ error: "Pernyataan pencairan belum dapat dimuat." }, 500, origin);
