@@ -257,6 +257,44 @@ begin
        or nullif(trim(p_note),'') is null then
       raise exception 'Referensi, bukti transfer, dan konfirmasi tertulis wajib tersedia.';
     end if;
+    if exists (
+      select 1
+      from public.marketplace_payout_items pi
+      join public.marketplace_order_items oi on oi.id=pi.order_item_id
+      join public.marketplace_orders o on o.id=oi.order_id
+      where pi.payout_id=p_payout_id
+        and (
+          oi.payout_hold = true
+          or o.status not in ('paid','processing','completed')
+          or o.payment_review_required = true
+          or o.shipping_status <> 'delivered'
+          or o.shipping_delivered_at is null
+          or o.shipping_delivered_at > now() - interval '7 days'
+          or not exists (
+            select 1 from public.marketplace_payment_events e
+            where e.order_id=o.id and e.provider='midtrans'
+              and e.event_type in ('capture','settlement')
+              and e.verification_status='verified' and e.processed_at is not null
+          )
+          or exists (
+            select 1 from public.marketplace_payment_events e
+            where e.order_id=o.id and (
+              lower(e.event_type) like '%refund%'
+              or lower(e.event_type) like '%chargeback%'
+              or lower(e.event_type) like '%dispute%'
+            )
+          )
+        )
+    ) then
+      raise exception 'Payout ditahan karena item tidak lagi memenuhi syarat atau ada sengketa/refund.';
+    end if;
+    if not exists (
+      select 1 from storage.objects so
+      where so.bucket_id='marketplace-payout-evidence'
+        and so.name=v_payout.transfer_evidence_path
+    ) then
+      raise exception 'File bukti transfer tidak lagi tersedia di bucket privat.';
+    end if;
     update public.marketplace_payout_ledger
     set status='paid',paid_by=v_admin,completed_at=now(),
         notes=left(trim(p_note),1000),updated_at=now()
