@@ -52,7 +52,10 @@ grant select, insert, update on table public.marketplace_payout_items to service
 
 insert into storage.buckets (id, name, public)
 values ('marketplace-payout-evidence', 'marketplace-payout-evidence', false)
-on conflict (id) do update set public = false;
+on conflict (id) do update
+set public = false,
+    file_size_limit = 5242880,
+    allowed_mime_types = array['application/pdf','image/png','image/jpeg'];
 
 create or replace function private.request_seller_marketplace_payout(p_request_id uuid)
 returns jsonb
