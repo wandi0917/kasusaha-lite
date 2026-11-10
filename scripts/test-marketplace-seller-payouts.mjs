@@ -8,6 +8,8 @@ const docs = fs.readFileSync("docs/marketplace-manual-seller-payouts.md", "utf8"
 
 const checks = [
   [migration.includes("unique references public.marketplace_order_items(id)"), "each order item can be allocated to only one payout"],
+  [migration.includes("(array_agg(c.id order by c.id) filter (where c.entry_type = 'commission'))[1]"), "commission UUID selection uses ordered aggregation without unsupported UUID max"],
+  [migration.includes("marketplace_payout_ledger_seller_transfer_reference_unique"), "a bank transfer reference cannot be reused for another seller payout"],
   [migration.includes("interval '7 days'"), "seller payout hold is 7x24h from validated delivered time"],
   [migration.includes("o.payment_review_required = false"), "payment review blocks payout"],
   [migration.includes("e.verification_status = 'verified'") && migration.includes("e.processed_at is not null"), "payout requires processed verified Midtrans event"],
@@ -22,6 +24,7 @@ const checks = [
   [edge.includes('authData.user?.email_confirmed_at') && edge.includes("platform_admins"), "edge endpoint verifies user and Platform Owner"],
   [edge.includes('eq("recipient_user_id", userId)'), "seller statement is scoped to the authenticated seller"],
   [edge.includes('createSignedUploadUrl') && edge.includes('createSignedUrl'), "evidence access uses short-lived signed URLs"],
+  [edge.includes('["pending", "failed"].includes(payout.status)'), "evidence upload is limited to an existing pending or failed seller payout"],
   [webhook.includes("shipping_delivered_at") && webhook.includes("currentOrder.shipping_delivered_at"), "delivered timestamp comes from signed webhook receipt"],
   [docs.includes("tidak mengubah data pesanan atau uang") && docs.includes("BELUM boleh dijalankan"), "production rollout is explicitly blocked pending migration reconciliation"],
 ];
