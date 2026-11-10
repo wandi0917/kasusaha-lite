@@ -14,6 +14,7 @@ const checks = [
   [migration.includes("where so.bucket_id='marketplace-payout-evidence'") && migration.includes("and so.name=trim(p_evidence_path)"), "submitted payout requires an uploaded private evidence object"],
   [(migration.match(/seller_marketplace_payout_batch_is_eligible\(p_payout_id\)/g) || []).length >= 2, "eligibility is revalidated before transfer and before paid confirmation"],
   [migration.includes("c.calculation_base = pi.item_subtotal") && migration.includes("c.entry_type <> 'commission'"), "commission ledger and later reversals are revalidated before payout"],
+  [migration.includes("o.payment_provider is distinct from 'midtrans'") && migration.includes("o.shipping_provider is distinct from 'Biteship'") && migration.includes("o.shipping_status is distinct from 'delivered'"), "missing payment or delivery fields fail closed at payout revalidation"],
   [migration.includes("pl.amount = (") && migration.includes("sum(pi.seller_net_amount)"), "payout batch total must equal the sum of its item allocations"],
   [migration.includes("(array_agg(c.id order by c.id) filter (where c.entry_type = 'commission'))[1]"), "commission UUID selection uses ordered aggregation without unsupported UUID max"],
   [migration.includes("marketplace_payout_ledger_seller_transfer_reference_unique"), "a bank transfer reference cannot be reused for another seller payout"],
