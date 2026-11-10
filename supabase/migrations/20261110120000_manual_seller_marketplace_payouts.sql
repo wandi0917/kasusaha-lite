@@ -187,6 +187,87 @@ as $function$
   select private.request_seller_marketplace_payout(p_request_id);
 $function$;
 
+create or replace function private.seller_marketplace_payout_batch_is_eligible(p_payout_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $function$
+  select exists (
+    select 1
+    from public.marketplace_payout_ledger pl
+    where pl.id = p_payout_id
+      and pl.recipient_type = 'seller'
+      and pl.amount = (
+        select coalesce(sum(pi.seller_net_amount), 0)
+        from public.marketplace_payout_items pi
+        where pi.payout_id = pl.id
+      )
+      and exists (
+        select 1 from public.marketplace_payout_items pi
+        where pi.payout_id = pl.id
+      )
+      and not exists (
+        select 1
+        from public.marketplace_payout_items pi
+        join public.marketplace_order_items oi on oi.id = pi.order_item_id
+        join public.marketplace_orders o on o.id = oi.order_id
+        where pi.payout_id = pl.id
+          and (
+            oi.seller_id <> pl.recipient_user_id
+            or oi.item_subtotal <> pi.item_subtotal
+            or oi.payout_hold = true
+            or oi.package_code is not null
+            or exists (
+              select 1 from public.kasusaha_license_plans lp
+              where lp.product_id = oi.product_id
+            )
+            or o.status not in ('paid','processing','completed')
+            or o.payment_review_required = true
+            or o.payment_provider <> 'midtrans'
+            or o.paid_at is null
+            or o.shipping_provider <> 'Biteship'
+            or o.shipping_status <> 'delivered'
+            or o.shipping_delivered_at is null
+            or o.shipping_delivered_at > now() - interval '7 days'
+            or not exists (
+              select 1 from public.marketplace_payment_events e
+              where e.order_id = o.id
+                and e.provider = 'midtrans'
+                and e.event_type in ('capture','settlement')
+                and e.verification_status = 'verified'
+                and e.processed_at is not null
+            )
+            or exists (
+              select 1 from public.marketplace_payment_events e
+              where e.order_id = o.id
+                and (
+                  lower(e.event_type) like '%refund%'
+                  or lower(e.event_type) like '%chargeback%'
+                  or lower(e.event_type) like '%dispute%'
+                )
+            )
+            or not exists (
+              select 1 from public.marketplace_commission_ledger c
+              where c.id = pi.commission_ledger_id
+                and c.order_item_id = oi.id
+                and c.entry_type = 'commission'
+                and c.calculation_base = pi.item_subtotal
+                and c.commission_rate = 0.025
+                and c.amount = pi.commission_amount
+                and c.amount = round(pi.item_subtotal * 0.025, 2)
+            )
+            or exists (
+              select 1 from public.marketplace_commission_ledger c
+              where c.order_item_id = oi.id
+                and c.entry_type <> 'commission'
+            )
+          )
+      )
+  );
+$function$;
+
 create or replace function private.platform_owner_update_seller_payout(
   p_payout_id uuid,
   p_action text,
@@ -217,6 +298,9 @@ begin
   if p_action in ('mark_submitted','retry_submitted') then
     if v_payout.status not in ('pending','failed') then
       raise exception 'Pencairan hanya dapat dikirim dari status pending atau failed.';
+    end if;
+    if not private.seller_marketplace_payout_batch_is_eligible(p_payout_id) then
+      raise exception 'Payout tidak lagi memenuhi seluruh syarat. Jangan lakukan transfer sebelum status pembayaran, pengiriman, komisi, dan masa tahan diverifikasi ulang.';
     end if;
     if nullif(trim(p_transfer_reference),'') is null
        or nullif(trim(p_evidence_path),'') is null
@@ -250,35 +334,7 @@ begin
        or nullif(trim(p_note),'') is null then
       raise exception 'Referensi, bukti transfer, dan konfirmasi tertulis wajib tersedia.';
     end if;
-    if exists (
-      select 1
-      from public.marketplace_payout_items pi
-      join public.marketplace_order_items oi on oi.id=pi.order_item_id
-      join public.marketplace_orders o on o.id=oi.order_id
-      where pi.payout_id=p_payout_id
-        and (
-          oi.payout_hold = true
-          or o.status not in ('paid','processing','completed')
-          or o.payment_review_required = true
-          or o.shipping_status <> 'delivered'
-          or o.shipping_delivered_at is null
-          or o.shipping_delivered_at > now() - interval '7 days'
-          or not exists (
-            select 1 from public.marketplace_payment_events e
-            where e.order_id=o.id and e.provider='midtrans'
-              and e.event_type in ('capture','settlement')
-              and e.verification_status='verified' and e.processed_at is not null
-          )
-          or exists (
-            select 1 from public.marketplace_payment_events e
-            where e.order_id=o.id and (
-              lower(e.event_type) like '%refund%'
-              or lower(e.event_type) like '%chargeback%'
-              or lower(e.event_type) like '%dispute%'
-            )
-          )
-        )
-    ) then
+    if not private.seller_marketplace_payout_batch_is_eligible(p_payout_id) then
       raise exception 'Payout ditahan karena item tidak lagi memenuhi syarat atau ada sengketa/refund.';
     end if;
     if not exists (
@@ -380,6 +436,7 @@ grant usage on schema private to authenticated;
 grant execute on function private.request_seller_marketplace_payout(uuid) to authenticated;
 grant execute on function public.request_seller_marketplace_payout(uuid) to authenticated;
 
+revoke all on function private.seller_marketplace_payout_batch_is_eligible(uuid) from public, anon, authenticated;
 revoke all on function private.platform_owner_update_seller_payout(uuid,text,text,text,text) from public, anon;
 revoke all on function public.platform_owner_update_seller_payout(uuid,text,text,text,text) from public, anon;
 grant execute on function private.platform_owner_update_seller_payout(uuid,text,text,text,text) to authenticated;
