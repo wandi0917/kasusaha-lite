@@ -46,7 +46,7 @@ test('seluruh menu publik utama membuka panel tujuan yang benar', async ({ page 
     await expect(button).toBeVisible();
     await button.click();
     await expect(page.locator(item.panel)).toHaveClass(/active/);
-    await expect(button).toHaveClass(/active/);
+    await expect(nav.locator(item.activeButton || item.button)).toHaveClass(/active/);
   }
 });
 
