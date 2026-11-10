@@ -101,6 +101,10 @@ begin
     where oi.seller_id = v_seller
       and oi.item_subtotal > 0
       and oi.package_code is null
+      and not exists (
+        select 1 from public.kasusaha_license_plans lp
+        where lp.product_id = oi.product_id
+      )
       and oi.payout_hold = false
       and cr.commission_count = 1
       and cr.has_adjustment is distinct from true
