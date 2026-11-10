@@ -10,7 +10,7 @@ const checks = [
   [migration.includes("unique references public.marketplace_order_items(id)"), "each order item can be allocated to only one payout"],
   [/update public\.marketplace_payout_ledger\s+set status='submitted'/.test(migration), "submitted transition uses valid UPDATE SQL"],
   [!/\n\) then\s+raise exception 'Lokasi bukti transfer/.test(migration), "migration contains no orphaned duplicate SQL fragment"],
-  [migration.includes("and oi.package_code is null"), "license package items are excluded without hard-coded product IDs"],
+  [migration.includes("and oi.package_code is null") && migration.includes("from public.kasusaha_license_plans lp"), "all configured license packages are excluded from seller payouts"],
   [migration.includes("where so.bucket_id='marketplace-payout-evidence'") && migration.includes("and so.name=trim(p_evidence_path)"), "submitted payout requires an uploaded private evidence object"],
   [migration.includes("(array_agg(c.id order by c.id) filter (where c.entry_type = 'commission'))[1]"), "commission UUID selection uses ordered aggregation without unsupported UUID max"],
   [migration.includes("marketplace_payout_ledger_seller_transfer_reference_unique"), "a bank transfer reference cannot be reused for another seller payout"],
