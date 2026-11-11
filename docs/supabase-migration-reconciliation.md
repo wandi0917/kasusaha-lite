@@ -149,3 +149,57 @@ Commit `54414606d0f9b8b32ef7cfc290860923bc2d4a94` menjalankan workflow validasi 
 7. Baru setelah seluruh gerbang lulus, pertimbangkan uji Production dengan nilai transaksi terkendali dan persetujuan eksplisit.
 
 **Kesimpulan:** 98/98 browser tests lulus untuk cakupan lokal yang tercantum, tetapi tidak boleh dilaporkan sebagai 98 tes transaksi Production. Integrasi staging dan pengujian perangkat nyata tetap menjadi blocker.
+
+
+## Pembaruan audit read-only 11 November 2026
+
+Pemeriksaan ulang dilakukan terhadap Supabase Production `flvdudmdltjjdjkdngbv` dan GitHub branch `main` pada commit `68603533935d35051a1a26f895c634b276d1e460`.
+
+### Rekonsiliasi versi saat audit
+
+- Supabase remote migration history: **146** versi.
+- File SQL pada `main`: **59**.
+- Pasangan lokal yang cocok persis: **58**.
+- Versi remote yang belum mempunyai pasangan SQL lokal: **88**.
+- File lokal yang belum cocok dengan riwayat remote: **1**, yaitu `20261108000000_kasusaha_lite_31_day_trial_entitlements.sql`.
+
+Angka ini menggantikan hitungan pada bagian audit 6–8 November di atas. Catatan historis tersebut dipertahankan sebagai riwayat, bukan status terkini.
+
+### Pemeriksaan hak akses untuk tabel RLS tanpa policy
+
+Lima belas tabel pada schema `public` ditemukan memiliki RLS aktif tetapi belum memiliki policy. Pemeriksaan privilege langsung menunjukkan role `anon` dan `authenticated` tidak memiliki privilege SELECT, INSERT, UPDATE, atau DELETE pada kelima belas tabel tersebut. Karena itu, temuan advisor pada tabel-tabel ini **bukan bukti akses terbuka**; kondisi saat ini adalah default-deny untuk kedua role tersebut. Jangan menambahkan policy hanya untuk menghilangkan peringatan advisor.
+
+### Fungsi SECURITY DEFINER yang dapat dipanggil anon
+
+Fungsi `public.kasusaha_marketplace_product_is_public(bigint)` memang dapat dipanggil oleh `anon` dan `authenticated`. Source migrasi `20261108010418_public_marketplace_trial_visibility_for_anonymous.sql` menunjukkan fungsi ini sengaja mendukung pengunjung anonim untuk melihat listing marketplace yang memenuhi entitlement. Fungsi menggunakan `search_path = ''` dan hanya mengembalikan boolean eligibility, dengan pemeriksaan status produk, workspace, keanggotaan owner, trial aktif atau lisensi berbayar terverifikasi. **Jangan revoke EXECUTE untuk anon secara membabi buta**, karena hal itu dapat memutus listing publik. Tetap lakukan pengujian negatif terhadap produk tidak aktif, usaha tidak valid, trial kedaluwarsa, dan lisensi tanpa pembayaran terverifikasi.
+
+### Tabel tanpa policy yang terverifikasi
+
+Seluruh tabel berikut terkonfirmasi tidak memberikan privilege langsung kepada role anon/authenticated pada pemeriksaan saat ini:
+
+- `biteship_shipping_quotes`
+- `employee_invite_code_users`
+- `employee_invite_codes`
+- `kasusaha_business_members`
+- `kasusaha_device_activations`
+- `kasusaha_license_plans`
+- `kasusaha_transactions`
+- `license_customer_attributions`
+- `license_marketing_partners`
+- `license_order_referrals`
+- `license_partner_commission_ledger`
+- `marketplace_commission_ledger`
+- `marketplace_payment_events`
+- `marketplace_payout_ledger`
+- `platform_admins`
+
+### Keputusan operasional
+
+1. Jangan menjalankan `db push`, reset, atau mengedit riwayat migrasi Production sampai 88 versi historis dipulihkan dari sumber tepercaya atau baseline schema terkontrol disiapkan dan diuji.
+2. Jangan revoke akses fungsi marketplace publik tanpa mengganti jalur listing anonim dan menguji regresinya.
+3. Jangan menambah policy pada 15 tabel tersebut tanpa kebutuhan akses yang terdokumentasi.
+4. Pengaturan leaked-password protection perlu diaktifkan melalui konfigurasi Auth/dashboard Supabase; tidak diubah melalui SQL dalam audit ini.
+5. Source 12 Edge Functions kritis yang dibandingkan dengan `main` cocok persis dengan source aktif Production. Kesamaan source bukan pengganti pengujian transaksi nyata.
+6. Midtrans Production, Biteship Production booking, transaksi E2E staging, perangkat fisik, dan backup restore Production tetap belum terbukti.
+
+**Kesimpulan:** peringatan RLS tanpa policy dan satu fungsi SECURITY DEFINER anonim telah diklasifikasikan dengan konteks aksesnya; tidak ditemukan alasan aman untuk melakukan perubahan privilege massal. Hambatan utama yang tersisa adalah rekonsiliasi migrasi, pengaturan Auth, dan bukti E2E staging/Production.
