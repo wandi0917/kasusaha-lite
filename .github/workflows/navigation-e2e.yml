@@ -23,7 +23,10 @@ jobs:
           npm init -y
           npm install --no-save @playwright/test
       - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+        # GitHub-hosted Ubuntu runners provide the browser runtime libraries.
+        # Avoid --with-deps here: it invokes apt and can fail when Ubuntu mirrors
+        # are temporarily unreachable, preventing the actual browser tests from running.
+        run: npx playwright install chromium
       - name: Start local server from the checked-out commit
         run: |
           python3 -m http.server 4173 --directory . > /tmp/kasusaha-http.log 2>&1 &
