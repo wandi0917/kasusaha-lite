@@ -10,6 +10,7 @@ CREATE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql STABLE AS $$
 $$;
 
 CREATE TABLE public.business_workspaces (id uuid PRIMARY KEY, owner_id uuid NOT NULL);
+CREATE TABLE public.produk (id bigint PRIMARY KEY, owner_id uuid NOT NULL, business_id uuid NOT NULL, aktif boolean NOT NULL);
 CREATE TABLE public.business_members (business_id uuid NOT NULL, user_id uuid NOT NULL, role text NOT NULL, active boolean NOT NULL);
 CREATE TABLE public.kasusaha_licenses (id uuid PRIMARY KEY, buyer_id uuid NOT NULL, order_id uuid NOT NULL, status text NOT NULL, product_name text NOT NULL, activated_at timestamptz, cloud_expires_at timestamptz, created_at timestamptz NOT NULL, plan_code text);
 CREATE TABLE public.marketplace_orders (id uuid PRIMARY KEY, buyer_id uuid NOT NULL, status text NOT NULL, paid_at timestamptz, payment_review_required boolean);
@@ -81,6 +82,47 @@ AS $function$
   ), false);
 $function$;
 
+
+-- Production-shaped public marketplace listing entitlement helper.
+CREATE OR REPLACE FUNCTION public.kasusaha_marketplace_product_is_public(p_product_id bigint)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO ''
+AS $function$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.produk p
+    JOIN public.business_workspaces w ON w.id = p.business_id AND w.owner_id = p.owner_id
+    JOIN public.business_members m ON m.business_id = w.id AND m.user_id = w.owner_id
+      AND m.role = 'owner' AND m.active IS TRUE
+    WHERE p.id = p_product_id AND p.aktif IS TRUE AND p.business_id IS NOT NULL
+      AND (
+        EXISTS (
+          SELECT 1 FROM private.kasusaha_free_trials t
+          WHERE t.business_id = w.id AND t.owner_id = w.owner_id AND t.plan_code = 'lite'
+            AND t.started_at <= now() AND t.expires_at > now()
+        )
+        OR coalesce((
+          SELECT CASE WHEN l.plan_code IS NULL OR btrim(l.plan_code) = '' THEN true
+            ELSE coalesce((lp.features ->> 'marketplace')::boolean, false) END
+          FROM public.kasusaha_licenses l
+          JOIN public.marketplace_orders o ON o.id = l.order_id AND o.buyer_id = l.buyer_id
+          JOIN LATERAL (
+            SELECT 1 FROM public.marketplace_payment_events e
+            WHERE e.order_id = o.id AND e.verification_status = 'verified'
+              AND e.processed_at IS NOT NULL LIMIT 1
+          ) verified_event ON true
+          LEFT JOIN public.kasusaha_license_plans lp
+            ON lp.plan_code = l.plan_code AND lp.active IS TRUE
+          WHERE l.buyer_id = w.owner_id AND l.status = 'active'
+            AND l.product_name = 'KasUsaha Lite' AND l.activated_at IS NOT NULL
+            AND (l.cloud_expires_at IS NULL OR l.cloud_expires_at > now())
+            AND o.status IN ('paid', 'processing', 'completed') AND o.paid_at IS NOT NULL
+            AND o.payment_review_required IS NOT TRUE
+          ORDER BY l.activated_at DESC NULLS LAST, l.created_at DESC LIMIT 1
+        ), false) IS TRUE
+      )
+  );
+$function$;
+
 -- Fix typo in fixture identifier before migration: the table name is kasusaha_licenses.
 
 INSERT INTO public.business_workspaces VALUES
@@ -93,6 +135,7 @@ INSERT INTO public.marketplace_orders VALUES
   ('00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000002', 'paid', now(), false);
 INSERT INTO public.marketplace_payment_events VALUES
   ('00000000-0000-0000-0000-000000000003', 'verified', now());
+INSERT INTO public.produk VALUES (1001, '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', true);
 INSERT INTO public.kasusaha_licenses VALUES
   ('00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000003', 'active', 'KasUsaha Lite', now(), now() + interval '30 days', now(), 'pro_hidden');
 
@@ -101,7 +144,10 @@ SELECT set_config('request.jwt.claims', '{"is_anonymous": false}', false);
 DO $test$
 BEGIN
   IF private.kasusaha_business_has_feature('00000000-0000-0000-0000-000000000001', 'cashier') THEN
-    RAISE EXCEPTION 'Regression fixture failed: hidden plan unexpectedly grants feature before migration';
+    RAISE EXCEPTION 'Regression fixture failed: hidden plan unexpectedly grants private feature before migration';
+  END IF;
+  IF public.kasusaha_marketplace_product_is_public(1001) THEN
+    RAISE EXCEPTION 'Regression fixture failed: hidden plan unexpectedly exposes marketplace listing before migration';
   END IF;
 END;
 $test$;
