@@ -1,4 +1,4 @@
-\\set ON_ERROR_STOP on
+\set ON_ERROR_STOP on
 DO $test$
 BEGIN
   IF NOT private.kasusaha_business_has_feature('00000000-0000-0000-0000-000000000001', 'cashier') THEN
