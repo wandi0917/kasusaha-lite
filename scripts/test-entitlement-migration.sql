@@ -130,7 +130,7 @@ INSERT INTO public.business_workspaces VALUES
 INSERT INTO public.business_members VALUES
   ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', 'owner', true);
 INSERT INTO public.kasusaha_license_plans VALUES
-  ('pro_hidden', '{"cashier": true, "advanced_reports": true}'::jsonb, false);
+  ('pro_hidden', '{"cashier": true, "advanced_reports": true, "marketplace": true}'::jsonb, false);
 INSERT INTO public.marketplace_orders VALUES
   ('00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000002', 'paid', now(), false);
 INSERT INTO public.marketplace_payment_events VALUES
