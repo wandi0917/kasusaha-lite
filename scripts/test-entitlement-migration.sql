@@ -1,7 +1,6 @@
 \set ON_ERROR_STOP on
-CREATE SCHEMA auth;
-CREATE SCHEMA private;
-CREATE SCHEMA public;
+CREATE SCHEMA IF NOT EXISTS auth;
+CREATE SCHEMA IF NOT EXISTS private;
 
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$
   SELECT nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
@@ -83,3 +82,26 @@ AS $function$
 $function$;
 
 -- Fix typo in fixture identifier before migration: the table name is kasusaha_licenses.
+
+INSERT INTO public.business_workspaces VALUES
+  ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002');
+INSERT INTO public.business_members VALUES
+  ('00000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000002', 'owner', true);
+INSERT INTO public.kasusaha_license_plans VALUES
+  ('pro_hidden', '{"cashier": true, "advanced_reports": true}'::jsonb, false);
+INSERT INTO public.marketplace_orders VALUES
+  ('00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000002', 'paid', now(), false);
+INSERT INTO public.marketplace_payment_events VALUES
+  ('00000000-0000-0000-0000-000000000003', 'verified', now());
+INSERT INTO public.kasusaha_licenses VALUES
+  ('00000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000003', 'active', 'KasUsaha Lite', now(), now() + interval '30 days', now(), 'pro_hidden');
+
+SELECT set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', false);
+SELECT set_config('request.jwt.claims', '{"is_anonymous": false}', false);
+DO $test$
+BEGIN
+  IF private.kasusaha_business_has_feature('00000000-0000-0000-0000-000000000001', 'cashier') THEN
+    RAISE EXCEPTION 'Regression fixture failed: hidden plan unexpectedly grants feature before migration';
+  END IF;
+END;
+$test$;
