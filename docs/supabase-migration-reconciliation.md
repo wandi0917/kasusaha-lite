@@ -149,3 +149,13 @@ Commit `54414606d0f9b8b32ef7cfc290860923bc2d4a94` menjalankan workflow validasi 
 7. Baru setelah seluruh gerbang lulus, pertimbangkan uji Production dengan nilai transaksi terkendali dan persetujuan eksplisit.
 
 **Kesimpulan:** 98/98 browser tests lulus untuk cakupan lokal yang tercantum, tetapi tidak boleh dilaporkan sebagai 98 tes transaksi Production. Integrasi staging dan pengujian perangkat nyata tetap menjadi blocker.
+
+
+## Pembaruan audit 14 November 2026 — arsip file trial yang belum direkonsiliasi
+
+- File `20261108000000_kasusaha_lite_31_day_trial_entitlements.sql` tidak memiliki versi yang cocok pada migration history Production.
+- Hubungan isi file gabungan tersebut dengan rangkaian migrasi remote trial belum dibuktikan byte-for-byte atau melalui arsip commit tepercaya.
+- Untuk mencegah Supabase CLI memperlakukannya sebagai migrasi pending, sumber SQL dipindahkan ke `docs/archived-migrations/`; isinya dipertahankan tanpa perubahan.
+- Script validasi aplikasi diarahkan ke salinan arsip agar regression checks tetap memeriksa sumber SQL historis.
+- Perubahan ini tidak mengubah migration history, skema, fungsi, maupun data Production. Jangan menjalankan migrasi dari arsip.
+- PR #221 ditutup karena penghapusan tanpa arsip menyebabkan CI gagal dan tidak mempertahankan sumber historis.
