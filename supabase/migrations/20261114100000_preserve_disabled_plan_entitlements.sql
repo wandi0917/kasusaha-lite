@@ -23,8 +23,8 @@ DECLARE
 BEGIN
   v_def := pg_get_functiondef('private.kasusaha_business_has_feature(uuid,text)'::regprocedure);
 
-  IF position(v_old in v_def) = 0 THEN
-    RAISE EXCEPTION 'Expected disabled-plan filter was not found; refusing entitlement rewrite';
+  IF (length(v_def) - length(replace(v_def, v_old, ''))) <> length(v_old) THEN
+    RAISE EXCEPTION 'Expected exactly one disabled-plan filter; refusing ambiguous entitlement rewrite';
   END IF;
 
   -- Remove only the sales-visibility predicate from the paid-plan feature lookup.
