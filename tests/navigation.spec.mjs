@@ -1038,3 +1038,11 @@ test('tagihan belum dibayar memakai tabel dan garis tabel berwarna hitam', async
   expect(borderColor).toBe('rgb(0, 0, 0)');
   await expect(page.locator('#quickSalePrintLastReceipt')).toHaveText(/Cetak struk pembayaran terakhir/);
 });
+
+test('pesan fitur Pasar Online tidak merekomendasikan paket Professional yang nonaktif', async ({ page }) => {
+  const scripts = await page.locator('script').allTextContents();
+  const source = scripts.join('\\n');
+
+  expect(source).toContain('Gunakan paket Lite atau Business dengan lisensi terverifikasi.');
+  expect(source).not.toContain('Gunakan paket Lite, Business, atau Professional dengan lisensi terverifikasi.');
+});
