@@ -356,11 +356,12 @@ const localClearButtonLabel = html.match(/<button[^>]*onclick="hapusSemua\(\)"[^
 const localClearFunction = html.match(/function hapusSemua\(\)\{([\s\S]*?)\}/)?.[1] || "";
 const localClearScopeIsAccurate =
   localClearButtonLabel === "Hapus transaksi &amp; produk lokal" &&
+  html.includes("Tombol Hapus transaksi &amp; produk lokal") &&
   localClearFunction.includes("transaksi=[];produk=[];simpan();tampil();") &&
   !localClearFunction.includes("keranjang=[]") &&
   !localClearFunction.includes("pesanan=[]");
-if (localClearScopeIsAccurate) pass("local clear button label matches its actual transaction/product-only scope");
-else fail("local clear button must not claim to delete all local data when cart and local orders are retained");
+if (localClearScopeIsAccurate) pass("local clear button label and guide match the actual transaction/product-only scope");
+else fail("local clear button and guide must not claim to delete all local data when cart and local orders are retained");
 
 const storeProductsEntitlementChecks = [
   [storeProductsEntitlementMigration.includes("store_products_member_select") &&
