@@ -349,11 +349,11 @@ for (const [ok, message] of backupRestoreAssertions) {
   else pass(message);
 }
 
-const localClearButtonLabel = html.match(/<button[^>]*onclick="hapusSemua\\(\\)"[^>]*>([\\s\\S]*?)<\\/button>/i)?.[1]
+const localClearButtonLabel = html.match(/<button[^>]*onclick="hapusSemua\(\)"[^>]*>([\s\S]*?)<\/button>/i)?.[1]
   ?.replace(/<[^>]*>/g, " ")
-  .replace(/\\s+/g, " ")
+  .replace(/\s+/g, " ")
   .trim();
-const localClearFunction = html.match(/function hapusSemua\\(\\)\\{([\\s\\S]*?)\\}/)?.[1] || "";
+const localClearFunction = html.match(/function hapusSemua\(\)\{([\s\S]*?)\}/)?.[1] || "";
 const localClearScopeIsAccurate =
   localClearButtonLabel === "Hapus transaksi &amp; produk lokal" &&
   localClearFunction.includes("transaksi=[];produk=[];simpan();tampil();") &&
