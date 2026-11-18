@@ -4070,7 +4070,7 @@ async function pastikanHakMarketplace(user,requiredBusinessId=null){
  const {data,error}=await sb.rpc('kasusaha_get_business_package_entitlements',{p_business_id:workspace.id});
  if(error)throw new Error('Hak paket Pasar Online belum dapat diverifikasi. Pastikan lisensi aktif dan coba kembali.');
  const result=Array.isArray(data)?data[0]:data;
- if(!result||!result.features||result.features.marketplace!==true)throw new Error('Paket atau lisensi usaha ini belum memiliki hak Pasar Online. Gunakan paket Lite, Business, atau Professional dengan lisensi terverifikasi.');
+ if(!result||!result.features||result.features.marketplace!==true)throw new Error('Paket atau lisensi usaha ini belum memiliki hak Pasar Online. Gunakan paket Lite atau Business dengan lisensi terverifikasi.');
  return {...result,business_id:workspace.id,workspace};
 }
 async function terbitkanProdukLokal(id,dariLogin=false){
