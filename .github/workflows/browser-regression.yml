@@ -1,0 +1,46 @@
+name: KasUsaha Lite browser regression
+
+on:
+  push:
+    branches:
+      - main
+      - "hardening/**"
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-regression:
+    name: Desktop and mobile browser regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Playwright test runner
+        run: npm install --no-save --no-package-lock @playwright/test
+      - name: Install Chromium and system dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Run desktop and mobile regression tests
+        env:
+          CI: "true"
+          KASUSAHA_BASE_URL: http://127.0.0.1:4173
+        run: npx playwright test --project=desktop-chromium --project=mobile-chromium --workers=1
+      - name: Upload Playwright failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-regression-failures
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
