@@ -349,6 +349,19 @@ for (const [ok, message] of backupRestoreAssertions) {
   else pass(message);
 }
 
+const localClearButtonLabel = html.match(/<button[^>]*onclick="hapusSemua\\(\\)"[^>]*>([\\s\\S]*?)<\\/button>/i)?.[1]
+  ?.replace(/<[^>]*>/g, " ")
+  .replace(/\\s+/g, " ")
+  .trim();
+const localClearFunction = html.match(/function hapusSemua\\(\\)\\{([\\s\\S]*?)\\}/)?.[1] || "";
+const localClearScopeIsAccurate =
+  localClearButtonLabel === "Hapus transaksi &amp; produk lokal" &&
+  localClearFunction.includes("transaksi=[];produk=[];simpan();tampil();") &&
+  !localClearFunction.includes("keranjang=[]") &&
+  !localClearFunction.includes("pesanan=[]");
+if (localClearScopeIsAccurate) pass("local clear button label matches its actual transaction/product-only scope");
+else fail("local clear button must not claim to delete all local data when cart and local orders are retained");
+
 const storeProductsEntitlementChecks = [
   [storeProductsEntitlementMigration.includes("store_products_member_select") &&
    storeProductsEntitlementMigration.includes("store_products_owner_insert") &&
