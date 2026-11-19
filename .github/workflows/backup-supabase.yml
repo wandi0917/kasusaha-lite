@@ -1,0 +1,101 @@
+name: Encrypted Supabase backup
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekly on Monday at 02:17 WIB (Sunday 19:17 UTC).
+    - cron: "17 19 * * 0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+    steps:
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in SUPABASE_URL SUPABASE_DB_URL SUPABASE_SERVICE_ROLE_KEY BACKUP_PASSPHRASE; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "::error::GitHub Actions secret $name belum diatur."
+              exit 1
+            fi
+          done
+          if [[ "${#BACKUP_PASSPHRASE}" -lt 32 ]]; then
+            echo "::error::BACKUP_PASSPHRASE harus minimal 32 karakter."
+            exit 1
+          fi
+
+      - name: Prepare tools and folders
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y gnupg
+          mkdir -p backup/storage
+
+      - name: Dump PostgreSQL database
+        shell: bash
+        run: |
+          set -euo pipefail
+          # PostgreSQL 17 client matches the Supabase PostgreSQL 17 server.
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE/backup:/backup" \
+            postgres:17 \
+            pg_dump --dbname="$SUPABASE_DB_URL" --format=custom --no-owner --no-acl --file=/backup/database.dump
+          test -s backup/database.dump
+
+      - name: Download product photo objects
+        shell: bash
+        run: node .github/scripts/backup-storage.mjs
+
+      - name: Package, encrypt, and verify archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > backup/manifest.json <<EOF
+          {
+            "created_at_utc": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "repository": "$GITHUB_REPOSITORY",
+            "commit": "$GITHUB_SHA",
+            "database_format": "PostgreSQL custom dump",
+            "storage_bucket": "product-photos"
+          }
+          EOF
+          archive="$RUNNER_TEMP/kasusaha-supabase-backup.tar.gz"
+          encrypted="$RUNNER_TEMP/kasusaha-supabase-backup.tar.gz.gpg"
+          tar -czf "$archive" -C backup database.dump storage manifest.json
+          gpg --batch --yes --pinentry-mode loopback \
+            --passphrase "$BACKUP_PASSPHRASE" \
+            --symmetric --cipher-algo AES256 \
+            --output "$encrypted" "$archive"
+          # Verify decryption and archive integrity before publishing the artifact.
+          gpg --batch --yes --pinentry-mode loopback \
+            --passphrase "$BACKUP_PASSPHRASE" \
+            --output "$RUNNER_TEMP/backup-verify.tar.gz" --decrypt "$encrypted"
+          tar -tzf "$RUNNER_TEMP/backup-verify.tar.gz" >/dev/null
+          rm -rf backup
+          mkdir -p backup
+          cp "$encrypted" backup/kasusaha-supabase-backup.tar.gz.gpg
+          ls -lh backup/kasusaha-supabase-backup.tar.gz.gpg
+
+      - name: Upload encrypted backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kasusaha-supabase-backup-${{ github.run_id }}
+          path: backup/kasusaha-supabase-backup.tar.gz.gpg
+          if-no-files-found: error
+          retention-days: 7
