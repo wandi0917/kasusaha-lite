@@ -94,8 +94,8 @@ async function walk(prefix = "") {
         entry.name === "." ||
         entry.name === ".." ||
         entry.name.includes("/") ||
-        entry.name.includes("\\\\") ||
-        entry.name.includes("\\0")
+        entry.name.includes("\\") ||
+        entry.name.includes("\0")
       ) {
         throw new Error("Nama objek Storage tidak valid; backup dihentikan.");
       }
@@ -119,9 +119,10 @@ await walk("");
 let totalBytes = 0;
 for (const objectPath of files) {
   const encodedPath = objectPath.split("/").map(encodeURIComponent).join("/");
-  const response = await fetch(
+  const response = await fetchWithRetry(
     `${baseUrl}/storage/v1/object/${bucket}/${encodedPath}`,
     { headers },
+    `Unduhan objek "${objectPath}"`,
   );
   if (!response.ok) {
     throw new Error(`Unduhan objek Storage gagal (HTTP ${response.status}).`);
