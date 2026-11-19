@@ -84,16 +84,21 @@ jobs:
           EOF
           archive="$RUNNER_TEMP/kasusaha-supabase-backup.tar.gz"
           encrypted="$RUNNER_TEMP/kasusaha-supabase-backup.tar.gz.gpg"
+          passphrase_file="$RUNNER_TEMP/backup-passphrase"
+          umask 077
+          printf '%s' "$BACKUP_PASSPHRASE" > "$passphrase_file"
+          unset BACKUP_PASSPHRASE
           tar -czf "$archive" -C backup database.dump storage manifest.json
           gpg --batch --yes --pinentry-mode loopback \
-            --passphrase "$BACKUP_PASSPHRASE" \
+            --passphrase-file "$passphrase_file" \
             --symmetric --cipher-algo AES256 \
             --output "$encrypted" "$archive"
           # Verify decryption and archive integrity before publishing the artifact.
           gpg --batch --yes --pinentry-mode loopback \
-            --passphrase "$BACKUP_PASSPHRASE" \
+            --passphrase-file "$passphrase_file" \
             --output "$RUNNER_TEMP/backup-verify.tar.gz" --decrypt "$encrypted"
           tar -tzf "$RUNNER_TEMP/backup-verify.tar.gz" >/dev/null
+          rm -f "$passphrase_file"
           rm -rf backup
           mkdir -p backup
           cp "$encrypted" backup/kasusaha-supabase-backup.tar.gz.gpg
