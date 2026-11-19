@@ -40,7 +40,7 @@ async function fetchWithRetry(url, options, label) {
 
     const retryAfter = response.headers.get("retry-after");
     await response.body?.cancel();
-    const retrySeconds = retryAfter && /^\\d+$/.test(retryAfter)
+    const retrySeconds = retryAfter && /^\d+$/.test(retryAfter)
       ? Math.min(Number(retryAfter), 30)
       : 0;
     const delayMs = retrySeconds > 0
