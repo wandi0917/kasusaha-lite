@@ -15,17 +15,58 @@ const headers = {
   Authorization: `Bearer ${serviceKey}`,
 };
 
+async function fetchWithRetry(url, options, label) {
+  const retryableStatuses = new Set([408, 425, 429, 500, 502, 503, 504]);
+  const maxAttempts = 4;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    let response;
+    try {
+      response = await fetch(url, {
+        ...options,
+        signal: AbortSignal.timeout(60_000),
+      });
+    } catch (error) {
+      if (attempt === maxAttempts) {
+        throw new Error(`${label} gagal setelah ${maxAttempts} percobaan: ${error.message}`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1000 * (2 ** (attempt - 1))));
+      continue;
+    }
+
+    if (response.ok || !retryableStatuses.has(response.status) || attempt === maxAttempts) {
+      return response;
+    }
+
+    const retryAfter = response.headers.get("retry-after");
+    await response.body?.cancel();
+    const retrySeconds = retryAfter && /^\\d+$/.test(retryAfter)
+      ? Math.min(Number(retryAfter), 30)
+      : 0;
+    const delayMs = retrySeconds > 0
+      ? retrySeconds * 1000
+      : 1000 * (2 ** (attempt - 1));
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
+  throw new Error(`${label} gagal setelah ${maxAttempts} percobaan.`);
+}
+
 async function listObjects(prefix, offset) {
-  const response = await fetch(`${baseUrl}/storage/v1/object/list/${bucket}`, {
-    method: "POST",
-    headers: { ...headers, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      prefix,
-      limit: 1000,
-      offset,
-      sortBy: { column: "name", order: "asc" },
-    }),
-  });
+  const response = await fetchWithRetry(
+    `${baseUrl}/storage/v1/object/list/${bucket}`,
+    {
+      method: "POST",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prefix,
+        limit: 1000,
+        offset,
+        sortBy: { column: "name", order: "asc" },
+      }),
+    },
+    `Daftar Storage untuk prefix "${prefix}"`,
+  );
   if (!response.ok) {
     throw new Error(`Storage list gagal (HTTP ${response.status}) pada prefix "${prefix}".`);
   }
@@ -47,7 +88,15 @@ async function walk(prefix = "") {
     }
 
     for (const entry of entries) {
-      if (!entry || typeof entry.name !== "string" || entry.name.includes("..")) {
+      if (
+        !entry ||
+        typeof entry.name !== "string" ||
+        entry.name === "." ||
+        entry.name === ".." ||
+        entry.name.includes("/") ||
+        entry.name.includes("\\\\") ||
+        entry.name.includes("\\0")
+      ) {
         throw new Error("Nama objek Storage tidak valid; backup dihentikan.");
       }
       const objectPath = prefix ? `${prefix}/${entry.name}` : entry.name;
