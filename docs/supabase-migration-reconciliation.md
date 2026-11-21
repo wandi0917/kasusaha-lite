@@ -159,3 +159,30 @@ Commit `54414606d0f9b8b32ef7cfc290860923bc2d4a94` menjalankan workflow validasi 
 - Script validasi aplikasi diarahkan ke salinan arsip agar regression checks tetap memeriksa sumber SQL historis.
 - Perubahan ini tidak mengubah migration history, skema, fungsi, maupun data Production. Jangan menjalankan migrasi dari arsip.
 - PR #221 ditutup karena penghapusan tanpa arsip menyebabkan CI gagal dan tidak mempertahankan sumber historis.
+
+
+## Snapshot rekonsiliasi terbaru — 21 November 2026
+
+Pemeriksaan read-only setelah integrasi PR #230 terhadap Supabase Production (flvdudmdltjjdjkdngbv) dan branch main pada commit c643f1d82301381dfa775ef5ebec73e955badaa5 menemukan:
+
+- Migration history Production mencatat **147 versi**, versi terbaru 20261118064519.
+- Direktori supabase/migrations berisi **59 file SQL**.
+- **59 dari 59** file lokal sekarang memiliki prefix versi yang cocok dengan migration history Production.
+- **88 versi remote** masih belum memiliki file SQL historis pasangannya di repositori.
+- **Tidak ada file lokal pending** yang tidak cocok dengan versi remote.
+
+### Perbaikan rename-only pada 21 November
+
+File 20261114100000_preserve_disabled_plan_entitlements.sql diselaraskan menjadi 20261118064519_preserve_disabled_plan_entitlements_20261114100000.sql, mengikuti versi remote 20261118064519 dan nama migrasi remote preserve_disabled_plan_entitlements_20261114100000.
+
+Isi SQL dipertahankan identik. Workflow regresi entitlement diperbarui untuk memakai nama file baru. Pengujian regresi SQL pada PostgreSQL terisolasi, validasi statis, lint Edge Functions, validasi aplikasi, dan browser navigation E2E berhasil pada PR #230 sebelum merge. Perubahan ini hanya mengubah nama file dan path pengujian; tidak ada SQL dijalankan pada Supabase Production dan tidak ada data atau skema yang diubah.
+
+### Batas dan aturan tetap
+
+- Angka 88 migrasi tanpa SQL pasangan berarti sejarah migrasi belum dapat direproduksi lengkap dari repository; bukan bukti bahwa 88 objek database hilang.
+- Jangan membuat SQL pengganti hanya dari nama migrasi.
+- Jangan menjalankan supabase db push, db reset, migration repair, atau DDL Production untuk menutup selisih tersebut.
+- Pulihkan SQL historis dari arsip/commit/backup tepercaya. Jika tidak tersedia, siapkan baseline schema dari keadaan database saat ini di project staging terpisah dan validasi hasil restore sebelum dipakai.
+- Ulangi rekonsiliasi setelah setiap perubahan migrasi. Prefix file harus cocok dengan remote version yang benar-benar diterapkan.
+
+**Status 21 November 2026:** tidak ada file migration lokal yang tampak pending; 88 migrasi historis remote tetap belum memiliki SQL pasangan di repository. Tidak ada perubahan database Production dalam audit ini.
