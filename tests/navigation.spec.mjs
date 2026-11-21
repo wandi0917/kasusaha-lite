@@ -5,6 +5,23 @@ test.beforeEach(async ({ page }) => {
   await expect(page.locator('nav[aria-label="Navigasi utama"]')).toBeVisible();
 });
 
+test('beranda menampilkan katalog Shopee dan TikTok dalam dua bagian terpisah', async ({ page }) => {
+  await expect(page.locator('#beranda #affiliateHomeCatalog')).toBeVisible();
+  await expect(page.locator('#beranda #tiktokAffiliateHomeCatalog')).toBeVisible();
+  await expect(page.locator('#beranda #affiliateHomeCatalog h2')).toContainText('Shopee Affiliate');
+  await expect(page.locator('#beranda #tiktokAffiliateHomeCatalog h2')).toContainText('TikTok Shop Affiliate');
+  await expect(page.locator('#beranda #affiliateHomeCatalog')).not.toContainText('TikTok Shop Affiliate');
+});
+
+test('form afiliasi memberi petunjuk sesuai platform TikTok yang dipilih', async ({ page }) => {
+  await page.locator('#navPasarOnline').click();
+  const platform = page.locator('#affPlatform');
+  await expect(platform).toBeVisible();
+  await platform.selectOption('TikTok');
+  await expect(page.locator('#affUrl')).toHaveAttribute('placeholder', /TikTok Shop Affiliate/);
+  await expect(page.locator('#affFormStatus')).toContainText('fitur Bagikan di TikTok Shop');
+});
+
 test('menu publik membuka panel yang benar dan menandai menu aktif', async ({ page }) => {
   const nav = page.locator('nav[aria-label="Navigasi utama"]');
   const cases = [

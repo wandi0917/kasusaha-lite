@@ -8,6 +8,29 @@ const fail = (message) => {
 const pass = (message) => console.log("PASS:", message);
 
 const html = fs.readFileSync("index.html", "utf8");
+
+const affiliatePlatformHint = html.slice(
+  html.indexOf("function ubahPetunjukTautanAfiliasi"),
+  html.indexOf("function affiliateCard", html.indexOf("function ubahPetunjukTautanAfiliasi")),
+);
+const affiliateCardSource = html.slice(
+  html.indexOf("function affiliateCard"),
+  html.indexOf("async function tampilkanRekomendasiAfiliasiStokHabis", html.indexOf("function affiliateCard")),
+);
+const affiliateSaveSource = html.slice(
+  html.indexOf("async function simpanProdukAfiliasi"),
+  html.indexOf("async function muatProdukAfiliasi", html.indexOf("async function simpanProdukAfiliasi")),
+);
+const affiliateChecks = [
+  [affiliatePlatformHint.includes("platform==='TikTok'") && affiliatePlatformHint.includes("TikTok Shop Affiliate") && !affiliatePlatformHint.includes("hanya menerima tautan afiliasi Shopee"), "affiliate form guidance must match the selected Shopee or TikTok platform"],
+  [affiliateCardSource.includes("link.href=affiliateUrl") && affiliateCardSource.includes("link.target='_blank'") && affiliateCardSource.includes("link.rel='nofollow sponsored noopener noreferrer'") && !affiliateCardSource.includes("ev.preventDefault()") && !affiliateCardSource.includes("window.open("), "affiliate product links must open through a real anchor without popup-blocker-prone delayed window.open"],
+  [affiliateSaveSource.includes("['Shopee','TikTok'].includes(platform)") && affiliateSaveSource.includes("platform,product_name:name"), "affiliate product saves must accept only the two supported platforms and persist the selected platform"],
+];
+for (const [ok, message] of affiliateChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 const publicMarketplaceEntitlementFix = fs.readFileSync("supabase/migrations/20261107143852_fix_public_marketplace_entitlement_evaluation.sql", "utf8");
 const publicMarketplaceVisibilityMigration = fs.readFileSync("supabase/migrations/20261107143320_hide_unentitled_marketplace_listings.sql", "utf8");
 const marketplaceWorkspaceMigration = fs.readFileSync("supabase/migrations/20261107142954_bind_marketplace_products_to_verified_business_entitlement.sql", "utf8");
