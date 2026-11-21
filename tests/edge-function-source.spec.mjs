@@ -186,3 +186,20 @@ test('marketplace expiry rejects unmapped or invalid order items before restorin
   expect(migration).toContain('REVOKE ALL ON FUNCTION public.expire_marketplace_order(uuid, text) FROM PUBLIC, anon, authenticated;');
   expect(migration).toContain('GRANT EXECUTE ON FUNCTION public.expire_marketplace_order(uuid, text) TO service_role;');
 });
+
+
+test('backup documentation matches the daily encrypted backup workflow schedule', async () => {
+  const workflow = readFileSync(
+    new URL('../.github/workflows/backup-supabase.yml', import.meta.url),
+    'utf8',
+  );
+  const documentation = readFileSync(
+    new URL('../docs/backup-supabase.md', import.meta.url),
+    'utf8',
+  );
+
+  expect(workflow).toContain('cron: "17 19 * * *"');
+  expect(documentation).toContain('setiap hari pukul 02.17 WIB');
+  expect(workflow).toContain('retention-days: 7');
+  expect(documentation).toContain('disimpan selama 7 hari');
+});
