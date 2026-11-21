@@ -3226,9 +3226,11 @@ function muatRekomendasiAfiliasiStokHabis(root,items){
 async function simpanProdukAfiliasi(){
  if(!sb){setAffStatus('Supabase tidak tersedia.',true);return;}
  const {data:sessionData,error:sessionError}=await sb.auth.getSession();if(sessionError||!sessionData.session){setAffStatus('Login dahulu dengan akun KasUsaha Lite Anda.',true);return;}
+ const platform=$('affPlatform').value;
+ if(!['Shopee','TikTok'].includes(platform)){setAffStatus('Pilih marketplace Shopee atau TikTok Shop Affiliate.',true);return;}
  const name=$('affName').value.trim(),url=safeHttps($('affUrl').value),image=$('affImage').value.trim()?safeHttps($('affImage').value):'',priceText=$('affPrice').value.trim(),price=priceText===''?null:Number(priceText);
  if(name.length<2||!url||!Number.isFinite(price===null?0:price)||(price!==null&&price<0)||($('affImage').value.trim()&&!image)){setAffStatus('Periksa nama, harga, dan URL HTTPS tautan afiliasi/foto.',true);return;}
- const payload={owner_id:sessionData.session.user.id,platform:$('affPlatform').value,product_name:name,category:$('affCategory').value,price, image_url:image,affiliate_url:url,description:$('affDesc').value.trim(),active:true};
+ const payload={owner_id:sessionData.session.user.id,platform,product_name:name,category:$('affCategory').value,price, image_url:image,affiliate_url:url,description:$('affDesc').value.trim(),active:true};
  try{const {error}=await sb.from('affiliate_products').insert(payload);if(error)throw error;$('affName').value='';$('affPrice').value='';$('affImage').value='';$('affUrl').value='';$('affDesc').value='';setAffStatus('Produk afiliasi tersimpan. Tautan siap ditampilkan; komisi aktual harus diperiksa di dashboard marketplace.');await muatProdukAfiliasi();await muatLaporanAfiliasi();}
  catch(e){setAffStatus('Gagal menyimpan: '+String(e.message||e).slice(0,240),true);}
 }
