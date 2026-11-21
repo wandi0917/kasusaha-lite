@@ -163,7 +163,7 @@ Commit `54414606d0f9b8b32ef7cfc290860923bc2d4a94` menjalankan workflow validasi 
 
 ## Snapshot rekonsiliasi terbaru — 21 November 2026
 
-Pemeriksaan read-only setelah integrasi PR #230 terhadap Supabase Production (flvdudmdltjjdjkdngbv) dan branch main pada commit c643f1d82301381dfa775ef5ebec73e955badaa5 menemukan:
+Pemeriksaan read-only setelah integrasi PR #230 dan dokumentasi PR #231 terhadap Supabase Production (flvdudmdltjjdjkdngbv) dan branch main pada commit 1e240175d8eef1024d29013651c6486841313e83 menemukan:
 
 - Migration history Production mencatat **147 versi**, versi terbaru 20261118064519.
 - Direktori supabase/migrations berisi **59 file SQL**.
