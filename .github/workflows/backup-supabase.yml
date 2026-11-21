@@ -3,8 +3,8 @@ name: Encrypted Supabase backup
 on:
   workflow_dispatch:
   schedule:
-    # Weekly on Monday at 02:17 WIB (Sunday 19:17 UTC).
-    - cron: "17 19 * * 0"
+    # Daily at 02:17 WIB (19:17 UTC).
+    - cron: "17 19 * * *"
 
 permissions:
   contents: read
