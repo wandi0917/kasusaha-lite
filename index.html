@@ -3147,10 +3147,13 @@ if($('filterKategori'))$('filterKategori').addEventListener('change',()=>muatPas
 function setAffStatus(msg,err=false){const e=$('affFormStatus');if(e){e.className=err?'status error':'status';e.textContent=msg;}}
 function safeHttps(value){try{const u=new URL(String(value||'').trim());return u.protocol==='https:'?u.href:'';}catch(e){return '';}}
 function ubahPetunjukTautanAfiliasi(){
+ const platform=$('affPlatform')?.value==='TikTok'?'TikTok':'Shopee';
  const input=$('affUrl');
- if(input)input.placeholder='Tempel tautan afiliasi resmi Shopee';
+ if(input)input.placeholder=platform==='TikTok'?'Tempel tautan TikTok Shop Affiliate resmi Anda':'Tempel tautan afiliasi resmi Shopee';
  const status=$('affFormStatus');
- if(status)status.textContent='Saat ini KasUsaha Lite hanya menerima tautan afiliasi Shopee.';
+ if(status)status.textContent=platform==='TikTok'
+  ?'Tempel tautan Affiliate yang disalin dari fitur Bagikan di TikTok Shop. Pastikan tautan milik akun Affiliate Anda.'
+  :'Tempel tautan Affiliate yang disalin dari Shopee Affiliate.';
 }
 function affiliateCard(p){
  const d=document.createElement('article');d.className='item';
@@ -3159,8 +3162,18 @@ function affiliateCard(p){
  if(p.image_url){const imgUrl=safeHttps(p.image_url);if(imgUrl){const im=document.createElement('img');im.src=imgUrl;im.alt=p.product_name;im.loading='lazy';im.className='product-photo';im.onerror=()=>im.remove();d.appendChild(im);}}
  const price=document.createElement('div');price.className='price';price.textContent=p.price===null||p.price===undefined?'Lihat harga terbaru di marketplace':format(p.price);
  const desc=document.createElement('p');desc.textContent=p.description||'Lihat detail, pilihan, dan ulasan pada halaman marketplace.';
- const link=document.createElement('a');link.href='#';link.textContent='Lihat produk di '+(p.platform||'marketplace')+' ↗';link.rel='nofollow sponsored noopener';link.className='primary';link.style.display='inline-block';link.style.textDecoration='none';link.style.marginTop='8px';link.style.color='white';link.style.padding='12px';link.style.borderRadius='8px';
- link.addEventListener('click',async ev=>{ev.preventDefault();try{if(sb)await sb.from('affiliate_clicks').insert({product_id:p.id,referrer:location.pathname,user_agent:navigator.userAgent.slice(0,300)});}catch(e){console.warn('Click logging unavailable',e);}window.open(p.affiliate_url,'_blank','noopener,noreferrer');});
+ const affiliateUrl=safeHttps(p.affiliate_url);
+ const link=document.createElement('a');link.textContent='Lihat produk di '+(p.platform||'marketplace')+' ↗';link.className='primary';link.style.display='inline-block';link.style.textDecoration='none';link.style.marginTop='8px';link.style.color='white';link.style.padding='12px';link.style.borderRadius='8px';
+ if(affiliateUrl){
+  link.href=affiliateUrl;link.target='_blank';link.rel='nofollow sponsored noopener noreferrer';
+  link.addEventListener('click',()=>{
+   if(sb)sb.from('affiliate_clicks').insert({product_id:p.id,referrer:location.pathname,user_agent:navigator.userAgent.slice(0,300)})
+    .then(({error})=>{if(error)console.warn('Click logging unavailable',error);})
+    .catch(error=>console.warn('Click logging unavailable',error));
+  });
+ }else{
+  link.removeAttribute('href');link.setAttribute('aria-disabled','true');link.textContent='Tautan produk tidak valid';
+ }
  d.append(badge,title,price,desc,link);return d;
 }
 async function tampilkanRekomendasiAfiliasiStokHabis(produkHabis,wadah){
