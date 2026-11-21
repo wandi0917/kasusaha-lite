@@ -24,7 +24,7 @@ Di GitHub, buka **Settings → Secrets and variables → Actions → New reposit
 5. Unduh artifact `kasusaha-supabase-backup-...` sebelum masa simpan 7 hari berakhir.
 6. Simpan ZIP/artifact terenkripsi di penyimpanan pribadi dengan akses terbatas. Artifact GitHub hanya penampung sementara, bukan arsip permanen.
 
-Workflow juga dijadwalkan mingguan setiap Senin sekitar pukul 02.17 WIB. Untuk menjaga salinan jangka panjang, unduh artifact setiap minggu dan pindahkan ke penyimpanan privat.
+Workflow dijadwalkan **setiap hari pukul 02.17 WIB** (cron `17 19 * * *` UTC). Setelah setiap run terjadwal, periksa GitHub Actions dan pastikan run berstatus berhasil serta artifact terenkripsi tersedia. Artifact hanya disimpan 7 hari; unduh salinan secara berkala dan pindahkan ke penyimpanan privat dengan akses terbatas. Jangan menganggap jadwal berarti backup telah berhasil: keberhasilan tetap bergantung pada empat repository secrets yang valid dan run yang selesai tanpa error.
 
 ## Isi dan batasan
 
