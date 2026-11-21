@@ -3,8 +3,8 @@ name: Encrypted Supabase backup
 on:
   workflow_dispatch:
   schedule:
-    # Weekly on Monday at 02:17 WIB (Sunday 19:17 UTC).
-    - cron: "17 19 * * 0"
+    # Daily at 02:17 WIB (19:17 UTC).
+    - cron: "17 19 * * *"
 
 permissions:
   contents: read
@@ -98,6 +98,19 @@ jobs:
             --passphrase-file "$passphrase_file" \
             --output "$RUNNER_TEMP/backup-verify.tar.gz" --decrypt "$encrypted"
           tar -tzf "$RUNNER_TEMP/backup-verify.tar.gz" >/dev/null
+          # Validate that the decrypted database dump is a readable PostgreSQL
+          # custom archive, not merely a valid tar/gzip container.
+          restore_check_dir="$RUNNER_TEMP/backup-restore-check"
+          mkdir -p "$restore_check_dir"
+          tar -xzf "$RUNNER_TEMP/backup-verify.tar.gz" -C "$restore_check_dir"
+          test -s "$restore_check_dir/database.dump"
+          test -s "$restore_check_dir/manifest.json"
+          test -d "$restore_check_dir/storage"
+          docker run --rm \
+            -v "$restore_check_dir:/restore:ro" \
+            postgres:17 \
+            pg_restore --list /restore/database.dump >/dev/null
+          rm -rf "$restore_check_dir"
           rm -f "$passphrase_file"
           rm -rf backup
           mkdir -p backup
