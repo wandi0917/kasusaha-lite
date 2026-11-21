@@ -1805,8 +1805,14 @@ async function bagikanKasUsahaLite(){
 <p class="small" style="margin:14px 0 0">Harga dan komisi di atas berasal dari daftar yang diberikan dan dapat berubah. Komisi bukan jaminan; Shopee menentukan atribusi, pesanan valid, dan pencairan. KasUsaha Lite tidak memproses pembayaran Shopee.</p>
 </section>
 
-
-
+<section id="tiktokAffiliateHomeCatalog" aria-label="Katalog TikTok Shop Affiliate" style="margin:26px 0;padding:clamp(16px,3vw,28px);border-radius:22px;background:linear-gradient(145deg,#f8fafc,#fff 55%,#f0fdfa);border:1px solid #cbd5e1;box-shadow:0 12px 30px rgba(15,23,42,.06)">
+ <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+  <div><h2 style="font-size:clamp(1.3rem,2.4vw,1.9rem);margin:0;color:#0f172a">🎵 Produk Pilihan TikTok Shop Affiliate</h2><p style="color:#475569;margin:7px 0 0">Katalog tautan Affiliate TikTok yang ditambahkan oleh Owner. Harga, stok, dan komisi mengikuti informasi terbaru di TikTok Shop.</p></div>
+  <a href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;padding:10px 14px;border-radius:10px;background:#0f172a;color:#fff;text-decoration:none;font-weight:750">Buka TikTok ↗</a>
+ </div>
+ <div id="tiktokAffiliateHomeProducts" class="affiliate-home-grid" aria-live="polite"><p class="small">Memuat produk TikTok Affiliate...</p></div>
+ <p class="small" style="margin:14px 0 0">Tautan dibagikan oleh kreator Affiliate. KasUsaha Lite tidak mengambil katalog atau komisi secara otomatis dari TikTok. Komisi dan pesanan valid tetap diperiksa di Affiliate Center.</p>
+</section>
 
 <section id="affiliateExtraCommissionCatalog" aria-label="Kategori Komisi Ekstra Shopee Affiliate">
 <style>
@@ -2297,7 +2303,7 @@ async function bagikanKasUsahaLite(){
 <p class="small">Produk ditampilkan dari tautan afiliasi yang Anda masukkan sendiri. KasUsaha Lite mencatat klik; komisi yang disetujui tetap diverifikasi di dashboard resmi Shopee Affiliate. Klik bukan bukti penjualan atau komisi.</p>
 <div class="card" style="background:#fff7ed;border-color:#fed7aa">
 <strong>Tambah produk afiliasi (khusus akun Anda)</strong>
-<label for="affPlatform">Marketplace</label><select id="affPlatform" onchange="ubahPetunjukTautanAfiliasi()"><option value="Shopee">Shopee</option></select>
+<label for="affPlatform">Marketplace</label><select id="affPlatform" onchange="ubahPetunjukTautanAfiliasi()"><option value="Shopee">Shopee</option><option value="TikTok">TikTok Shop Affiliate</option></select>
 <label for="affName">Nama produk</label><input id="affName" maxlength="180" placeholder="Contoh: Blender portable">
 <label for="affCategory">Kategori</label><select id="affCategory"><option>Lainnya</option><option>Makanan &amp; Minuman</option><option>Fashion</option><option>Elektronik</option><option>Rumah Tangga</option><option>Kecantikan</option><option>Perlengkapan Bayi</option><option>Olahraga</option></select>
 <label for="affPrice">Harga (opsional, Rp)</label><input id="affPrice" type="number" min="0" step="1" placeholder="Contoh: 125000">
@@ -3218,6 +3224,27 @@ async function muatProdukAfiliasi(){
  try{const {data,error}=await sb.from('affiliate_products').select('id,owner_id,platform,product_name,description,category,price,image_url,affiliate_url,active,created_at').eq('active',true).order('created_at',{ascending:false}).limit(100);if(error)throw error;box.replaceChildren();if(!data||!data.length){box.textContent='Belum ada produk afiliasi. Login dan masukkan tautan afiliasi Anda di formulir di atas.';return;}data.forEach(p=>box.appendChild(affiliateCard(p)));}
  catch(e){box.textContent='Produk afiliasi belum dapat dimuat: '+String(e.message||e).slice(0,180);}
 }
+
+async function muatKatalogTikTokBeranda(){
+ const box=$('tiktokAffiliateHomeProducts');if(!box)return;
+ if(!sb){box.textContent='Katalog TikTok belum dapat dimuat karena koneksi belum tersedia.';return;}
+ try{
+  const {data,error}=await sb.from('affiliate_products')
+   .select('id,owner_id,platform,product_name,description,category,price,image_url,affiliate_url,active,created_at')
+   .eq('active',true).eq('platform','TikTok')
+   .order('created_at',{ascending:false}).limit(100);
+  if(error)throw error;
+  box.replaceChildren();
+  const valid=(data||[]).filter(p=>safeHttps(p.affiliate_url));
+  if(!valid.length){const empty=document.createElement('p');empty.className='small';empty.textContent='Belum ada produk TikTok Affiliate. Owner dapat menambahkan tautan produk melalui menu Pasar Online → Belanja Afiliasi.';box.appendChild(empty);return;}
+  valid.forEach(p=>box.appendChild(affiliateCard(p)));
+ }catch(e){
+  box.textContent='Katalog TikTok belum dapat dimuat: '+String(e.message||e).slice(0,160);
+ }
+}
+
+// Memuat katalog TikTok terpisah dari katalog Shopee pada beranda.
+muatKatalogTikTokBeranda();
 async function muatLaporanAfiliasi(){
  const box=$('affReport');if(!box||!sb)return;
  try{const {data:sd,error:se}=await sb.auth.getSession();if(se)throw se;if(!sd.session){box.textContent='Login untuk melihat laporan klik produk afiliasi milik Anda.';return;}
