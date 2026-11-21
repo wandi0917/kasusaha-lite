@@ -88,6 +88,21 @@ for (const [ok, message] of liteTrialChecks) {
   else fail(message);
 }
 
+const liteTrialSecurityChecks = [
+  [liteTrialMigration.includes("if v_uid is null then") && liteTrialMigration.includes("Login akun terdaftar diperlukan"), "trial activation must reject requests without an authenticated user"],
+  [liteTrialMigration.includes("->> 'is_anonymous'") && liteTrialMigration.includes("'status', 'owner_required'"), "anonymous employee sessions must never activate an Owner trial"],
+  [liteTrialMigration.includes("v_owner_id <> v_uid") && liteTrialMigration.includes("m.role = 'owner' and m.active = true"), "trial activation must verify workspace ownership and active Owner membership"],
+  [liteTrialMigration.includes("e.verification_status = 'verified'") && liteTrialMigration.includes("e.processed_at is not null") && liteTrialMigration.includes("o.payment_review_required is not true"), "paid-license detection must require a processed verified payment event outside manual review"],
+  [liteTrialMigration.includes("if v_paid then") && liteTrialMigration.includes("'status', 'paid'"), "an already-paid customer must not be granted a free trial"],
+  [liteTrialMigration.includes("on conflict (owner_id) do nothing") && liteTrialMigration.includes("unique (owner_id)"), "concurrent trial requests must not create more than one Owner trial"],
+  [liteTrialMigration.includes("business_id is not distinct from p_business_id") || liteTrialMigration.includes("business_id = p_business_id"), "trial status must be bound to the original business workspace"],
+  [liteTrialMigration.includes("revoke all on function public.kasusaha_start_free_trial(uuid) from public, anon") && liteTrialMigration.includes("grant execute on function public.kasusaha_start_free_trial(uuid) to authenticated"), "trial activation RPC must be unavailable to public and anonymous roles"],
+];
+for (const [ok, message] of liteTrialSecurityChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
 const paidCashierItemNoteChecks = [
   [html.includes("lines:lines.map(d=>({product_id:d.p.id,quantity:d.qty,unit_price:d.price,note:d.note}))"), "direct paid cashier sales must send each item note to the server RPC"],
   [html.includes("d.note?' ; catatan pelanggan: '+d.note:''"), "cashier confirmation must display the note attached to each item before payment is saved"],
