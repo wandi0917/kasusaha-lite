@@ -35,5 +35,5 @@ jobs:
         run: |
           psql -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 \
             -f scripts/test-entitlement-migration.sql \
-            -f supabase/migrations/20261114100000_preserve_disabled_plan_entitlements.sql \
+            -f supabase/migrations/20261118064519_preserve_disabled_plan_entitlements_20261114100000.sql \
             -f scripts/assert-entitlement-migration.sql
