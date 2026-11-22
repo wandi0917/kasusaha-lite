@@ -507,11 +507,15 @@ const preserveDisabledPlanEntitlementsMigration = fs.readFileSync(
 );
 const professionalPlanChecks = [
   [
-    /UPDATE\\s+public\\.kasusaha_license_plans[\\s\\S]*?SET\\s+active\\s*=\\s*false[\\s\\S]*?WHERE\\s+plan_code\\s*=\\s*'professional'/i.test(professionalPlanVisibilityMigration),
+    professionalPlanVisibilityMigration.includes("UPDATE public.kasusaha_license_plans") &&
+      professionalPlanVisibilityMigration.includes("SET active = false") &&
+      professionalPlanVisibilityMigration.includes("WHERE plan_code = 'professional'"),
     "Professional must remain disabled for new license sales",
   ],
   [
-    /IF\\s+EXISTS\\s*\\([\\s\\S]*?plan_code\\s*=\\s*'professional'[\\s\\S]*?active\\s+IS\\s+TRUE[\\s\\S]*?\\)\\s+THEN/i.test(professionalPlanVisibilityMigration),
+    professionalPlanVisibilityMigration.includes("IF EXISTS (") &&
+      professionalPlanVisibilityMigration.includes("plan_code = 'professional'") &&
+      professionalPlanVisibilityMigration.includes("active IS TRUE"),
     "Professional deactivation migration must fail if the plan is still active",
   ],
   [
@@ -527,7 +531,7 @@ const professionalPlanChecks = [
     "existing license entitlements must still require a verified, processed payment outside manual review",
   ],
   [
-    !/UPDATE\\s+public\\.kasusaha_license_plans[\\s\\S]*?SET\\s+active\\s*=\\s*true/i.test(preserveDisabledPlanEntitlementsMigration),
+    !preserveDisabledPlanEntitlementsMigration.includes("SET active = true"),
     "disabled Professional plan must not be reactivated by the entitlement-preservation migration",
   ],
 ];
