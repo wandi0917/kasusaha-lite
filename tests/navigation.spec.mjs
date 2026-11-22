@@ -1095,7 +1095,7 @@ test('semua tombol yang dirender memiliki handler klik atau form submit yang ter
       return !formSubmitHandler;
     }).map((button) => ({
       id: button.id || '(tanpa ID)',
-      label: (button.innerText || button.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 100),
+      label: (button.innerText || button.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 100),
       type: button.type,
       form: button.form?.id || null,
     }));
