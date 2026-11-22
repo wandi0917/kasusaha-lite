@@ -1080,7 +1080,7 @@ test('semua tombol yang dirender memiliki handler klik atau form submit yang ter
 
   const unhandled = await page.evaluate(() => {
     const registrations = window.__kasusahaHandlerAudit || [];
-    return [...document.querySelectorAll('button')].filter((button) => {
+    return [...document.querySelectorAll('button')].filter((button) => {\n      if (button.closest('[hidden]')) return false;
       const inlineHandler = button.hasAttribute('onclick') || typeof button.onclick === 'function';
       if (inlineHandler) return false;
       const directClickHandler = registrations.some((entry) =>
@@ -1102,4 +1102,35 @@ test('semua tombol yang dirender memiliki handler klik atau form submit yang ter
   });
 
   expect(unhandled, 'Tombol tanpa aksi terpasang: ' + JSON.stringify(unhandled)).toEqual([]);
+});
+
+
+test('tombol Panduan instal PWA membuka petunjuk setelah pembayaran', async ({ page }) => {
+  await page.goto('/?payment=return', { waitUntil: 'domcontentloaded' });
+  const notice = page.locator('#kasusahaPaymentReturnNotice');
+  const button = page.locator('#kasusahaPaymentOpenInstall');
+  const guideHeading = notice.locator('.kasusaha-install-after-payment h3');
+
+  await expect(notice).toBeVisible();
+  await expect(button).toBeVisible();
+  await button.click();
+  await expect.poll(() => page.evaluate(() =>
+    document.activeElement?.textContent?.trim() || ''
+  )).toContain('Pasang KasUsaha Lite setelah pembayaran');
+  await expect(guideHeading).toHaveAttribute('tabindex', '-1');
+});
+
+test('tombol Tutup kamera dipasang ketika panel pemindai barcode dibuka', async ({ page }) => {
+  await page.evaluate(() => {
+    const panel = ensureQuickSaleCameraPanel();
+    panel.modal.hidden = false;
+    panel.modal.style.display = 'flex';
+  });
+
+  const modal = page.locator('#quickSaleBarcodeModal');
+  const close = modal.locator('#quickSaleBarcodeClose');
+  await expect(modal).toBeVisible();
+  await expect(close).toBeVisible();
+  await close.click();
+  await expect(modal).toBeHidden();
 });
