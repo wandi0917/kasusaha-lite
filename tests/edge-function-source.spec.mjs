@@ -203,3 +203,42 @@ test('backup documentation matches the daily encrypted backup workflow schedule'
   expect(workflow).toContain('retention-days: 7');
   expect(documentation).toContain('disimpan selama 7 hari');
 });
+
+
+test('platform finance rejects untrusted origins before processing CORS preflight', async () => {
+  const source = readFileSync(
+    new URL('../supabase/functions/platform-marketplace-finance/index.ts', import.meta.url),
+    'utf8',
+  );
+
+  const originGuard = source.indexOf('if (origin && !ALLOWED_ORIGINS.has(origin))');
+  const preflight = source.indexOf('if (req.method === "OPTIONS")');
+  const methodGuard = source.indexOf('if (req.method !== "GET")');
+
+  expect(originGuard, 'untrusted origin guard must exist').toBeGreaterThanOrEqual(0);
+  expect(preflight, 'CORS preflight handler must exist').toBeGreaterThan(originGuard);
+  expect(methodGuard, 'non-GET methods must be rejected').toBeGreaterThan(preflight);
+  expect(source).toContain('status: 403');
+  expect(source).toContain('error: "Origin not allowed"');
+});
+
+test('platform finance verifies the signed-in Platform Owner before reading financial ledgers', async () => {
+  const source = readFileSync(
+    new URL('../supabase/functions/platform-marketplace-finance/index.ts', import.meta.url),
+    'utf8',
+  );
+
+  const confirmedEmail = source.indexOf('!session.user?.email_confirmed_at');
+  const adminLookup = source.indexOf('.from("platform_admins")');
+  const activeOwnerCheck = source.indexOf('.eq("role", "platform_owner")');
+  const denyNonOwner = source.indexOf('if (!admin)');
+  const commissionRead = source.indexOf('.from("marketplace_commission_ledger")');
+  const payoutRead = source.indexOf('.from("marketplace_payout_ledger")');
+
+  expect(confirmedEmail).toBeGreaterThanOrEqual(0);
+  expect(adminLookup).toBeGreaterThan(confirmedEmail);
+  expect(activeOwnerCheck).toBeGreaterThan(adminLookup);
+  expect(denyNonOwner).toBeGreaterThan(activeOwnerCheck);
+  expect(commissionRead).toBeGreaterThan(denyNonOwner);
+  expect(payoutRead).toBeGreaterThan(denyNonOwner);
+});
