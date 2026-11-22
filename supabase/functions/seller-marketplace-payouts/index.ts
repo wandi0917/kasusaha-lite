@@ -3,7 +3,6 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const ALLOWED_ORIGINS = new Set([
   "https://kasusaha-lite.pages.dev",
   "https://wandi0917.github.io",
-  "https://fix-navigation-serialization.kasusaha-lite.pages.dev",
 ]);
 const headers = {
   "Access-Control-Allow-Headers": "authorization, apikey, content-type, x-client-info",
