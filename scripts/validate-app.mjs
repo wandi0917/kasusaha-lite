@@ -497,6 +497,46 @@ if (!/KS_PACKAGE_PRICES/.test(html) ||
   fail("public checkout must expose only Starter, Lite, and Business while Professional is hidden");
 } else pass("public checkout exposes only Starter, Lite, and Business; Professional is hidden");
 
+const professionalPlanVisibilityMigration = fs.readFileSync(
+  "supabase/migrations/20261108134058_hide_professional_license_plan.sql",
+  "utf8",
+);
+const preserveDisabledPlanEntitlementsMigration = fs.readFileSync(
+  "supabase/migrations/20261118064519_preserve_disabled_plan_entitlements_20261114100000.sql",
+  "utf8",
+);
+const professionalPlanChecks = [
+  [
+    /UPDATE\\s+public\\.kasusaha_license_plans[\\s\\S]*?SET\\s+active\\s*=\\s*false[\\s\\S]*?WHERE\\s+plan_code\\s*=\\s*'professional'/i.test(professionalPlanVisibilityMigration),
+    "Professional must remain disabled for new license sales",
+  ],
+  [
+    /IF\\s+EXISTS\\s*\\([\\s\\S]*?plan_code\\s*=\\s*'professional'[\\s\\S]*?active\\s+IS\\s+TRUE[\\s\\S]*?\\)\\s+THEN/i.test(professionalPlanVisibilityMigration),
+    "Professional deactivation migration must fail if the plan is still active",
+  ],
+  [
+    preserveDisabledPlanEntitlementsMigration.includes("Preserve entitlements for already-issued, verified licenses") &&
+      preserveDisabledPlanEntitlementsMigration.includes("v_old text := 'and paid_plan.active = true'") &&
+      preserveDisabledPlanEntitlementsMigration.includes("v_old text := 'AND lp.active IS TRUE'"),
+    "hiding Professional must not revoke features from existing verified licenses",
+  ],
+  [
+    preserveDisabledPlanEntitlementsMigration.includes("e.verification_status = ''verified''") &&
+      preserveDisabledPlanEntitlementsMigration.includes("e.processed_at is not null") &&
+      preserveDisabledPlanEntitlementsMigration.includes("o.payment_review_required is not true"),
+    "existing license entitlements must still require a verified, processed payment outside manual review",
+  ],
+  [
+    !/UPDATE\\s+public\\.kasusaha_license_plans[\\s\\S]*?SET\\s+active\\s*=\\s*true/i.test(preserveDisabledPlanEntitlementsMigration),
+    "disabled Professional plan must not be reactivated by the entitlement-preservation migration",
+  ],
+];
+for (const [ok, message] of professionalPlanChecks) {
+  if (ok) pass(message);
+  else fail(message);
+}
+
+
 if (!/const description=\$\('financeDescription'\)\.value\.trim\(\),amount=Number\(\$\('financeAmount'\)\.value\)[\s\S]{0,500}description\.length<2/.test(html)) {
   fail("Owner and Employee transaction form must reject descriptions shorter than two characters");
 } else pass("manual finance form requires at least two description characters");
