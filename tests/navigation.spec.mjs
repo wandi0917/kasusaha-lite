@@ -1063,3 +1063,43 @@ test('pesan fitur Pasar Online tidak merekomendasikan paket Professional yang no
   expect(source).toContain('Gunakan paket Lite atau Business dengan lisensi terverifikasi.');
   expect(source).not.toContain('Gunakan paket Lite, Business, atau Professional dengan lisensi terverifikasi.');
 });
+
+
+test('semua tombol yang dirender memiliki handler klik atau form submit yang terpasang', async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = EventTarget.prototype.addEventListener;
+    window.__kasusahaHandlerAudit = [];
+    EventTarget.prototype.addEventListener = function (type, listener, options) {
+      if (type === 'click' || type === 'submit') {
+        window.__kasusahaHandlerAudit.push({ target: this, type });
+      }
+      return original.call(this, type, listener, options);
+    };
+  });
+  await page.reload({ waitUntil: 'load' });
+
+  const unhandled = await page.evaluate(() => {
+    const registrations = window.__kasusahaHandlerAudit || [];
+    return [...document.querySelectorAll('button')].filter((button) => {
+      const inlineHandler = button.hasAttribute('onclick') || typeof button.onclick === 'function';
+      if (inlineHandler) return false;
+      const directClickHandler = registrations.some((entry) =>
+        entry.target === button && entry.type === 'click'
+      );
+      if (directClickHandler) return false;
+      const form = button.form;
+      const formSubmitHandler = button.type === 'submit' && form && (
+        typeof form.onsubmit === 'function' ||
+        registrations.some((entry) => entry.target === form && entry.type === 'submit')
+      );
+      return !formSubmitHandler;
+    }).map((button) => ({
+      id: button.id || '(tanpa ID)',
+      label: (button.innerText || button.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 100),
+      type: button.type,
+      form: button.form?.id || null,
+    }));
+  });
+
+  expect(unhandled, 'Tombol tanpa aksi terpasang: ' + JSON.stringify(unhandled)).toEqual([]);
+});
