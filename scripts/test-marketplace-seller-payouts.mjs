@@ -6,6 +6,8 @@ const edge = fs.readFileSync("supabase/functions/seller-marketplace-payouts/inde
 const webhook = fs.readFileSync("supabase/functions/biteship-webhook/index.ts", "utf8");
 const docs = fs.readFileSync("docs/marketplace-manual-seller-payouts.md", "utf8");
 
+const corsOrigins = edge.match(/const ALLOWED_ORIGINS = new Set\(\[([\s\S]*?)\]\);/)?.[1] || "";
+
 const checks = [
   [migration.includes("unique references public.marketplace_order_items(id)"), "each order item can be allocated to only one payout"],
   [/update public\.marketplace_payout_ledger\s+set status='submitted'/.test(migration), "submitted transition uses valid UPDATE SQL"],
@@ -36,6 +38,7 @@ const checks = [
   [migration.includes("\n  5242880,\n  array['application/pdf','image/png','image/jpeg']"), "evidence uploads are capped at 5 MiB and restricted to PDF, PNG or JPEG"],
   [migration.includes("insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)") && migration.includes("'marketplace-payout-evidence',\n  false,\n  5242880") && migration.includes("array['application/pdf','image/png','image/jpeg']"), "new evidence buckets receive upload restrictions at creation, not only on conflict"],
   [edge.includes('authData.user?.email_confirmed_at') && edge.includes("platform_admins"), "edge endpoint verifies user and Platform Owner"],
+  [corsOrigins.includes('"https://kasusaha-lite.pages.dev"') && corsOrigins.includes('"https://wandi0917.github.io"') && !corsOrigins.includes("fix-navigation-serialization"), "payout CORS allows canonical and legacy origins but rejects temporary preview deployments"],
   [edge.includes('eq("recipient_user_id", userId)'), "seller statement is scoped to the authenticated seller"],
   [edge.includes('createSignedUploadUrl') && edge.includes('createSignedUrl'), "evidence access uses short-lived signed URLs"],
   [edge.includes('eq("transfer_evidence_path", path)'), "evidence download requires an exact payout ledger link"],
