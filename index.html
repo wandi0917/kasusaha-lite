@@ -7351,6 +7351,19 @@ sb.auth.onAuthStateChange((event,session)=>{
     if (typeof buka === 'function') buka('akunPembeli', tabButton);
     else window.location.hash = 'akunPembeli';
   });
+  if (installButton) installButton.addEventListener('click', () => {
+    const guide = notice?.querySelector('.kasusaha-install-after-payment');
+    if (!guide) return;
+    guide.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'start',
+    });
+    const heading = guide.querySelector('h3');
+    if (heading) {
+      heading.setAttribute('tabindex', '-1');
+      heading.focus({ preventScroll: true });
+    }
+  });
   const cleanupUrl = () => {
     try {
       const clean = new URL(window.location.href);

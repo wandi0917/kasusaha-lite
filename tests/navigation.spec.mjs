@@ -1063,3 +1063,75 @@ test('pesan fitur Pasar Online tidak merekomendasikan paket Professional yang no
   expect(source).toContain('Gunakan paket Lite atau Business dengan lisensi terverifikasi.');
   expect(source).not.toContain('Gunakan paket Lite, Business, atau Professional dengan lisensi terverifikasi.');
 });
+
+
+test('semua tombol yang dirender memiliki handler klik atau form submit yang terpasang', async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = EventTarget.prototype.addEventListener;
+    window.__kasusahaHandlerAudit = [];
+    EventTarget.prototype.addEventListener = function (type, listener, options) {
+      if (type === 'click' || type === 'submit') {
+        window.__kasusahaHandlerAudit.push({ target: this, type });
+      }
+      return original.call(this, type, listener, options);
+    };
+  });
+  await page.reload({ waitUntil: 'load' });
+
+  const unhandled = await page.evaluate(() => {
+    const registrations = window.__kasusahaHandlerAudit || [];
+    return [...document.querySelectorAll('button')].filter((button) => {
+      if (button.closest('[hidden]')) return false;
+      const inlineHandler = button.hasAttribute('onclick') || typeof button.onclick === 'function';
+      if (inlineHandler) return false;
+      const directClickHandler = registrations.some((entry) =>
+        entry.target === button && entry.type === 'click'
+      );
+      if (directClickHandler) return false;
+      const form = button.form;
+      const formSubmitHandler = button.type === 'submit' && form && (
+        typeof form.onsubmit === 'function' ||
+        registrations.some((entry) => entry.target === form && entry.type === 'submit')
+      );
+      return !formSubmitHandler;
+    }).map((button) => ({
+      id: button.id || '(tanpa ID)',
+      label: (button.innerText || button.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 100),
+      type: button.type,
+      form: button.form?.id || null,
+    }));
+  });
+
+  expect(unhandled, 'Tombol tanpa aksi terpasang: ' + JSON.stringify(unhandled)).toEqual([]);
+});
+
+
+test('tombol Panduan instal PWA membuka petunjuk setelah pembayaran', async ({ page }) => {
+  await page.goto('/?payment=return', { waitUntil: 'domcontentloaded' });
+  const notice = page.locator('#kasusahaPaymentReturnNotice');
+  const button = page.locator('#kasusahaPaymentOpenInstall');
+  const guideHeading = notice.locator('.kasusaha-install-after-payment h3');
+
+  await expect(notice).toBeVisible();
+  await expect(button).toBeVisible();
+  await button.click();
+  await expect.poll(() => page.evaluate(() =>
+    document.activeElement?.textContent?.trim() || ''
+  )).toContain('Pasang KasUsaha Lite setelah pembayaran');
+  await expect(guideHeading).toHaveAttribute('tabindex', '-1');
+});
+
+test('tombol Tutup kamera dipasang ketika panel pemindai barcode dibuka', async ({ page }) => {
+  await page.evaluate(() => {
+    const panel = ensureQuickSaleCameraPanel();
+    panel.modal.hidden = false;
+    panel.modal.style.display = 'flex';
+  });
+
+  const modal = page.locator('#quickSaleBarcodeModal');
+  const close = modal.locator('#quickSaleBarcodeClose');
+  await expect(modal).toBeVisible();
+  await expect(close).toBeVisible();
+  await close.click();
+  await expect(modal).toBeHidden();
+});
