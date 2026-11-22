@@ -1080,7 +1080,8 @@ test('semua tombol yang dirender memiliki handler klik atau form submit yang ter
 
   const unhandled = await page.evaluate(() => {
     const registrations = window.__kasusahaHandlerAudit || [];
-    return [...document.querySelectorAll('button')].filter((button) => {\n      if (button.closest('[hidden]')) return false;
+    return [...document.querySelectorAll('button')].filter((button) => {
+      if (button.closest('[hidden]')) return false;
       const inlineHandler = button.hasAttribute('onclick') || typeof button.onclick === 'function';
       if (inlineHandler) return false;
       const directClickHandler = registrations.some((entry) =>
