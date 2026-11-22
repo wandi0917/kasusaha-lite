@@ -186,3 +186,30 @@ Isi SQL dipertahankan identik. Workflow regresi entitlement diperbarui untuk mem
 - Ulangi rekonsiliasi setelah setiap perubahan migrasi. Prefix file harus cocok dengan remote version yang benar-benar diterapkan.
 
 **Status 21 November 2026:** tidak ada file migration lokal yang tampak pending; 88 migrasi historis remote tetap belum memiliki SQL pasangan di repository. Tidak ada perubahan database Production dalam audit ini.
+
+
+## Snapshot audit ulang 22 November 2026 — read-only
+
+Pemeriksaan ulang langsung terhadap Supabase Production dan branch `main` menghasilkan:
+
+- Supabase remote migration history: **147 versi**; versi terbaru `20261118064519`.
+- Branch `main`: **59 file SQL** pada `supabase/migrations`.
+- **59 file lokal cocok** dengan versi remote.
+- **88 versi remote belum memiliki pasangan file SQL lokal**.
+- Tidak ditemukan file SQL lokal yang belum tercatat pada remote.
+- Tidak ada migrasi yang dijalankan, diubah, dihapus, atau diperbaiki melalui pemeriksaan ini.
+
+Pembaruan ini menggantikan angka snapshot lama sebagai kondisi terbaru pada tanggal audit ini. Catatan historis di atas tetap dipertahankan sebagai rekam jejak tanggal pemeriksaan masing-masing.
+
+### Pemeriksaan tambahan read-only
+
+- Seluruh tabel publik yang diperiksa memiliki RLS aktif.
+- Beberapa tabel memiliki RLS tanpa policy dan tanpa privilege langsung untuk `anon` maupun `authenticated`; pola ini konsisten dengan akses melalui fungsi backend pada tabel-tabel tersebut. Jangan menambahkan policy hanya untuk menghilangkan indikator kosong.
+- Empat paket lisensi tercatat: Starter Rp49.000 aktif, Lite Rp99.000 aktif, Business Rp149.000 aktif, dan Professional Rp249.000 nonaktif.
+- Ledger komisi marketplace yang tercatat berisi satu baris dengan dasar Rp12.000, tarif 2,5%, dan komisi Rp300. Nilai ini konsisten dengan komisi atas subtotal produk, bukan ongkir.
+- Terdapat 99 entri jurnal yang diperiksa; seluruh entri yang memiliki baris jurnal seimbang debit dan kredit.
+- Data order yang ada tidak membuktikan transaksi uang sungguhan; pengujian pembayaran Production tetap belum terverifikasi.
+
+### Keputusan keselamatan
+
+Jangan menjalankan `supabase db push`, reset, migration repair, atau DDL Production untuk menutup selisih 88 versi. Pulihkan SQL historis dari arsip tepercaya atau siapkan baseline skema terkontrol yang diuji pada database kosong/terisolasi. Tidak ada perubahan data bisnis atau skema Production pada snapshot audit ini.
