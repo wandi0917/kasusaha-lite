@@ -15,4 +15,4 @@ When it is absent, a new anonymous session can pass the used-invite and paid-act
 
 ## Safety
 
-The repair does not merge employees by display name, does not read or expose invite codes, and does not grant client access to `employee_invite_code_users`. It does not modify financial transaction rows. The SQL migration is additive and has not been applied to Production; migration baseline reconciliation is still required before applying it.
+The repair does not merge employees by display name, does not read or expose invite codes, and does not grant client access to `employee_invite_code_users`. It does not modify financial transaction rows. The additive migration was applied successfully to Supabase Production as remote version `20261124093623` (`fix_employee_cross_device_identity_history_20261124`). Edge Function `employee-device-activation` was deployed as version 51 with JWT verification still enabled. The migration added/replaced only private resolver functions and did not backfill, delete, or update transaction data. Full historical migration baseline reconciliation remains outstanding; do not use `supabase db push` or reset.

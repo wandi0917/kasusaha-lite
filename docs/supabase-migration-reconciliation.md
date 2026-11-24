@@ -213,3 +213,29 @@ Pembaruan ini menggantikan angka snapshot lama sebagai kondisi terbaru pada tang
 ### Keputusan keselamatan
 
 Jangan menjalankan `supabase db push`, reset, migration repair, atau DDL Production untuk menutup selisih 88 versi. Pulihkan SQL historis dari arsip tepercaya atau siapkan baseline skema terkontrol yang diuji pada database kosong/terisolasi. Tidak ada perubahan data bisnis atau skema Production pada snapshot audit ini.
+
+
+## Snapshot rekonsiliasi terbaru — 24 November 2026
+
+Pemeriksaan read-only setelah perbaikan identitas Karyawan:
+
+- Supabase remote migration history: **148 versi**; versi terbaru `20261124093623`.
+- Branch `main`: **60 file SQL** pada `supabase/migrations`.
+- **60 dari 60 file lokal cocok** dengan versi remote.
+- **88 versi remote historis** masih belum memiliki pasangan file SQL di repository.
+- Tidak ada file lokal pending yang belum tercatat di remote.
+
+### Migrasi identitas Karyawan yang diterapkan
+
+Remote version `20261124093623`, name `fix_employee_cross_device_identity_history_20261124`, diterapkan melalui Supabase Migration API pada 24 November 2026. Migrasi mengganti dua fungsi resolver privat agar riwayat laporan dan predicate RLS dapat menghubungkan sesi melalui `employee_invite_code_users` untuk undangan yang sudah digunakan dan akun canonical yang masih memiliki aktivasi `paid`. Alias legacy tetap didukung.
+
+Edge Function `employee-device-activation` kemudian dideploy sebagai version **51**, dengan `verify_jwt=true`. Tidak ada baris transaksi, saldo, komisi, pesanan, atau stok yang diubah oleh migrasi ini.
+
+### Batas yang tetap berlaku
+
+- 88 migrasi historis remote masih belum dapat direproduksi dari SQL di repository.
+- Jangan menjalankan `supabase db push`, reset, atau migration repair untuk menutup selisih tersebut.
+- Migrasi baru yang sudah diterapkan harus tercatat dengan versi remote dan file lokal yang cocok.
+- Rekonsiliasi baseline penuh tetap diperlukan sebelum membangun database baru dari repository atau menjalankan rangkaian migrasi historis.
+
+**Status 24 November 2026:** migration history remote dan file lokal cocok untuk seluruh 60 file yang tersedia; 88 versi historis tetap perlu dipulihkan dari arsip tepercaya atau digantikan dengan baseline schema terkontrol yang diuji pada project terisolasi.
