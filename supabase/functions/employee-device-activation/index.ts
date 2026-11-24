@@ -201,10 +201,10 @@ Deno.serve(async (req: Request) => {
         return reply({ success: false, message: "Status keanggotaan tidak dapat diperiksa." }, 500);
       }
 
-      // Kode yang sudah dipakai dapat dipulihkan oleh sesi anonim lama yang
-      // telah dipetakan secara eksplisit ke identitas karyawan yang sama oleh server.
+      // Kode undangan yang sudah dipakai dapat dipulihkan pada sesi anonim baru
+      // setelah nama cocok dan aktivasi akun canonical masih berstatus paid.
       if (invite.status === "used") {
-        let verifiedHistoricalAlias = false;
+        let verifiedRecoverySession = false;
         if (invite.user_id !== authUserId) {
           const canonicalAccountDeviceId = "ksacct_" + String(invite.user_id || "").replace(/-/g, "");
           const { data: canonicalActivation, error: canonicalActivationError } = await admin.from("kasusaha_device_activations")
@@ -212,50 +212,23 @@ Deno.serve(async (req: Request) => {
             .eq("device_id", canonicalAccountDeviceId).eq("role", "employee").maybeSingle();
           if (canonicalActivationError) return reply({ success: false, message: "Status aktivasi akun utama belum dapat diverifikasi." }, 500);
           if (canonicalActivation?.status !== "paid") return reply({ success: false, message: "Akses ID karyawan sedang dinonaktifkan Owner atau aktivasi akun utama belum aktif." }, 403);
-          let { data: aliasMatch, error: aliasError } = await admin.rpc("kasusaha_employee_alias_matches", {
-            p_business_id: invite.business_id,
-            p_canonical_user_id: invite.user_id,
-            p_alias_user_id: authUserId,
-          });
-          if (aliasError) {
-            console.error("Check employee identity alias:", aliasError.message);
-            return reply({ success: false, message: "Identitas karyawan belum dapat diverifikasi. Coba lagi atau hubungi Owner." }, 500);
-          }
-          // Kode undangan rahasia + nama terdaftar adalah kredensial login karyawan.
-          // Jika kredensial cocok dengan undangan terpakai, daftarkan sesi anonim baru
-          // sebagai alias identitas yang sama agar login lintas browser/perangkat bekerja.
-          if (aliasMatch !== true) {
-            const { data: registered, error: registerError } = await admin.rpc("kasusaha_employee_register_alias", {
-              p_business_id: invite.business_id,
-              p_canonical_user_id: invite.user_id,
-              p_alias_user_id: authUserId,
-            });
-            if (registerError || registered !== true) {
-              console.error("Register employee identity alias:", registerError?.message || "alias rejected");
-              return reply({ success: false, message: "Sesi baru belum dapat ditautkan dengan aman ke akun karyawan. Hubungi Owner." }, 403);
-            }
-            const { data: confirmed, error: confirmError } = await admin.rpc("kasusaha_employee_alias_matches", {
-              p_business_id: invite.business_id,
-              p_canonical_user_id: invite.user_id,
-              p_alias_user_id: authUserId,
-            });
-            if (confirmError || confirmed !== true) {
-              return reply({ success: false, message: "Tautan identitas karyawan belum lolos verifikasi akhir. Coba lagi." }, 500);
-            }
-            aliasMatch = confirmed;
-          }
-          verifiedHistoricalAlias = aliasMatch === true;
+
+          // Nama + kode ID sudah diverifikasi terhadap undangan yang berstatus used.
+          // Akun utama juga harus memiliki aktivasi berbayar yang masih aktif.
+          // Binding sesi baru ke invite_code_id yang sama menjadi sumber identitas
+          // lintas perangkat; tidak bergantung pada baris alias legacy yang mungkin belum ada.
+          verifiedRecoverySession = true;
         }
-        if (!verifiedHistoricalAlias && (!existing?.active || existing.business_id !== invite.business_id || existing.role !== "employee")) {
+        if (!verifiedRecoverySession && (!existing?.active || existing.business_id !== invite.business_id || existing.role !== "employee")) {
           return reply({ success: false, message: "Akses akun ini sedang dinonaktifkan atau telah dihapus Owner. Hubungi Owner." }, 403);
         }
-        if (verifiedHistoricalAlias) {
+        if (verifiedRecoverySession) {
           const { error: memberRestoreError } = await admin.from("business_members").upsert({
             business_id: invite.business_id, user_id: authUserId, role: "employee", active: true
           }, { onConflict: "business_id,user_id" });
           if (memberRestoreError) {
-            console.error("Restore verified employee alias membership:", memberRestoreError.message);
-            return reply({ success: false, message: "Sesi lama terverifikasi, tetapi keanggotaan belum dapat dipulihkan. Hubungi Owner." }, 500);
+            console.error("Restore verified employee recovery-session membership:", memberRestoreError.message);
+            return reply({ success: false, message: "Sesi pemulihan terverifikasi, tetapi keanggotaan belum dapat dipulihkan. Hubungi Owner." }, 500);
           }
         }
 
@@ -270,19 +243,19 @@ Deno.serve(async (req: Request) => {
         }, { onConflict: "business_id,device_id" });
         if (activationError) return reply({ success: false, message: "Status aktivasi ID belum dapat dipulihkan. Hubungi Owner." }, 500);
 
-        // Re-check the canonical account after restoring an alias. Owner revocation
+        // Re-check the canonical account after restoring the recovery session. Owner revocation
         // may have raced with this login after the first check above.
-        if (verifiedHistoricalAlias) {
+        if (verifiedRecoverySession) {
           const { data: finalCanonicalActivation, error: finalCanonicalActivationError } = await admin.from("kasusaha_device_activations")
             .select("status").eq("business_id", invite.business_id).eq("user_id", invite.user_id)
             .eq("device_id", "ksacct_" + String(invite.user_id || "").replace(/-/g, "")).eq("role", "employee").maybeSingle();
           if (finalCanonicalActivationError || finalCanonicalActivation?.status !== "paid") {
-            const { error: revokeAliasActivationError } = await admin.from("kasusaha_device_activations")
+            const { error: revokeRecoveryActivationError } = await admin.from("kasusaha_device_activations")
               .update({ status: "revoked", updated_at: new Date().toISOString() })
               .eq("business_id", invite.business_id).eq("user_id", authUserId).eq("device_id", accountDeviceId).eq("role", "employee");
-            const { error: deactivateAliasMemberError } = await admin.from("business_members")
+            const { error: deactivateRecoveryMemberError } = await admin.from("business_members")
               .update({ active: false }).eq("business_id", invite.business_id).eq("user_id", authUserId).eq("role", "employee");
-            if (revokeAliasActivationError || deactivateAliasMemberError) {
+            if (revokeRecoveryActivationError || deactivateRecoveryMemberError) {
               return reply({ success: false, message: "Akses sesi baru belum dapat dipastikan aman. Hubungi Owner." }, 500);
             }
             return reply({ success: false, message: "Owner telah menonaktifkan akses karyawan. Sesi ini tidak dapat dipulihkan." }, 403);
