@@ -201,8 +201,8 @@ Deno.serve(async (req: Request) => {
         return reply({ success: false, message: "Status keanggotaan tidak dapat diperiksa." }, 500);
       }
 
-      // Kode yang sudah dipakai dapat dipulihkan oleh sesi anonim lama yang
-      // telah dipetakan secara eksplisit ke identitas karyawan yang sama oleh server.
+      // Kode undangan yang sudah dipakai dapat dipulihkan pada sesi anonim baru
+      // setelah nama cocok dan aktivasi akun canonical masih berstatus paid.
       if (invite.status === "used") {
         let verifiedRecoverySession = false;
         if (invite.user_id !== authUserId) {
