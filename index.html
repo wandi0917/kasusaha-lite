@@ -2981,7 +2981,7 @@ function barisHarian(d){const kelas=d.laba<0?'expense':'income';return '<tr><td>
 function tampilLaporanHarian(){const laporan=dataLaporanHarian();const html=laporan.length?laporan.map(barisHarian).join(''):'<tr><td colspan="6">Belum ada transaksi untuk dilaporkan.</td></tr>';const a=$('laporanHarianBeranda'),b=$('laporanHarianTransaksi');if(a)a.innerHTML=html;if(b)b.innerHTML=html;}
 function tampilLaporanHarianUsaha(){
  if(!financeBusiness||!financeMemberRole||offlineTransactionMode){tampilLaporanHarian();return;}
- const rows=financeMemberRole==='employee'?financeRows.filter(r=>financeEmployeeIdentityUserIds.includes(r.created_by)&&r.created_by_role==='employee'&&r.transaction_type==='income'):financeRows.slice();
+ const rows=financeMemberRole==='employee'?financeRows.filter(r=>financeEmployeeIdentityUserIds.includes(String(r.created_by||''))&&r.created_by_role==='employee'&&r.transaction_type==='income'):financeRows.slice();
  const daily=new Map();
  rows.forEach(r=>{const day=String(r.transaction_date||'').slice(0,10);if(!/^\d{4}-\d{2}-\d{2}$/.test(day))return;if(!daily.has(day))daily.set(day,{income:0,expense:0,count:0});const item=daily.get(day);if(r.transaction_type==='income')item.income+=Number(r.amount||0);else if(r.transaction_type==='expense'&&financeMemberRole==='owner')item.expense+=Number(r.amount||0);item.count++;});
  let balance=0;
@@ -3020,7 +3020,7 @@ async function buatPratinjauLaporan(){
  let sumber;
  if(pakaiDataBersama){
   sumber=financeRows.filter(r=>{
-   if(financeMemberRole==="employee"&&(!financeEmployeeIdentityUserIds.includes(r.created_by)||r.created_by_role!=="employee"||r.transaction_type!=="income"))return false;
+   if(financeMemberRole==="employee"&&(!financeEmployeeIdentityUserIds.includes(String(r.created_by||''))||r.created_by_role!=="employee"||r.transaction_type!=="income"))return false;
    const tanggal=String(r.transaction_date||"");
    if(tanggal<kMulai||tanggal>kAkhir)return false;
    const cat=String(r.category||"").trim();
@@ -6783,7 +6783,7 @@ function renderFinanceReport(){
  let rows=financeRows.filter(r=>r.transaction_date>=bounds.start&&r.transaction_date<=bounds.end);
  const category=$('financeReportCategory')?.value||'all';
  if(category==='__uncategorized')rows=rows.filter(r=>!String(r.category||'').trim());else if(category!=='all'){const target=financeNormalizeCategory(category);rows=rows.filter(r=>financeNormalizeCategory(r.category)===target);}
- if(isEmployee){rows=rows.filter(r=>financeEmployeeIdentityUserIds.includes(r.created_by)&&r.created_by_role==='employee'&&r.transaction_type==='income');}
+ if(isEmployee){rows=rows.filter(r=>financeEmployeeIdentityUserIds.includes(String(r.created_by||''))&&r.created_by_role==='employee'&&r.transaction_type==='income');}
  else{
   const filter=$('financeRoleFilter').value;
   if(filter==='owner'||filter==='employee')rows=rows.filter(r=>r.created_by_role===filter);
