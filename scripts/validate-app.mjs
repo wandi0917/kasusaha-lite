@@ -886,10 +886,10 @@ const employeeJoinCodeBlock = employeeJoinCodeStart >= 0 && employeeJoinCodeEnd 
 if (!employeeJoinCodeBlock.includes('canonicalActivation?.status !== "paid"')) fail("Historical employee aliases must not restore access after the canonical activation was revoked"); else pass("Historical employee aliases cannot restore access after the canonical activation was revoked");
 
 if (!employeeJoinCodeBlock.includes('finalCanonicalActivation?.status !== "paid"') ||
-    !employeeJoinCodeBlock.includes('revokeAliasActivationError') ||
-    !employeeJoinCodeBlock.includes('deactivateAliasMemberError')) {
-  fail("historical alias login must recheck canonical activation after writes and fail closed on concurrent revocation");
-} else pass("historical alias login rechecks canonical activation after writes and fails closed on concurrent revocation");
+    !employeeJoinCodeBlock.includes('revokeRecoveryActivationError') ||
+    !employeeJoinCodeBlock.includes('deactivateRecoveryMemberError')) {
+  fail("employee recovery login must recheck canonical activation after writes and fail closed on concurrent revocation");
+} else pass("employee recovery login rechecks canonical activation after writes and fails closed on concurrent revocation");
 
 if (!employeeOwnerListBlock.includes('historicalUserIds.has(row.user_id)')) {
   fail("Owner list payment refresh must not independently reactivate historical alias sessions");
