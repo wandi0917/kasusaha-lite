@@ -1,5 +1,4 @@
 import fs from "node:fs";
-import assert from "node:assert/strict";
 
 const edge = fs.readFileSync("supabase/functions/employee-device-activation/index.ts", "utf8");
 const migration = fs.readFileSync(
@@ -22,6 +21,8 @@ const checks = [
   [(migration.match(/security definer/g) || []).length === 2 && (migration.match(/set search_path = ''/g) || []).length === 2, "both private resolver functions retain a fixed search_path and definer boundary"],
   [migration.includes("revoke all on function private.kasusaha_employee_identity_user_ids(uuid) from public, anon") && migration.includes("revoke all on function private.kasusaha_employee_same_identity_user(uuid,uuid) from public, anon"), "private identity resolvers are not executable by anon or PUBLIC"],
   [migration.includes("grant execute on function private.kasusaha_employee_identity_user_ids(uuid) to authenticated, service_role") && migration.includes("grant execute on function private.kasusaha_employee_same_identity_user(uuid,uuid) to authenticated, service_role"), "only authenticated sessions and service role can execute the private identity resolvers"],
+
+  [(migration.match(/canonical_activation\.status = 'paid'/g) || []).length === 2, "both history resolvers require the canonical account device activation to remain paid"],
 ];
 
 for (const [ok, message] of checks) {
