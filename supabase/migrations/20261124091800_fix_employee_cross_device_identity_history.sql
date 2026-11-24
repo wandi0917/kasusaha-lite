@@ -48,6 +48,12 @@ as $function$
             on canonical_binding.invite_code_id = invite.id
            and canonical_binding.business_id = invite.business_id
            and canonical_binding.user_id = invite.user_id
+           join public.kasusaha_device_activations canonical_activation
+             on canonical_activation.business_id = invite.business_id
+            and canonical_activation.user_id = invite.user_id
+            and canonical_activation.device_id = 'ksacct_' || replace(invite.user_id::text, '-', '')
+            and canonical_activation.role = 'employee'
+            and canonical_activation.status = 'paid'
           join public.employee_invite_code_users other_binding
             on other_binding.invite_code_id = current_binding.invite_code_id
            and other_binding.business_id = current_binding.business_id
@@ -96,6 +102,12 @@ as $function$
         on canonical_binding.invite_code_id = invite.id
        and canonical_binding.business_id = invite.business_id
        and canonical_binding.user_id = invite.user_id
+       join public.kasusaha_device_activations canonical_activation
+         on canonical_activation.business_id = invite.business_id
+        and canonical_activation.user_id = invite.user_id
+        and canonical_activation.device_id = 'ksacct_' || replace(invite.user_id::text, '-', '')
+        and canonical_activation.role = 'employee'
+        and canonical_activation.status = 'paid'
       join public.employee_invite_code_users other_binding
         on other_binding.invite_code_id = current_binding.invite_code_id
        and other_binding.business_id = current_binding.business_id
