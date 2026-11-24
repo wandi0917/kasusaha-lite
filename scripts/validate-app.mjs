@@ -9,6 +9,11 @@ const pass = (message) => console.log("PASS:", message);
 
 const html = fs.readFileSync("index.html", "utf8");
 
+const employeeReportIdentityExpression = "financeEmployeeIdentityUserIds.includes(String(r.created_by||''))";
+if (html.includes("financeEmployeeIdentityUserIds.includes(r.created_by)") || !html.includes(employeeReportIdentityExpression)) {
+  fail("employee report identity matching must normalize creator IDs consistently across shared reports");
+} else pass("employee report identity matching normalizes creator IDs consistently across shared reports");
+
 const affiliatePlatformHint = html.slice(
   html.indexOf("function ubahPetunjukTautanAfiliasi"),
   html.indexOf("function affiliateCard", html.indexOf("function ubahPetunjukTautanAfiliasi")),
